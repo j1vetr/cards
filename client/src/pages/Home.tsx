@@ -31,7 +31,7 @@ const tickerWords = Array(12).fill(
 
 const features = [
   { icon: Truck, label: 'Türkiye Geneli Kargo', sub: 'Özenli paketleme' },
-  { icon: RotateCcw, label: 'Numune Talebi', sub: 'Karar vermeden önce' },
+  { icon: RotateCcw, label: 'Hızlı Teslimat', sub: '81 ile özel sevkiyat' },
   { icon: Shield, label: 'Güvenli Ödeme', sub: 'SSL korumalı' },
   { icon: Zap, label: 'Uzman Danışmanlık', sub: 'Mekânınıza özel öneri' },
 ];
@@ -332,7 +332,20 @@ export default function Home() {
     image: cat.image || defaultCategoryImages[cat.slug] || '',
   }));
 
-  const featuredProducts = allProducts.slice(0, 9);
+  const featuredProducts = allProducts.slice(0, 13);
+  const newArrivals = [...allProducts]
+    .sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt as any).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt as any).getTime() : 0;
+      return tb - ta;
+    })
+    .slice(0, 12);
+  const discountedProducts = allProducts.filter(p => p.discountBadge).slice(0, 8);
+  const fallbackHighlights = allProducts.slice(13, 21);
+  const hasDiscounts = discountedProducts.length >= 4;
+  const highlightProducts = hasDiscounts ? discountedProducts : fallbackHighlights;
+  const highlightLabel = hasDiscounts ? 'İNDİRİMDEKİLER' : 'ÖNE ÇIKANLAR';
+  const highlightEyebrow = hasDiscounts ? 'Kampanya' : 'Seçki';
 
   useEffect(() => {
     const t = setInterval(() => setActiveSlide(p => (p + 1) % heroSlides.length), 6000);
@@ -595,6 +608,123 @@ export default function Home() {
       )}
 
       {/* ════════════════════════════════════════════
+          02 — YENİ GELENLER (horizontal editorial scroll)
+      ════════════════════════════════════════════ */}
+      {newArrivals.length > 0 && (
+        <section className="bg-polen-cream/40 border-t border-black/8 mt-8 lg:mt-12 py-12 lg:py-20" data-testid="section-new-arrivals">
+          <div className="max-w-[1440px] mx-auto px-4 lg:px-10 xl:px-14">
+            <div className="flex items-end justify-between mb-6 lg:mb-10">
+              <div>
+                <span className="block text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums mb-2">02 / Yeni</span>
+                <h2 className="font-display text-3xl lg:text-5xl tracking-wide text-black leading-[0.95]">
+                  YENİ GELENLER
+                </h2>
+                <p className="text-black/45 text-sm mt-3 max-w-md">
+                  Son eklenen ocak çıkışlı bloklar, taze koleksiyonlar.
+                </p>
+              </div>
+              <Link href="/magaza" className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-black/45 hover:text-polen-orange transition-colors font-medium">
+                Tümünü Gör <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            <div className="relative -mx-4 lg:-mx-10 xl:-mx-14">
+              <div className="flex gap-3 lg:gap-4 overflow-x-auto pb-4 px-4 lg:px-10 xl:px-14 scrollbar-hide snap-x snap-mandatory">
+                {newArrivals.map((p, i) => {
+                  const img = p.images?.[0] || '';
+                  const price = parseFloat(p.basePrice || '0');
+                  const originalPrice = getOriginalPrice(price, p.discountBadge);
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/urun/${p.slug}`}
+                      data-testid={`link-new-arrival-${p.id}`}
+                      className="snap-start shrink-0 w-[64vw] sm:w-[44vw] md:w-[32vw] lg:w-[260px] group"
+                    >
+                      <div className="relative h-[340px] lg:h-[340px] overflow-hidden bg-stone-100">
+                        <motion.img
+                          src={img}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ duration: 0.65, ease: [0.33, 1, 0.68, 1] }}
+                          loading="lazy"
+                        />
+                        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+                          <span className="text-[8px] font-mono tracking-[0.28em] uppercase text-white/90 bg-black/55 backdrop-blur px-2 py-1">
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          {p.discountBadge && (
+                            <span className="bg-polen-orange text-white text-[9px] font-bold tracking-widest px-2 py-1 uppercase">
+                              {p.discountBadge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      </div>
+                      <div className="pt-3 pr-2">
+                        <p className="font-display text-sm lg:text-base text-black tracking-wide line-clamp-1 group-hover:text-polen-orange transition-colors">
+                          {p.name.toUpperCase()}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {originalPrice && (
+                            <span className="text-black/35 text-[11px] line-through">
+                              {originalPrice.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
+                            </span>
+                          )}
+                          <span className="text-black text-xs font-semibold">
+                            {price.toLocaleString('tr-TR')} ₺
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════════════════════════════════
+          03 — HIGHLIGHT GRID (İndirimde / Koleksiyondan)
+      ════════════════════════════════════════════ */}
+      {highlightProducts.length > 0 && (
+        <section className="bg-white border-t border-black/8 py-12 lg:py-20 px-4 lg:px-10 xl:px-14" data-testid="section-highlights">
+          <div className="max-w-[1440px] mx-auto">
+            <div className="flex items-end justify-between mb-6 lg:mb-10">
+              <div>
+                <span className="block text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums mb-2">
+                  03 / {highlightEyebrow}
+                </span>
+                <h2 className="font-display text-2xl lg:text-4xl tracking-wide text-black">
+                  {highlightLabel}
+                </h2>
+              </div>
+              <Link href="/magaza" className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-black/45 hover:text-polen-orange transition-colors font-medium">
+                Tümünü Gör <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+              {highlightProducts.map((product, i) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.5, delay: (i % 4) * 0.06 }}
+                  data-testid={`product-highlight-${product.id}`}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════════════════════════════════
           TICKER STRIP
       ════════════════════════════════════════════ */}
       <div className="bg-[hsl(var(--polen-stone))] overflow-hidden h-10 flex items-center mt-5 lg:mt-8">
@@ -617,7 +747,7 @@ export default function Home() {
           {/* Header */}
           <div className="flex items-center justify-between mb-5 lg:mb-8 border-b border-black/8 pb-5 lg:pb-8">
             <div className="flex items-center gap-4">
-              <span className="text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums">02</span>
+              <span className="text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums">04</span>
               <h2 className="font-display text-2xl lg:text-4xl tracking-wide text-black">TAŞ KATEGORİLERİ</h2>
             </div>
             <Link href="/magaza" className="group hidden lg:flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/35 hover:text-black transition-colors font-medium">

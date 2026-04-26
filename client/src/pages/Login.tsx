@@ -68,13 +68,12 @@ export default function Login() {
             <div className="relative z-10 px-12 pb-16 max-w-xl">
               <span className="block text-[10px] font-mono tracking-[0.32em] uppercase text-black/45 mb-6">— Üyelere Özel</span>
               <h2 className="font-display text-5xl xl:text-6xl tracking-[0.005em] text-black leading-[0.98] mb-7">
-                DOĞANIN<br />
-                İHTİŞAMI<br />
-                <span className="text-polen-orange">SİZİ BEKLİYOR</span>
+                HESABINIZA<br />
+                <span className="text-polen-orange">GİRİŞ YAPIN</span>
               </h2>
               <p className="text-black/55 text-[15px] leading-relaxed max-w-md">
-                Anadolu'nun en seçkin doğal taş ocaklarından, sadece üyelerimize özel
-                koleksiyonlar, ücretsiz numune talepleri ve kişiye özel projelendirme.
+                Sipariş geçmişiniz, favori taşlarınız ve teslimat adresleriniz tek noktada;
+                yeni siparişlerde her şey otomatik dolu.
               </p>
 
               <div className="mt-12 grid grid-cols-3 gap-6 max-w-md border-t border-black/10 pt-8">
@@ -106,7 +105,7 @@ export default function Login() {
               <div className="relative z-10 px-6 py-8">
                 <span className="block text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums mb-3">01 / Giriş</span>
                 <h2 className="font-display text-3xl tracking-[0.005em] text-black leading-[0.98]">
-                  DOĞANIN İHTİŞAMI <span className="text-polen-orange">SİZİ BEKLİYOR</span>
+                  HESABINIZA <span className="text-polen-orange">GİRİŞ YAPIN</span>
                 </h2>
               </div>
             </div>
@@ -130,8 +129,7 @@ export default function Login() {
                     HOŞ GELDİNİZ
                   </h1>
                   <p className="text-black/50 text-sm leading-relaxed">
-                    Hesabınıza giriş yapın; favori taşlarınız, sipariş geçmişiniz ve numune
-                    talepleriniz sizi bekliyor.
+                    Sipariş geçmişiniz, favori taşlarınız ve teslimat adresleriniz tek noktada.
                   </p>
                 </div>
 
@@ -219,7 +217,7 @@ export default function Login() {
               href="/kayit"
               index="02"
               eyebrow="Yeni Misiniz?"
-              headline="POLEN STONE AİLESİNE KATILIN"
+              headline="YENİ HESAP OLUŞTURUN"
               ctaLabel="Hesap Oluştur"
               testId="link-register"
             />

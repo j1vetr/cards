@@ -104,7 +104,7 @@ export function Header() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-polen-orange shrink-0">
               <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
             </svg>
-            <span className="text-[10px] tracking-[0.28em] uppercase text-white/75 font-medium">Ücretsiz Numune Talebi</span>
+            <span className="text-[10px] tracking-[0.28em] uppercase text-white/75 font-medium">Anadolu'dan Mekânınıza</span>
           </div>
         </div>
       </div>
@@ -285,8 +285,9 @@ export function Header() {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <motion.button whileTap={{ scale: 0.9 }} className="p-3 text-black/65 hover:text-polen-orange transition-colors" data-testid="button-account" aria-label="Hesabım">
-                      <User className="w-[22px] h-[22px]" strokeWidth={1.75} />
+                    <motion.button whileTap={{ scale: 0.9 }} className="p-3 text-black/65 hover:text-polen-orange transition-colors flex items-center gap-2" data-testid="button-account" aria-label="Hesabım">
+                      <User className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                      <span className="text-[11px] tracking-[0.18em] uppercase font-medium hidden xl:inline">Hesabım</span>
                     </motion.button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-white border-black/8 shadow-lg rounded-none min-w-[180px]">
@@ -300,11 +301,24 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Link href="/giris">
-                  <motion.button whileTap={{ scale: 0.9 }} className="p-3 text-black/65 hover:text-polen-orange transition-colors" data-testid="button-account" aria-label="Giriş Yap">
-                    <User className="w-[22px] h-[22px]" strokeWidth={1.75} />
-                  </motion.button>
-                </Link>
+                <div className="flex items-center gap-1 ml-1 pl-3 border-l border-black/10">
+                  <Link href="/giris" data-testid="button-account" aria-label="Giriş Yap">
+                    <motion.span
+                      whileTap={{ scale: 0.97 }}
+                      className="inline-flex items-center px-3 py-2 text-[11px] tracking-[0.18em] uppercase font-medium text-black/70 hover:text-polen-orange transition-colors cursor-pointer"
+                    >
+                      Giriş Yap
+                    </motion.span>
+                  </Link>
+                  <Link href="/kayit" data-testid="link-header-kayit">
+                    <motion.span
+                      whileTap={{ scale: 0.97 }}
+                      className="inline-flex items-center px-3 py-2 text-[11px] tracking-[0.18em] uppercase font-bold text-white bg-polen-orange hover:bg-[hsl(var(--polen-orange-deep))] transition-colors cursor-pointer"
+                    >
+                      Kayıt Ol
+                    </motion.span>
+                  </Link>
+                </div>
               )}
 
               <Link href="/sepet">
@@ -354,73 +368,50 @@ export function Header() {
               className="fixed inset-y-0 left-0 z-50 w-[92%] max-w-[420px] bg-white flex flex-col overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.25)]"
               data-testid="drawer-mobile-menu"
             >
-              {/* ── Hero panel: marble bg with brand identity ── */}
-              <div className="relative h-[210px] shrink-0 overflow-hidden">
+              {/* ── Hero panel: soft marble bg, large clean logo only ── */}
+              <div className="relative h-[150px] shrink-0 overflow-hidden border-b border-black/8">
                 <img
                   src={marbleHero}
                   alt=""
                   className="absolute inset-0 w-full h-full object-cover"
                   aria-hidden="true"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/85" />
+                {/* Bright cream/white veil so logo reads cleanly */}
+                <div className="absolute inset-0 bg-white/72" />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/45" />
 
-                {/* Top utility row */}
-                <div className="relative z-10 flex items-start justify-between px-6 pt-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-white/60">
-                      Menü ‘26
-                    </span>
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.88 }}
-                    onClick={() => setMobileOpen(false)}
-                    className="group relative -mr-2 -mt-1 p-2 text-white/85 hover:text-white transition-colors"
-                    data-testid="button-close-menu"
-                    aria-label="Menüyü Kapat"
-                  >
-                    <span className="absolute inset-0 m-auto w-9 h-9 rounded-full border border-white/25 group-hover:border-white/60 transition-colors" />
-                    <X className="relative w-4 h-4" strokeWidth={1.75} />
-                  </motion.button>
-                </div>
+                {/* Close button — top-right */}
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  onClick={() => setMobileOpen(false)}
+                  className="group absolute top-4 right-4 z-10 p-2 text-black/70 hover:text-black transition-colors"
+                  data-testid="button-close-menu"
+                  aria-label="Menüyü Kapat"
+                >
+                  <span className="absolute inset-0 m-auto w-9 h-9 rounded-full border border-black/15 group-hover:border-black/45 transition-colors" />
+                  <X className="relative w-4 h-4" strokeWidth={1.75} />
+                </motion.button>
 
-                {/* Logo + tagline block */}
-                <div className="absolute z-10 left-6 right-6 bottom-5 flex items-end gap-4">
+                {/* Centered, larger logo */}
+                <div className="absolute inset-0 z-[5] flex items-center justify-center">
                   <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="block shrink-0"
+                    className="block"
                     data-testid="link-mobile-logo"
                   >
                     <img
                       src={polenLogo}
                       alt="Polen Stone"
-                      className="h-[88px] w-[88px] object-contain drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
+                      className="h-[120px] w-[120px] object-contain"
                       data-testid="img-logo-mobile-drawer"
                     />
                   </Link>
-                  <div className="flex flex-col pb-1.5">
-                    <span className="font-display text-white text-[22px] leading-[1] tracking-[0.04em]">
-                      Polen Stone
-                    </span>
-                    <span className="text-white/60 text-[9px] tracking-[0.34em] uppercase mt-2">
-                      Doğal Taş & Mermer
-                    </span>
-                  </div>
                 </div>
               </div>
 
               {/* ── Editorial nav list ── */}
-              <nav className="flex-1 overflow-y-auto bg-white">
-                {/* Section caption */}
-                <div className="flex items-center justify-between px-6 pt-7 pb-3">
-                  <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/35">
-                    İçerik
-                  </span>
-                  <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/25">
-                    05 bağlantı
-                  </span>
-                </div>
-
+              <nav className="flex-1 overflow-y-auto bg-white pt-4">
                 <motion.ul
                   variants={stagger.container}
                   initial="initial"
@@ -541,8 +532,8 @@ export function Header() {
                     </Link>
                   </motion.li>
 
-                  <motion.li variants={stagger.item} className="border-t border-b border-black/[0.08]">
-                    {user ? (
+                  {user ? (
+                    <motion.li variants={stagger.item} className="border-t border-b border-black/[0.08]">
                       <Link
                         href="/hesabim"
                         onClick={() => setMobileOpen(false)}
@@ -559,41 +550,48 @@ export function Header() {
                         </span>
                         <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
                       </Link>
-                    ) : (
-                      <Link
-                        href="/giris"
-                        onClick={() => setMobileOpen(false)}
-                        className="group relative flex items-baseline justify-between py-4"
-                        data-testid="link-mobile-giris"
-                      >
-                        <span className="flex items-baseline gap-5">
-                          <span className="text-[10px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
-                            05
+                    </motion.li>
+                  ) : (
+                    <>
+                      <motion.li variants={stagger.item} className="border-t border-black/[0.08]">
+                        <Link
+                          href="/giris"
+                          onClick={() => setMobileOpen(false)}
+                          className="group relative flex items-baseline justify-between py-4"
+                          data-testid="link-mobile-giris"
+                        >
+                          <span className="flex items-baseline gap-5">
+                            <span className="text-[10px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
+                              05
+                            </span>
+                            <span className="font-display text-[24px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
+                              Giriş Yap
+                            </span>
                           </span>
-                          <span className="font-display text-[24px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
-                            Giriş Yap
+                          <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
+                        </Link>
+                      </motion.li>
+                      <motion.li variants={stagger.item} className="border-t border-b border-black/[0.08]">
+                        <Link
+                          href="/kayit"
+                          onClick={() => setMobileOpen(false)}
+                          className="group relative flex items-baseline justify-between py-4"
+                          data-testid="link-mobile-kayit"
+                        >
+                          <span className="flex items-baseline gap-5">
+                            <span className="text-[10px] font-mono tracking-[0.18em] text-polen-orange transition-colors">
+                              06
+                            </span>
+                            <span className="font-display text-[24px] leading-none tracking-[0.01em] text-polen-orange transition-colors">
+                              Kayıt Ol
+                            </span>
                           </span>
-                        </span>
-                        <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
-                      </Link>
-                    )}
-                  </motion.li>
+                          <ArrowUpRight className="w-4 h-4 text-polen-orange rotate-45 group-hover:rotate-0 transition-all duration-300" />
+                        </Link>
+                      </motion.li>
+                    </>
+                  )}
                 </motion.ul>
-
-                {/* Promo footnote only */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35, duration: 0.5 }}
-                  className="mx-6 mt-8 mb-6 pt-5 border-t border-black/[0.08] flex items-center gap-2.5"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-polen-orange shrink-0">
-                    <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
-                  </svg>
-                  <span className="text-[10px] tracking-[0.22em] uppercase text-black/60 font-medium">
-                    Ücretsiz Numune Talebi · Türkiye Geneli Kargo
-                  </span>
-                </motion.div>
               </nav>
 
               {/* ── Bottom: editorial cart CTA ── */}
@@ -605,7 +603,7 @@ export function Header() {
               >
                 <span className="flex items-center gap-4">
                   <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-white/45 group-hover:text-white/70 transition-colors">
-                    06
+                    {user ? '06' : '07'}
                   </span>
                   <span className="font-display text-[18px] tracking-[0.04em]">
                     Sepeti Görüntüle

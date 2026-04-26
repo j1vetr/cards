@@ -99,7 +99,7 @@ export default function Register() {
               <div className="relative z-10 px-6 py-8">
                 <span className="block text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums mb-3">02 / Kayıt</span>
                 <h2 className="font-display text-3xl tracking-[0.005em] text-black leading-[0.98]">
-                  <span className="text-polen-orange">EVE GELEN</span> NUMUNE, ÖZEL FİYAT.
+                  <span className="text-polen-orange">PROJEYE ÖZEL</span> FİYAT VE DESTEK.
                 </h2>
               </div>
             </div>
@@ -123,8 +123,8 @@ export default function Register() {
                     HESAP OLUŞTUR
                   </h1>
                   <p className="text-black/50 text-sm leading-relaxed">
-                    Bilgilerinizi tek seferlik girin; sonraki numune talepleri ve siparişlerde
-                    tüm detaylar otomatik dolu gelsin.
+                    Bilgilerinizi tek seferlik girin; sonraki siparişlerde tüm detaylar
+                    otomatik dolu gelsin.
                   </p>
                 </div>
 
@@ -404,19 +404,19 @@ export default function Register() {
             <div className="relative z-10 px-12 pb-16 max-w-xl">
               <span className="block text-[10px] font-mono tracking-[0.32em] uppercase text-black/45 mb-6">— Üyeliğin Ayrıcalığı</span>
               <h2 className="font-display text-5xl xl:text-6xl tracking-[0.005em] text-black leading-[0.98] mb-7">
-                <span className="text-polen-orange">EVE GELEN</span><br />
-                NUMUNE,<br />
-                ÖZEL FİYAT.
+                <span className="text-polen-orange">PROJEYE ÖZEL</span><br />
+                FİYAT VE<br />
+                DESTEK.
               </h2>
               <p className="text-black/55 text-[15px] leading-relaxed max-w-md">
-                Polen Stone üyeleri ücretsiz numune talep eder, projeye özel kesim ve
-                fiyatlandırma alır, koleksiyonlara erken erişir.
+                Polen Stone üyeleri projeye özel kesim ve fiyatlandırma alır, uzman
+                danışmanlık eşliğinde yeni koleksiyonlara erken erişir.
               </p>
 
               <ul className="mt-10 space-y-4 max-w-md border-t border-black/10 pt-7">
                 {[
-                  ['01.', 'Ücretsiz numune kargosu'],
-                  ['02.', 'Projeye özel kesim & fiyat'],
+                  ['01.', 'Projeye özel kesim & fiyat'],
+                  ['02.', 'Uzman taş danışmanlığı'],
                   ['03.', 'Yeni koleksiyonlara erken erişim'],
                 ].map(([n, t]) => (
                   <li key={n} className="flex items-baseline gap-4">
