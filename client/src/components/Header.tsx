@@ -112,27 +112,77 @@ export function Header() {
       {/* ── Main header ── */}
       <motion.header
         initial={false}
-        animate={{ height: scrolled ? 80 : 110 }}
+        animate={{ height: scrolled ? 64 : 72 }}
         transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
-        className="fixed lg:static top-0 left-0 right-0 z-40 bg-white border-b border-black/8 flex items-center"
+        className="fixed lg:static top-0 left-0 right-0 z-40 bg-white border-b border-black/8 flex items-center lg:!h-auto"
         style={{ willChange: 'height' }}
       >
-        <div className="w-full max-w-[1400px] mx-auto px-5 lg:px-8">
-          <div className="flex items-center justify-between gap-6">
+        <div className="w-full max-w-[1400px] mx-auto px-4 lg:px-8 lg:py-3">
+          {/* ── Mobile layout: hamburger / centered logo / icons ── */}
+          <div className="grid lg:hidden grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <button
+              data-testid="button-mobile-menu"
+              onClick={() => setMobileOpen(true)}
+              className="justify-self-start flex flex-col gap-[5px] p-2 -ml-2 group"
+              aria-label="Menü"
+            >
+              <span className="block h-px w-5 bg-black transition-all group-hover:w-6" />
+              <span className="block h-px w-4 bg-black transition-all group-hover:w-6" />
+              <span className="block h-px w-6 bg-black" />
+            </button>
 
-            {/* Left: Logo + mobile hamburger */}
-            <div className="flex items-center gap-4 min-w-0">
-              <button
-                data-testid="button-mobile-menu"
-                onClick={() => setMobileOpen(true)}
-                className="lg:hidden flex flex-col gap-[5px] p-1 -ml-1 group"
-                aria-label="Menü"
+            <Link href="/" data-testid="link-logo-mobile-header" className="justify-self-center block">
+              <motion.img
+                src={polenLogo}
+                alt="Polen Stone — Doğal Taş & Mermer"
+                animate={{ height: scrolled ? 40 : 48 }}
+                transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
+                className="w-auto object-contain"
+                data-testid="img-logo-mobile-header"
+                style={{ willChange: 'height' }}
+              />
+            </Link>
+
+            <div className="justify-self-end flex items-center gap-0.5">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSearchOpen(true)}
+                className="p-2.5 text-black/65 hover:text-polen-orange transition-colors"
+                data-testid="button-search-mobile"
+                aria-label="Ara"
               >
-                <span className="block h-px w-5 bg-black transition-all group-hover:w-6" />
-                <span className="block h-px w-4 bg-black transition-all group-hover:w-6" />
-                <span className="block h-px w-6 bg-black" />
-              </button>
+                <Search className="w-[18px] h-[18px]" strokeWidth={1.75} />
+              </motion.button>
+              <Link href="/sepet" data-testid="link-cart-mobile">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  className="p-2.5 text-black/65 hover:text-polen-orange transition-colors relative"
+                  aria-label="Sepet"
+                >
+                  <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                  <AnimatePresence>
+                    {totalItems > 0 && (
+                      <motion.span
+                        key="badge-mobile"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute top-1 right-1 min-w-[16px] h-[16px] px-1 bg-polen-orange text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
+                      >
+                        {totalItems > 9 ? '9+' : totalItems}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </Link>
+            </div>
+          </div>
 
+          {/* ── Desktop layout ── */}
+          <div className="hidden lg:flex items-center justify-between gap-6">
+
+            {/* Left: Logo */}
+            <div className="flex items-center gap-4 min-w-0">
               <Link href="/" data-testid="link-logo" className="shrink-0 block">
                 <motion.img
                   src={polenLogo}
@@ -333,24 +383,29 @@ export function Header() {
                   </motion.button>
                 </div>
 
-                {/* Wordmark block */}
-                <div className="absolute z-10 left-6 right-6 bottom-5">
+                {/* Logo + tagline block */}
+                <div className="absolute z-10 left-6 right-6 bottom-5 flex items-end gap-4">
                   <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="inline-flex flex-col"
+                    className="block shrink-0"
                     data-testid="link-mobile-logo"
                   >
-                    <span className="font-display text-white text-[34px] leading-[0.95] tracking-[0.04em]">
-                      Polen<span className="text-polen-orange">.</span>
-                    </span>
-                    <span className="font-display text-white/85 text-[34px] leading-[0.95] tracking-[0.04em] -mt-0.5">
-                      Stone
-                    </span>
-                    <span className="text-white/55 text-[10px] tracking-[0.34em] uppercase mt-3">
-                      Doğal Taş & Mermer Atölyesi
-                    </span>
+                    <img
+                      src={polenLogo}
+                      alt="Polen Stone"
+                      className="h-[88px] w-[88px] object-contain drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
+                      data-testid="img-logo-mobile-drawer"
+                    />
                   </Link>
+                  <div className="flex flex-col pb-1.5">
+                    <span className="font-display text-white text-[22px] leading-[1] tracking-[0.04em]">
+                      Polen Stone
+                    </span>
+                    <span className="text-white/60 text-[9px] tracking-[0.34em] uppercase mt-2">
+                      Doğal Taş & Mermer
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -362,7 +417,7 @@ export function Header() {
                     İçerik
                   </span>
                   <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/25">
-                    {String((visibleCategories.length || 4) + 4).padStart(2, '0')} bağlantı
+                    05 bağlantı
                   </span>
                 </div>
 
@@ -525,51 +580,20 @@ export function Header() {
                   </motion.li>
                 </motion.ul>
 
-                {/* ── Brand info ── */}
-                <motion.section
+                {/* Promo footnote only */}
+                <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="px-6 pt-8 pb-6"
+                  transition={{ delay: 0.35, duration: 0.5 }}
+                  className="mx-6 mt-8 mb-6 pt-5 border-t border-black/[0.08] flex items-center gap-2.5"
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="block w-6 h-px bg-polen-orange" />
-                    <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/45">
-                      İletişim
-                    </span>
-                  </div>
-                  <div className="space-y-2.5">
-                    <a
-                      href="mailto:info@polenstone.com.tr"
-                      className="block text-[13px] text-black hover:text-polen-orange transition-colors tracking-tight"
-                      data-testid="link-mobile-email"
-                    >
-                      info@polenstone.com.tr
-                    </a>
-                    <a
-                      href="https://www.instagram.com/polenstone"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-[13px] text-black hover:text-polen-orange transition-colors tracking-tight"
-                      data-testid="link-mobile-instagram"
-                    >
-                      @polenstone <span className="text-black/30 ml-1">↗</span>
-                    </a>
-                    <span className="block text-[12px] text-black/55 tracking-tight">
-                      polenstone.com.tr
-                    </span>
-                  </div>
-
-                  {/* Promo footnote */}
-                  <div className="mt-6 pt-5 border-t border-black/[0.08] flex items-center gap-2.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-polen-orange shrink-0">
-                      <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
-                    </svg>
-                    <span className="text-[10px] tracking-[0.22em] uppercase text-black/60 font-medium">
-                      2.500 TL Üzeri Ücretsiz Kargo
-                    </span>
-                  </div>
-                </motion.section>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-polen-orange shrink-0">
+                    <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
+                  </svg>
+                  <span className="text-[10px] tracking-[0.22em] uppercase text-black/60 font-medium">
+                    2.500 TL Üzeri Ücretsiz Kargo
+                  </span>
+                </motion.div>
               </nav>
 
               {/* ── Bottom: editorial cart CTA ── */}
