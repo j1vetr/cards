@@ -28,7 +28,6 @@ import { getPayTRToken, verifyPayTRCallback, type PayTRCallbackData } from "./pa
 import { sendInvoiceToBizimHesap } from "./bizimhesap";
 import { generateProductDescription, styleNames, type DescriptionStyle } from "./aiService";
 import { processMessage, getChatHistory, generateProductEmbedding, generateAllProductEmbeddings, isChatbotAvailable } from "./chatbotService";
-import { sendCapiEvent, extractFbCookies, getClientIp } from "./metaCapi";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -1939,8 +1938,6 @@ export async function registerRoutes(
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 1); // Expires in 1 hour
 
-      const { fbp: paymentFbp, fbc: paymentFbc } = extractFbCookies(req.headers.cookie);
-
       await storage.createPendingPayment({
         merchantOid,
         sessionId: cartToken,
@@ -1960,8 +1957,6 @@ export async function registerRoutes(
         accountPasswordHash: accountPasswordHash,
         clientIp: userIp,
         clientUserAgent: req.headers['user-agent'] || '',
-        fbp: paymentFbp || null,
-        fbc: paymentFbc || null,
         expiresAt,
       });
 
@@ -2124,51 +2119,6 @@ export async function registerRoutes(
 
         // Update pending payment status
         await storage.updatePendingPaymentStatus(callbackData.merchant_oid, 'completed');
-
-        // Send Meta CAPI Purchase event FIRST (server-side for 100% accuracy)
-        try {
-          const purchaseEventId = `purchase-${orderNumber}`;
-          const cartItemsArray = Array.isArray(pendingPayment.cartItems) ? pendingPayment.cartItems : [];
-          const purchaseContents = cartItemsArray.map((item: any) => ({
-            id: item.productId,
-            quantity: item.quantity,
-            price: parseFloat(item.price),
-            title: item.productName,
-          }));
-          const purchaseContentIds = cartItemsArray.map((item: any) => item.productId);
-          const shippingAddr = pendingPayment.shippingAddress as any;
-          console.log('[Meta CAPI] Sending Purchase event:', { eventId: purchaseEventId, value: pendingPayment.total, itemCount: cartItemsArray.length });
-          await sendCapiEvent({
-            eventName: 'Purchase',
-            eventId: purchaseEventId,
-            eventSourceUrl: 'https://polenstone.com.tr/odeme-basarili',
-            userData: {
-              email: pendingPayment.customerEmail,
-              phone: pendingPayment.customerPhone,
-              firstName: pendingPayment.customerName.split(' ')[0],
-              lastName: pendingPayment.customerName.split(' ').slice(1).join(' '),
-              city: shippingAddr?.city,
-              state: shippingAddr?.district,
-              zip: shippingAddr?.postalCode,
-              country: shippingAddr?.country || 'Türkiye',
-              clientIpAddress: pendingPayment.clientIp || undefined,
-              clientUserAgent: pendingPayment.clientUserAgent || undefined,
-              fbp: pendingPayment.fbp || undefined,
-              fbc: pendingPayment.fbc || undefined,
-            },
-            customData: {
-              value: parseFloat(pendingPayment.total),
-              currency: 'TRY',
-              contentIds: purchaseContentIds,
-              contentType: 'product',
-              contents: purchaseContents,
-              numItems: cartItemsArray.length,
-            },
-          });
-          console.log('[Meta CAPI] Purchase event sent successfully for:', orderNumber);
-        } catch (capiErr) {
-          console.error('[Meta CAPI] Purchase event failed:', capiErr);
-        }
 
         // Send confirmation emails
         const orderItems = await storage.getOrderItems(order.id);
@@ -5404,187 +5354,14 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
-  // Meta CAPI tracking endpoints - helper to build full user data
-  async function buildCapiUserData(req: Request, res: Response) {
-    const { fbp, fbc } = extractFbCookies(req.headers.cookie);
-    const clientIp = getClientIp(req);
-    const userAgent = req.headers['user-agent'] || '';
-    const clientUserData = req.body.userData || {};
 
-    const mergedData: any = {
-      clientIpAddress: clientIp,
-      clientUserAgent: userAgent,
-      fbp: fbp || clientUserData.fbp,
-      fbc: fbc || clientUserData.fbc,
-    };
-
-    if (clientUserData.email) mergedData.email = clientUserData.email;
-    if (clientUserData.phone) mergedData.phone = clientUserData.phone;
-    if (clientUserData.firstName) mergedData.firstName = clientUserData.firstName;
-    if (clientUserData.lastName) mergedData.lastName = clientUserData.lastName;
-    if (clientUserData.city) mergedData.city = clientUserData.city;
-    if (clientUserData.state) mergedData.state = clientUserData.state;
-    if (clientUserData.zip) mergedData.zip = clientUserData.zip;
-    if (clientUserData.country) mergedData.country = clientUserData.country;
-    if (clientUserData.externalId) mergedData.externalId = clientUserData.externalId;
-
-    if (!mergedData.email || !mergedData.externalId) {
-      try {
-        const payload = await getAuthPayload(req, res);
-        if (payload?.userId) {
-          const dbUser = await storage.getUser(payload.userId);
-          if (dbUser) {
-            if (!mergedData.externalId) mergedData.externalId = dbUser.id;
-            if (!mergedData.email) mergedData.email = dbUser.email;
-            if (!mergedData.phone && dbUser.phone) mergedData.phone = dbUser.phone;
-            if (!mergedData.firstName && dbUser.firstName) mergedData.firstName = dbUser.firstName;
-            if (!mergedData.lastName && dbUser.lastName) mergedData.lastName = dbUser.lastName;
-            if (!mergedData.city && dbUser.city) mergedData.city = dbUser.city;
-            if (!mergedData.state && dbUser.district) mergedData.state = dbUser.district;
-            if (!mergedData.zip && dbUser.postalCode) mergedData.zip = dbUser.postalCode;
-            if (!mergedData.country && dbUser.country) mergedData.country = dbUser.country;
-          }
-        }
-      } catch {}
-    }
-
-    return mergedData;
-  }
-
-  app.post("/api/track/view-content", async (req: Request, res) => {
-    try {
-      const { eventId, contentId, contentName, contentCategory, value, sourceUrl } = req.body;
-      const userData = await buildCapiUserData(req, res);
-
-      sendCapiEvent({
-        eventName: 'ViewContent',
-        eventId,
-        eventSourceUrl: sourceUrl || 'https://polenstone.com.tr',
-        userData,
-        customData: {
-          value,
-          currency: 'TRY',
-          contentIds: [contentId],
-          contentType: 'product',
-          contentName,
-          contentCategory,
-        },
-      }).catch(err => console.error('[Meta CAPI] ViewContent error:', err));
-
-      res.json({ success: true });
-    } catch (error) {
-      res.json({ success: false });
-    }
-  });
-
-  app.post("/api/track/add-to-cart", async (req: Request, res) => {
-    try {
-      const { eventId, contentId, contentName, contentCategory, value, quantity, sourceUrl } = req.body;
-      const userData = await buildCapiUserData(req, res);
-
-      sendCapiEvent({
-        eventName: 'AddToCart',
-        eventId,
-        eventSourceUrl: sourceUrl || 'https://polenstone.com.tr',
-        userData,
-        customData: {
-          value,
-          currency: 'TRY',
-          contentIds: [contentId],
-          contentType: 'product',
-          contentName,
-          contentCategory,
-          contents: [{ id: contentId, quantity: quantity || 1, price: value }],
-        },
-      }).catch(err => console.error('[Meta CAPI] AddToCart error:', err));
-
-      res.json({ success: true });
-    } catch (error) {
-      res.json({ success: false });
-    }
-  });
-
-  app.post("/api/track/initiate-checkout", async (req: Request, res) => {
-    try {
-      const { eventId, contentIds, value, numItems, contents, sourceUrl } = req.body;
-      const userData = await buildCapiUserData(req, res);
-
-      sendCapiEvent({
-        eventName: 'InitiateCheckout',
-        eventId,
-        eventSourceUrl: sourceUrl || 'https://polenstone.com.tr',
-        userData,
-        customData: {
-          value,
-          currency: 'TRY',
-          contentIds,
-          contentType: 'product',
-          numItems,
-          contents,
-        },
-      }).catch(err => console.error('[Meta CAPI] InitiateCheckout error:', err));
-
-      res.json({ success: true });
-    } catch (error) {
-      res.json({ success: false });
-    }
-  });
-
-  app.post("/api/track/purchase", async (req: Request, res) => {
-    try {
-      const { eventId, contentIds, value, numItems, orderId, contents, sourceUrl } = req.body;
-      const userData = await buildCapiUserData(req, res);
-
-      console.log('[Meta CAPI] Client Purchase tracking:', { eventId, value, orderId, contentIds });
-
-      sendCapiEvent({
-        eventName: 'Purchase',
-        eventId,
-        eventSourceUrl: sourceUrl || 'https://polenstone.com.tr/odeme-basarili',
-        userData,
-        customData: {
-          value,
-          currency: 'TRY',
-          contentIds,
-          contentType: 'product',
-          numItems,
-          contents,
-        },
-      }).then(() => console.log('[Meta CAPI] Client Purchase sent successfully:', eventId))
-        .catch(err => console.error('[Meta CAPI] Purchase (client) error:', err));
-
-      res.json({ success: true });
-    } catch (error) {
-      res.json({ success: false });
-    }
-  });
-
-  app.post("/api/track/add-payment-info", async (req: Request, res) => {
-    try {
-      const { eventId, contentIds, value, numItems, contents, sourceUrl } = req.body;
-      const userData = await buildCapiUserData(req, res);
-
-      sendCapiEvent({
-        eventName: 'AddPaymentInfo',
-        eventId,
-        eventSourceUrl: sourceUrl || 'https://polenstone.com.tr',
-        userData,
-        customData: {
-          value,
-          currency: 'TRY',
-          contentIds,
-          contentType: 'product',
-          numItems,
-          contents,
-        },
-      }).catch(err => console.error('[Meta CAPI] AddPaymentInfo error:', err));
-
-      res.json({ success: true });
-    } catch (error) {
-      res.json({ success: false });
-    }
-  });
-
+  // Meta Pixel + CAPI tracking removed. Stub endpoints kept as no-ops so any cached/old client deploys do not get 404s.
+  const noopTrackHandler = (_req: Request, res: Response) => res.json({ success: true });
+  app.post("/api/track/view-content", noopTrackHandler);
+  app.post("/api/track/add-to-cart", noopTrackHandler);
+  app.post("/api/track/initiate-checkout", noopTrackHandler);
+  app.post("/api/track/purchase", noopTrackHandler);
+  app.post("/api/track/add-payment-info", noopTrackHandler);
   app.get("/feeds/google-merchant.xml", async (_req: Request, res: Response) => {
     try {
       const allProducts = await storage.getAllProducts();

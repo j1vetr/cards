@@ -1,17 +1,15 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { CheckCircle2, ArrowRight, Loader2, Package } from 'lucide-react';
-import { trackPurchase } from '@/lib/metaPixel';
 
 export default function PaymentSuccess() {
   const [location] = useLocation();
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const purchaseTracked = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,23 +32,6 @@ export default function PaymentSuccess() {
           if (data.status === 'completed') {
             setOrderNumber(data.orderNumber);
             setLoading(false);
-            if (!purchaseTracked.current) {
-              purchaseTracked.current = true;
-              const items = data.items || [];
-              const totalValue = parseFloat(data.total || '0');
-              const orderNum = data.orderNumber || oid;
-              trackPurchase({
-                contentIds: items.map((i: any) => i.productId),
-                value: totalValue,
-                numItems: items.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0) || 1,
-                orderId: orderNum,
-                contents: items.map((i: any) => ({
-                  id: i.productId,
-                  quantity: i.quantity || 1,
-                  price: parseFloat(i.price || '0'),
-                })),
-              });
-            }
           } else if (data.status === 'failed') {
             setError('Ödeme işlemi başarısız oldu');
             setLoading(false);

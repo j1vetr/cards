@@ -29,7 +29,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useProduct, useProducts, useCategories } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
-import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { useCartModal } from '@/hooks/useCartModal';
 import { useToast } from '@/hooks/use-toast';
 import { ProductCard } from '@/components/ProductCard';
@@ -143,29 +142,6 @@ export default function ProductDetail() {
   }, [lightboxEmblaApi, onLightboxSelect]);
 
   useEffect(() => {
-    if (product) {
-      const category = categories.find(c => c.id === product.categoryId);
-      trackViewContent({
-        contentId: product.id,
-        contentName: product.name,
-        contentCategory: category?.name,
-        value: parseFloat(product.basePrice || '0'),
-        userData: user ? {
-          email: user.email,
-          phone: user.phone || undefined,
-          firstName: user.firstName || undefined,
-          lastName: user.lastName || undefined,
-          city: user.city || undefined,
-          state: user.district || undefined,
-          zip: user.postalCode || undefined,
-          country: user.country || undefined,
-          externalId: user.id,
-        } : undefined,
-      });
-    }
-  }, [product?.id]);
-
-  useEffect(() => {
     const fetchSizeChart = async () => {
       if (!product?.categoryId) {
         setSizeChart(null);
@@ -209,25 +185,6 @@ export default function ProductDetail() {
     try {
       const variant = selectedSize ? product.variants?.find(v => v.size === selectedSize) : undefined;
       await addToCart(product.id, variant?.id, quantity);
-      const category = categories.find(c => c.id === product.categoryId);
-      trackAddToCart({
-        contentId: product.id,
-        contentName: product.name,
-        contentCategory: category?.name,
-        value: parseFloat(product.basePrice || '0') * quantity,
-        quantity,
-        userData: user ? {
-          email: user.email,
-          phone: user.phone || undefined,
-          firstName: user.firstName || undefined,
-          lastName: user.lastName || undefined,
-          city: user.city || undefined,
-          state: user.district || undefined,
-          zip: user.postalCode || undefined,
-          country: user.country || undefined,
-          externalId: user.id,
-        } : undefined,
-      });
       const mainImage = product.images?.length > 0 
         ? product.images[0] 
         : 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop';

@@ -16,7 +16,6 @@ import {
   CheckCircle2, UserPlus, Tag, X, Instagram
 } from 'lucide-react';
 import { COUNTRIES } from '@/lib/countries';
-import { trackInitiateCheckout, trackAddPaymentInfo, trackPurchase } from '@/lib/metaPixel';
 
 interface Product {
   id: string;
@@ -138,40 +137,6 @@ export default function Checkout() {
       }));
     }
   }, [user]);
-
-  const getTrackUserData = () => {
-    const ud: any = {};
-    if (formData.customerEmail) ud.email = formData.customerEmail;
-    if (formData.customerPhone) ud.phone = formData.customerPhone;
-    const nameParts = formData.customerName.trim().split(' ');
-    if (nameParts[0]) ud.firstName = nameParts[0];
-    if (nameParts.length > 1) ud.lastName = nameParts.slice(1).join(' ');
-    if (formData.city) ud.city = formData.city;
-    if (formData.district) ud.state = formData.district;
-    if (formData.postalCode) ud.zip = formData.postalCode;
-    if (formData.country) ud.country = formData.country;
-    if (user?.id) ud.externalId = user.id;
-    return Object.keys(ud).length > 0 ? ud : undefined;
-  };
-
-  useEffect(() => {
-    if (!initiateCheckoutTracked.current && items.length > 0 && products.length > 0) {
-      initiateCheckoutTracked.current = true;
-      const trackContentIds = cartItemsWithProducts.map(item => item.productId);
-      const trackContents = cartItemsWithProducts.map(item => ({
-        id: item.productId,
-        quantity: item.quantity,
-        price: parseFloat(item.product?.basePrice || '0'),
-      }));
-      trackInitiateCheckout({
-        contentIds: trackContentIds,
-        value: cartItemsWithProducts.reduce((sum, item) => sum + parseFloat(item.product?.basePrice || '0') * item.quantity, 0),
-        numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-        contents: trackContents,
-        userData: getTrackUserData(),
-      });
-    }
-  }, [items, products]);
 
   // Auto-select default address when addresses are loaded (only once on initial load)
   useEffect(() => {
@@ -393,19 +358,6 @@ export default function Checkout() {
       setSavedOrderTotal(total);
       setCurrentStep(3);
 
-      const trackContentIds = cartItemsWithProducts.map(item => item.productId);
-      const trackContents = cartItemsWithProducts.map(item => ({
-        id: item.productId,
-        quantity: item.quantity,
-        price: parseFloat(item.product?.basePrice || '0'),
-      }));
-      trackAddPaymentInfo({
-        contentIds: trackContentIds,
-        value: total,
-        numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-        contents: trackContents,
-        userData: getTrackUserData(),
-      });
     } catch (error: any) {
       setPaymentError(error.message || 'Ödeme başlatılamadı');
       toast({ 
@@ -436,25 +388,6 @@ export default function Checkout() {
           setOrderComplete(true);
           clearCart();
 
-          if (!purchaseTracked.current) {
-            purchaseTracked.current = true;
-            const orderItems = data.items || [];
-            const totalValue = parseFloat(data.total || '0');
-            const orderNum = data.orderNumber || merchantOid;
-            trackPurchase({
-              contentIds: orderItems.map((i: any) => i.productId),
-              value: totalValue,
-              numItems: orderItems.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0) || 1,
-              orderId: orderNum,
-              contents: orderItems.map((i: any) => ({
-                id: i.productId,
-                quantity: i.quantity || 1,
-                price: parseFloat(i.price || '0'),
-              })),
-              userData: getTrackUserData(),
-            });
-            console.log('[Meta Pixel] Purchase event fired from Checkout page:', orderNum);
-          }
         } else if (data.status === 'failed') {
           setPaymentError('Ödeme başarısız oldu. Lütfen tekrar deneyin.');
           setPaytrToken(null);
