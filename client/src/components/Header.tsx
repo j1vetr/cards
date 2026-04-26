@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import polenLogo from '@assets/Polen-Sticker-1.pdf_1777239312980.png';
+import marbleHero from '@assets/generated_images/polen-hero-1.png';
 
 interface MenuItemData {
   id: string;
@@ -279,7 +280,7 @@ export function Header() {
         </div>
       </motion.header>
 
-      {/* ── Mobile drawer menu ── */}
+      {/* ── Mobile editorial menu ── */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -288,9 +289,9 @@ export function Header() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.3 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-black/45 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-black/55 backdrop-blur-md"
               data-testid="overlay-mobile-menu"
             />
 
@@ -299,100 +300,132 @@ export function Header() {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 left-0 z-50 w-[88%] max-w-[400px] bg-white flex flex-col overflow-hidden shadow-2xl"
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 left-0 z-50 w-[92%] max-w-[420px] bg-white flex flex-col overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.25)]"
               data-testid="drawer-mobile-menu"
             >
-              {/* Top bar — orange */}
-              <div className="relative bg-polen-orange flex items-center justify-between px-5 py-4">
-                <Link href="/" onClick={() => setMobileOpen(false)} className="block bg-white rounded-full p-1.5">
-                  <img
-                    src={polenLogo}
-                    alt="Polen Stone"
-                    className="h-12 w-12 object-contain"
-                    data-testid="img-logo-mobile"
-                  />
-                </Link>
-                <div className="flex flex-col items-end">
-                  <span className="font-display text-white text-[11px] tracking-[0.32em] uppercase opacity-95">
-                    Polen Stone
+              {/* ── Hero panel: marble bg with brand identity ── */}
+              <div className="relative h-[210px] shrink-0 overflow-hidden">
+                <img
+                  src={marbleHero}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  aria-hidden="true"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/85" />
+
+                {/* Top utility row */}
+                <div className="relative z-10 flex items-start justify-between px-6 pt-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-white/60">
+                      Menü ‘26
+                    </span>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    onClick={() => setMobileOpen(false)}
+                    className="group relative -mr-2 -mt-1 p-2 text-white/85 hover:text-white transition-colors"
+                    data-testid="button-close-menu"
+                    aria-label="Menüyü Kapat"
+                  >
+                    <span className="absolute inset-0 m-auto w-9 h-9 rounded-full border border-white/25 group-hover:border-white/60 transition-colors" />
+                    <X className="relative w-4 h-4" strokeWidth={1.75} />
+                  </motion.button>
+                </div>
+
+                {/* Wordmark block */}
+                <div className="absolute z-10 left-6 right-6 bottom-5">
+                  <Link
+                    href="/"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex flex-col"
+                    data-testid="link-mobile-logo"
+                  >
+                    <span className="font-display text-white text-[34px] leading-[0.95] tracking-[0.04em]">
+                      Polen<span className="text-polen-orange">.</span>
+                    </span>
+                    <span className="font-display text-white/85 text-[34px] leading-[0.95] tracking-[0.04em] -mt-0.5">
+                      Stone
+                    </span>
+                    <span className="text-white/55 text-[10px] tracking-[0.34em] uppercase mt-3">
+                      Doğal Taş & Mermer Atölyesi
+                    </span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* ── Editorial nav list ── */}
+              <nav className="flex-1 overflow-y-auto bg-white">
+                {/* Section caption */}
+                <div className="flex items-center justify-between px-6 pt-7 pb-3">
+                  <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/35">
+                    İçerik
                   </span>
-                  <span className="text-white/75 text-[9px] tracking-[0.28em] uppercase mt-0.5">
-                    Doğal Taş & Mermer
+                  <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/25">
+                    {String((visibleCategories.length || 4) + 4).padStart(2, '0')} bağlantı
                   </span>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  onClick={() => setMobileOpen(false)}
-                  className="absolute top-3 right-3 p-2 bg-white/15 hover:bg-white/25 rounded-full text-white transition-colors"
-                  data-testid="button-close-menu"
-                  aria-label="Menüyü Kapat"
-                >
-                  <X className="w-4 h-4" strokeWidth={2.25} />
-                </motion.button>
-              </div>
 
-              {/* Promo strip */}
-              <div className="bg-[hsl(var(--polen-cream))] px-5 py-3 border-b border-black/5 flex items-center gap-2.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-polen-orange shrink-0">
-                  <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
-                </svg>
-                <span className="text-[10px] tracking-[0.22em] uppercase text-black/75 font-semibold">
-                  2.500 TL Üzeri Ücretsiz Kargo
-                </span>
-              </div>
-
-              {/* Nav links — white bg */}
-              <nav className="flex-1 overflow-y-auto bg-white">
-                <motion.div
+                <motion.ul
                   variants={stagger.container}
                   initial="initial"
                   animate="animate"
                   exit="initial"
-                  className="flex flex-col"
+                  className="flex flex-col px-6"
                 >
                   {[
                     { href: '/', label: 'Ana Sayfa', testId: 'link-mobile-home' },
                     { href: '/magaza', label: 'Mağaza', testId: 'link-mobile-magaza' },
-                  ].map(link => (
-                    <motion.div key={link.href} variants={stagger.item}>
+                  ].map((link, idx) => (
+                    <motion.li key={link.href} variants={stagger.item} className="border-t border-black/[0.08]">
                       <Link
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
-                        className="group flex items-center justify-between px-5 py-4 border-b border-black/[0.06] transition-colors hover:bg-[hsl(var(--polen-cream))]"
+                        className="group relative flex items-baseline justify-between py-4"
                         data-testid={link.testId}
                       >
-                        <span className="flex items-center gap-3">
-                          <span className="block w-1 h-7 bg-transparent group-hover:bg-polen-orange transition-colors rounded-full" />
-                          <span className="font-display text-[18px] tracking-[0.18em] uppercase text-black group-hover:text-polen-orange transition-colors">
+                        <span className="flex items-baseline gap-5">
+                          <span className="text-[10px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
+                            {String(idx + 1).padStart(2, '0')}
+                          </span>
+                          <span className="font-display text-[24px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
                             {link.label}
                           </span>
                         </span>
-                        <ChevronDown className="w-3.5 h-3.5 text-black/25 -rotate-90 group-hover:text-polen-orange transition-colors" />
+                        <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
                       </Link>
-                    </motion.div>
+                    </motion.li>
                   ))}
 
-                  {/* Categories accordion */}
-                  <motion.div variants={stagger.item}>
+                  {/* Categories — accordion */}
+                  <motion.li variants={stagger.item} className="border-t border-black/[0.08]">
                     <button
                       onClick={() => setMobileCatOpen(v => !v)}
-                      className={`group w-full flex items-center justify-between px-5 py-4 border-b border-black/[0.06] transition-colors ${mobileCatOpen ? 'bg-polen-orange' : 'hover:bg-[hsl(var(--polen-cream))]'}`}
+                      className="group relative w-full flex items-baseline justify-between py-4"
                       data-testid="button-mobile-kategoriler"
                       aria-expanded={mobileCatOpen}
                     >
-                      <span className="flex items-center gap-3">
-                        <span className={`block w-1 h-7 rounded-full transition-colors ${mobileCatOpen ? 'bg-white' : 'bg-transparent group-hover:bg-polen-orange'}`} />
-                        <span className={`font-display text-[18px] tracking-[0.18em] uppercase transition-colors ${mobileCatOpen ? 'text-white' : 'text-black group-hover:text-polen-orange'}`}>
+                      <span className="flex items-baseline gap-5">
+                        <span className={`text-[10px] font-mono tracking-[0.18em] transition-colors ${mobileCatOpen ? 'text-polen-orange' : 'text-black/30 group-hover:text-polen-orange'}`}>
+                          03
+                        </span>
+                        <span className={`font-display text-[24px] leading-none tracking-[0.01em] transition-colors ${mobileCatOpen ? 'text-polen-orange' : 'text-black group-hover:text-polen-orange'}`}>
                           Kategoriler
                         </span>
                       </span>
                       <motion.span
-                        animate={{ rotate: mobileCatOpen ? 180 : 0 }}
-                        transition={{ duration: 0.25 }}
-                        className={`${mobileCatOpen ? 'text-white' : 'text-black/35 group-hover:text-polen-orange'} transition-colors`}
+                        animate={{ rotate: mobileCatOpen ? 90 : 0 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className={`${mobileCatOpen ? 'text-polen-orange' : 'text-black/30'} transition-colors`}
                       >
-                        <ChevronDown className="w-4 h-4" strokeWidth={2.25} />
+                        <span className="block w-3.5 h-3.5 relative">
+                          <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-current" />
+                          <motion.span
+                            animate={{ scaleY: mobileCatOpen ? 0 : 1 }}
+                            transition={{ duration: 0.25 }}
+                            className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-current"
+                          />
+                        </span>
                       </motion.span>
                     </button>
                     <AnimatePresence initial={false}>
@@ -401,137 +434,166 @@ export function Header() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                          className="overflow-hidden bg-[hsl(var(--polen-cream))] border-b border-black/[0.06]"
+                          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                          className="overflow-hidden"
                         >
-                          <div className="py-2">
-                            {visibleCategories.length === 0 ? (
-                              <Link
-                                href="/magaza"
-                                onClick={() => setMobileOpen(false)}
-                                className="flex items-center gap-3 px-8 py-3 text-[12px] tracking-[0.16em] uppercase font-semibold text-polen-orange hover:bg-white/60 transition-colors"
-                                data-testid="link-mobile-cat-tum-urunler"
-                              >
-                                <span className="w-1 h-1 rounded-full bg-polen-orange" />
-                                Tüm Ürünler →
-                              </Link>
-                            ) : (
-                              <>
-                                {visibleCategories.map(c => (
-                                  <Link
-                                    key={c.id}
-                                    href={`/kategori/${c.slug}`}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="flex items-center gap-3 px-8 py-3 text-[12px] tracking-[0.16em] uppercase text-black/75 hover:text-polen-orange hover:bg-white/60 transition-colors"
-                                    data-testid={`link-mobile-cat-${c.slug}`}
-                                  >
-                                    <span className="w-1 h-1 rounded-full bg-polen-orange/60" />
-                                    {c.name}
-                                  </Link>
-                                ))}
+                          <ul className="pb-4 pl-9 border-l border-polen-orange/30 ml-[3px] mb-2">
+                            {(visibleCategories.length === 0
+                              ? [{ id: 'all-fb', slug: '', name: 'Tüm Ürünler →', href: '/magaza', testId: 'link-mobile-cat-tum-urunler' }]
+                              : [
+                                  ...visibleCategories.map(c => ({ id: c.id, slug: c.slug, name: c.name, href: `/kategori/${c.slug}`, testId: `link-mobile-cat-${c.slug}` })),
+                                  { id: 'all', slug: '', name: 'Tüm Ürünler →', href: '/magaza', testId: 'link-mobile-cat-tum-urunler' },
+                                ]
+                            ).map((c, idx, arr) => (
+                              <li key={c.id}>
                                 <Link
-                                  href="/magaza"
+                                  href={c.href}
                                   onClick={() => setMobileOpen(false)}
-                                  className="flex items-center gap-3 px-8 py-3 mt-1 text-[12px] tracking-[0.16em] uppercase font-semibold text-polen-orange border-t border-black/5 hover:bg-white/60 transition-colors"
-                                  data-testid="link-mobile-cat-tum-urunler"
+                                  className={`group flex items-baseline gap-3 py-2.5 transition-colors ${idx === arr.length - 1 && arr.length > 1 ? 'text-polen-orange font-semibold' : 'text-black/65 hover:text-polen-orange'}`}
+                                  data-testid={c.testId}
                                 >
-                                  <span className="w-1 h-1 rounded-full bg-polen-orange" />
-                                  Tüm Ürünler →
+                                  <span className="text-[8px] font-mono tracking-[0.16em] text-black/30 mt-0.5">
+                                    {String(idx + 1).padStart(2, '0')}
+                                  </span>
+                                  <span className="text-[13px] tracking-[0.14em] uppercase">
+                                    {c.name}
+                                  </span>
                                 </Link>
-                              </>
-                            )}
-                          </div>
+                              </li>
+                            ))}
+                          </ul>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
+                  </motion.li>
 
-                  <motion.div variants={stagger.item}>
+                  <motion.li variants={stagger.item} className="border-t border-black/[0.08]">
                     <Link
                       href="/hakkimizda"
                       onClick={() => setMobileOpen(false)}
-                      className="group flex items-center justify-between px-5 py-4 border-b border-black/[0.06] transition-colors hover:bg-[hsl(var(--polen-cream))]"
+                      className="group relative flex items-baseline justify-between py-4"
                       data-testid="link-mobile-hakkimizda"
                     >
-                      <span className="flex items-center gap-3">
-                        <span className="block w-1 h-7 bg-transparent group-hover:bg-polen-orange transition-colors rounded-full" />
-                        <span className="font-display text-[18px] tracking-[0.18em] uppercase text-black group-hover:text-polen-orange transition-colors">
+                      <span className="flex items-baseline gap-5">
+                        <span className="text-[10px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
+                          04
+                        </span>
+                        <span className="font-display text-[24px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
                           Hakkımızda
                         </span>
                       </span>
-                      <ChevronDown className="w-3.5 h-3.5 text-black/25 -rotate-90 group-hover:text-polen-orange transition-colors" />
+                      <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
                     </Link>
-                  </motion.div>
+                  </motion.li>
 
-                  {/* Account */}
-                  <motion.div variants={stagger.item}>
+                  <motion.li variants={stagger.item} className="border-t border-b border-black/[0.08]">
                     {user ? (
-                      <>
-                        <Link
-                          href="/hesabim"
-                          onClick={() => setMobileOpen(false)}
-                          className="group flex items-center justify-between px-5 py-4 border-b border-black/[0.06] transition-colors hover:bg-[hsl(var(--polen-cream))]"
-                          data-testid="link-mobile-hesabim"
-                        >
-                          <span className="flex items-center gap-3">
-                            <User className="w-4 h-4 text-polen-orange" strokeWidth={1.75} />
-                            <span className="text-[13px] tracking-[0.16em] uppercase text-black/80 group-hover:text-polen-orange font-medium transition-colors">
-                              Hesabım
-                            </span>
+                      <Link
+                        href="/hesabim"
+                        onClick={() => setMobileOpen(false)}
+                        className="group relative flex items-baseline justify-between py-4"
+                        data-testid="link-mobile-hesabim"
+                      >
+                        <span className="flex items-baseline gap-5">
+                          <span className="text-[10px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
+                            05
                           </span>
-                        </Link>
-                        <button
-                          onClick={() => { logout(); navigate('/'); setMobileOpen(false); }}
-                          className="group w-full flex items-center justify-between px-5 py-4 border-b border-black/[0.06] transition-colors hover:bg-[hsl(var(--polen-cream))]"
-                          data-testid="button-mobile-logout"
-                        >
-                          <span className="flex items-center gap-3">
-                            <LogOut className="w-4 h-4 text-black/45" strokeWidth={1.75} />
-                            <span className="text-[13px] tracking-[0.16em] uppercase text-black/80 group-hover:text-polen-orange font-medium transition-colors">
-                              Çıkış Yap
-                            </span>
+                          <span className="font-display text-[24px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
+                            Hesabım
                           </span>
-                        </button>
-                      </>
+                        </span>
+                        <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
+                      </Link>
                     ) : (
                       <Link
                         href="/giris"
                         onClick={() => setMobileOpen(false)}
-                        className="group flex items-center justify-between px-5 py-4 border-b border-black/[0.06] transition-colors hover:bg-[hsl(var(--polen-cream))]"
+                        className="group relative flex items-baseline justify-between py-4"
                         data-testid="link-mobile-giris"
                       >
-                        <span className="flex items-center gap-3">
-                          <User className="w-4 h-4 text-polen-orange" strokeWidth={1.75} />
-                          <span className="text-[13px] tracking-[0.16em] uppercase text-black/80 group-hover:text-polen-orange font-medium transition-colors">
+                        <span className="flex items-baseline gap-5">
+                          <span className="text-[10px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
+                            05
+                          </span>
+                          <span className="font-display text-[24px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
                             Giriş Yap
                           </span>
                         </span>
+                        <ArrowUpRight className="w-4 h-4 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
                       </Link>
                     )}
-                  </motion.div>
-                </motion.div>
+                  </motion.li>
+                </motion.ul>
+
+                {/* ── Brand info ── */}
+                <motion.section
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="px-6 pt-8 pb-6"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="block w-6 h-px bg-polen-orange" />
+                    <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-black/45">
+                      İletişim
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    <a
+                      href="mailto:info@polenstone.com.tr"
+                      className="block text-[13px] text-black hover:text-polen-orange transition-colors tracking-tight"
+                      data-testid="link-mobile-email"
+                    >
+                      info@polenstone.com.tr
+                    </a>
+                    <a
+                      href="https://www.instagram.com/polenstone"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-[13px] text-black hover:text-polen-orange transition-colors tracking-tight"
+                      data-testid="link-mobile-instagram"
+                    >
+                      @polenstone <span className="text-black/30 ml-1">↗</span>
+                    </a>
+                    <span className="block text-[12px] text-black/55 tracking-tight">
+                      polenstone.com.tr
+                    </span>
+                  </div>
+
+                  {/* Promo footnote */}
+                  <div className="mt-6 pt-5 border-t border-black/[0.08] flex items-center gap-2.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-polen-orange shrink-0">
+                      <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
+                    </svg>
+                    <span className="text-[10px] tracking-[0.22em] uppercase text-black/60 font-medium">
+                      2.500 TL Üzeri Ücretsiz Kargo
+                    </span>
+                  </div>
+                </motion.section>
               </nav>
 
-              {/* Bottom: solid orange CTA */}
+              {/* ── Bottom: editorial cart CTA ── */}
               <Link
                 href="/sepet"
                 onClick={() => setMobileOpen(false)}
-                className="relative bg-polen-orange hover:brightness-110 transition-all px-5 py-5 flex items-center justify-between text-white"
+                className="group relative shrink-0 bg-black hover:bg-polen-orange transition-colors duration-500 px-6 py-5 flex items-center justify-between text-white"
                 data-testid="link-mobile-sepet"
               >
-                <span className="flex items-center gap-3">
-                  <ShoppingBag className="w-5 h-5" strokeWidth={1.75} />
-                  <span className="font-display text-[14px] tracking-[0.2em] uppercase font-semibold">
-                    Sepete Git
+                <span className="flex items-center gap-4">
+                  <span className="text-[9px] font-mono tracking-[0.32em] uppercase text-white/45 group-hover:text-white/70 transition-colors">
+                    06
+                  </span>
+                  <span className="font-display text-[18px] tracking-[0.04em]">
+                    Sepeti Görüntüle
                   </span>
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-3">
                   {totalItems > 0 && (
-                    <span className="min-w-[24px] h-6 px-2 bg-white text-polen-orange text-[11px] font-bold flex items-center justify-center rounded-full">
+                    <span className="min-w-[26px] h-[26px] px-2 bg-polen-orange group-hover:bg-white text-white group-hover:text-polen-orange text-[11px] font-bold flex items-center justify-center rounded-full transition-colors">
                       {totalItems}
                     </span>
                   )}
-                  <ChevronDown className="w-4 h-4 -rotate-90" strokeWidth={2.25} />
+                  <ArrowUpRight className="w-4 h-4 transition-transform duration-500 group-hover:rotate-45" strokeWidth={1.75} />
                 </span>
               </Link>
             </motion.div>
