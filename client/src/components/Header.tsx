@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useMotionValueEvent, type Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import polenLogo from '@assets/Polen-Sticker-1.pdf_1777239312980.png';
 
 interface MenuItemData {
   id: string;
@@ -27,12 +28,20 @@ interface MenuItemData {
   children?: MenuItemData[];
 }
 
-const stagger = {
-  container: { animate: { transition: { staggerChildren: 0.07 } } },
+interface CategoryData {
+  id: string;
+  name: string;
+  slug: string;
+  displayOrder: number;
+  image?: string | null;
+}
+
+const stagger: { container: Variants; item: Variants } = {
+  container: { animate: { transition: { staggerChildren: 0.05 } } },
   item: {
     initial: { y: 60, opacity: 0 },
-    animate: { y: 0, opacity: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
-    exit: { y: -40, opacity: 0, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } },
+    animate: { y: 0, opacity: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
+    exit: { y: -40, opacity: 0, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] as [number, number, number, number] } },
   },
 };
 
@@ -41,7 +50,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [expandedMobileItem, setExpandedMobileItem] = useState<string | null>(null);
+  const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const { totalItems } = useCart();
   const { user, logout } = useAuth();
   const { scrollY } = useScroll();
@@ -54,59 +63,29 @@ export function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const { data: menuItems = [] } = useQuery<MenuItemData[]>({
-    queryKey: ['menu'],
+  const { data: categoriesData = [] } = useQuery<CategoryData[]>({
+    queryKey: ['categories'],
     queryFn: async () => {
-      const res = await fetch('/api/menu');
+      const res = await fetch('/api/categories');
       if (!res.ok) return [];
       return res.json();
     },
     staleTime: 60000,
   });
 
-  const getHref = (item: MenuItemData) => {
-    if (item.type === 'category' && item.category) return `/kategori/${item.category.slug}`;
-    if (item.type === 'link' && item.url) return item.url;
-    return '#';
-  };
+  // Hide legacy fitness categories (display_order >= 100); show only stone categories
+  const visibleCategories = categoriesData
+    .filter(c => (c.displayOrder ?? 0) < 100)
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
-  const topItems = menuItems.slice(0, Math.ceil(menuItems.length / 2));
-  const bottomItems = menuItems.slice(Math.ceil(menuItems.length / 2));
+  // Static nav links (always visible)
+  const staticLinks = [
+    { href: '/magaza', label: 'Mağaza', testId: 'link-nav-magaza' },
+    { href: '/hakkimizda', label: 'Hakkımızda', testId: 'link-nav-hakkimizda' },
+  ];
 
-  const DesktopNavLink = ({ item }: { item: MenuItemData }) => {
-    const href = getHref(item);
-    const isActive = location === href;
-    const hasChildren = item.type === 'submenu' && item.children?.length;
-
-    if (hasChildren) {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className={`relative inline-flex items-center gap-1 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors ${isActive ? 'text-black' : 'text-black/70 hover:text-black'} nav-link-hover`}>
-              {item.title}
-              <ChevronDown className="w-2.5 h-2.5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="bg-white border-black/8 shadow-lg rounded-none min-w-[180px]">
-            {item.children!.map(child => (
-              <DropdownMenuItem key={child.id} onClick={() => navigate(getHref(child))}
-                className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
-                {child.title}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    }
-
-    const isExternal = item.type === 'link' && item.url?.startsWith('http');
-    const cls = `relative inline-flex items-center gap-1 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors nav-link-hover ${isActive ? 'text-black' : 'text-black/70 hover:text-black'}`;
-
-    if (isExternal || item.openInNewTab) {
-      return <a href={href} target="_blank" rel="noopener noreferrer" className={cls} data-testid={`link-nav-${item.title}`}>{item.title}<ArrowUpRight className="w-2.5 h-2.5 opacity-50" /></a>;
-    }
-    return <Link href={href} className={cls} data-testid={`link-nav-${item.title}`}>{item.title}</Link>;
-  };
+  const navLinkCls = (active: boolean) =>
+    `relative inline-flex items-center gap-1 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors nav-link-hover ${active ? 'text-black' : 'text-black/70 hover:text-black'}`;
 
   return (
     <>
@@ -122,9 +101,9 @@ export function Header() {
           <span className="w-px h-3 bg-white/15" />
           <div className="flex items-center gap-2.5">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-polen-orange shrink-0">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
+              <circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>
             </svg>
-            <span className="text-[10px] tracking-[0.28em] uppercase text-white/75 font-medium">Ücretsiz Numune Talebi</span>
+            <span className="text-[10px] tracking-[0.28em] uppercase text-white/75 font-medium">2.500 TL Üzeri Ücretsiz Kargo</span>
           </div>
         </div>
       </div>
@@ -132,16 +111,16 @@ export function Header() {
       {/* ── Main header ── */}
       <motion.header
         initial={false}
-        animate={{ height: scrolled ? 56 : 68 }}
+        animate={{ height: scrolled ? 80 : 110 }}
         transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
         className="fixed lg:static top-0 left-0 right-0 z-40 bg-white border-b border-black/8 flex items-center"
         style={{ willChange: 'height' }}
       >
         <div className="w-full max-w-[1400px] mx-auto px-5 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-6">
 
-            {/* Left: hamburger (mobile) + nav (desktop) */}
-            <div className="flex items-center gap-6 min-w-0 flex-1">
+            {/* Left: Logo + mobile hamburger */}
+            <div className="flex items-center gap-4 min-w-0">
               <button
                 data-testid="button-mobile-menu"
                 onClick={() => setMobileOpen(true)}
@@ -153,103 +132,147 @@ export function Header() {
                 <span className="block h-px w-6 bg-black" />
               </button>
 
-              <nav className="hidden lg:flex items-center gap-7">
-                {topItems.length > 0
-                  ? topItems.map(item => <DesktopNavLink key={item.id} item={item} />)
-                  : (
-                    <>
-                      <Link href="/magaza" className={`relative text-[11px] font-medium tracking-[0.18em] uppercase nav-link-hover ${location === '/magaza' ? 'text-black' : 'text-black/70 hover:text-black'}`}>Koleksiyon</Link>
-                      <Link href="/kategori/mermer" className="relative text-[11px] font-medium tracking-[0.18em] uppercase text-black/70 hover:text-black transition-colors nav-link-hover">Mermer</Link>
-                    </>
-                  )
-                }
-              </nav>
+              <Link href="/" data-testid="link-logo" className="shrink-0 block">
+                <motion.img
+                  src={polenLogo}
+                  alt="Polen Stone — Doğal Taş & Mermer"
+                  whileHover={{ opacity: 0.85 }}
+                  transition={{ duration: 0.2 }}
+                  animate={{ height: scrolled ? 60 : 88 }}
+                  className="w-auto object-contain"
+                  data-testid="img-logo"
+                  style={{ willChange: 'height' }}
+                />
+              </Link>
             </div>
 
-            {/* Center: Logo */}
-            <Link href="/" data-testid="link-logo" className="shrink-0">
-              <motion.div whileHover={{ opacity: 0.75 }} transition={{ duration: 0.2 }} className="flex flex-col items-center leading-none">
-                <span
-                  className="font-display text-xl lg:text-2xl tracking-[0.22em] text-black"
-                  data-testid="text-logo"
+            {/* Center: Desktop nav */}
+            <nav className="hidden lg:flex items-center gap-8">
+              {/* Categories mega-dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={navLinkCls(location.startsWith('/kategori/'))}
+                    data-testid="button-nav-kategoriler"
+                  >
+                    Kategoriler
+                    <ChevronDown className="w-2.5 h-2.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  sideOffset={20}
+                  className="bg-white border-black/8 shadow-xl rounded-none p-3"
+                  style={{ minWidth: visibleCategories.length > 6 ? 520 : 240 }}
                 >
-                  POLEN <span className="text-polen-orange">STONE</span>
-                </span>
-                <span className="hidden lg:block text-[8px] tracking-[0.42em] uppercase text-black/40 mt-1">
-                  Doğal Taş & Mermer
-                </span>
-              </motion.div>
-            </Link>
+                  {visibleCategories.length === 0 ? (
+                    <DropdownMenuItem
+                      onClick={() => navigate('/magaza')}
+                      className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5"
+                    >
+                      Tüm Ürünler
+                    </DropdownMenuItem>
+                  ) : (
+                    <div
+                      className="grid gap-x-2 gap-y-0.5"
+                      style={{ gridTemplateColumns: visibleCategories.length > 6 ? 'repeat(2, minmax(0, 1fr))' : '1fr' }}
+                    >
+                      {visibleCategories.map((c) => {
+                        const href = `/kategori/${c.slug}`;
+                        return (
+                          <DropdownMenuItem
+                            key={c.id}
+                            onClick={() => navigate(href)}
+                            className="text-[11px] tracking-[0.16em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-polen-orange cursor-pointer py-2.5 px-3 rounded-none transition-colors"
+                            data-testid={`link-cat-${c.slug}`}
+                          >
+                            {c.name}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                      <div
+                        className="border-t border-black/10 mt-2 pt-2"
+                        style={{ gridColumn: visibleCategories.length > 6 ? '1 / -1' : 'auto' }}
+                      >
+                        <DropdownMenuItem
+                          onClick={() => navigate('/magaza')}
+                          className="text-[11px] tracking-[0.16em] uppercase text-polen-orange font-semibold hover:bg-[hsl(var(--polen-cream))] cursor-pointer py-2.5 px-3 rounded-none"
+                          data-testid="link-cat-tum-urunler"
+                        >
+                          Tüm Ürünler →
+                        </DropdownMenuItem>
+                      </div>
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {/* Right: nav (desktop) + icons */}
-            <div className="flex items-center gap-6 flex-1 justify-end">
-              <nav className="hidden lg:flex items-center gap-7">
-                {bottomItems.length > 0
-                  ? bottomItems.map(item => <DesktopNavLink key={item.id} item={item} />)
-                  : (
-                    <>
-                      <Link href="/kategori/granit" className="relative text-[11px] font-medium tracking-[0.18em] uppercase text-black/70 hover:text-black transition-colors nav-link-hover">Granit</Link>
-                      <Link href="/kategori/traverten" className="relative text-[11px] font-medium tracking-[0.18em] uppercase text-black/70 hover:text-black transition-colors nav-link-hover">Traverten</Link>
-                    </>
-                  )
-                }
-              </nav>
-
-              {/* Icons */}
-              <div className="flex items-center gap-0.5">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setSearchOpen(true)}
-                  className="p-2.5 text-black/45 hover:text-black transition-colors"
-                  data-testid="button-search"
+              {staticLinks.map(link => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={navLinkCls(location === link.href)}
+                  data-testid={link.testId}
                 >
-                  <Search className="w-4 h-4" />
-                </motion.button>
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
 
-                {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <motion.button whileTap={{ scale: 0.9 }} className="p-2.5 text-black/45 hover:text-black transition-colors" data-testid="button-account">
-                        <User className="w-4 h-4" />
-                      </motion.button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-white border-black/8 shadow-lg rounded-none min-w-[160px]">
-                      <DropdownMenuItem disabled className="text-[10px] tracking-widest text-black/30 uppercase">{user.firstName || user.email}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/hesabim')} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
-                        <User className="w-3.5 h-3.5 mr-2" />Hesabım
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { logout(); navigate('/'); }} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
-                        <LogOut className="w-3.5 h-3.5 mr-2" />Çıkış Yap
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Link href="/giris">
+            {/* Right: Icons */}
+            <div className="flex items-center gap-0.5 shrink-0">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSearchOpen(true)}
+                className="p-2.5 text-black/45 hover:text-black transition-colors"
+                data-testid="button-search"
+              >
+                <Search className="w-4 h-4" />
+              </motion.button>
+
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <motion.button whileTap={{ scale: 0.9 }} className="p-2.5 text-black/45 hover:text-black transition-colors" data-testid="button-account">
                       <User className="w-4 h-4" />
                     </motion.button>
-                  </Link>
-                )}
-
-                <Link href="/sepet">
-                  <motion.button whileTap={{ scale: 0.9 }} className="p-2.5 text-black/45 hover:text-black transition-colors relative" data-testid="button-cart">
-                    <ShoppingBag className="w-4 h-4" />
-                    <AnimatePresence>
-                      {totalItems > 0 && (
-                        <motion.span
-                          key="badge"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
-                        >
-                          {totalItems > 9 ? '9+' : totalItems}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white border-black/8 shadow-lg rounded-none min-w-[160px]">
+                    <DropdownMenuItem disabled className="text-[10px] tracking-widest text-black/30 uppercase">{user.firstName || user.email}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/hesabim')} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
+                      <User className="w-3.5 h-3.5 mr-2" />Hesabım
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { logout(); navigate('/'); }} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
+                      <LogOut className="w-3.5 h-3.5 mr-2" />Çıkış Yap
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link href="/giris">
+                  <motion.button whileTap={{ scale: 0.9 }} className="p-2.5 text-black/45 hover:text-black transition-colors" data-testid="button-account">
+                    <User className="w-4 h-4" />
                   </motion.button>
                 </Link>
-              </div>
+              )}
+
+              <Link href="/sepet">
+                <motion.button whileTap={{ scale: 0.9 }} className="p-2.5 text-black/45 hover:text-black transition-colors relative" data-testid="button-cart">
+                  <ShoppingBag className="w-4 h-4" />
+                  <AnimatePresence>
+                    {totalItems > 0 && (
+                      <motion.span
+                        key="badge"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
+                      >
+                        {totalItems > 9 ? '9+' : totalItems}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </Link>
             </div>
           </div>
         </div>
@@ -265,7 +288,7 @@ export function Header() {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden"
           >
-            {/* Background Polen Stone watermark */}
+            {/* Background watermark */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
               <span className="font-display text-[180px] leading-none text-white/[0.025] tracking-tighter">
                 POLEN
@@ -274,13 +297,13 @@ export function Header() {
 
             {/* Top bar */}
             <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-6 border-b border-white/8">
-              <Link href="/" onClick={() => setMobileOpen(false)} className="flex flex-col leading-none">
-                <span className="font-display text-xl tracking-[0.22em] text-white">
-                  POLEN <span className="text-polen-orange">STONE</span>
-                </span>
-                <span className="text-[8px] tracking-[0.42em] uppercase text-white/40 mt-1">
-                  Doğal Taş & Mermer
-                </span>
+              <Link href="/" onClick={() => setMobileOpen(false)} className="block">
+                <img
+                  src={polenLogo}
+                  alt="Polen Stone"
+                  className="h-16 w-auto object-contain"
+                  data-testid="img-logo-mobile"
+                />
               </Link>
               <motion.button
                 whileTap={{ scale: 0.9 }}
@@ -301,7 +324,6 @@ export function Header() {
                 exit="initial"
                 className="flex flex-col"
               >
-                {/* Default home link */}
                 <motion.div variants={stagger.item}>
                   <Link
                     href="/"
@@ -309,7 +331,7 @@ export function Header() {
                     className="block py-5 border-b border-white/8 group"
                     data-testid="link-mobile-home"
                   >
-                    <span className="font-display text-[44px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
+                    <span className="font-display text-[40px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
                       ANA SAYFA
                     </span>
                   </Link>
@@ -322,96 +344,89 @@ export function Header() {
                     className="block py-5 border-b border-white/8 group"
                     data-testid="link-mobile-magaza"
                   >
-                    <span className="font-display text-[44px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
+                    <span className="font-display text-[40px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
                       MAĞAZA
                     </span>
                   </Link>
                 </motion.div>
 
-                {menuItems.length === 0 && (
-                  <>
-                    {[
-                      { id: 'fb-mermer', href: '/kategori/mermer', label: 'MERMER' },
-                      { id: 'fb-granit', href: '/kategori/granit', label: 'GRANİT' },
-                      { id: 'fb-traverten', href: '/kategori/traverten', label: 'TRAVERTEN' },
-                      { id: 'fb-oniks', href: '/kategori/oniks', label: 'ONİKS' },
-                    ].map(fb => (
-                      <motion.div key={fb.id} variants={stagger.item}>
-                        <Link
-                          href={fb.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="block py-5 border-b border-white/8 group"
-                          data-testid={`link-mobile-${fb.id}`}
-                        >
-                          <span className="font-display text-[44px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
-                            {fb.label}
-                          </span>
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </>
-                )}
-
-                {menuItems.map((item, i) => {
-                  const href = getHref(item);
-                  const hasChildren = item.type === 'submenu' && item.children?.length;
-
-                  return (
-                    <motion.div key={item.id} variants={stagger.item}>
-                      {hasChildren ? (
-                        <div>
-                          <button
-                            onClick={() => setExpandedMobileItem(expandedMobileItem === item.id ? null : item.id)}
-                            className="w-full flex items-center justify-between py-5 border-b border-white/8 group"
-                            data-testid={`button-mobile-sub-${item.id}`}
+                {/* Categories accordion */}
+                <motion.div variants={stagger.item}>
+                  <button
+                    onClick={() => setMobileCatOpen(v => !v)}
+                    className="w-full flex items-center justify-between py-5 border-b border-white/8 group"
+                    data-testid="button-mobile-kategoriler"
+                  >
+                    <span className="font-display text-[40px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
+                      KATEGORİLER
+                    </span>
+                    <motion.span
+                      animate={{ rotate: mobileCatOpen ? 45 : 0 }}
+                      className="text-white/30 text-3xl font-light leading-none"
+                    >
+                      +
+                    </motion.span>
+                  </button>
+                  <AnimatePresence>
+                    {mobileCatOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden pl-4 bg-white/[0.02]"
+                      >
+                        {visibleCategories.length === 0 ? (
+                          <Link
+                            href="/magaza"
+                            onClick={() => setMobileOpen(false)}
+                            className="block py-3.5 text-sm text-polen-orange tracking-[0.15em] uppercase font-semibold transition-colors border-b border-white/5"
+                            data-testid="link-mobile-cat-tum-urunler"
                           >
-                            <span className="font-display text-[44px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
-                              {item.title.toUpperCase()}
-                            </span>
-                            <motion.span
-                              animate={{ rotate: expandedMobileItem === item.id ? 45 : 0 }}
-                              className="text-white/30 text-3xl font-light leading-none"
+                            Tüm Ürünler →
+                          </Link>
+                        ) : (
+                          visibleCategories.map(c => (
+                            <Link
+                              key={c.id}
+                              href={`/kategori/${c.slug}`}
+                              onClick={() => setMobileOpen(false)}
+                              className="block py-3.5 text-sm text-white/40 hover:text-polen-orange tracking-[0.15em] uppercase transition-colors border-b border-white/5"
+                              data-testid={`link-mobile-cat-${c.slug}`}
                             >
-                              +
-                            </motion.span>
-                          </button>
-                          <AnimatePresence>
-                            {expandedMobileItem === item.id && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden pl-4 bg-white/[0.02]"
-                              >
-                                {item.children!.map(child => (
-                                  <Link
-                                    key={child.id}
-                                    href={getHref(child)}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="block py-3.5 text-sm text-white/40 hover:text-white tracking-[0.15em] uppercase transition-colors border-b border-white/5"
-                                  >
-                                    {child.title}
-                                  </Link>
-                                ))}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      ) : (
-                        <Link
-                          href={href}
-                          onClick={() => setMobileOpen(false)}
-                          className="block py-5 border-b border-white/8 group"
-                          data-testid={`link-mobile-${item.id}`}
-                        >
-                          <span className="font-display text-[44px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
-                            {item.title.toUpperCase()}
-                          </span>
-                        </Link>
-                      )}
-                    </motion.div>
-                  );
-                })}
+                              {c.name}
+                            </Link>
+                          ))
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                <motion.div variants={stagger.item}>
+                  <Link
+                    href="/hakkimizda"
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-5 border-b border-white/8 group"
+                    data-testid="link-mobile-hakkimizda"
+                  >
+                    <span className="font-display text-[40px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
+                      HAKKIMIZDA
+                    </span>
+                  </Link>
+                </motion.div>
+
+                <motion.div variants={stagger.item}>
+                  <Link
+                    href="/iletisim"
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-5 border-b border-white/8 group"
+                    data-testid="link-mobile-iletisim"
+                  >
+                    <span className="font-display text-[40px] leading-none text-white/70 group-hover:text-white transition-colors tracking-wide">
+                      İLETİŞİM
+                    </span>
+                  </Link>
+                </motion.div>
               </motion.div>
             </nav>
 
