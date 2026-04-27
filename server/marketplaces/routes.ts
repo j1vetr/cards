@@ -156,10 +156,14 @@ export function registerMarketplaceRoutes(
     if (!parsed.success) {
       return res.status(400).json({ ok: false, message: "Geçersiz istek" });
     }
-    if (!getAdapterEntry(parsed.data.type as MarketplaceType)) {
-      return res
-        .status(400)
-        .json({ ok: false, message: `Bilinmeyen pazaryeri: ${parsed.data.type}` });
+    // Bilinmeyen tip → 400 (getAdapterEntry throw eder, biz yakalayıp döneriz)
+    try {
+      getAdapterEntry(parsed.data.type as MarketplaceType);
+    } catch (err) {
+      return res.status(400).json({
+        ok: false,
+        message: err instanceof Error ? err.message : `Bilinmeyen pazaryeri: ${parsed.data.type}`,
+      });
     }
     try {
       const adapter = createAdapter(

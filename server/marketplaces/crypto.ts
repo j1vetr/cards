@@ -1,87 +1,52 @@
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
 
 /**
  * Pazaryeri kredensiyellerini AES-256-GCM ile şifreler/çözer.
  *
- * Anahtar kaynağı (öncelik sırası):
- *   1. process.env.MARKETPLACE_ENCRYPTION_KEY — 32-byte base64/hex
- *   2. .local/marketplace_key — ilk açılışta otomatik üretilir, kalıcı saklanır
+ * Anahtar kaynağı: SADECE process.env.MARKETPLACE_ENCRYPTION_KEY — 32-byte
+ * (hex veya base64). Tüm ortamlarda zorunludur. Hiçbir koşulda dosya tabanlı
+ * dev fallback YOKTUR; çünkü:
+ *   - DB başka bir makineye taşındığında çözülemeyen kredensiyellere yol açar,
+ *   - üretim ortamında yanlış sızıntı sınıfına geçer (anahtar diskte rastgele).
  *
- * Üretim ortamında MUTLAKA env var'la verin; .local fallback yalnız geliştirme
- * konforu içindir (DB üzerinden kredensiyel taşınamaz çünkü key makineye bağlı).
+ * Yeni kurulum için anahtar üretmek:
+ *   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
  */
 
-const KEY_FILE = path.join(process.cwd(), ".local", "marketplace_key");
 const ALGO = "aes-256-gcm";
 const IV_LEN = 12; // GCM önerilen
 const TAG_LEN = 16;
 
 let cachedKey: Buffer | null = null;
 
-function isProductionEnv(): boolean {
-  return process.env.NODE_ENV === "production";
-}
-
 function loadKey(): Buffer {
   if (cachedKey) return cachedKey;
 
   const envKey = process.env.MARKETPLACE_ENCRYPTION_KEY;
-  if (envKey && envKey.trim()) {
-    const raw = envKey.trim();
-    let buf: Buffer;
-    if (/^[0-9a-fA-F]{64}$/.test(raw)) {
-      buf = Buffer.from(raw, "hex");
-    } else {
-      try {
-        buf = Buffer.from(raw, "base64");
-      } catch {
-        throw new Error("MARKETPLACE_ENCRYPTION_KEY must be 32 bytes (hex or base64)");
-      }
-    }
-    if (buf.length !== 32) {
-      throw new Error(
-        `MARKETPLACE_ENCRYPTION_KEY must decode to 32 bytes, got ${buf.length}`,
-      );
-    }
-    cachedKey = buf;
-    return cachedKey;
-  }
-
-  // Production'da env şart. Aksi halde başlatma kapatılır.
-  if (isProductionEnv()) {
+  if (!envKey || !envKey.trim()) {
     throw new Error(
-      "MARKETPLACE_ENCRYPTION_KEY is required in production (32-byte hex or base64). " +
-        "Refusing to start with the dev fallback key — set the env var and redeploy.",
+      "MARKETPLACE_ENCRYPTION_KEY is required (32-byte hex or base64). " +
+        "Set it as a Replit Secret. Generate with: " +
+        `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`,
     );
   }
-
-  // Sadece dev için: .local/marketplace_key fallback (kalıcı, makineye bağlı).
-  try {
-    if (fs.existsSync(KEY_FILE)) {
-      const raw = fs.readFileSync(KEY_FILE, "utf8").trim();
-      const buf = Buffer.from(raw, "base64");
-      if (buf.length !== 32) throw new Error("invalid local key length");
-      cachedKey = buf;
-      return cachedKey;
+  const raw = envKey.trim();
+  let buf: Buffer;
+  if (/^[0-9a-fA-F]{64}$/.test(raw)) {
+    buf = Buffer.from(raw, "hex");
+  } else {
+    try {
+      buf = Buffer.from(raw, "base64");
+    } catch {
+      throw new Error("MARKETPLACE_ENCRYPTION_KEY must be 32 bytes (hex or base64)");
     }
-  } catch (err) {
-    console.warn("[marketplace/crypto] failed to read local key, regenerating:", err);
   }
-
-  const fresh = crypto.randomBytes(32);
-  try {
-    fs.mkdirSync(path.dirname(KEY_FILE), { recursive: true });
-    fs.writeFileSync(KEY_FILE, fresh.toString("base64"), { mode: 0o600 });
-    console.warn(
-      "[marketplace/crypto] DEV ONLY: generated ephemeral key at .local/marketplace_key. " +
-        "Production deployments MUST set MARKETPLACE_ENCRYPTION_KEY.",
+  if (buf.length !== 32) {
+    throw new Error(
+      `MARKETPLACE_ENCRYPTION_KEY must decode to 32 bytes, got ${buf.length}`,
     );
-  } catch (err) {
-    console.error("[marketplace/crypto] could not persist generated key:", err);
   }
-  cachedKey = fresh;
+  cachedKey = buf;
   return cachedKey;
 }
 

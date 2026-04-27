@@ -42,3 +42,8 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
+
+[userenv]
+
+[userenv.shared]
+MARKETPLACE_ENCRYPTION_KEY = "cZ/v71/Px+E5ETgpNLnCHqLQZ1LJtYH0tDCiHd46uJY="
