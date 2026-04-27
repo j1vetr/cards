@@ -10,6 +10,7 @@ import { storage } from "../storage";
 import { encryptCredentials, decryptCredentials, maskSecret } from "./crypto";
 import { listRegisteredAdapters, createAdapter, getAdapterEntry } from "./registry";
 import { runSync, type SyncMode } from "./sync/engine";
+import { suggestCategoryMappings } from "./category-suggester";
 import type { Marketplace, InsertMarketplace } from "@shared/schema";
 import type {
   MarketplaceConfig,
@@ -273,6 +274,30 @@ export function registerMarketplaceRoutes(
     const rows = await storage.getMarketplaceCategories(req.params.id);
     res.json(rows);
   });
+
+  // Kategori eşleme — akıllı öneriler.
+  // Sadece henüz eşlenmemiş (siteCategoryId=null) pazaryeri kategorileri için
+  // string benzerliğine göre en olası site kategorisi adayını döner.
+  // İstemci her satırda "Önerilen: …" rozeti gösterir; "Tüm önerileri uygula"
+  // tek tıkla draft state'e doldurur ve mevcut Kaydet (N) akışı çalışır.
+  app.get(
+    "/api/admin/marketplaces/:id/category-mappings/suggestions",
+    requireAdmin,
+    async (req, res) => {
+      const mp = await storage.getMarketplace(req.params.id);
+      if (!mp) return res.status(404).json({ message: "Bulunamadı" });
+      const [mappings, siteCats] = await Promise.all([
+        storage.getMarketplaceCategories(req.params.id),
+        storage.getCategories(),
+      ]);
+      const unmatched = mappings
+        .filter((m) => !m.siteCategoryId)
+        .map((m) => ({ id: m.id, name: m.name }));
+      const sites = siteCats.map((c) => ({ id: c.id, name: c.name }));
+      const suggestions = suggestCategoryMappings(unmatched, sites);
+      res.json(suggestions);
+    },
+  );
 
   // Kategori eşleme — güncelle
   app.put(

@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Zap,
   Link2,
+  Sparkles,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import AdminModal from './_ui/AdminModal';
@@ -1176,7 +1177,36 @@ function CategoryMappingsDialog({
     enabled: open,
   });
 
+  type SuggestionDto = {
+    marketplaceCategoryId: string;
+    siteCategoryId: string;
+    score: number;
+  };
+  const suggestionsQuery = useQuery<SuggestionDto[]>({
+    queryKey: ['/api/admin/marketplaces', marketplaceId, 'category-mappings', 'suggestions'],
+    queryFn: async () => {
+      const res = await apiRequest(
+        'GET',
+        `/api/admin/marketplaces/${marketplaceId}/category-mappings/suggestions`,
+      );
+      return await res.json();
+    },
+    enabled: open,
+  });
+
   const allMappings = data ?? [];
+  const suggestionsByMappingId = useMemo(() => {
+    const map: Record<string, SuggestionDto> = {};
+    for (const s of suggestionsQuery.data ?? []) {
+      map[s.marketplaceCategoryId] = s;
+    }
+    return map;
+  }, [suggestionsQuery.data]);
+  const siteCategoryNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of siteCategories) m[c.id] = c.name;
+    return m;
+  }, [siteCategories]);
 
   const draftCount = Object.keys(drafts).length;
 
@@ -1219,6 +1249,45 @@ function CategoryMappingsDialog({
     });
   }
 
+  // Görselleştirme/uygulama için minimum güven eşiği. Backend her unmatched
+  // satır için bir aday döner (skor 0 dahil); UI tarafında çok zayıf
+  // adayları gizleyerek/bulk apply'dan çıkararak gürültüyü azaltırız.
+  // Kullanıcı manuel olarak her zaman istediği eşlemeyi yapabilir.
+  const SUGGESTION_DISPLAY_THRESHOLD = 0.25;
+  const SUGGESTION_APPLY_THRESHOLD = 0.4;
+
+  // Henüz eşlenmemiş, draft'ta da değiştirilmemiş ve önerisi güçlü olan
+  // satırlar — bulk "Tüm önerileri uygula" akışına alınacaklar.
+  const applicableSuggestions = useMemo(() => {
+    return allMappings
+      .map((m) => {
+        const s = suggestionsByMappingId[m.id];
+        if (!s) return null;
+        if (s.score < SUGGESTION_APPLY_THRESHOLD) return null;
+        if (effectiveValue(m) !== null) return null;
+        return { mapping: m, suggestion: s };
+      })
+      .filter((x): x is { mapping: CategoryMapping; suggestion: SuggestionDto } => x !== null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMappings, suggestionsByMappingId, drafts]);
+
+  function applyAllSuggestions() {
+    if (applicableSuggestions.length === 0) return;
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (const { mapping, suggestion } of applicableSuggestions) {
+        if (suggestion.siteCategoryId !== mapping.siteCategoryId) {
+          next[mapping.id] = suggestion.siteCategoryId;
+        }
+      }
+      return next;
+    });
+    toast({
+      title: `${applicableSuggestions.length} öneri dolduruldu`,
+      description: 'Kaydet ile değişiklikleri onaylayın.',
+    });
+  }
+
   const saveAllMutation = useMutation({
     mutationFn: async () => {
       const entries = Object.entries(drafts);
@@ -1241,6 +1310,14 @@ function CategoryMappingsDialog({
     onSuccess: ({ succeededIds, failedIds }) => {
       qc.invalidateQueries({
         queryKey: ['/api/admin/marketplaces', marketplaceId, 'category-mappings'],
+      });
+      qc.invalidateQueries({
+        queryKey: [
+          '/api/admin/marketplaces',
+          marketplaceId,
+          'category-mappings',
+          'suggestions',
+        ],
       });
       // Keep failed entries in drafts so retry is one-click; clear successes only
       setDrafts((prev) => {
@@ -1333,6 +1410,28 @@ function CategoryMappingsDialog({
               <AlertTriangle className="w-3.5 h-3.5" />
               Sadece eşleşmemiş ({totalUnmatched})
             </button>
+            <button
+              type="button"
+              onClick={applyAllSuggestions}
+              disabled={
+                suggestionsQuery.isLoading || applicableSuggestions.length === 0
+              }
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-[12px] font-medium rounded-md border transition-colors bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              data-testid="button-apply-all-suggestions"
+              title={
+                applicableSuggestions.length === 0
+                  ? 'Doldurulacak öneri yok'
+                  : `${applicableSuggestions.length} eşleşmemiş kategori için öneri var`
+              }
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Tüm önerileri uygula
+              {applicableSuggestions.length > 0 && (
+                <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-violet-200 text-violet-900 text-[10px] font-semibold">
+                  {applicableSuggestions.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Header */}
@@ -1355,6 +1454,19 @@ function CategoryMappingsDialog({
                   const value = effectiveValue(m);
                   const unmatched = value === null;
                   const dirty = m.id in drafts;
+                  const suggestion = suggestionsByMappingId[m.id];
+                  const suggestionName = suggestion
+                    ? siteCategoryNameById[suggestion.siteCategoryId]
+                    : undefined;
+                  // Çok düşük güveni (gürültü) gösterme; orta-zayıf güveni
+                  // gri/muted stilde göster, yüksek güveni vurgulu göster.
+                  const showSuggestion =
+                    unmatched &&
+                    suggestion &&
+                    suggestionName !== undefined &&
+                    suggestion.score >= SUGGESTION_DISPLAY_THRESHOLD;
+                  const suggestionStrong =
+                    suggestion && suggestion.score >= SUGGESTION_APPLY_THRESHOLD;
                   return (
                     <li
                       key={m.id}
@@ -1377,21 +1489,46 @@ function CategoryMappingsDialog({
                           </div>
                         </div>
                       </div>
-                      <SelectInput
-                        value={value ?? '__none'}
-                        onChange={(e) =>
-                          changeDraft(m, e.target.value === '__none' ? null : e.target.value)
-                        }
-                        data-testid={`select-mapping-${m.id}`}
-                        className="w-full"
-                      >
-                        <option value="__none">— Eşleme yok —</option>
-                        {siteCategories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </SelectInput>
+                      <div className="flex flex-col gap-1.5 min-w-0">
+                        <SelectInput
+                          value={value ?? '__none'}
+                          onChange={(e) =>
+                            changeDraft(m, e.target.value === '__none' ? null : e.target.value)
+                          }
+                          data-testid={`select-mapping-${m.id}`}
+                          className="w-full"
+                        >
+                          <option value="__none">— Eşleme yok —</option>
+                          {siteCategories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </SelectInput>
+                        {showSuggestion && (
+                          <button
+                            type="button"
+                            onClick={() => changeDraft(m, suggestion!.siteCategoryId)}
+                            className={`inline-flex items-center gap-1 self-start px-1.5 py-0.5 -mt-0.5 rounded text-[10.5px] font-medium transition-colors max-w-full ${
+                              suggestionStrong
+                                ? 'text-neutral-600 hover:text-violet-800 hover:bg-violet-50'
+                                : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'
+                            }`}
+                            title={
+                              suggestionStrong
+                                ? `Önerilen eşleme — uygulamak için tıkla (skor: ${suggestion!.score.toFixed(2)})`
+                                : `Düşük güvenli öneri — manuel kontrol önerilir (skor: ${suggestion!.score.toFixed(2)})`
+                            }
+                            data-testid={`button-suggestion-${m.id}`}
+                          >
+                            <Sparkles
+                              className={`w-3 h-3 shrink-0 ${suggestionStrong ? 'text-violet-500' : 'text-neutral-400'}`}
+                            />
+                            <span className="opacity-70 shrink-0">Önerilen:</span>
+                            <span className="truncate">{suggestionName}</span>
+                          </button>
+                        )}
+                      </div>
                     </li>
                   );
                 })}
