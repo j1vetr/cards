@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Product, BulkPriceAction } from '../_shared/types';
-import { X, Edit, ChevronDown, ChevronUp, Search, Check, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import type { Category } from '../_shared/types';
 import AdminModal from '../_ui/AdminModal';
 

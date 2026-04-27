@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Upload, ImageIcon, Loader2, Plus, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Edit, Check, GripVertical, Package, Eye, RefreshCw } from 'lucide-react';
+import { X, Upload, Loader2, Sparkles, Wand2, Check, Package, Eye, RefreshCw } from 'lucide-react';
 import type { Product, ProductDraft, Category } from '../_shared/types';
 import AdminModal from '../_ui/AdminModal';
 

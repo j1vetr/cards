@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { BulkAIResult } from '../_shared/types';
 import { useQueryClient } from '@tanstack/react-query';
-import { Sparkles, X, Loader2, Check } from 'lucide-react';
+import { Sparkles, Loader2, Check } from 'lucide-react';
 import type { Category } from '../_shared/types';
 import AdminModal from '../_ui/AdminModal';
 

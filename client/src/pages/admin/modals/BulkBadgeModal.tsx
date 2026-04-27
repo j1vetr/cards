@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { X, Tag, ChevronDown, ChevronUp, Search, Check, Loader2 } from 'lucide-react';
+import { Tag, Loader2 } from 'lucide-react';
 import type { Category, Product } from '../_shared/types';
 import AdminModal from '../_ui/AdminModal';
 

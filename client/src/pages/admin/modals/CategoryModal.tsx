@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Loader2, ImageIcon } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 import type { Category } from '../_shared/types';
 import AdminModal from '../_ui/AdminModal';
 
