@@ -2335,6 +2335,13 @@ export async function registerRoutes(
       console.error('[iyzico Callback] Error:', error);
       // CRITICAL: if we claimed the row but didn't reach a terminal state,
       // release the claim back to 'failed' so the row never gets stuck in 'processing'.
+      //
+      // NOTE on reconciliation trade-off: a charge that succeeded on iyzico's side
+      // but threw downstream (e.g. order creation crash) will be marked 'failed'
+      // here. The customer is shown /odeme-basarisiz and we always log the
+      // merchantOid + iyzico paymentId (when known) so admins can manually
+      // reconcile via iyzico's dashboard. A dedicated `needs_reconciliation`
+      // status is tracked as a future hardening follow-up.
       if (claimedMerchantOid && !terminalized) {
         try {
           await storage.updatePendingPaymentStatus(claimedMerchantOid, 'failed');

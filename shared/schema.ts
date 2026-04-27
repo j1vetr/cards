@@ -554,6 +554,9 @@ export const pendingPayments = pgTable("pending_payments", {
   couponCode: text("coupon_code"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   status: text("status").default("pending").notNull(),
+  // Provider-agnostic payment token (was `paytr_token` pre-migration to iyzico).
+  // The column was renamed in-place via direct SQL — no historical PayTR token
+  // backfill is required since pending_payments are short-lived (24h expiry).
   paymentToken: text("payment_token"),
   iyzicoPaymentId: text("iyzico_payment_id"),
   createAccount: boolean("create_account").default(false),
