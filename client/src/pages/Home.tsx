@@ -423,106 +423,59 @@ export default function Home() {
           }}
         />
 
-        {/* ── Editorial chrome: corner rules ── */}
-        <div className="absolute top-0 left-0 w-px h-16 bg-polen-orange z-20 hidden lg:block" />
-        <div className="absolute bottom-0 right-0 w-px h-24 bg-polen-orange z-20 hidden lg:block" />
-
-        {/* ── Top bar: brand mark (left) + slide meta (right) ── */}
-        <div className="absolute top-5 lg:top-8 left-5 lg:left-10 right-5 lg:right-10 z-20 flex items-start justify-between gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.2 }}
-            className="flex items-center gap-3"
-          >
-            <span className="hidden lg:inline-block w-8 h-px bg-white/35" />
-            <span className="text-white/55 text-[10px] tracking-[0.32em] uppercase font-medium">
-              Polen Stone <span className="hidden md:inline">— Est. Anatolia</span>
-            </span>
-          </motion.div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`meta-${activeSlide}`}
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="text-right"
-            >
-              <p className="text-white/85 text-[10px] tracking-[0.32em] uppercase font-medium">
-                {heroSlides[activeSlide].stone}
-              </p>
-              <p className="text-white/35 text-[9px] tracking-[0.32em] uppercase mt-1 tabular-nums">
-                {heroSlides[activeSlide].origin}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+        {/* ── Top-right: slide counter only (minimal) ── */}
+        <div className="absolute top-5 lg:top-8 right-5 lg:right-10 z-20 flex items-center gap-2.5">
+          <span className="text-white/80 text-[11px] tracking-[0.3em] font-medium tabular-nums">
+            {String(activeSlide + 1).padStart(2, '0')}
+          </span>
+          <span className="w-3 h-px bg-white/30" />
+          <span className="text-white/35 text-[11px] tracking-[0.3em] font-medium tabular-nums">
+            {String(heroSlides.length).padStart(2, '0')}
+          </span>
         </div>
 
         {/* ── Main content: off-center left ── */}
-        <div className="absolute inset-0 z-10 flex items-center px-5 lg:px-16">
+        <div className="absolute inset-0 z-10 flex items-center px-5 lg:px-16 pb-[210px] lg:pb-[230px]">
           <div className="max-w-[640px] w-full">
-            {/* Eyebrow with edition */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`eyebrow-${activeSlide}`}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.6 }}
-                className="flex items-center gap-3 mb-6 lg:mb-9"
-              >
-                <span className="w-10 h-px bg-polen-orange" />
-                <span className="text-polen-orange text-[10px] tracking-[0.32em] uppercase font-semibold">
-                  Editorial · {heroSlides[activeSlide].edition}
-                </span>
-              </motion.div>
-            </AnimatePresence>
-
             {/* Headline (one semantic h1, two visual lines) */}
             <h1
-              className="font-display leading-[0.95] tracking-[0.01em]"
-              style={{ fontSize: 'clamp(2.6rem, 9.2vw, 9.5rem)' }}
+              className="font-display leading-[1.05] tracking-[0.01em]"
+              style={{ fontSize: 'clamp(2.8rem, 9vw, 9rem)' }}
               aria-label="Doğanın İhtişamı"
             >
-              <span className="block overflow-hidden">
-                <motion.span
-                  initial={{ y: '110%' }}
-                  animate={{ y: '0%' }}
-                  transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
-                  className="block text-white"
-                >
-                  DOĞANIN
-                </motion.span>
-              </span>
-              <span className="block overflow-hidden mt-1 lg:mt-2">
-                <motion.span
-                  initial={{ y: '110%' }}
-                  animate={{ y: '0%' }}
-                  transition={{ duration: 1.05, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-                  className="block italic"
-                  style={{
-                    color: 'transparent',
-                    WebkitTextStroke: '1.4px hsl(var(--polen-orange))',
-                  }}
-                >
-                  İHTİŞAMI
-                </motion.span>
-              </span>
+              <motion.span
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
+                className="block text-white"
+              >
+                DOĞANIN
+              </motion.span>
+              <motion.span
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.95, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                className="block"
+                style={{
+                  color: 'transparent',
+                  WebkitTextStroke: '1.4px hsl(var(--polen-orange))',
+                }}
+              >
+                İHTİŞAMI
+              </motion.span>
             </h1>
 
-            {/* Rule + description */}
+            {/* Description */}
             <motion.div
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.55 }}
-              className="mt-8 lg:mt-10 max-w-[480px]"
+              transition={{ duration: 0.9, delay: 0.5 }}
+              className="mt-7 lg:mt-9 max-w-[480px]"
             >
-              <div className="w-12 h-px bg-white/30 mb-5" />
-              <p className="text-white/65 text-[13px] lg:text-[14px] font-body leading-[1.7] tracking-wide">
-                Anadolu'nun ocaklarından, mimarın masasına. Mermer, granit, traverten ve oniks
-                koleksiyonumuzla mekânlarınıza bin yıllık taş mirasını taşıyoruz.
+              <p className="text-white/70 text-[13px] lg:text-[14px] font-body leading-[1.7]">
+                Anadolu'nun ocaklarından, mimarın masasına. Mermer, granit,
+                traverten ve oniks koleksiyonumuzla mekânlarınıza bin yıllık
+                taş mirasını taşıyoruz.
               </p>
             </motion.div>
 
@@ -530,139 +483,97 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-              className="mt-9 lg:mt-12 flex flex-wrap items-center gap-x-5 lg:gap-x-7 gap-y-4"
+              transition={{ duration: 0.8, delay: 0.65 }}
+              className="mt-7 lg:mt-9 flex flex-wrap items-center gap-x-5 lg:gap-x-7 gap-y-3"
             >
               <Link href="/magaza" data-testid="button-hero-shop">
                 <motion.span
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.97 }}
-                  className="group inline-flex items-center gap-4 bg-polen-orange text-white text-[10px] tracking-[0.28em] uppercase font-bold px-7 py-4 lg:px-9 lg:py-[18px] cursor-pointer hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
+                  className="group inline-flex items-center gap-4 bg-polen-orange text-white text-[11px] tracking-[0.22em] uppercase font-semibold px-7 py-4 lg:px-9 lg:py-[16px] cursor-pointer hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
                 >
                   Koleksiyonu Keşfet
                   <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1.5" />
                 </motion.span>
               </Link>
-              <Link href="/iletisim">
-                <span className="text-[10px] tracking-[0.22em] uppercase text-white/65 hover:text-white transition-colors font-medium border-b border-white/30 hover:border-white pb-1.5">
-                  Atölyeyi Ziyaret Et
+              <Link href="/magaza">
+                <span className="text-[11px] tracking-[0.18em] uppercase text-white/70 hover:text-white transition-colors font-medium border-b border-white/30 hover:border-white pb-1.5">
+                  Tüm Ürünler
                 </span>
               </Link>
             </motion.div>
           </div>
         </div>
 
-        {/* ── Bottom-left: scroll indicator ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1.2 }}
-          className="absolute bottom-7 left-5 lg:left-10 z-20 hidden md:flex items-center gap-3"
-        >
-          <span className="text-white/45 text-[9px] tracking-[0.32em] uppercase font-medium">Scroll</span>
-          <div className="relative w-10 h-px bg-white/15 overflow-hidden">
-            <motion.span
-              animate={{ x: ['-100%', '100%'] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute inset-y-0 left-0 w-1/2 bg-white"
-            />
-          </div>
-        </motion.div>
+        {/* ── Bottom: integrated product marquee inside hero ── */}
+        {allProducts.length > 0 && (
+          <div
+            className="absolute bottom-0 left-0 right-0 z-20 bg-black/55 backdrop-blur-sm border-t border-white/10"
+            data-testid="section-hero-marquee"
+          >
+            {/* Slide indicator dots above marquee */}
+            <div className="absolute -top-9 left-5 lg:left-10 hidden md:flex items-center gap-2 z-10">
+              {heroSlides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveSlide(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  className="group relative h-3 flex items-center"
+                  data-testid={`button-slide-${i}`}
+                >
+                  <span
+                    className={`h-px transition-all duration-700 ease-out ${
+                      activeSlide === i ? 'w-10 bg-polen-orange' : 'w-5 bg-white/30 group-hover:bg-white/60'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
 
-        {/* ── Bottom-right: slide indicator + counter ── */}
-        <div className="absolute bottom-7 right-5 lg:right-10 z-20 flex items-center gap-5">
-          <span className="text-white/85 text-[12px] tracking-[0.32em] font-medium tabular-nums">
-            {String(activeSlide + 1).padStart(2, '0')}
-          </span>
-          <div className="flex items-center gap-2">
-            {heroSlides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveSlide(i)}
-                aria-label={`Slide ${i + 1}`}
-                className="group relative h-3 flex items-center"
-                data-testid={`button-slide-${i}`}
-              >
-                <span
-                  className={`h-px transition-all duration-700 ease-out ${
-                    activeSlide === i ? 'w-12 bg-polen-orange' : 'w-5 bg-white/30 group-hover:bg-white/60'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-          <span className="text-white/35 text-[12px] tracking-[0.32em] font-medium tabular-nums">
-            {String(heroSlides.length).padStart(2, '0')}
-          </span>
-        </div>
-      </section>
+            <div className="relative h-[170px] lg:h-[185px] overflow-hidden">
+              {/* Edge fades */}
+              <div className="absolute inset-y-0 left-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.95), transparent)' }} />
+              <div className="absolute inset-y-0 right-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, rgba(0,0,0,0.95), transparent)' }} />
 
-      {/* ════════════════════════════════════════════
-          HERO PRODUCT MARQUEE — refined dark band
-          (preserved beneath hero per brand spec)
-      ════════════════════════════════════════════ */}
-      {allProducts.length > 0 && (
-        <section
-          className="relative bg-black border-y border-white/10 overflow-hidden"
-          data-testid="section-hero-marquee"
-        >
-          {/* Eyebrow row */}
-          <div className="absolute top-3 left-5 lg:left-10 z-20 flex items-center gap-3">
-            <span className="w-6 h-px bg-polen-orange" />
-            <span className="text-white/55 text-[9px] tracking-[0.32em] uppercase font-medium">
-              Vitrin
-            </span>
-          </div>
-          <div className="absolute top-3 right-5 lg:right-10 z-20">
-            <span className="text-white/35 text-[9px] tracking-[0.32em] uppercase font-medium tabular-nums">
-              {String(allProducts.length).padStart(2, '0')} ÜRÜN
-            </span>
-          </div>
-
-          {/* Track */}
-          <div className="relative h-[160px] lg:h-[180px] pt-9 overflow-hidden">
-            {/* Edge fades */}
-            <div className="absolute inset-y-0 left-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(0,0,0,1), transparent)' }} />
-            <div className="absolute inset-y-0 right-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, rgba(0,0,0,1), transparent)' }} />
-
-            <div className="flex animate-marquee-slow h-full items-start pt-1" style={{ width: 'max-content' }}>
-              {[...allProducts, ...allProducts, ...allProducts].map((p, i) => {
-                const img = p.images?.[0];
-                const price = parseFloat(p.basePrice);
-                return (
-                  <Link
-                    key={`${p.id}-${i}`}
-                    href={`/urun/${p.slug}`}
-                    className="group flex-shrink-0 mx-3 flex flex-col items-center gap-2 cursor-pointer"
-                    data-testid={`link-hero-scroll-${p.id}-${i}`}
-                  >
-                    <div className="relative w-[78px] h-[110px] overflow-hidden bg-white/5 border border-white/10 group-hover:border-polen-orange/60 transition-colors duration-400">
-                      {img ? (
-                        <img
-                          src={img}
-                          alt={p.name}
-                          className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-white/5" />
-                      )}
-                      {p.discountBadge && (
-                        <div className="absolute top-1 left-1 bg-white text-black text-[7px] font-black tracking-wider px-1 py-px uppercase">
-                          {p.discountBadge}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-white/55 group-hover:text-white transition-colors font-medium tracking-[0.06em] tabular-nums">
-                      {price.toLocaleString('tr-TR')} ₺
-                    </p>
-                  </Link>
-                );
-              })}
+              <div className="flex animate-marquee-slow h-full items-center" style={{ width: 'max-content' }}>
+                {[...allProducts, ...allProducts, ...allProducts].map((p, i) => {
+                  const img = p.images?.[0];
+                  const price = parseFloat(p.basePrice);
+                  return (
+                    <Link
+                      key={`${p.id}-${i}`}
+                      href={`/urun/${p.slug}`}
+                      className="group flex-shrink-0 mx-3 flex flex-col items-center gap-2 cursor-pointer"
+                      data-testid={`link-hero-scroll-${p.id}-${i}`}
+                    >
+                      <div className="relative w-[80px] h-[112px] overflow-hidden bg-white/5 border border-white/10 group-hover:border-polen-orange/60 transition-colors duration-400">
+                        {img ? (
+                          <img
+                            src={img}
+                            alt={p.name}
+                            className="w-full h-full object-cover object-top opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-white/5" />
+                        )}
+                        {p.discountBadge && (
+                          <div className="absolute top-1 left-1 bg-white text-black text-[7px] font-bold tracking-wider px-1 py-px uppercase">
+                            {p.discountBadge}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-white/65 group-hover:text-white transition-colors font-medium tabular-nums">
+                        {price.toLocaleString('tr-TR')} ₺
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ════════════════════════════════════════════
           FEATURED PRODUCTS — editorial layout
