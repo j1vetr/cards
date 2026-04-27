@@ -282,6 +282,8 @@ export interface IStorage {
     id: string,
     patch: { status: string; stats: Record<string, number>; errors: Array<{ context: string; message: string }> },
   ): Promise<MarketplaceSyncRun>;
+  /** Live progress write — update only the stats jsonb on a running run. */
+  updateSyncRunStats(id: string, stats: Record<string, number>): Promise<void>;
   getRunningSyncRun(marketplaceId: string): Promise<MarketplaceSyncRun | undefined>;
   getRecentSyncRuns(marketplaceId: string, limit?: number): Promise<MarketplaceSyncRun[]>;
 }
@@ -1918,6 +1920,13 @@ export class DbStorage implements IStorage {
       .where(eq(marketplaceSyncRuns.id, id))
       .returning();
     return row;
+  }
+
+  async updateSyncRunStats(id: string, stats: Record<string, number>): Promise<void> {
+    await db
+      .update(marketplaceSyncRuns)
+      .set({ stats })
+      .where(eq(marketplaceSyncRuns.id, id));
   }
 
   async getRunningSyncRun(marketplaceId: string): Promise<MarketplaceSyncRun | undefined> {

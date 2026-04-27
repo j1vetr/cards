@@ -64,6 +64,10 @@ type SyncStats = {
   imagesDownloaded: number;
   imagesSkipped: number;
   pagesProcessed: number;
+  /** Canlı ilerleme — şu ana kadar işlenmiş ürün sayısı. */
+  processedTotal: number;
+  /** Canlı ilerleme — beklenen toplam ürün sayısı (adapter veya tahmin). */
+  expectedTotal: number;
 };
 
 interface SyncErrorEntry {
@@ -86,7 +90,28 @@ function emptyStats(): SyncStats {
     imagesDownloaded: 0,
     imagesSkipped: 0,
     pagesProcessed: 0,
+    processedTotal: 0,
+    expectedTotal: 0,
   };
+}
+
+/**
+ * Canlı ilerleme yazıcı — kart UI'sındaki progress bar için stats jsonb'ı
+ * periyodik olarak günceller. Hata yutar (best-effort): bir DB hıçkırığı
+ * tüm sync'i öldürmemeli.
+ */
+async function publishProgress(
+  runId: string,
+  stats: SyncStats,
+): Promise<void> {
+  try {
+    await storage.updateSyncRunStats(runId, stats);
+  } catch (err) {
+    console.warn(
+      `[marketplaces] live progress write failed for run ${runId}:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
 }
 
 /** Türkçe karakter normalize edip slug üretir. */
@@ -583,9 +608,9 @@ export async function runSync(
 
   try {
     if (mode === "full") {
-      await runFullSync(mp, adapter, stats, errors);
+      await runFullSync(mp, adapter, stats, errors, run.id);
     } else {
-      await runDeltaSync(mp, adapter, stats, errors);
+      await runDeltaSync(mp, adapter, stats, errors, run.id);
     }
 
     const status = errors.length === 0 ? "completed" : "partial";
@@ -613,7 +638,20 @@ async function runFullSync(
   adapter: MarketplaceAdapter,
   stats: SyncStats,
   errors: SyncErrorEntry[],
+  runId: string,
 ): Promise<void> {
+  // İlk tahmin: önceki tarama sonucu mevcut katalog büyüklüğü.
+  // Adapter ilk sayfayı döndürene kadar bar bu sayıya göre çalışır;
+  // sonra resp.total ile değiştirilir.
+  try {
+    const existingRows = await storage.getMarketplaceProducts(mp.id);
+    if (existingRows.length > 0) {
+      stats.expectedTotal = existingRows.length;
+      await publishProgress(runId, stats);
+    }
+  } catch {
+    /* tahmin opsiyonel — sessiz geç */
+  }
   // 1. Kategori ağacını çek + DB'ye marketplace_categories satırlarına yaz
   let tree: NormalizedCategory[] = [];
   try {
@@ -664,6 +702,13 @@ async function runFullSync(
       break;
     }
     stats.pagesProcessed += 1;
+    // Adapter total verdiyse, expectedTotal'ı buna sabitle.
+    if (typeof resp.total === "number" && resp.total >= 0) {
+      stats.expectedTotal = resp.total;
+    } else if (stats.processedTotal + resp.products.length > stats.expectedTotal) {
+      // Total bilinmiyor: alt sınır olarak şimdiye kadar gördüklerimizi kullan.
+      stats.expectedTotal = stats.processedTotal + resp.products.length;
+    }
     for (const np of resp.products) {
       seen.add(np.externalId);
       try {
@@ -690,8 +735,12 @@ async function runFullSync(
           context: `product ${np.externalId}`,
           message: err instanceof Error ? err.message : String(err),
         });
+      } finally {
+        stats.processedTotal += 1;
       }
     }
+    // Sayfa tamamlanınca canlı ilerlemeyi yayımla — UI 1-2sn aralıkla poll'luyor.
+    await publishProgress(runId, stats);
     if (resp.nextCursor == null) {
       fullScanCompleted = true;
       break;
@@ -739,9 +788,14 @@ async function runDeltaSync(
   adapter: MarketplaceAdapter,
   stats: SyncStats,
   errors: SyncErrorEntry[],
+  runId: string,
 ): Promise<void> {
   const rows = await storage.getMarketplaceProducts(mp.id);
   if (rows.length === 0) return;
+  // Delta için beklenen toplam = mevcut köprü satırı sayısı (her satır
+  // bir snapshot'a bakılıp güncellenmeyi dener).
+  stats.expectedTotal = rows.length;
+  await publishProgress(runId, stats);
   const ids = rows.map((r) => r.externalId);
   // Trendyol'da batch endpoint yok — adapter sayfa tarayıp filtreler.
   let snapshots;
@@ -756,7 +810,15 @@ async function runDeltaSync(
   }
 
   const byExt = new Map(snapshots.map((s) => [s.externalId, s]));
+  let processedSinceFlush = 0;
   for (const row of rows) {
+    // Bu satır da işlenmiş sayılır; köprüde productId yoksa atla ama bar ilerlesin.
+    stats.processedTotal += 1;
+    processedSinceFlush += 1;
+    if (processedSinceFlush >= 25) {
+      await publishProgress(runId, stats);
+      processedSinceFlush = 0;
+    }
     if (!row.productId) continue;
     const snap = byExt.get(row.externalId);
     if (!snap) continue;

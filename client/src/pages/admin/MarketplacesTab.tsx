@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -474,7 +474,9 @@ function MarketplaceCard({
       toast({ title: 'Bağlantı hatası', description: err.message, variant: 'destructive' }),
   });
 
-  // Latest run (running indicator + last result)
+  // Latest run (running indicator + last result).
+  // Çalışırken sıkı poll (1.5sn), aksi halde 5sn — ilerleme barı canlı hissetsin
+  // ama bekleme/idle hâlinde sunucuyu yormasın.
   const latestRunQuery = useQuery<SyncRun[]>({
     queryKey: ['/api/admin/marketplaces', mp.id, 'sync-runs', 'latest'],
     queryFn: async () => {
@@ -484,7 +486,10 @@ function MarketplaceCard({
       );
       return await res.json();
     },
-    refetchInterval: 5000,
+    refetchInterval: (query) => {
+      const latest = (query.state.data as SyncRun[] | undefined)?.[0];
+      return latest?.status === 'running' ? 1500 : 5000;
+    },
   });
   const latestRun = (latestRunQuery.data ?? [])[0];
   const isRunning = latestRun?.status === 'running';
@@ -601,6 +606,9 @@ function MarketplaceCard({
         />
       </div>
 
+      {/* Live progress bar (running) — fades out shortly after completion */}
+      <LiveProgressBar mp={mp} latestRun={latestRun} />
+
       {/* Last error preview */}
       {latestRun &&
         !isRunning &&
@@ -687,6 +695,135 @@ function MarketplaceCard({
         </div>
       )}
     </Card>
+  );
+}
+
+// ============================================================================
+// Live Progress Bar — kart üzerinde çalışan run için ince yatay bar.
+// - status === 'running' iken görünür.
+// - Bitince (status değişince) 0.5sn sonra solar.
+// - expectedTotal yoksa indeterminate animasyon, varsa determinate %.
+// - "X / Y ürün · NN%" + (yeterli veri varsa) "Tahmini kalan: X dk"
+// ============================================================================
+function LiveProgressBar({
+  mp,
+  latestRun,
+}: {
+  mp: Marketplace;
+  latestRun: SyncRun | undefined;
+}) {
+  const isRunning = latestRun?.status === 'running';
+  // Solma için: çalışıyor → görünür; bittiğinde 500ms görünür kalsın, sonra gizle.
+  const [visible, setVisible] = useState<boolean>(isRunning);
+  // Son görünen run'ı tut ki fade-out sırasında bilgi kaybolmasın.
+  const lastRunRef = useRef<SyncRun | undefined>(latestRun);
+  useEffect(() => {
+    if (isRunning) {
+      lastRunRef.current = latestRun;
+      setVisible(true);
+      return;
+    }
+    if (!visible) return;
+    // Bittiğinde son snapshot'ı dondur, kısa bir an sonra gizle.
+    if (latestRun) lastRunRef.current = latestRun;
+    const t = window.setTimeout(() => setVisible(false), 500);
+    return () => window.clearTimeout(t);
+  }, [isRunning, latestRun, visible]);
+
+  if (!visible) return null;
+  const run = lastRunRef.current ?? latestRun;
+  if (!run) return null;
+
+  const stats = run.stats ?? {};
+  const processed = Math.max(0, Number(stats.processedTotal ?? 0));
+  const expected = Math.max(0, Number(stats.expectedTotal ?? 0));
+  const determinate = expected > 0;
+  const pct = determinate
+    ? Math.min(100, Math.round((processed / Math.max(1, expected)) * 100))
+    : 0;
+
+  // ETA: yalnız anlamlı veri varsa göster (>5sn geçmiş, en az 5 ürün işlenmiş,
+  // determinate ve en az 1 ürün kalmış).
+  let etaLabel: string | null = null;
+  if (isRunning && determinate && processed >= 5 && processed < expected) {
+    const elapsedMs = Date.now() - new Date(run.startedAt).getTime();
+    if (elapsedMs > 5_000) {
+      const perItemMs = elapsedMs / processed;
+      const remainingMs = perItemMs * (expected - processed);
+      const remainingSec = Math.round(remainingMs / 1000);
+      if (remainingSec < 60) {
+        etaLabel = `~${remainingSec} sn kaldı`;
+      } else if (remainingSec < 60 * 60) {
+        etaLabel = `~${Math.round(remainingSec / 60)} dk kaldı`;
+      } else {
+        const h = Math.floor(remainingSec / 3600);
+        const m = Math.round((remainingSec % 3600) / 60);
+        etaLabel = m ? `~${h}sa ${m}dk kaldı` : `~${h}sa kaldı`;
+      }
+    }
+  }
+
+  const modeLabel = run.mode === 'full' ? 'Tam senkron' : 'Hızlı senkron';
+  const opacityClass = isRunning ? 'opacity-100' : 'opacity-0';
+
+  return (
+    <div
+      className={`transition-opacity duration-500 ${opacityClass}`}
+      data-testid={`progress-sync-${mp.id}`}
+      aria-hidden={!isRunning}
+    >
+      <div className="flex items-center justify-between gap-2 text-[11px] mb-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Loader2 className="w-3 h-3 animate-spin text-blue-600 shrink-0" />
+          <span className="font-medium text-neutral-700 truncate">
+            {modeLabel}
+          </span>
+          {determinate && (
+            <span
+              className="text-neutral-500 shrink-0"
+              data-testid={`text-progress-count-${mp.id}`}
+            >
+              · {processed.toLocaleString('tr-TR')} / {expected.toLocaleString('tr-TR')} ürün
+            </span>
+          )}
+          {!determinate && processed > 0 && (
+            <span className="text-neutral-500 shrink-0">
+              · {processed.toLocaleString('tr-TR')} ürün
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0 text-neutral-500">
+          {etaLabel && (
+            <span data-testid={`text-progress-eta-${mp.id}`}>{etaLabel}</span>
+          )}
+          {determinate && (
+            <span
+              className="font-mono tabular-nums text-neutral-700"
+              data-testid={`text-progress-pct-${mp.id}`}
+            >
+              {pct}%
+            </span>
+          )}
+        </div>
+      </div>
+      <div
+        className="h-1.5 w-full rounded-full bg-neutral-200/80 overflow-hidden"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={determinate ? pct : undefined}
+        aria-label={`${modeLabel} ilerlemesi`}
+      >
+        {determinate ? (
+          <div
+            className="h-full bg-blue-500 transition-[width] duration-500 ease-out"
+            style={{ width: `${pct}%` }}
+          />
+        ) : (
+          <div className="h-full w-1/3 bg-blue-500 rounded-full animate-progress-indeterminate" />
+        )}
+      </div>
+    </div>
   );
 }
 

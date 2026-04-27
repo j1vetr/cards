@@ -853,6 +853,10 @@ export const marketplaceSyncRuns = pgTable("marketplace_sync_runs", {
       imagesDownloaded?: number;
       imagesSkipped?: number;
       pagesProcessed?: number;
+      /** Live progress: how many products have been processed so far. */
+      processedTotal?: number;
+      /** Live progress: total products expected (from adapter or estimate). */
+      expectedTotal?: number;
     }>()
     .default({})
     .notNull(),
