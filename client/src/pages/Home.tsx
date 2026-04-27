@@ -598,6 +598,73 @@ export default function Home() {
       </section>
 
       {/* ════════════════════════════════════════════
+          HERO PRODUCT MARQUEE — refined dark band
+          (preserved beneath hero per brand spec)
+      ════════════════════════════════════════════ */}
+      {allProducts.length > 0 && (
+        <section
+          className="relative bg-black border-y border-white/10 overflow-hidden"
+          data-testid="section-hero-marquee"
+        >
+          {/* Eyebrow row */}
+          <div className="absolute top-3 left-5 lg:left-10 z-20 flex items-center gap-3">
+            <span className="w-6 h-px bg-polen-orange" />
+            <span className="text-white/55 text-[9px] tracking-[0.32em] uppercase font-medium">
+              Vitrin
+            </span>
+          </div>
+          <div className="absolute top-3 right-5 lg:right-10 z-20">
+            <span className="text-white/35 text-[9px] tracking-[0.32em] uppercase font-medium tabular-nums">
+              {String(allProducts.length).padStart(2, '0')} ÜRÜN
+            </span>
+          </div>
+
+          {/* Track */}
+          <div className="relative h-[160px] lg:h-[180px] pt-9 overflow-hidden">
+            {/* Edge fades */}
+            <div className="absolute inset-y-0 left-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(0,0,0,1), transparent)' }} />
+            <div className="absolute inset-y-0 right-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, rgba(0,0,0,1), transparent)' }} />
+
+            <div className="flex animate-marquee-slow h-full items-start pt-1" style={{ width: 'max-content' }}>
+              {[...allProducts, ...allProducts, ...allProducts].map((p, i) => {
+                const img = p.images?.[0];
+                const price = parseFloat(p.basePrice);
+                return (
+                  <Link
+                    key={`${p.id}-${i}`}
+                    href={`/urun/${p.slug}`}
+                    className="group flex-shrink-0 mx-3 flex flex-col items-center gap-2 cursor-pointer"
+                    data-testid={`link-hero-scroll-${p.id}-${i}`}
+                  >
+                    <div className="relative w-[78px] h-[110px] overflow-hidden bg-white/5 border border-white/10 group-hover:border-polen-orange/60 transition-colors duration-400">
+                      {img ? (
+                        <img
+                          src={img}
+                          alt={p.name}
+                          className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-white/5" />
+                      )}
+                      {p.discountBadge && (
+                        <div className="absolute top-1 left-1 bg-white text-black text-[7px] font-black tracking-wider px-1 py-px uppercase">
+                          {p.discountBadge}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-white/55 group-hover:text-white transition-colors font-medium tracking-[0.06em] tabular-nums">
+                      {price.toLocaleString('tr-TR')} ₺
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════════════════════════════════
           FEATURED PRODUCTS — editorial layout
       ════════════════════════════════════════════ */}
       {featuredProducts.length > 0 && (
