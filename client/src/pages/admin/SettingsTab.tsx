@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle } from 'lucide-react';
+import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound } from 'lucide-react';
 
 type WhatsAppEvent =
   | 'order_received_customer'
@@ -99,6 +99,11 @@ export default function SettingsPanel() {
   const [waTesting, setWaTesting] = useState(false);
   const [waTestPhone, setWaTestPhone] = useState('');
   const [waTestMessage, setWaTestMessage] = useState('');
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountCurrentPassword, setAccountCurrentPassword] = useState('');
+  const [accountNewUsername, setAccountNewUsername] = useState('');
+  const [accountNewPassword, setAccountNewPassword] = useState('');
+  const [accountNewPassword2, setAccountNewPassword2] = useState('');
 
   const { data: maintenanceData, refetch: refetchMaintenance } = useQuery<{ enabled: boolean }>({
     queryKey: ['/api/admin/maintenance'],
@@ -255,6 +260,62 @@ export default function SettingsPanel() {
       setMessage({ type: 'error', text: 'Bir hata oluştu' });
     } finally {
       setWaTesting(false);
+    }
+  };
+
+  const handleAccountUpdate = async () => {
+    if (!accountCurrentPassword) {
+      setMessage({ type: 'error', text: 'Mevcut şifrenizi girmelisiniz' });
+      return;
+    }
+    if (!accountNewUsername.trim() && !accountNewPassword) {
+      setMessage({ type: 'error', text: 'Yeni kullanıcı adı veya yeni şifre girin' });
+      return;
+    }
+    if (accountNewPassword && accountNewPassword !== accountNewPassword2) {
+      setMessage({ type: 'error', text: 'Yeni şifreler eşleşmiyor' });
+      return;
+    }
+    if (accountNewPassword && accountNewPassword.length < 8) {
+      setMessage({ type: 'error', text: 'Yeni şifre en az 8 karakter olmalı' });
+      return;
+    }
+
+    setAccountSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: accountCurrentPassword,
+          newUsername: accountNewUsername.trim() || undefined,
+          newPassword: accountNewPassword || undefined,
+        }),
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        const parts: string[] = [];
+        if (data.usernameChanged) parts.push('kullanıcı adı');
+        if (data.passwordChanged) parts.push('şifre');
+        setMessage({
+          type: 'success',
+          text: `Yönetici ${parts.join(' ve ')} başarıyla güncellendi.${
+            data.passwordChanged ? ' Bir sonraki girişte yeni şifrenizi kullanın.' : ''
+          }`,
+        });
+        setAccountCurrentPassword('');
+        setAccountNewUsername('');
+        setAccountNewPassword('');
+        setAccountNewPassword2('');
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Güncelleme başarısız' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Bir hata oluştu' });
+    } finally {
+      setAccountSaving(false);
     }
   };
 
@@ -799,6 +860,105 @@ export default function SettingsPanel() {
             >
               {waTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Test Gönder
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-neutral-200 rounded-xl p-6" data-testid="card-admin-account">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-amber-50 rounded-lg">
+            <KeyRound className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-neutral-900">Yönetici Hesabı</h3>
+            <p className="text-sm text-neutral-500">
+              Panele giriş için kullandığınız kullanıcı adı ve şifreyi değiştirin.
+              Onay için mevcut şifrenizi girmek zorundasınız.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-500 mb-2">
+              Mevcut Şifre <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              value={accountCurrentPassword}
+              onChange={(e) => setAccountCurrentPassword(e.target.value)}
+              placeholder="Mevcut şifreniz"
+              autoComplete="current-password"
+              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900"
+              data-testid="input-account-current-password"
+            />
+          </div>
+
+          <div className="border-t border-neutral-200 pt-4">
+            <p className="text-xs font-medium text-neutral-700 mb-3">
+              Aşağıdakilerden en az birini doldurun. Boş bıraktıklarınız değişmez.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-500 mb-2">
+                  Yeni Kullanıcı Adı
+                </label>
+                <input
+                  type="text"
+                  value={accountNewUsername}
+                  onChange={(e) => setAccountNewUsername(e.target.value)}
+                  placeholder="(değişmesin diye boş bırakın)"
+                  autoComplete="off"
+                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900"
+                  data-testid="input-account-new-username"
+                />
+                <p className="text-xs text-neutral-500 mt-1">
+                  En az 3 karakter; harf, rakam, '.', '_' ve '-' kullanılabilir.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-500 mb-2">
+                  Yeni Şifre
+                </label>
+                <input
+                  type="password"
+                  value={accountNewPassword}
+                  onChange={(e) => setAccountNewPassword(e.target.value)}
+                  placeholder="(değişmesin diye boş bırakın)"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900"
+                  data-testid="input-account-new-password"
+                />
+                <p className="text-xs text-neutral-500 mt-1">En az 8 karakter olmalı.</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-neutral-500 mb-2">
+                  Yeni Şifre (Tekrar)
+                </label>
+                <input
+                  type="password"
+                  value={accountNewPassword2}
+                  onChange={(e) => setAccountNewPassword2(e.target.value)}
+                  placeholder="Yeni şifreyi tekrar girin"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900"
+                  data-testid="input-account-new-password-confirm"
+                  disabled={!accountNewPassword}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={handleAccountUpdate}
+              disabled={accountSaving}
+              className="flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 font-medium"
+              data-testid="button-account-save"
+            >
+              {accountSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+              Hesabı Güncelle
             </button>
           </div>
         </div>

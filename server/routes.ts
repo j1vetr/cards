@@ -539,6 +539,76 @@ export async function registerRoutes(
     res.json({ id: user.id, username: user.username });
   });
 
+  app.patch("/api/admin/account", async (req: Request, res) => {
+    try {
+      const payload = await getAuthPayload(req, res);
+      if (!payload || payload.type !== 'admin' || !payload.adminUserId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getAdminUser(payload.adminUserId);
+      if (!user) {
+        return res.status(404).json({ error: "Yönetici bulunamadı" });
+      }
+
+      const { currentPassword, newUsername, newPassword } = req.body || {};
+
+      if (typeof currentPassword !== 'string' || currentPassword.length === 0) {
+        return res.status(400).json({ error: "Mevcut şifre gerekli" });
+      }
+
+      const passwordOk = await bcrypt.compare(currentPassword, user.password);
+      if (!passwordOk) {
+        return res.status(401).json({ error: "Mevcut şifre hatalı" });
+      }
+
+      const update: Partial<{ username: string; password: string }> = {};
+
+      if (typeof newUsername === 'string' && newUsername.trim().length > 0 && newUsername.trim() !== user.username) {
+        const trimmed = newUsername.trim();
+        if (trimmed.length < 3) {
+          return res.status(400).json({ error: "Kullanıcı adı en az 3 karakter olmalı" });
+        }
+        if (!/^[a-zA-Z0-9_.-]+$/.test(trimmed)) {
+          return res.status(400).json({ error: "Kullanıcı adı yalnızca harf, rakam, '.', '_' ve '-' içerebilir" });
+        }
+        const existing = await storage.getAdminUserByUsername(trimmed);
+        if (existing && existing.id !== user.id) {
+          return res.status(409).json({ error: "Bu kullanıcı adı zaten kullanılıyor" });
+        }
+        update.username = trimmed;
+      }
+
+      if (typeof newPassword === 'string' && newPassword.length > 0) {
+        if (newPassword.length < 8) {
+          return res.status(400).json({ error: "Yeni şifre en az 8 karakter olmalı" });
+        }
+        update.password = await bcrypt.hash(newPassword, 10);
+      }
+
+      if (!update.username && !update.password) {
+        return res.status(400).json({ error: "Değiştirilecek bir bilgi girin" });
+      }
+
+      const updated = await storage.updateAdminUser(user.id, update);
+      if (!updated) {
+        return res.status(500).json({ error: "Güncelleme başarısız" });
+      }
+
+      console.log(`[AdminAccount] ${user.username} updated -> username:${update.username ? 'changed' : '-'} password:${update.password ? 'changed' : '-'}`);
+
+      res.json({
+        success: true,
+        user: { id: updated.id, username: updated.username },
+        usernameChanged: Boolean(update.username),
+        passwordChanged: Boolean(update.password),
+      });
+    } catch (error) {
+      console.error('[AdminAccount] update error:', error);
+      res.status(500).json({ error: "Hesap güncellenemedi" });
+    }
+  });
+
   // Middleware for admin routes
   const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
     const payload = await getAuthPayload(req, res);
