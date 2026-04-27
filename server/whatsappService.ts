@@ -151,7 +151,7 @@ function orderVars(order: Order, config: WhatsAppConfig): Record<string, string>
     kargoUcreti: String(order.shippingCost),
     kargoTakipNo: order.trackingNumber || '',
     kargoTakipLink: order.trackingUrl || '',
-    kargoFirma: (order as any).shippingCarrier || '',
+    kargoFirma: order.shippingCarrier || '',
     siteAdi: config.siteName,
   };
 }
