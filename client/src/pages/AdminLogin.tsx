@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -44,19 +43,15 @@ export default function AdminLogin() {
       <main className="flex-1 flex items-center justify-center px-5 py-10 sm:py-16">
         <div className="w-full max-w-[400px]">
           <header className="mb-10 text-center">
-            <p
-              className="text-[10px] font-medium tracking-[0.28em] uppercase text-neutral-400 mb-3"
-              data-testid="text-admin-eyebrow"
-            >
-              Polen Stone
-            </p>
             <h1
-              className="font-display text-[26px] sm:text-[28px] leading-tight tracking-tight text-neutral-900"
+              className="font-display text-[22px] sm:text-[24px] leading-tight tracking-[0.04em] text-neutral-900"
               data-testid="text-brand"
             >
-              Admin Paneli
+              <span>POLEN STONE</span>
+              <span className="text-neutral-400 mx-2">—</span>
+              <span className="text-neutral-500 font-normal">Admin</span>
             </h1>
-            <p className="mt-2 text-[13px] text-neutral-500">
+            <p className="mt-3 text-[13px] text-neutral-500">
               Devam etmek için yönetici hesabınla giriş yap.
             </p>
           </header>
@@ -122,7 +117,11 @@ export default function AdminLogin() {
               >
                 {isPending ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span aria-hidden="true" className="inline-flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-white/60" />
+                      <span className="w-1 h-1 rounded-full bg-white/80" />
+                      <span className="w-1 h-1 rounded-full bg-white" />
+                    </span>
                     <span>Giriş yapılıyor</span>
                   </>
                 ) : (
