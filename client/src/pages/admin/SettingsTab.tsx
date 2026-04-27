@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle } from 'lucide-react';
+import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench } from 'lucide-react';
 
 export default function SettingsPanel() {
   const [settings, setSettings] = useState({
@@ -18,6 +18,41 @@ export default function SettingsPanel() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [iyzicoSaving, setIyzicoSaving] = useState(false);
   const [callbackCopied, setCallbackCopied] = useState(false);
+  const [maintenanceSaving, setMaintenanceSaving] = useState(false);
+
+  const { data: maintenanceData, refetch: refetchMaintenance } = useQuery<{ enabled: boolean }>({
+    queryKey: ['/api/admin/maintenance'],
+  });
+
+  const handleMaintenanceToggle = async (enabled: boolean) => {
+    if (!maintenanceData || maintenanceData.enabled === enabled) return;
+    setMaintenanceSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        await refetchMaintenance();
+        setMessage({
+          type: 'success',
+          text: enabled
+            ? 'Bakım modu AÇILDI. Site ziyaretçilere bakım sayfası gösteriliyor. Admin paneli açık kalır.'
+            : 'Bakım modu KAPATILDI. Site normal şekilde yayında.',
+        });
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.error || 'Bakım modu değiştirilemedi' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Bakım modu değiştirilemedi' });
+    } finally {
+      setMaintenanceSaving(false);
+    }
+  };
 
   const { data: iyzicoConfig, refetch: refetchIyzico } = useQuery<{
     mode: 'sandbox' | 'live';
@@ -272,6 +307,74 @@ export default function SettingsPanel() {
             <p className="text-xs text-neutral-500 mt-1">E-postalardaki bağlantılar için kullanılır</p>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white border border-neutral-200 rounded-xl p-6" data-testid="card-maintenance-settings">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-neutral-50 rounded-lg">
+            <Wrench className="w-5 h-5 text-neutral-900" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-neutral-900">Bakım Modu</h3>
+            <p className="text-sm text-neutral-500">Açıkken siteye gelen ziyaretçilere bakım sayfası gösterilir. Admin paneli ve API erişimi açık kalır.</p>
+          </div>
+        </div>
+
+        {!maintenanceData ? (
+          <div className="flex items-center gap-2 text-sm text-neutral-500">
+            <Loader2 className="w-4 h-4 animate-spin" /> Yükleniyor...
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleMaintenanceToggle(false)}
+                disabled={maintenanceSaving}
+                data-testid="button-maintenance-off"
+                className={`px-4 py-3 rounded-lg border text-sm font-medium transition-colors text-left ${
+                  !maintenanceData.enabled
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {!maintenanceData.enabled && <CheckCircle2 className="w-4 h-4" />}
+                  <span>KAPALI · Site yayında</span>
+                </div>
+                <div className={`text-xs mt-1 ${!maintenanceData.enabled ? 'text-white/70' : 'text-neutral-500'}`}>
+                  Normal çalışma modu
+                </div>
+              </button>
+              <button
+                onClick={() => handleMaintenanceToggle(true)}
+                disabled={maintenanceSaving}
+                data-testid="button-maintenance-on"
+                className={`px-4 py-3 rounded-lg border text-sm font-medium transition-colors text-left ${
+                  maintenanceData.enabled
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {maintenanceData.enabled && <CheckCircle2 className="w-4 h-4" />}
+                  <span>AÇIK · Bakım sayfası</span>
+                </div>
+                <div className={`text-xs mt-1 ${maintenanceData.enabled ? 'text-white/80' : 'text-neutral-500'}`}>
+                  Ziyaretçiler bakım sayfasını görür
+                </div>
+              </button>
+            </div>
+
+            {maintenanceData.enabled && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-800">
+                  Site şu anda bakımda. Ziyaretçiler "Yakında yeni tasarımımız ile sizlerle birlikteyiz" mesajını görüyor. Admin paneline (<code>/admin</code>) erişim sürüyor.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-neutral-200 rounded-xl p-6" data-testid="card-iyzico-settings">

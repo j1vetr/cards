@@ -2359,6 +2359,31 @@ export async function registerRoutes(
   // Backwards-compatible alias for any legacy webhook configuration
   app.post("/api/payment/callback", iyzicoCallbackHandler);
 
+  // ── Maintenance mode admin controls ────────────────────────────────────
+  app.get("/api/admin/maintenance", requireAdmin, async (_req, res) => {
+    try {
+      const { getMaintenanceMode } = await import("./maintenance");
+      const enabled = await getMaintenanceMode();
+      res.json({ enabled });
+    } catch (error) {
+      console.error("[maintenance get] error:", error);
+      res.status(500).json({ error: "Bakım modu durumu alınamadı" });
+    }
+  });
+
+  app.post("/api/admin/maintenance", requireAdmin, async (req, res) => {
+    try {
+      const enabled = Boolean(req.body?.enabled);
+      const { setMaintenanceMode } = await import("./maintenance");
+      await setMaintenanceMode(enabled);
+      console.log("[maintenance] mode switched →", enabled ? "ON" : "OFF");
+      res.json({ success: true, enabled });
+    } catch (error) {
+      console.error("[maintenance set] error:", error);
+      res.status(500).json({ error: "Bakım modu değiştirilemedi" });
+    }
+  });
+
   // ── iyzico mode (sandbox/live) admin controls ──────────────────────────
   app.get("/api/admin/iyzico/config", requireAdmin, async (_req, res) => {
     try {

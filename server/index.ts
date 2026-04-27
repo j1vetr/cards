@@ -76,6 +76,9 @@ app.use((req, res, next) => {
     throw err;
   }
 
+  const { maintenanceMiddleware } = await import("./maintenance");
+  app.use(maintenanceMiddleware());
+
   await registerRoutes(httpServer, app);
 
   // Pazaryeri senkron zamanlayıcısı (Trendyol delta saatlik / full 03:00)
