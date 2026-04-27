@@ -30,6 +30,7 @@ export async function setMaintenanceMode(enabled: boolean): Promise<void> {
 
 const ALLOW_PREFIXES = [
   "/admin",
+  "/toov-admin",
   "/api/admin",
   "/api/auth/login",
   "/api/auth/logout",
