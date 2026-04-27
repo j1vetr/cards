@@ -2327,8 +2327,9 @@ export async function registerRoutes(
         // Payment failed
         await storage.updatePendingPaymentStatus(merchantOid, 'failed');
         terminalized = true;
-        console.log('[iyzico Callback] Payment failed:', merchantOid, result.errorMessage || result.paymentStatus);
-        return sendRedirect(`/odeme-basarisiz?oid=${merchantOid}`);
+        const reason = result.errorMessage || result.paymentStatus || 'Ödeme tamamlanamadı';
+        console.log('[iyzico Callback] Payment failed:', merchantOid, reason);
+        return sendRedirect(`/odeme-basarisiz?oid=${merchantOid}&reason=${encodeURIComponent(reason)}`);
       }
     } catch (error) {
       console.error('[iyzico Callback] Error:', error);

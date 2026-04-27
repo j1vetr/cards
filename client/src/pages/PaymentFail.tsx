@@ -7,12 +7,17 @@ import { XCircle, ArrowRight, RefreshCw } from 'lucide-react';
 
 export default function PaymentFail() {
   const [merchantOid, setMerchantOid] = useState<string | null>(null);
+  const [failureReason, setFailureReason] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oid = params.get('oid');
+    const reason = params.get('reason');
     if (oid) {
       setMerchantOid(oid);
+    }
+    if (reason) {
+      setFailureReason(reason);
     }
   }, []);
 
@@ -39,7 +44,17 @@ export default function PaymentFail() {
           <p className="text-muted-foreground mb-8">
             Ödeme işlemi tamamlanamadı. Kart bilgilerinizi kontrol ederek tekrar deneyebilirsiniz.
           </p>
-          
+
+          {failureReason && (
+            <div
+              className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-left"
+              data-testid="text-payment-failure-reason"
+            >
+              <p className="text-sm font-medium text-red-300 mb-1">Banka / iyzico mesajı</p>
+              <p className="text-sm text-red-200/90">{failureReason}</p>
+            </div>
+          )}
+
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-8 text-left">
             <h3 className="font-semibold text-white mb-3">Olası Nedenler</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">

@@ -1,8 +1,10 @@
 import Iyzipay from 'iyzipay';
 
-const API_KEY = process.env.IYZICO_API_KEY || '';
-const SECRET_KEY = process.env.IYZICO_SECRET_KEY || '';
-const BASE_URL = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
+// Read iyzico credentials per call (not at module load) so secrets rotated
+// at runtime via the secrets panel are picked up without restarting the app.
+const getApiKey = () => process.env.IYZICO_API_KEY || '';
+const getSecretKey = () => process.env.IYZICO_SECRET_KEY || '';
+const getBaseUrl = () => process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
 
 export type IyzicoBuyer = {
   id: string;
@@ -95,24 +97,26 @@ export type IyzicoCheckoutFormRetrieveResponse = {
 };
 
 function buildClient(): Iyzipay {
-  if (!API_KEY || !SECRET_KEY) {
+  const apiKey = getApiKey();
+  const secretKey = getSecretKey();
+  if (!apiKey || !secretKey) {
     throw new Error(
       '[iyzico] IYZICO_API_KEY ve IYZICO_SECRET_KEY ortam değişkenleri tanımlı değil.',
     );
   }
   return new Iyzipay({
-    apiKey: API_KEY,
-    secretKey: SECRET_KEY,
-    uri: BASE_URL,
+    apiKey,
+    secretKey,
+    uri: getBaseUrl(),
   });
 }
 
 export function isIyzicoConfigured(): boolean {
-  return Boolean(API_KEY && SECRET_KEY);
+  return Boolean(getApiKey() && getSecretKey());
 }
 
 export function getIyzicoMode(): 'sandbox' | 'production' {
-  return BASE_URL.includes('sandbox') ? 'sandbox' : 'production';
+  return getBaseUrl().includes('sandbox') ? 'sandbox' : 'production';
 }
 
 export async function createCheckoutFormInitialize(
