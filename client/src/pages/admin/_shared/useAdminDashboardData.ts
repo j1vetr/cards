@@ -26,7 +26,7 @@ export function useAdminDashboardData({
     retry: false,
   });
 
-  const { data: stats } = useQuery<Stats>({
+  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
       const response = await fetch('/api/admin/stats', { credentials: 'include' });
@@ -37,7 +37,7 @@ export function useAdminDashboardData({
     refetchInterval: 30000,
   });
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ['admin', 'products'],
     queryFn: async () => (await fetch('/api/admin/products')).json(),
     enabled: !!adminUser,
@@ -59,7 +59,7 @@ export function useAdminDashboardData({
     enabled: !!adminUser,
   });
 
-  const { data: orders = [], refetch: refetchOrders } = useQuery<Order[]>({
+  const { data: orders = [], refetch: refetchOrders, isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ['admin', 'orders'],
     queryFn: async () => (await fetch('/api/admin/orders')).json(),
     enabled: !!adminUser,
@@ -142,10 +142,13 @@ export function useAdminDashboardData({
     adminUser,
     userLoading,
     stats,
+    statsLoading,
     products,
+    productsLoading,
     allVariants,
     categories,
     orders,
+    ordersLoading,
     refetchOrders,
     users,
     logoutMutation,

@@ -70,10 +70,13 @@ export default function AdminDashboard() {
     adminUser,
     userLoading,
     stats,
+    statsLoading,
     products,
+    productsLoading,
     allVariants,
     categories,
     orders,
+    ordersLoading,
     refetchOrders,
     users,
     logoutMutation,
@@ -132,6 +135,7 @@ export default function AdminDashboard() {
             getStatusColor={getStatusColor}
             getStatusLabel={getStatusLabel}
             onNavigate={handleTabChange}
+            isLoading={statsLoading || ordersLoading || productsLoading}
           />
         )}
         {activeTab === 'products' && (
