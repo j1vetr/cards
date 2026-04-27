@@ -24,18 +24,31 @@
     <meta name="twitter:image" content="https://polenstone.com.tr/uploads/branding/og-image.png" />
 
     <link rel="icon" type="image/png" href="/favicon.png" />
-    
+
     <!-- Preconnect to external domains for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://www.googletagmanager.com" />
-    
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+
     <!-- DNS prefetch for additional domains -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-    
-    <!-- Optimized font loading with display=swap for faster render -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Optimized font loading: only essential weights, swap to render faster -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=Oswald:wght@500;600&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=Oswald:wght@500;600&display=swap"
+    />
+
+    <!-- Hero LCP asset preload -->
+    <link rel="preload" as="video" href="/videos/polen-hero.mp4" type="video/mp4" media="(min-width: 768px)" />
+    <link rel="preload" as="video" href="/videos/polen-hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
 
     <!-- Inline critical CSS for faster first paint -->
     <style>
