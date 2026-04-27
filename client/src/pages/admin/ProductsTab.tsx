@@ -8,7 +8,7 @@ interface ProductsTabProps {
   allVariants: ProductVariant[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
-  setEditingProduct: (p: Product | null) => void;
+  setEditingProduct: (p: Product | ProductDraft | null) => void;
   setShowProductModal: (b: boolean) => void;
   setShowBulkBadgeModal: (b: boolean) => void;
   setShowBulkPriceModal: (b: boolean) => void;
@@ -177,14 +177,14 @@ export default function ProductsTab({
                             </button>
                             <button
                               onClick={() => {
-                                const duplicatedProduct = {
+                                const duplicatedProduct: ProductDraft = {
                                   ...product,
                                   id: undefined,
                                   name: `${product.name} (Kopya)`,
                                   slug: '',
                                   sku: product.sku ? `${product.sku}-KOPYA` : undefined,
                                 };
-                                setEditingProduct(duplicatedProduct as ProductDraft as unknown as Product);
+                                setEditingProduct(duplicatedProduct);
                                 setShowProductModal(true);
                               }}
                               className="p-2 hover:bg-neutral-200 rounded-lg transition-colors text-neutral-500 hover:text-neutral-900"

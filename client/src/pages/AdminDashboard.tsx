@@ -23,7 +23,7 @@ import BulkPriceModal from './admin/modals/BulkPriceModal';
 import BulkBadgeModal from './admin/modals/BulkBadgeModal';
 import BulkAIModal from './admin/modals/BulkAIModal';
 
-import type { Product, Category, User, TabType } from './admin/_shared/types';
+import type { Product, ProductDraft, Category, User, TabType } from './admin/_shared/types';
 import {
   VALID_TABS,
   SIDEBAR_CATEGORIES,
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
   });
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | ProductDraft | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Upload, ImageIcon, Loader2, Plus, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Edit, Check, GripVertical, Package, Eye, RefreshCw } from 'lucide-react';
-import type { Product, Category } from '../_shared/types';
+import type { Product, ProductDraft, Category } from '../_shared/types';
 import AdminModal from '../_ui/AdminModal';
 
 const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL'];
@@ -31,7 +31,7 @@ export default function ProductModal({
   onSave, 
   isSaving 
 }: { 
-  product: Product | null; 
+  product: Product | ProductDraft | null; 
   categories: Category[];
   onClose: () => void; 
   onSave: (product: Partial<Product>) => void;
