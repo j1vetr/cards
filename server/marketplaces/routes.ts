@@ -10,6 +10,7 @@ import { storage } from "../storage";
 import { encryptCredentials, decryptCredentials, maskSecret } from "./crypto";
 import { listRegisteredAdapters, createAdapter, getAdapterEntry } from "./registry";
 import { runSync, type SyncMode } from "./sync/engine";
+import type { Marketplace, InsertMarketplace } from "@shared/schema";
 import type {
   MarketplaceConfig,
   MarketplaceCredentials,
@@ -56,7 +57,9 @@ function publicMarketplace(mp: Awaited<ReturnType<typeof storage.getMarketplace>
   } catch {
     masked = { _error: "decrypt-failed" };
   }
-  const { encryptedCredentials, ...rest } = mp as any;
+  // encryptedCredentials'ı düşürüp güvenli versiyonu döndür
+  const { encryptedCredentials: _omit, ...rest } = mp;
+  void _omit;
   return { ...rest, maskedCredentials: masked };
 }
 
@@ -114,7 +117,7 @@ export function registerMarketplaceRoutes(
     const existing = await storage.getMarketplace(req.params.id);
     if (!existing) return res.status(404).json({ message: "Bulunamadı" });
 
-    const patch: Record<string, unknown> = {};
+    const patch: Partial<InsertMarketplace> = {};
     if (parsed.data.name !== undefined) patch.name = parsed.data.name;
     if (parsed.data.isActive !== undefined) patch.isActive = parsed.data.isActive;
     if (parsed.data.config !== undefined) patch.config = parsed.data.config;
@@ -129,7 +132,8 @@ export function registerMarketplaceRoutes(
       const merged = { ...current, ...parsed.data.credentials };
       patch.encryptedCredentials = encryptCredentials(merged);
     }
-    const updated = await storage.updateMarketplace(req.params.id, patch as any);
+    const updated = await storage.updateMarketplace(req.params.id, patch);
+    if (!updated) return res.status(404).json({ message: "Bulunamadı" });
     res.json(publicMarketplace(updated));
   });
 

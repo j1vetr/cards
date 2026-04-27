@@ -108,6 +108,18 @@ function formatDate(d: string | null): string {
   }
 }
 
+function formatDuration(start: string, end: string | null): string {
+  if (!end) return "…";
+  const ms = new Date(end).getTime() - new Date(start).getTime();
+  if (Number.isNaN(ms) || ms < 0) return "—";
+  if (ms < 1000) return `${ms}ms`;
+  const sec = Math.floor(ms / 1000);
+  if (sec < 60) return `${sec}sn`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s ? `${m}dk ${s}sn` : `${m}dk`;
+}
+
 export default function MarketplacesTab({
   siteCategories,
 }: {
@@ -228,6 +240,7 @@ export default function MarketplacesTab({
                     ) : (
                       <Badge className="bg-zinc-700/40 text-zinc-400 border-0">Pasif</Badge>
                     )}
+                    <CurrentRunBadge marketplaceId={mp.id} />
                   </div>
                   <div className="text-xs text-zinc-500 mt-2 space-y-0.5">
                     <div>Son tam senkron: {formatDate(mp.lastFullSyncAt)}</div>
@@ -538,11 +551,15 @@ function SyncHistoryDialog({
               <thead className="text-left text-zinc-400 border-b border-zinc-800">
                 <tr>
                   <th className="py-2">Başlangıç</th>
+                  <th>Bitiş</th>
+                  <th>Süre</th>
                   <th>Mod</th>
                   <th>Tetik</th>
                   <th>Durum</th>
                   <th>Eklenen</th>
                   <th>Güncel.</th>
+                  <th title="Soft-delete edilen">Gizlenen</th>
+                  <th title="Yeniden aktive edilen">Yeniden Aktif</th>
                   <th>Hata</th>
                 </tr>
               </thead>
@@ -550,17 +567,27 @@ function SyncHistoryDialog({
                 {(data ?? []).map((r) => (
                   <tr key={r.id} className="border-b border-zinc-800/50">
                     <td className="py-2 text-zinc-300">{formatDate(r.startedAt)}</td>
+                    <td className="text-zinc-400">{formatDate(r.completedAt)}</td>
+                    <td className="text-zinc-400" data-testid={`text-duration-${r.id}`}>
+                      {formatDuration(r.startedAt, r.completedAt)}
+                    </td>
                     <td className="text-zinc-400">{r.mode}</td>
                     <td className="text-zinc-400">{r.trigger}</td>
                     <td>{statusBadge(r.status)}</td>
                     <td className="text-zinc-300">{r.stats?.productsAdded ?? 0}</td>
                     <td className="text-zinc-300">{r.stats?.productsUpdated ?? 0}</td>
+                    <td className="text-amber-300" data-testid={`text-deactivated-${r.id}`}>
+                      {r.stats?.productsDeactivated ?? 0}
+                    </td>
+                    <td className="text-emerald-300" data-testid={`text-reactivated-${r.id}`}>
+                      {r.stats?.productsReactivated ?? 0}
+                    </td>
                     <td className="text-red-400">{r.errors?.length ?? 0}</td>
                   </tr>
                 ))}
                 {(data ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-6 text-center text-zinc-500">
+                    <td colSpan={11} className="py-6 text-center text-zinc-500">
                       Henüz senkron çalışması yok.
                     </td>
                   </tr>
@@ -666,5 +693,49 @@ function CategoryMappingsDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CurrentRunBadge({ marketplaceId }: { marketplaceId: string }) {
+  const { data } = useQuery<SyncRun[]>({
+    queryKey: ["/api/admin/marketplaces", marketplaceId, "sync-runs", "latest"],
+    queryFn: async () => {
+      const res = await apiRequest(
+        "GET",
+        `/api/admin/marketplaces/${marketplaceId}/sync-runs?limit=1`,
+      );
+      return await res.json();
+    },
+    refetchInterval: 5000,
+  });
+  const last = (data ?? [])[0];
+  if (!last) return null;
+  if (last.status === "running") {
+    return (
+      <Badge
+        className="bg-blue-500/20 text-blue-300 border-0 gap-1"
+        data-testid={`badge-running-${marketplaceId}`}
+      >
+        <Loader2 className="w-3 h-3 animate-spin" />
+        Çalışıyor ({last.mode})
+      </Badge>
+    );
+  }
+  const dur = formatDuration(last.startedAt, last.completedAt);
+  const cls =
+    last.status === "completed"
+      ? "bg-emerald-500/15 text-emerald-300"
+      : last.status === "partial"
+        ? "bg-amber-500/15 text-amber-300"
+        : "bg-red-500/15 text-red-300";
+  return (
+    <Badge
+      className={`${cls} border-0`}
+      title={`Son: ${formatDate(last.completedAt)} • ${dur}`}
+      data-testid={`badge-last-run-${marketplaceId}`}
+    >
+      Son: {last.status === "completed" ? "Başarılı" : last.status === "partial" ? "Kısmi" : "Hata"} ·{" "}
+      {dur}
+    </Badge>
   );
 }

@@ -29,6 +29,8 @@ import {
   MarketplaceType,
   NormalizedCategory,
   NormalizedProduct,
+  PageCursor,
+  ProductsPage,
 } from "../types";
 import type {
   Marketplace,
@@ -43,7 +45,12 @@ import type {
 export type SyncMode = "delta" | "full";
 export type SyncTrigger = "manual" | "cron";
 
-interface SyncStats {
+/**
+ * SyncStats: bilinçli olarak Record<string, number>'a uyumlu yapıldı
+ * (index signature) → storage interface ile cast'siz çalışır.
+ */
+type SyncStats = {
+  [k: string]: number;
   categoriesAdded: number;
   categoriesUpdated: number;
   productsAdded: number;
@@ -53,7 +60,7 @@ interface SyncStats {
   imagesDownloaded: number;
   imagesSkipped: number;
   pagesProcessed: number;
-}
+};
 
 interface SyncErrorEntry {
   context: string;
@@ -188,9 +195,10 @@ async function assertSafeImageUrl(raw: string): Promise<URL> {
     return u;
   }
   // Hostname → DNS lookup all addresses, reject if any is private (DNS rebinding guard)
-  let addrs: dns.LookupAddress[];
+  type DnsAddr = { address: string; family: number };
+  let addrs: DnsAddr[];
   try {
-    addrs = await dns.lookup(host, { all: true });
+    addrs = (await dns.lookup(host, { all: true })) as DnsAddr[];
   } catch (err) {
     throw new Error(`dns lookup failed for ${host}: ${(err as Error).message}`);
   }
@@ -428,14 +436,17 @@ async function upsertProduct(
       await storage.deleteProductVariant(v.id);
     }
     for (const v of np.variants) {
+      // ProductVariants şemasında sku alanı yok — barcode/sku marketplace_products
+      // tarafında köprüde tutulur. Burada sadece şemanın bildiği alanları yazıyoruz.
       await storage.createProductVariant({
         productId: siteProduct.id,
         size: v.size ?? "Tek Beden",
         color: v.color?.name ?? "—",
+        colorHex: v.color?.hex ?? null,
         price: v.price.toFixed(2),
         stock: v.stock,
-        sku: v.sku ?? v.barcode ?? null,
-      } as any);
+        isActive: true,
+      });
     }
   } catch (err) {
     errors.push({
@@ -525,7 +536,7 @@ export async function runSync(
   } catch (err) {
     return await storage.completeSyncRun(run.id, {
       status: "failed",
-      stats: stats as unknown as Record<string, number>,
+      stats,
       errors: [
         {
           context: "adapter.init",
@@ -545,7 +556,7 @@ export async function runSync(
     const status = errors.length === 0 ? "completed" : "partial";
     const updated = await storage.completeSyncRun(run.id, {
       status,
-      stats: stats as unknown as Record<string, number>,
+      stats,
       errors: errors.slice(0, 100),
     });
     if (mode === "full") await storage.updateMarketplaceSyncTime(marketplaceId, "full");
@@ -556,7 +567,7 @@ export async function runSync(
     errors.push({ context: "sync.fatal", message });
     return await storage.completeSyncRun(run.id, {
       status: "failed",
-      stats: stats as unknown as Record<string, number>,
+      stats,
       errors: errors.slice(0, 100),
     });
   }
@@ -600,12 +611,12 @@ async function runFullSync(
   // 2. Sayfa sayfa ürünleri çek
   const seen = new Set<string>();
   const catCache = new Map<string, string>();
-  let cursor: ReturnType<typeof JSON.stringify> | string | number | null = null;
+  let cursor: PageCursor = null;
   let page = 0;
   while (true) {
-    let resp;
+    let resp: ProductsPage;
     try {
-      resp = await adapter.fetchProductsPage(cursor as any);
+      resp = await adapter.fetchProductsPage(cursor);
     } catch (err) {
       errors.push({
         context: `fetchProductsPage page=${page}`,
@@ -700,18 +711,26 @@ async function runDeltaSync(
         if (snap.isActive && !p.isActive) stats.productsReactivated += 1;
         if (!snap.isActive && p.isActive) stats.productsDeactivated += 1;
       }
-      // Varyant stok güncellemesi — basit eşleme barcode üzerinden
+      // Varyant düzeyinde stok güncellemesi: ProductVariant şemasında sku/barcode
+      // alanı yok. İlk eşleştirme: tek varyant varsa onu güncelle. Çoklu varyant
+      // durumlarında size+color üzerinden eşle; eşleşmeyenler atlanır (full-sync
+      // bir sonraki turda yeniden yazacak).
       if (snap.variants?.length) {
         const variants = await storage.getProductVariants(row.productId);
         for (const v of snap.variants) {
-          const target = variants.find(
-            (existing) => existing.sku === (v.sku ?? v.barcode),
-          );
+          let target = variants.length === 1 ? variants[0] : undefined;
+          if (!target) {
+            target = variants.find(
+              (existing) =>
+                (existing.size ?? "") === (v.sku ?? v.barcode ?? "") ||
+                (existing.color ?? "") === (v.sku ?? v.barcode ?? ""),
+            );
+          }
           if (target) {
             await storage.updateProductVariant(target.id, {
               price: v.price.toFixed(2),
               stock: v.stock,
-            } as any);
+            });
           }
         }
       }

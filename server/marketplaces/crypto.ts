@@ -20,6 +20,10 @@ const TAG_LEN = 16;
 
 let cachedKey: Buffer | null = null;
 
+function isProductionEnv(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
 function loadKey(): Buffer {
   if (cachedKey) return cachedKey;
 
@@ -45,7 +49,15 @@ function loadKey(): Buffer {
     return cachedKey;
   }
 
-  // Fallback: .local/marketplace_key
+  // Production'da env şart. Aksi halde başlatma kapatılır.
+  if (isProductionEnv()) {
+    throw new Error(
+      "MARKETPLACE_ENCRYPTION_KEY is required in production (32-byte hex or base64). " +
+        "Refusing to start with the dev fallback key — set the env var and redeploy.",
+    );
+  }
+
+  // Sadece dev için: .local/marketplace_key fallback (kalıcı, makineye bağlı).
   try {
     if (fs.existsSync(KEY_FILE)) {
       const raw = fs.readFileSync(KEY_FILE, "utf8").trim();
@@ -62,9 +74,9 @@ function loadKey(): Buffer {
   try {
     fs.mkdirSync(path.dirname(KEY_FILE), { recursive: true });
     fs.writeFileSync(KEY_FILE, fresh.toString("base64"), { mode: 0o600 });
-    console.log(
-      "[marketplace/crypto] generated new encryption key at .local/marketplace_key — " +
-        "set MARKETPLACE_ENCRYPTION_KEY env var for production stability",
+    console.warn(
+      "[marketplace/crypto] DEV ONLY: generated ephemeral key at .local/marketplace_key. " +
+        "Production deployments MUST set MARKETPLACE_ENCRYPTION_KEY.",
     );
   } catch (err) {
     console.error("[marketplace/crypto] could not persist generated key:", err);

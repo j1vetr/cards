@@ -120,6 +120,13 @@ export interface MarketplaceAdapter {
    * detayını korur.
    */
   fetchStockAndPrice(externalIds: string[]): Promise<NormalizedStockPrice[]>;
+
+  /**
+   * Tek bir ürünün tam detayını çeker (tekrar senkronlama / rakip pazaryerleri
+   * için). Bulunamazsa null döner. Engine: full sync hash atlamasının kırıldığı
+   * veya elle "şu ürünü tazele" istendiği durumlarda kullanır.
+   */
+  fetchProductDetails(externalId: string): Promise<NormalizedProduct | null>;
 }
 
 /**

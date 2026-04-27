@@ -129,7 +129,10 @@ export class MarketplaceHttpClient {
         if (ct.includes("application/json")) {
           return (await resp.json()) as T;
         }
-        return (await resp.text()) as unknown as T;
+        // Non-JSON yanıtı text olarak dön. Çağıranın T'si string'i kapsar
+        // (caller, response tipini bilerek doğru T'yi seçer).
+        const text = await resp.text();
+        return text as T;
       } catch (err) {
         clearTimeout(t);
         lastErr = err;

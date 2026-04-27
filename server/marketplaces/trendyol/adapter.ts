@@ -199,6 +199,31 @@ class TrendyolAdapter implements MarketplaceAdapter {
     }
     return out;
   }
+
+  /**
+   * Tek ürünün detayını döner. Trendyol'un dedike "GET product" endpoint'i
+   * /products/{barcode} olabiliyor; biz güvenli şekilde liste filtresine
+   * düşüyoruz: barcode ile sayfa sayfa tarayıp eşleşeni dönüyoruz.
+   * Ağır endpoint kullanan yeni adapter'lar bu metodu daha verimli yazabilir.
+   */
+  async fetchProductDetails(externalId: string): Promise<NormalizedProduct | null> {
+    const wanted = String(externalId);
+    let page = 0;
+    while (true) {
+      const url =
+        `/suppliers/${encodeURIComponent(this.supplierId)}/products` +
+        `?page=${page}&size=${DEFAULT_PAGE_SIZE}`;
+      const resp = await this.client.request<TrendyolListResponse>(url);
+      for (const p of resp.content ?? []) {
+        const id = String(p.contentId ?? p.barcode);
+        if (id === wanted) return normalize(p);
+      }
+      page += 1;
+      if (resp.totalPages != null && page >= resp.totalPages) return null;
+      if (!resp.content || resp.content.length === 0) return null;
+      if (page > 1000) return null;
+    }
+  }
 }
 
 function normalize(p: TrendyolProduct): NormalizedProduct {
