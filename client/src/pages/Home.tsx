@@ -383,7 +383,7 @@ export default function Home() {
       <section
         ref={heroRef}
         className="relative overflow-hidden bg-black text-white"
-        style={{ height: 'clamp(580px, 100svh, 720px)' }}
+        style={{ height: 'calc(100svh - 112px)', minHeight: '600px', maxHeight: '1000px' }}
         data-testid="section-hero"
       >
         {/* ── Cinematic background video (with poster fallback) ── */}
@@ -424,10 +424,10 @@ export default function Home() {
           }}
         />
 
-        {/* ── Main content: vertically centered, generous breathing room ── */}
+        {/* ── Main content: more centered vertically over the video ── */}
         <div
           className="absolute inset-0 z-10 flex items-center"
-          style={{ paddingBottom: 'clamp(180px, 24vh, 230px)' }}
+          style={{ paddingTop: 'clamp(40px, 8vh, 90px)', paddingBottom: 'clamp(120px, 18vh, 180px)' }}
         >
           <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
             <div className="max-w-[680px]">
@@ -448,8 +448,8 @@ export default function Home() {
               <h1
                 className="font-display tracking-[0.005em] text-white"
                 style={{
-                  fontSize: 'clamp(2.1rem, 7vw, 6.5rem)',
-                  lineHeight: 1.08,
+                  fontSize: 'clamp(3.2rem, 9vw, 7rem)',
+                  lineHeight: 1.05,
                 }}
                 aria-label="Doğanın İhtişamı"
               >
@@ -517,7 +517,7 @@ export default function Home() {
         {/* ── Bottom: integrated product marquee inside hero ── */}
         {allProducts.length > 0 && (
           <div
-            className="absolute bottom-0 left-0 right-0 z-20 bg-black/55 backdrop-blur-sm border-t border-white/10"
+            className="absolute bottom-4 sm:bottom-6 lg:bottom-8 left-0 right-0 z-20 bg-black/60 backdrop-blur-md border-y border-white/10"
             data-testid="section-hero-marquee"
           >
             <div className="relative h-[140px] sm:h-[155px] overflow-hidden">
