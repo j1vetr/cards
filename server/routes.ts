@@ -5477,6 +5477,12 @@ ${items.join("\n")}
     }
   });
 
+  // ==========================================================================
+  // Marketplaces (Trendyol / N11 / Hepsiburada ...) — admin-only
+  // ==========================================================================
+  const { registerMarketplaceRoutes } = await import("./marketplaces/routes");
+  registerMarketplaceRoutes(app, requireAdmin);
+
   return httpServer;
 }
 

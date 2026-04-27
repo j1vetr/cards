@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, boolean, timestamp, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -750,3 +750,130 @@ export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
 
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type MenuItem = typeof menuItems.$inferSelect;
+
+// ============================================================================
+// MARKETPLACES — Çoklu pazaryeri (Trendyol / N11 / Hepsiburada ...) çatısı
+// Tek yön: pazaryeri → site (read-only katalog senkronu)
+// ============================================================================
+
+export const marketplaces = pgTable("marketplaces", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(), // 'trendyol' | 'n11' | 'hepsiburada' | 'amazon'
+  name: text("name").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  // AES-256-GCM encrypted JSON of credentials (supplier id, api key, api secret, ...)
+  // Format: base64(iv:cipher:tag). MARKETPLACE_ENCRYPTION_KEY required.
+  encryptedCredentials: text("encrypted_credentials").notNull(),
+  // Adapter-specific non-secret config (e.g. { sandbox: false, rateLimit: 600 })
+  config: jsonb("config").$type<Record<string, unknown>>().default({}).notNull(),
+  lastFullSyncAt: timestamp("last_full_sync_at"),
+  lastDeltaSyncAt: timestamp("last_delta_sync_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertMarketplaceSchema = createInsertSchema(marketplaces).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastFullSyncAt: true,
+  lastDeltaSyncAt: true,
+});
+export type InsertMarketplace = z.infer<typeof insertMarketplaceSchema>;
+export type Marketplace = typeof marketplaces.$inferSelect;
+
+export const marketplaceCategories = pgTable("marketplace_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketplaceId: varchar("marketplace_id")
+    .references(() => marketplaces.id, { onDelete: "cascade" })
+    .notNull(),
+  externalId: text("external_id").notNull(), // pazaryeri kategori ID'si
+  name: text("name").notNull(),
+  parentExternalId: text("parent_external_id"),
+  // Eşlenen Polen Stone kategorisi (NULL = otomatik üretildi / eşlenmedi)
+  siteCategoryId: varchar("site_category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqExternal: uniqueIndex("uniq_mp_cat_external").on(t.marketplaceId, t.externalId),
+}));
+
+export const insertMarketplaceCategorySchema = createInsertSchema(marketplaceCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMarketplaceCategory = z.infer<typeof insertMarketplaceCategorySchema>;
+export type MarketplaceCategory = typeof marketplaceCategories.$inferSelect;
+
+export const marketplaceProducts = pgTable("marketplace_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketplaceId: varchar("marketplace_id")
+    .references(() => marketplaces.id, { onDelete: "cascade" })
+    .notNull(),
+  externalId: text("external_id").notNull(), // Trendyol contentId / barcode
+  externalProductCode: text("external_product_code"),
+  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
+  // sha256 hash listesi — yeniden indirmeyi önlemek için
+  imageHashes: jsonb("image_hashes").$type<string[]>().default([]).notNull(),
+  // İçerik diff hash'i (name + description + basePrice + stock) — değişmediyse skip
+  contentHash: text("content_hash"),
+  lastSyncedAt: timestamp("last_synced_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqExternal: uniqueIndex("uniq_mp_prod_external").on(t.marketplaceId, t.externalId),
+}));
+
+export const insertMarketplaceProductSchema = createInsertSchema(marketplaceProducts).omit({
+  id: true,
+  createdAt: true,
+  lastSyncedAt: true,
+});
+export type InsertMarketplaceProduct = z.infer<typeof insertMarketplaceProductSchema>;
+export type MarketplaceProduct = typeof marketplaceProducts.$inferSelect;
+
+export const marketplaceSyncRuns = pgTable("marketplace_sync_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketplaceId: varchar("marketplace_id")
+    .references(() => marketplaces.id, { onDelete: "cascade" })
+    .notNull(),
+  mode: text("mode").notNull(), // 'delta' | 'full'
+  status: text("status").default("running").notNull(), // 'running' | 'completed' | 'failed' | 'partial'
+  trigger: text("trigger").default("manual").notNull(), // 'manual' | 'cron'
+  stats: jsonb("stats")
+    .$type<{
+      categoriesAdded?: number;
+      categoriesUpdated?: number;
+      productsAdded?: number;
+      productsUpdated?: number;
+      productsDeactivated?: number;
+      productsReactivated?: number;
+      imagesDownloaded?: number;
+      imagesSkipped?: number;
+      pagesProcessed?: number;
+    }>()
+    .default({})
+    .notNull(),
+  errors: jsonb("errors")
+    .$type<Array<{ context: string; message: string }>>()
+    .default([])
+    .notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (t) => ({
+  // Marketplace başına sadece bir 'running' run — race-safe lock
+  uniqRunning: uniqueIndex("uniq_mp_running_per_marketplace")
+    .on(t.marketplaceId)
+    .where(sql`status = 'running'`),
+  startedIdx: index("idx_mp_runs_mp").on(t.marketplaceId, t.startedAt),
+}));
+
+export const insertMarketplaceSyncRunSchema = createInsertSchema(marketplaceSyncRuns).omit({
+  id: true,
+  startedAt: true,
+  completedAt: true,
+});
+export type InsertMarketplaceSyncRun = z.infer<typeof insertMarketplaceSyncRunSchema>;
+export type MarketplaceSyncRun = typeof marketplaceSyncRuns.$inferSelect;

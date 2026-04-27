@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import OrdersPanel from './AdminOrdersPanel';
+import MarketplacesTab from './admin/MarketplacesTab';
 import { 
   LayoutDashboard, 
   Package, 
@@ -134,14 +135,14 @@ interface ProductVariant {
   stock: number;
 }
 
-type TabType = 'dashboard' | 'products' | 'categories' | 'orders' | 'users' | 'analytics' | 'inventory' | 'settings' | 'database' | 'ai-descriptions' | 'menu';
+type TabType = 'dashboard' | 'products' | 'categories' | 'orders' | 'users' | 'analytics' | 'inventory' | 'settings' | 'database' | 'ai-descriptions' | 'menu' | 'marketplaces';
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab && ['dashboard', 'products', 'categories', 'orders', 'users', 'analytics', 'inventory', 'settings', 'database', 'ai-descriptions', 'menu'].includes(tab)) {
+    if (tab && ['dashboard', 'products', 'categories', 'orders', 'users', 'analytics', 'inventory', 'settings', 'database', 'ai-descriptions', 'menu', 'marketplaces'].includes(tab)) {
       return tab as TabType;
     }
     return 'dashboard';
@@ -371,6 +372,12 @@ export default function AdminDashboard() {
       title: 'AI Araçları',
       items: [
         { id: 'ai-descriptions' as TabType, icon: Wand2, label: 'AI Açıklamalar' },
+      ]
+    },
+    {
+      title: 'Entegrasyonlar',
+      items: [
+        { id: 'marketplaces' as TabType, icon: Globe, label: 'Pazaryerleri' },
       ]
     },
     {
@@ -976,6 +983,10 @@ export default function AdminDashboard() {
           
           {activeTab === 'menu' && (
             <MenuManagementPanel categories={categories} />
+          )}
+
+          {activeTab === 'marketplaces' && (
+            <MarketplacesTab siteCategories={categories.map(c => ({ id: c.id, name: c.name, slug: c.slug }))} />
           )}
         </div>
       </main>

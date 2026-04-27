@@ -63,7 +63,18 @@ Preferred communication style: Simple, everyday language.
 - **Lucide React**: Icons.
 - **Sharp**: Image optimization.
 
+## Marketplace Sync (multi-marketplace adapter framework)
+- **One-way pull**: marketplace → site catalog (categories, products, images, stock, price). No order/push.
+- **Adapter pattern**: `MarketplaceAdapter` interface (`server/marketplaces/types.ts`) + registry (`server/marketplaces/registry.ts`). New marketplaces (N11, Hepsiburada, Amazon) plug in by adding one adapter file and a `registerAdapter` call — sync engine, scheduler, routes and admin UI are marketplace-agnostic.
+- **Trendyol adapter** (`server/marketplaces/trendyol/adapter.ts`) is the only live implementation today — Basic auth, rate-limited (600/min), retry with backoff, sandbox toggle.
+- **Sync engine** (`server/marketplaces/sync/engine.ts`): two modes — `delta` (price + stock only) and `full` (categories + products + images + variants). Per-item try/catch, soft-delete missing products (`isActive=false`), auto-create unmapped categories with Turkish-normalized slug, image dedupe by sha256 hash, sharp-optimized into `client/public/uploads/products/`. Lock via `marketplace_sync_runs.status='running'`.
+- **Scheduler** (`server/scheduler.ts`): node-cron — delta hourly (minute 5), full daily at 03:00. Disabled in `NODE_ENV=test`. Set `MARKETPLACE_DEV_CRON=1` for 2-minute delta in dev.
+- **Credentials encryption**: `MARKETPLACE_ENCRYPTION_KEY` env var (32-byte hex/base64) drives AES-256-GCM at rest in `marketplaces.encrypted_credentials`. Falls back to auto-generated `.local/marketplace_key` for dev (not portable across machines).
+- **Tables**: `marketplaces`, `marketplace_categories`, `marketplace_products`, `marketplace_sync_runs`. No changes to existing `products` / `categories`.
+- **Admin UI**: `client/src/pages/admin/MarketplacesTab.tsx` — add/edit/delete marketplaces, test connection, manual sync (delta/full), 20-run history, category mapping editor. Sidebar item under "Entegrasyonlar".
+- **Admin API**: `GET/POST/PUT/DELETE /api/admin/marketplaces`, `POST /test-connection`, `POST /sync-now`, `GET /sync-runs`, `GET/PUT /category-mappings/:id`. All `requireAdmin`-protected; secrets masked in responses (last 4 chars only).
+
 ## Future Work
-- Trendyol → Site product sync (deferred to a later phase).
 - Replace text wordmark with user-supplied logo asset.
 - Seed Granit / Traverten / Oniks categories with imagery and content once available.
+- Implement N11 / Hepsiburada / Amazon adapters when needed (add files + `registerAdapter` call).
