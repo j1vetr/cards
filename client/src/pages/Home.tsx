@@ -30,7 +30,7 @@ interface MenuItemData {
   parentId: string | null;
   displayOrder: number;
   isActive: boolean;
-  category?: { id: string; name: string; slug: string } | null;
+  category?: { id: string; name: string; slug: string; image?: string | null } | null;
   children?: MenuItemData[];
 }
 
@@ -367,7 +367,7 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
         aria-label="Ürün vitrini"
       >
         <div className="px-5 mb-6 flex items-center justify-between text-[10px] font-mono tracking-[0.28em] uppercase text-white/55">
-          <span>— 03 / Vitrin</span>
+          <span>— 02 / Vitrin</span>
           <span className="flex items-center gap-3">
             <span aria-hidden="true" className="text-white/40">
               ← Kaydır →
@@ -456,7 +456,7 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center">
         <div className="absolute top-0 left-0 right-0 px-5 lg:px-10 pt-8 lg:pt-10 flex items-center justify-between text-[10px] font-mono tracking-[0.28em] uppercase text-white/55 z-20">
-          <span>— 03 / Vitrin</span>
+          <span>— 02 / Vitrin</span>
           <Link
             href="/magaza"
             className="hover:text-polen-orange transition-colors"
@@ -779,8 +779,10 @@ function CategoryBentoScene({
       const pool = products.filter(
         (p) => p.categoryId && ids.includes(p.categoryId) && p.images?.length,
       );
-      // Image fallback chain: (1) product image from this group → (2) any
-      // matching category record's `image` → (3) null (card renders typographic).
+      // Image fallback chain: (1) product image from this group →
+      // (2) /api/categories record `image` for any category id under this root →
+      // (3) /api/menu record's own embedded `category.image` (when backend
+      //     widens the menu payload) → (4) null (card renders typographic).
       let image: string | null = null;
       if (pool.length > 0) {
         const idx = hashStr(root.id) % pool.length;
@@ -793,6 +795,17 @@ function CategoryBentoScene({
             image = ci;
             break;
           }
+        }
+      }
+      if (!image && root.category?.image) {
+        image = root.category.image;
+      }
+      if (!image) {
+        const childWithImage = (root.children || []).find(
+          (c) => c.category?.image,
+        );
+        if (childWithImage?.category?.image) {
+          image = childWithImage.category.image;
         }
       }
       const subTitles = (root.children || [])
@@ -997,7 +1010,7 @@ function StatementMarqueeScene() {
     '✦',
     'TÜRKİYE GENELİ KARGO',
     '◆',
-    '81 İL TESLİMAT',
+    'KAPIDAN TESLİMAT',
     '✦',
     'GÜVENLİ ÖDEME',
     '◆',
