@@ -409,6 +409,13 @@ async function syncImages(
   stats: SyncStats,
   errors: SyncErrorEntry[],
   ctx: string,
+  /**
+   * Sync süresince paylaşılan URL → indirilmiş sonuç cache'i. Aynı görsel
+   * URL'i farklı ürünlerde tekrar gelirse (Trendyol kataloğunda yaygın),
+   * downloadImage'i tekrar çağırmadan cache'ten döner. Sync arası persist
+   * değildir; sadece tek bir runFullSync süresinde geçerlidir.
+   */
+  urlCache?: Map<string, { relativePath: string; hash: string } | null>,
 ): Promise<{ images: string[]; hashes: string[] }> {
   const ordered = [...product.images].sort((a, b) => a.order - b.order);
   const concurrency = 5;
@@ -419,7 +426,13 @@ async function syncImages(
       const i = cursor++;
       const img = ordered[i];
       try {
-        const downloaded = await downloadImage(img.url);
+        let downloaded: { relativePath: string; hash: string } | null;
+        if (urlCache && urlCache.has(img.url)) {
+          downloaded = urlCache.get(img.url) ?? null;
+        } else {
+          downloaded = await downloadImage(img.url);
+          if (urlCache) urlCache.set(img.url, downloaded);
+        }
         if (!downloaded) {
           stats.imagesSkipped += 1;
           results[i] = null;
@@ -546,6 +559,7 @@ async function upsertProduct(
   existingMpRow: MarketplaceProductRow | undefined,
   stats: SyncStats,
   errors: SyncErrorEntry[],
+  imageUrlCache?: Map<string, { relativePath: string; hash: string } | null>,
 ): Promise<void> {
   const ctx = `[${marketplace.type}] ${np.name} (${np.externalId})`;
 
@@ -582,7 +596,7 @@ async function upsertProduct(
 
   // Görselleri indir / dedupe
   const known = existingMpRow?.imageHashes ?? [];
-  const { images, hashes } = await syncImages(np, known, stats, errors, ctx);
+  const { images, hashes } = await syncImages(np, known, stats, errors, ctx, imageUrlCache);
 
   const slug = deterministicProductSlug(np);
 
@@ -927,6 +941,10 @@ async function runFullSync(
   // 2. Sayfa sayfa ürünleri çek
   const seen = new Set<string>();
   const catCache = new Map<string, string>();
+  // Sync süresince paylaşılan görsel URL → indirme sonucu cache'i. Aynı görsel
+  // URL'i farklı ürünlerde tekrar geçtiğinde downloadImage'i atlatır
+  // (network/disk tasarrufu). Sync arası persist DEĞİL — sadece bu run.
+  const imageUrlCache = new Map<string, { relativePath: string; hash: string } | null>();
   let cursor: PageCursor = null;
   let page = 0;
   // Bu bayrak deactivateMissing'in kararını yönetir: yalnız tüm sayfalar
@@ -995,7 +1013,7 @@ async function runFullSync(
         );
         if (!finalCatId) continue;
         const mpRow = await storage.getMarketplaceProductByExternal(mp.id, np.externalId);
-        await upsertProduct(mp, np, finalCatId, mpRow, stats, errors);
+        await upsertProduct(mp, np, finalCatId, mpRow, stats, errors, imageUrlCache);
       } catch (err) {
         const status = err instanceof MarketplaceError ? err.statusCode : undefined;
         errors.push({
