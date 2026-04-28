@@ -1,0 +1,91 @@
+root@162-55-4-35:/var/www/polenstone# cat /tmp/polen-diag.log
+================ 1) GENEL SAYILAR ================
+         tablo          | count
+------------------------+-------
+ site_categories        |     1
+ products               |   860
+ marketplace_categories |  3859
+ marketplace_products   |   860
+(4 rows)
+
+
+================ 2) HER SITE KATEGORISINDE KAC URUN ================
+ name  | slug  | display_order | urun
+-------+-------+---------------+------
+ Saksı | saksi |           200 |  860
+(1 row)
+
+
+================ 3) TRENDYOL KATEGORI AGACI (ilk 40) ================
+             name              |                                                       full_path                                                       | eslesmis
+-------------------------------+-----------------------------------------------------------------------------------------------------------------------+----------
+ 3D Kalem                      | Elektronik > Bilgisayar Grubu > Yazıcı & Tarayıcı > Yazıcılar > 3D Kalem                                              | f
+ 3D Yapboz                     | Hobi & Eğlence > Oyun Grupları > 3D Yapboz                                                                            | f
+ 3D Yazıcı                     | Elektronik > Bilgisayar Grubu > Yazıcı & Tarayıcı > Yazıcılar > 3D Yazıcı                                             | f
+ 3 Tekerlekli Bebek Bisikleti  | Anne & Bebek & Çocuk > Çocuk Gereçleri > Bebek Arabası & Puset > 3 Tekerlekli Bebek Bisikleti                         | f
+ 4G Modem & Router             | Elektronik > Elektronik Aksesuarlar > Bilgisayar Aksesuarları > Ağ - Modem > 4G Modem & Router                        | f
+ 4G Taşınabilir Modem          | Elektronik > Elektronik Aksesuarlar > Bilgisayar Aksesuarları > Ağ - Modem > 4G Taşınabilir Modem                     | f
+ Abajur                        | Ev & Mobilya > Mobilya > Elektrik & Aydınlatma > Abajur                                                               | f
+ Abaküs                        | Kırtasiye & Ofis Malzemeleri > Kırtasiye > Eğitim Ürünleri > Abaküs                                                   | f
+ Abiye Ayakkabı                | Ayakkabı > Topuklu Ayakkabı > Abiye Ayakkabı                                                                          | f
+ Abiye Çanta                   | Aksesuar > Çanta > Abiye Çanta                                                                                        | f
+ Abiye & Mezuniyet Elbisesi    | Giyim > Abiye & Mezuniyet Elbisesi                                                                                    | f
+ ABS Sensörü                   | Otomobil & Motosiklet > Otomobil Yedek Parça > Fren & Debriyaj > ABS Sensörü                                          | f
+ Access Point                  | Elektronik > Elektronik Aksesuarlar > Bilgisayar Aksesuarları > Ağ - Modem > Access Point                             | f
+ Acil Durum & Güvenlik Ekipman | Spor & Outdoor > Acil Durum & Güvenlik Ekipman                                                                        | f
+ Açılı Engelli Banyo Aynası    | Banyo Yapı & Hırdavat > Banyo Yapı Malzemeleri > Yaşlı & Bedensel Engelli Banyo Ürünleri > Açılı Engelli Banyo Aynası | f
+ Adaçayı                       | Süpermarket > Gıda & İçecek > Çay > Bitki Çayı > Adaçayı                                                              | f
+ ADSL Modem                    | Elektronik > Elektronik Aksesuarlar > Bilgisayar Aksesuarları > Ağ - Modem > ADSL Modem                               | f
+ Aeropress                     | Ev & Mobilya > Ev > Sofra & Mutfak > Çay ve Kahve Demleme > Aeropress                                                 | f
+ Ağda                          | Kozmetik & Kişisel Bakım > Tıraş, Ağda ve Epilasyon > Ağda & Tüy Dökücü > Ağda                                        | f
+ Ağda Bandı                    | Kozmetik & Kişisel Bakım > Tıraş, Ağda ve Epilasyon > Ağda & Tüy Dökücü > Ağda Bandı                                  | f
+ Ağda & Tüy Dökücü             | Kozmetik & Kişisel Bakım > Tıraş, Ağda ve Epilasyon > Ağda & Tüy Dökücü                                               | f
+ Ağırlık Çantası               | Spor & Outdoor > Ekipman & Aksesuar > Ağırlık Çantası                                                                 | f
+ Ağırlık Çekiş Barı            | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Çekiş Barı                                 | f
+ Ağırlık Eldiveni              | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Eldiveni                                   | f
+ Ağırlık Kaldırma Kayışı       | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Kaldırma Kayışı                            | f
+ Ağırlık Kemeri                | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Kemeri                                     | f
+ Ağırlık Sehpası               | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Sehpası                                    | f
+ Ağırlık Topu                  | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Topu                                       | f
+ Ağırlık Yeleği                | Spor & Outdoor > Ekipman & Aksesuar > Fitness & Vücut Geliştirme > Ağırlık Yeleği                                     | f
+ Ağız Bakım                    | Kozmetik & Kişisel Bakım > Ağız Bakım                                                                                 | f
+ Ağız Çalkalama Suyu           | Kozmetik & Kişisel Bakım > Ağız Bakım > Ağız Çalkalama Suyu                                                           | f
+ Ağız Duşu                     | Kozmetik & Kişisel Bakım > Ağız Bakım > Ağız Duşu                                                                     | f
+ Ağız ve Diş Sağlığı           | Süpermarket > Sağlık > Genel Sağlık > Ağız ve Diş Sağlığı                                                             | f
+ Ağ - Modem                    | Elektronik > Elektronik Aksesuarlar > Bilgisayar Aksesuarları > Ağ - Modem                                            | f
+ Ağ Modem Switch               | Elektronik > Elektronik Aksesuarlar > Bilgisayar Aksesuarları > Ağ - Modem > Ağ Modem Switch                          | f
+ Ağrı Bandı                    | Süpermarket > Sağlık > Genel Sağlık > Bant ve Isıtıcı Ürünler > Ağrı Bandı                                            | f
+ Ahşap Boyası                  | Kırtasiye & Ofis Malzemeleri > Boyalar > Ahşap Boyası                                                                 | f
+ Ahşap Boya & Vernik           | Banyo Yapı & Hırdavat > Boya > Ahşap Boya & Vernik                                                                    | f
+ Ahşap & Metal Kesme           | Bahçe & Elektrikli El Aletleri > Elektrikli El Aletleri > Ahşap & Metal Kesme                                         | f
+ Ahşap Oyuncak                 | Anne & Bebek & Çocuk > Oyuncak > Ahşap Oyuncak                                                                        | f
+(40 rows)
+
+
+================ 4) KATEGORISI BOS / GENEL URUNLER ================
+       durum       | count
+-------------------+-------
+ kategori_bos_urun |     0
+ genel_kategoride  |     0
+(2 rows)
+
+
+================ 5) SON 5 SENKRON CALISMASI ================
+ERROR:  column "finished_at" does not exist
+LINE 1: SELECT id, mode, status, started_at, finished_at, EXTRACT(EP...
+                                             ^
+
+================ 6) POLENSTONE OUT LOG (son 200 satir, ilgili) ================
+
+================ 7) POLENSTONE ERROR LOG (son 200 satir) ================
+
+================ 8) PM2 RESTART NEDENI ================
+│ status            │ online                                     │
+│ restarts          │ 7                                          │
+│ uptime            │ 31m                                        │
+│ exec mode         │ fork_mode                                  │
+│ unstable restarts │ 0                                          │
+│ km:cpu:profiling:start │
+│ km:cpu:profiling:stop  │
+ Use `pm2 monit` to monitor CPU and Memory usage polenstone
+root@162-55-4-35:/var/www/polenstone#
