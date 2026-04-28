@@ -238,12 +238,18 @@
 }
 
 /* Hero marquee — buttery-smooth GPU-accelerated scroll for the product strip
-   inside the homepage hero. Uses translate3d for compositor promotion and
-   will-change for hint, plus a calm cadence (≈ 6s per item with 18 items × 2). */
+   inside the homepage hero. Uses translate3d in the keyframe (forces compositor
+   layer) and will-change as a hint. width:max-content prevents flex re-layout
+   during the loop, removing the "jitter / kasma" that appears at slower speeds. */
+@keyframes marquee-hero-3d {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
 .animate-marquee-hero {
-  animation: marquee 120s linear infinite;
+  animation: marquee-hero-3d 70s linear infinite;
+  width: max-content;
   will-change: transform;
-  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   perspective: 1000px;
   contain: layout style paint;

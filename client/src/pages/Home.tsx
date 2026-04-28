@@ -164,19 +164,6 @@ function HeroSceneInner() {
   const titleY = useTransform(scrollYProgress, [0, 1], ['0%', isTouch ? '0%' : '-30%']);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.7], [1, isTouch ? 1 : 0]);
 
-  const [time, setTime] = useState('');
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date();
-      setTime(
-        `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} GMT+3`,
-      );
-    };
-    tick();
-    const id = setInterval(tick, 30_000);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <section
       ref={heroRef}
@@ -194,17 +181,6 @@ function HeroSceneInner() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/80" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/30" />
       </motion.div>
-
-      <div className="absolute top-0 left-0 right-0 z-20 px-5 lg:px-10 pt-24 lg:pt-12 flex items-center justify-end text-white/65 text-[10px] font-mono tracking-[0.28em] uppercase">
-        <motion.span
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.6 }}
-          className="hidden md:inline"
-        >
-          {time || '—'}
-        </motion.span>
-      </div>
 
       <motion.div
         className="absolute inset-0 z-10 flex items-center justify-center px-5"
@@ -296,7 +272,10 @@ function PinnedShowcaseScene({ products }: { products: Product[] }) {
       </div>
 
       <div className="relative">
-        <div className="flex animate-marquee-hero will-change-transform">
+        {/* Sağ ve sol fade mask: kartların sert kesilmesi yerine zarifçe sönmesi için */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 lg:w-24 bg-gradient-to-r from-[#0c0a09] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 lg:w-24 bg-gradient-to-l from-[#0c0a09] to-transparent" />
+        <div className="flex animate-marquee-hero">
           {[0, 1].map((groupIdx) => (
             <div
               key={groupIdx}
