@@ -487,3 +487,22 @@
   animation: progress-indeterminate 1.4s ease-in-out infinite;
 }
 
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-slow,
+  .animate-marquee-slowest,
+  .animate-marquee-hero,
+  .animate-marquee-right,
+  .animate-hero-slider,
+  .animate-border-dash,
+  .animate-progress-indeterminate {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

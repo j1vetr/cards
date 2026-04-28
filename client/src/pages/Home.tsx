@@ -10,6 +10,7 @@ import {
   useInView,
   useMotionValueEvent,
   useReducedMotion,
+  MotionConfig,
 } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, ArrowRight, Plus } from 'lucide-react';
@@ -146,29 +147,9 @@ function HeroSceneStatic() {
 function HeroVideoLazy() {
   const [show, setShow] = useState(false);
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let cancelled = false;
-    const start = () => {
-      if (cancelled) return;
-      setShow(true);
-    };
-    // Defer until browser idle (or 1.2s fallback) so hero paint isn't blocked by video bytes
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-    };
-    const idleId = w.requestIdleCallback
-      ? w.requestIdleCallback(start, { timeout: 1500 })
-      : window.setTimeout(start, 1200);
-    return () => {
-      cancelled = true;
-      if (w.requestIdleCallback) {
-        (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(
-          idleId as number,
-        );
-      } else {
-        window.clearTimeout(idleId as number);
-      }
-    };
+    // Defer video mount past first paint so the LCP poster image lands first.
+    const id = window.setTimeout(() => setShow(true), 900);
+    return () => window.clearTimeout(id);
   }, []);
   if (!show) return null;
   return (
@@ -707,6 +688,9 @@ function BentoCard({ product }: { product: Product }) {
   const [hovered, setHovered] = useState(false);
   const price = parseFloat(product.basePrice || '0');
   const original = getOriginalPrice(price, product.discountBadge);
+  const primary = product.images?.[0] || '';
+  const secondary = product.images?.[1] || product.images?.[0] || '';
+  const hasSwap = !!(product.images && product.images.length > 1);
 
   return (
     <Link
@@ -721,17 +705,41 @@ function BentoCard({ product }: { product: Product }) {
       onBlur={() => setHovered(false)}
       className="relative block w-full h-full overflow-hidden bg-stone-200 group"
     >
+      {/* Image swap stack: primary fades out, secondary fades in on hover */}
       <motion.img
-        src={product.images?.[0] || ''}
+        src={primary}
         alt={product.name}
         loading="lazy"
         decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
-        animate={{ scale: hovered ? 1.06 : 1 }}
-        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+        animate={{
+          scale: hovered ? 1.06 : 1,
+          opacity: hovered && hasSwap ? 0 : 1,
+        }}
+        transition={{
+          scale: { duration: 1.1, ease: [0.16, 1, 0.3, 1] },
+          opacity: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+        }}
       />
+      {hasSwap && (
+        <motion.img
+          src={secondary}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover"
+          initial={{ opacity: 0, scale: 1.06 }}
+          animate={{
+            opacity: hovered ? 1 : 0,
+            scale: hovered ? 1 : 1.06,
+          }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        />
+      )}
+
       {/* Bottom gradient */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
       {/* Top-right plus */}
       <motion.div
@@ -749,14 +757,22 @@ function BentoCard({ product }: { product: Product }) {
         </div>
       )}
 
-      {/* Caption */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 lg:p-4 text-white">
+      {/* Caption — name slides up from below on hover, price stays */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 lg:p-4 text-white overflow-hidden">
         <div className="text-[9px] font-mono tracking-[0.22em] uppercase text-white/65 mb-1">
           Ürün
         </div>
-        <div className="text-sm lg:text-base font-medium leading-snug line-clamp-2 mb-1">
+        <motion.div
+          className="text-sm lg:text-base font-medium leading-snug line-clamp-2 mb-1"
+          initial={{ y: 28, opacity: 0 }}
+          animate={{
+            y: hovered ? 0 : 28,
+            opacity: hovered ? 1 : 0,
+          }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
           {product.name}
-        </div>
+        </motion.div>
         <div className="flex items-baseline gap-2">
           {original && (
             <span className="text-xs text-white/45 line-through">
@@ -1194,15 +1210,17 @@ export default function Home() {
         description="Polen Stone — Premium doğal taş ve mermer markası. Mermer, granit, traverten ve oniks koleksiyonu ile mekânlarınıza doğanın ihtişamını taşıyın."
       />
       <Header />
-      <main className="bg-black">
-        <HeroScene />
-        <ProductMarqueeScene products={products} />
-        <PinnedShowcaseScene products={products} />
-        <BentoMosaicScene products={products} />
-        <CategoryBentoScene menuRoots={menuRoots} products={products} />
-        <StatementMarqueeScene />
-        <FinalCtaScene />
-      </main>
+      <MotionConfig reducedMotion="user">
+        <main className="bg-black">
+          <HeroScene />
+          <ProductMarqueeScene products={products} />
+          <PinnedShowcaseScene products={products} />
+          <BentoMosaicScene products={products} />
+          <CategoryBentoScene menuRoots={menuRoots} products={products} />
+          <StatementMarqueeScene />
+          <FinalCtaScene />
+        </main>
+      </MotionConfig>
       <Footer />
     </>
   );
