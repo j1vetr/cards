@@ -526,33 +526,45 @@ export default function Home() {
               <div className="absolute inset-y-0 left-0 w-20 sm:w-28 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.7), transparent)' }} />
               <div className="absolute inset-y-0 right-0 w-20 sm:w-28 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, rgba(0,0,0,0.7), transparent)' }} />
 
-              <div className="flex animate-marquee-slowest h-full items-center" style={{ width: 'max-content' }}>
-                {[...allProducts, ...allProducts, ...allProducts].map((p, i) => {
-                  const img = p.images?.[0];
-                  return (
-                    <Link
-                      key={`${p.id}-${i}`}
-                      href={`/urun/${p.slug}`}
-                      className="group flex-shrink-0 mx-3 sm:mx-4 flex items-center cursor-pointer"
-                      data-testid={`link-hero-scroll-${p.id}-${i}`}
-                      aria-label={p.name}
-                    >
-                      <div className="relative w-[88px] h-[105px] sm:w-[96px] sm:h-[115px] overflow-hidden bg-white/5 border border-white/15 group-hover:border-polen-orange/60 transition-colors duration-400 shadow-xl shadow-black/40">
-                        {img ? (
-                          <img
-                            src={img}
-                            alt=""
-                            className="w-full h-full object-cover object-center opacity-100 group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-white/5" />
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
+              {(() => {
+                // Performans: tüm ürün listesinden 18 tane seç (üzeri kasma yapıyor),
+                // 2x duplicate ile sonsuz döngü (translateX -50%).
+                const marqueeProducts = allProducts.slice(0, 18);
+                const looped = [...marqueeProducts, ...marqueeProducts];
+                return (
+                  <div
+                    className="flex animate-marquee-hero h-full items-center"
+                    style={{ width: 'max-content' }}
+                  >
+                    {looped.map((p, i) => {
+                      const img = p.images?.[0];
+                      return (
+                        <Link
+                          key={`${p.id}-${i}`}
+                          href={`/urun/${p.slug}`}
+                          className="group flex-shrink-0 mx-3 sm:mx-4 flex items-center cursor-pointer"
+                          data-testid={`link-hero-scroll-${p.id}-${i}`}
+                          aria-label={p.name}
+                        >
+                          <div className="relative w-[88px] h-[105px] sm:w-[96px] sm:h-[115px] overflow-hidden bg-white/5 border border-white/15 group-hover:border-polen-orange/60 transition-colors duration-400 shadow-xl shadow-black/40">
+                            {img ? (
+                              <img
+                                src={img}
+                                alt=""
+                                className="w-full h-full object-cover object-center opacity-100 group-hover:scale-105 transition-transform duration-700"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-white/5" />
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, GripVertical, ExternalLink, Loader2, X, Menu, Tag, ChevronUp, ChevronDown, Wand2 } from 'lucide-react';
+import { Plus, Edit, Trash2, GripVertical, ExternalLink, Loader2, X, Menu, Tag, ChevronUp, ChevronDown, Wand2, RefreshCw } from 'lucide-react';
 import type { Category } from './_shared/types';
 
 interface MenuManagementPanelProps {
@@ -129,10 +129,12 @@ export default function MenuManagementPanel({ categories }: MenuManagementPanelP
   });
 
   const regenerateMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (wipeAll: boolean) => {
       const res = await fetch('/api/admin/menu-items/regenerate-from-categories', {
         method: 'POST',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wipeAll }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -172,7 +174,26 @@ export default function MenuManagementPanel({ categories }: MenuManagementPanelP
         'Devam edilsin mi?'
       )
     ) return;
-    regenerateMutation.mutate();
+    regenerateMutation.mutate(false);
+  };
+
+  const handleResetAndRegenerate = () => {
+    if (
+      !confirm(
+        '⚠️ DİKKAT: TÜM menü öğeleri silinecek!\n\n' +
+        'Bu işlem manuel eklediğin öğeler dahil hepsini siler ve sıfırdan ' +
+        '8 ana grup + alt kategoriler oluşturur.\n\n' +
+        'Eski "Mermer / Granit / Traverten / Oniks" sabit öğelerini ' +
+        'temizlemek istiyorsan bu seçeneği kullan.\n\n' +
+        'Devam edilsin mi?'
+      )
+    ) return;
+    if (
+      !confirm(
+        'Son onay: Mevcut tüm menü kayıtları silinip yeniden oluşturulacak. Onaylıyor musun?'
+      )
+    ) return;
+    regenerateMutation.mutate(true);
   };
 
   const closeModal = () => {
@@ -260,14 +281,28 @@ export default function MenuManagementPanel({ categories }: MenuManagementPanelP
             disabled={regenerateMutation.isPending}
             className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors"
             data-testid="button-auto-group-categories"
-            title="Mevcut kategorileri 8 ana grup altında otomatik düzenler"
+            title="Mevcut kategorileri 8 ana grup altında otomatik düzenler (manuel öğeleri korur)"
           >
             {regenerateMutation.isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <Wand2 className="w-5 h-5" />
             )}
-            Kategorileri Otomatik Gruplandır
+            Otomatik Gruplandır
+          </button>
+          <button
+            onClick={handleResetAndRegenerate}
+            disabled={regenerateMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 disabled:opacity-50 transition-colors"
+            data-testid="button-reset-and-group-categories"
+            title="TÜM menü öğelerini siler ve sıfırdan 8 ana grup oluşturur"
+          >
+            {regenerateMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-5 h-5" />
+            )}
+            Sıfırla & Yeniden Oluştur
           </button>
           <button
             onClick={() => setShowModal(true)}

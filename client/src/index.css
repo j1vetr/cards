@@ -237,6 +237,22 @@
   animation-play-state: paused;
 }
 
+/* Hero marquee — buttery-smooth GPU-accelerated scroll for the product strip
+   inside the homepage hero. Uses translate3d for compositor promotion and
+   will-change for hint, plus a calm cadence (≈ 6s per item with 18 items × 2). */
+.animate-marquee-hero {
+  animation: marquee 120s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  contain: layout style paint;
+}
+
+.animate-marquee-hero:hover {
+  animation-play-state: paused;
+}
+
 @keyframes marquee-right {
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }

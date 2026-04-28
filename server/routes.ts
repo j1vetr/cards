@@ -5437,20 +5437,27 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Kategorileri otomatik gruplandır → menu_items üret
   // Sadece displayOrder >= AUTO_GROUP_DISPLAY_ORDER_BASE olan kayıtları siler.
   // Kullanıcının manuel eklediği menüler korunur.
-  app.post("/api/admin/menu-items/regenerate-from-categories", requireAdmin, async (_req, res) => {
+  app.post("/api/admin/menu-items/regenerate-from-categories", requireAdmin, async (req, res) => {
     try {
+      const wipeAll = req.body?.wipeAll === true;
       const categories = await storage.getCategories();
       const plan = buildGroupingPlan(categories);
 
-      // 1) Eski auto-generated kayıtları sil (parent + child hepsi aynı aralıkta)
-      await db
-        .delete(menuItemsTable)
-        .where(
-          and(
-            gte(menuItemsTable.displayOrder, AUTO_GROUP_DISPLAY_ORDER_BASE),
-            lte(menuItemsTable.displayOrder, AUTO_GROUP_DISPLAY_ORDER_MAX),
-          ),
-        );
+      // 1) Eski kayıtları sil
+      //    wipeAll=true  → tüm menu_items tablosunu sıfırla (manuel öğeler dahil)
+      //    wipeAll=false → sadece auto-generated displayOrder aralığını sil
+      if (wipeAll) {
+        await db.delete(menuItemsTable);
+      } else {
+        await db
+          .delete(menuItemsTable)
+          .where(
+            and(
+              gte(menuItemsTable.displayOrder, AUTO_GROUP_DISPLAY_ORDER_BASE),
+              lte(menuItemsTable.displayOrder, AUTO_GROUP_DISPLAY_ORDER_MAX),
+            ),
+          );
+      }
 
       // 2) Her ana grup için submenu kaydı + altına category çocukları
       let createdParents = 0;
