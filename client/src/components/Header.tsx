@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight, Phone, Mail } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, type Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/hooks/useCart';
