@@ -6,25 +6,26 @@ import { ArrowRight, Truck, RotateCcw, Shield, Zap } from 'lucide-react';
 import { Link } from 'wouter';
 import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import heroPosterImage from '@assets/generated_images/polen-hero-dark-1.png';
-import categoryMermer from '@assets/generated_images/polen-category-mermer.png';
-import { useProducts, useCategories } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { getOriginalPrice } from '@/lib/discountPrice';
 
-const defaultCategoryImages: Record<string, string> = {
-  'mermer': categoryMermer,
-  'granit': categoryMermer,
-  'traverten': categoryMermer,
-  'oniks': categoryMermer,
-  'bazalt': categoryMermer,
-};
+interface MenuItemData {
+  id: string;
+  title: string;
+  type: 'category' | 'link' | 'submenu';
+  categoryId: string | null;
+  url: string | null;
+  parentId: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  category?: { id: string; name: string; slug: string } | null;
+  children?: MenuItemData[];
+}
 
 const HERO_VIDEO_DESKTOP = '/videos/polen-hero.mp4';
 const HERO_VIDEO_MOBILE = '/videos/polen-hero-mobile.mp4';
-
-const tickerWords = Array(12).fill(
-  ['MERMER', 'GRANİT', 'POLEN STONE', 'TRAVERTEN', 'DOĞAL TAŞ']
-).flat();
 
 const features = [
   { icon: Truck, label: 'Türkiye Geneli Kargo', sub: 'Özenli paketleme' },
@@ -320,13 +321,28 @@ export default function Home() {
   const { scrollY } = useScroll();
   const heroImgY = useTransform(scrollY, [0, 700], [0, -60]);
 
-  const { data: apiCategories = [] } = useCategories();
   const { data: allProducts = [] } = useProducts({});
 
-  const categories = apiCategories.map(cat => ({
-    ...cat,
-    image: cat.image || defaultCategoryImages[cat.slug] || '',
-  }));
+  // Üst nav ile aynı menü ağacı — 8 ana grup ve alt kategoriler
+  const { data: menuTree = [] } = useQuery<MenuItemData[]>({
+    queryKey: ['/api/menu'],
+    queryFn: async () => {
+      const res = await fetch('/api/menu');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 60000,
+  });
+
+  const menuRoots = [...menuTree]
+    .filter(m => m.isActive && !m.parentId)
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+
+  const hrefForMenuItem = (item: MenuItemData): string => {
+    if (item.type === 'category' && item.category) return `/kategori/${item.category.slug}`;
+    if (item.type === 'link' && item.url) return item.url;
+    return '/magaza';
+  };
 
   const featuredProducts = allProducts.slice(0, 13);
 
@@ -569,29 +585,35 @@ export default function Home() {
           </div>
         )}
       </section>
-
       {/* ════════════════════════════════════════════
-          FEATURED PRODUCTS — editorial layout
+          01 — ÜRÜNLER (editorial product grid)
       ════════════════════════════════════════════ */}
       {featuredProducts.length > 0 && (
-        <section className="px-4 pt-5 pb-0 lg:px-10 xl:px-14" data-testid="section-featured">
+        <section
+          className="bg-white px-4 lg:px-10 xl:px-14 pt-14 lg:pt-24 pb-2"
+          data-testid="section-featured"
+        >
           <div className="max-w-[1440px] mx-auto">
-
-            {/* Section header */}
-            <div className="flex items-center justify-between py-5 lg:py-8 border-b border-black/8 mb-0">
-              <div className="flex items-center gap-4">
-                <span className="text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums">01</span>
-                <h2 className="font-display text-2xl lg:text-4xl tracking-wide text-black">SEÇKİN KOLEKSİYON</h2>
+            {/* Eyebrow + tüm ürünler linki — tek satır, minimal */}
+            <div className="flex items-end justify-between pb-7 lg:pb-10">
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-px bg-polen-orange" />
+                <span className="text-[10px] tracking-[0.32em] uppercase text-black/55 font-medium">
+                  Seçkiler
+                </span>
               </div>
-              <Link href="/magaza" className="group flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/35 hover:text-black transition-colors font-medium">
-                <span>Tümünü Gör</span>
+              <Link
+                href="/magaza"
+                className="group flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/40 hover:text-polen-orange transition-colors font-medium"
+                data-testid="link-featured-all"
+              >
+                <span>Tüm Ürünler</span>
                 <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
-            {/* ── DESKTOP: CSS Grid layout ── */}
+            {/* ── DESKTOP: 1 büyük + 2×2 küçük ── */}
             <div ref={productsSectionRef} className="hidden lg:block">
-              {/* Primary grid: 1 tall hero + up to 4 cards in a 2×2 grid */}
               <div
                 className="grid"
                 style={{
@@ -599,19 +621,16 @@ export default function Home() {
                   gridTemplateRows: '280px 280px',
                 }}
               >
-                {/* Hero card — spans 2 rows */}
                 {featuredProducts[0] && (
                   <div style={{ gridRow: 'span 2', gridColumn: '1' }}>
                     <FeaturedHeroCard product={featuredProducts[0]} />
                   </div>
                 )}
-                {/* Remaining 4 cards auto-fill the 2×2 right area */}
                 {featuredProducts.slice(1, 5).map((product, i) => (
                   <FeaturedSmallCard key={product.id} product={product} delay={i * 0.06} />
                 ))}
               </div>
 
-              {/* Secondary row: remaining products filling evenly */}
               {featuredProducts.length > 5 && (() => {
                 const secondaryProducts = featuredProducts.slice(5);
                 const cols = secondaryProducts.length;
@@ -638,7 +657,7 @@ export default function Home() {
               })()}
             </div>
 
-            {/* ── MOBILE: full-width hero + 2-col grid ── */}
+            {/* ── MOBİL: full-width hero + 2 sütun grid ── */}
             <div className="lg:hidden">
               {featuredProducts[0] && (
                 <FeaturedHeroCard product={featuredProducts[0]} />
@@ -654,36 +673,37 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: i * 0.06 }}
-                    className={`${i % 2 === 1 ? 'border-l border-white/0' : ''}`}
                   >
                     <EditorialCard product={product} size="sm" />
                   </motion.div>
                 ))}
               </div>
             </div>
-
           </div>
         </section>
       )}
 
       {/* ════════════════════════════════════════════
-          02 — YENİ GELENLER (horizontal editorial scroll)
+          02 — YENİ GELENLER (yatay editorial scroll)
       ════════════════════════════════════════════ */}
       {newArrivals.length > 0 && (
-        <section className="bg-polen-cream/40 border-t border-black/8 mt-8 lg:mt-12 py-12 lg:py-20" data-testid="section-new-arrivals">
+        <section
+          className="bg-polen-cream/40 mt-16 lg:mt-24 py-14 lg:py-20"
+          data-testid="section-new-arrivals"
+        >
           <div className="max-w-[1440px] mx-auto px-4 lg:px-10 xl:px-14">
-            <div className="flex items-end justify-between mb-6 lg:mb-10">
-              <div>
-                <span className="block text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums mb-2">02 / Yeni</span>
-                <h2 className="font-display text-3xl lg:text-5xl tracking-wide text-black leading-[0.95]">
-                  YENİ GELENLER
-                </h2>
-                <p className="text-black/45 text-sm mt-3 max-w-md">
-                  Son eklenen ocak çıkışlı bloklar, taze koleksiyonlar.
-                </p>
+            <div className="flex items-end justify-between mb-8 lg:mb-12">
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-px bg-polen-orange" />
+                <span className="text-[10px] tracking-[0.32em] uppercase text-black/55 font-medium">
+                  Yeni Gelenler
+                </span>
               </div>
-              <Link href="/magaza" className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-black/45 hover:text-polen-orange transition-colors font-medium">
-                Tümünü Gör <ArrowRight className="w-3 h-3" />
+              <Link
+                href="/magaza"
+                className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/40 hover:text-polen-orange transition-colors font-medium"
+              >
+                Tümü <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
@@ -700,7 +720,7 @@ export default function Home() {
                       data-testid={`link-new-arrival-${p.id}`}
                       className="snap-start shrink-0 w-[64vw] sm:w-[44vw] md:w-[32vw] lg:w-[260px] group"
                     >
-                      <div className="relative h-[340px] lg:h-[340px] overflow-hidden bg-stone-100">
+                      <div className="relative h-[340px] overflow-hidden bg-stone-100">
                         <motion.img
                           src={img}
                           alt={p.name}
@@ -746,22 +766,144 @@ export default function Home() {
       )}
 
       {/* ════════════════════════════════════════════
-          03 — HIGHLIGHT GRID (İndirimde / Koleksiyondan)
+          03 — KATEGORİLER (resimsiz tipografik editorial liste)
+      ════════════════════════════════════════════ */}
+      {menuRoots.length > 0 && (
+        <section
+          className="bg-white py-20 lg:py-28 px-4 lg:px-10 xl:px-14"
+          data-testid="section-categories"
+        >
+          <div className="max-w-[1320px] mx-auto">
+            {/* Eyebrow */}
+            <div className="flex items-end justify-between mb-10 lg:mb-16">
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-px bg-polen-orange" />
+                <span className="text-[10px] tracking-[0.32em] uppercase text-black/55 font-medium">
+                  Koleksiyon
+                </span>
+              </div>
+              <Link
+                href="/magaza"
+                className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/40 hover:text-polen-orange transition-colors font-medium"
+              >
+                Tüm Kategoriler <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* Editorial table-of-contents — her satır: numara · isim · alt kategoriler · ok */}
+            <ul className="divide-y divide-black/8 border-y border-black/8">
+              {menuRoots.map((root, idx) => {
+                const subtitles = (root.children ?? [])
+                  .filter(c => c.isActive)
+                  .slice(0, 4)
+                  .map(c => c.title);
+                const href = hrefForMenuItem(root);
+                return (
+                  <li key={root.id}>
+                    <Link
+                      href={href}
+                      data-testid={`link-home-cat-${root.id}`}
+                      className="group block"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: '-40px' }}
+                        transition={{ duration: 0.5, delay: idx * 0.04 }}
+                        className="relative grid grid-cols-[36px_1fr_auto] lg:grid-cols-[64px_minmax(0,1fr)_minmax(0,2fr)_56px] items-center gap-3 lg:gap-8 py-5 lg:py-8 transition-colors duration-300 group-hover:bg-polen-cream/50"
+                      >
+                        {/* Number */}
+                        <span className="text-[10px] lg:text-[11px] tracking-[0.32em] text-black/30 font-mono tabular-nums lg:pl-2">
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+
+                        {/* Title */}
+                        <h3 className="font-display text-xl sm:text-2xl lg:text-[2.2rem] tracking-wide text-black leading-tight group-hover:text-polen-orange transition-colors duration-300">
+                          {root.title.toUpperCase()}
+                        </h3>
+
+                        {/* Sub-categories — desktop only, third column */}
+                        <div className="hidden lg:flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-black/45 font-medium tracking-wide">
+                          {subtitles.length > 0 ? (
+                            subtitles.map((s, i) => (
+                              <span key={s + i} className="inline-flex items-center gap-2">
+                                <span className="group-hover:text-black/75 transition-colors">{s}</span>
+                                {i < subtitles.length - 1 && (
+                                  <span className="text-black/15">·</span>
+                                )}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-black/30 text-[10px] tracking-[0.28em] uppercase">
+                              Koleksiyonu Keşfet
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex items-center justify-end lg:pr-2">
+                          <span className="inline-flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 border border-black/15 group-hover:border-polen-orange group-hover:bg-polen-orange transition-all duration-300">
+                            <ArrowRight className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-black/50 group-hover:text-white transition-colors duration-300" />
+                          </span>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Mobile: alt kategorileri ayrı bir satır olarak göster (her ana grup altında küçük chip listesi) */}
+            <div className="lg:hidden mt-10 space-y-6">
+              {menuRoots.slice(0, 4).map((root) => {
+                const subs = (root.children ?? []).filter(c => c.isActive).slice(0, 6);
+                if (subs.length === 0) return null;
+                return (
+                  <div key={`m-${root.id}`}>
+                    <p className="text-[10px] tracking-[0.28em] uppercase text-black/35 font-medium mb-3">
+                      {root.title}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {subs.map(s => (
+                        <Link
+                          key={s.id}
+                          href={hrefForMenuItem(s)}
+                          className="inline-flex items-center px-3 py-1.5 border border-black/10 text-[11px] text-black/65 hover:border-polen-orange hover:text-polen-orange transition-colors"
+                          data-testid={`chip-mobile-cat-${s.id}`}
+                        >
+                          {s.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════════════════════════════════
+          04 — İNDİRİMDEKİLER / ÖNE ÇIKANLAR
       ════════════════════════════════════════════ */}
       {highlightProducts.length > 0 && (
-        <section className="bg-white border-t border-black/8 py-12 lg:py-20 px-4 lg:px-10 xl:px-14" data-testid="section-highlights">
+        <section
+          className="bg-polen-cream/40 py-14 lg:py-20 px-4 lg:px-10 xl:px-14"
+          data-testid="section-highlights"
+        >
           <div className="max-w-[1440px] mx-auto">
-            <div className="flex items-end justify-between mb-6 lg:mb-10">
-              <div>
-                <span className="block text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums mb-2">
-                  03 / {highlightEyebrow}
+            <div className="flex items-end justify-between mb-8 lg:mb-12">
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-px bg-polen-orange" />
+                <span className="text-[10px] tracking-[0.32em] uppercase text-black/55 font-medium">
+                  {highlightEyebrow}
                 </span>
-                <h2 className="font-display text-2xl lg:text-4xl tracking-wide text-black">
-                  {highlightLabel}
-                </h2>
               </div>
-              <Link href="/magaza" className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-black/45 hover:text-polen-orange transition-colors font-medium">
-                Tümünü Gör <ArrowRight className="w-3 h-3" />
+              <Link
+                href="/magaza"
+                className="hidden lg:flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/40 hover:text-polen-orange transition-colors font-medium"
+              >
+                Tümü <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
@@ -784,122 +926,29 @@ export default function Home() {
       )}
 
       {/* ════════════════════════════════════════════
-          TICKER STRIP
-      ════════════════════════════════════════════ */}
-      <div className="bg-[hsl(var(--polen-stone))] overflow-hidden h-10 flex items-center mt-5 lg:mt-8">
-        <div className="flex animate-marquee-fast whitespace-nowrap">
-          {tickerWords.map((word, i) => (
-            <span key={i} className="inline-flex items-center gap-5 text-[10px] tracking-[0.4em] uppercase font-medium px-6 text-white">
-              <span className={i % 3 === 1 ? 'text-polen-orange' : 'text-white'}>{word}</span>
-              <span className="inline-block w-4 h-px bg-white/30" />
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════
-          CATEGORIES — editorial grid
-      ════════════════════════════════════════════ */}
-      <section className="bg-white py-12 lg:py-20 px-4 lg:px-10 xl:px-14" data-testid="section-categories">
-        <div className="max-w-[1440px] mx-auto">
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-5 lg:mb-8 border-b border-black/8 pb-5 lg:pb-8">
-            <div className="flex items-center gap-4">
-              <span className="text-[9px] tracking-[0.35em] uppercase text-polen-orange font-medium tabular-nums">04</span>
-              <h2 className="font-display text-2xl lg:text-4xl tracking-wide text-black">TAŞ KATEGORİLERİ</h2>
-            </div>
-            <Link href="/magaza" className="group hidden lg:flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-black/35 hover:text-black transition-colors font-medium">
-              Tümünü Gör <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
-
-          {/* Desktop editorial grid: 1 tall + 2×2 */}
-          {categories.length >= 4 ? (
-            <div className="hidden lg:flex gap-3 xl:gap-4" style={{ height: '520px' }}>
-              {/* Big left card */}
-              <Link href={`/kategori/${categories[0].slug}`} className="flex-[1.4] relative overflow-hidden group bg-stone-100 block" data-testid={`link-cat-${categories[0].id}`}>
-                <motion.img src={categories[0].image} alt={categories[0].name} className="w-full h-full object-cover" whileHover={{ scale: 1.05 }} transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                <div className="absolute inset-3 border border-white/0 group-hover:border-white/28 transition-all duration-500 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <span className="text-[9px] tracking-[0.3em] uppercase text-white/45 font-medium">Keşfet</span>
-                  <h3 className="font-display text-3xl xl:text-4xl text-white tracking-wide mt-1 group-hover:-translate-y-1 transition-transform duration-500">{categories[0].name.toUpperCase()}</h3>
-                </div>
-              </Link>
-              {/* Right 2×2 */}
-              <div className="flex-[2] grid grid-cols-2 grid-rows-2 gap-3 xl:gap-4">
-                {categories.slice(1, 5).map(cat => (
-                  <Link key={cat.id} href={`/kategori/${cat.slug}`} className="relative overflow-hidden group bg-stone-100 block" data-testid={`link-cat-${cat.id}`}>
-                    <motion.img src={cat.image} alt={cat.name} className="w-full h-full object-cover" whileHover={{ scale: 1.06 }} transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-                    <div className="absolute inset-2 border border-white/0 group-hover:border-white/25 transition-all duration-500 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 xl:p-5">
-                      <h3 className="font-display text-xl xl:text-2xl text-white tracking-wide group-hover:-translate-y-0.5 transition-transform duration-500">{cat.name.toUpperCase()}</h3>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="hidden lg:flex gap-3 xl:gap-4" style={{ height: '480px' }}>
-              {categories.map(cat => (
-                <Link key={cat.id} href={`/kategori/${cat.slug}`} className="flex-1 relative overflow-hidden group bg-stone-100 block" data-testid={`link-cat-${cat.id}`}>
-                  <motion.img src={cat.image} alt={cat.name} className="w-full h-full object-cover" whileHover={{ scale: 1.05 }} transition={{ duration: 0.7 }} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <h3 className="font-display text-2xl text-white tracking-wide">{cat.name.toUpperCase()}</h3>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* Mobile: horizontal scroll */}
-          <div className="lg:hidden flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
-            {categories.map((cat, i) => (
-              <div key={cat.id} className="snap-start shrink-0 w-[72vw] max-w-[320px]">
-                <Link href={`/kategori/${cat.slug}`} data-testid={`link-cat-mobile-${cat.id}`}>
-                  <div className="relative h-[240px] overflow-hidden bg-stone-100">
-                    <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <h3 className="font-display text-2xl text-white tracking-wide">{cat.name.toUpperCase()}</h3>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════
-          MANIFESTO — black statement + product slider
+          05 — MANİFESTO (siyah, sade marka anlatısı)
       ════════════════════════════════════════════ */}
       <section className="bg-black overflow-hidden" data-testid="section-manifesto">
-        {/* Top: text + stats */}
-        <div className="py-16 lg:py-24 px-4 lg:px-10 xl:px-14">
+        <div className="py-20 lg:py-28 px-4 lg:px-10 xl:px-14">
           <div className="max-w-[1440px] mx-auto">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-20">
-              {/* Left: auto-rotating 2-product slider */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-12 lg:gap-20">
+              {/* Sol: 2 ürün otomatik döner slider */}
               <ManifestoProductSlider products={allProducts} />
 
-              {/* Right: stats + cta */}
-              <div className="flex-[0_0_auto] lg:w-72">
+              {/* Sağ: kısa anlatı + sayılar + cta */}
+              <div className="flex-[0_0_auto] lg:w-[300px]">
                 <motion.p
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.7, delay: 0.3 }}
-                  className="text-white/45 text-sm font-body leading-relaxed mb-8"
+                  className="text-white/55 text-sm font-body leading-relaxed mb-10"
                 >
-                  Anadolu'nun zengin doğal taş mirasını, modern mekânlara taşıyoruz.
+                  Anadolu'nun zengin doğal taş mirasını modern mekânlara taşıyoruz.
                   Her bir blok, milyonlarca yılın izini ve eşsiz bir hikâyeyi barındırır.
                 </motion.p>
-                <div className="grid grid-cols-2 gap-px bg-white/8 mb-8">
-                  {[['500+', 'Proje'], ['10+', 'Yıl Deneyim'], ['%100', 'Türk Mermeri'], ['81', 'İl Teslimat']].map(([n, l], i) => (
+                <div className="grid grid-cols-2 gap-px bg-white/8 mb-10">
+                  {[['500+', 'Proje'], ['10+', 'Yıl'], ['%100', 'Türk Mermeri'], ['81', 'İl Teslimat']].map(([n, l], i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0 }}
@@ -909,7 +958,7 @@ export default function Home() {
                       className="bg-black px-4 py-5"
                     >
                       <p className="font-display text-white text-3xl leading-none mb-1">{n}</p>
-                      <p className="text-[9px] tracking-[0.18em] uppercase text-white/30 font-medium">{l}</p>
+                      <p className="text-[9px] tracking-[0.18em] uppercase text-white/35 font-medium">{l}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -926,13 +975,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-
       </section>
 
       {/* ════════════════════════════════════════════
-          FEATURES — minimal 4-col
+          06 — FEATURES (4 sütun minimal güven şeridi)
       ════════════════════════════════════════════ */}
-      <section className="border-t border-black/8" data-testid="section-features">
+      <section className="border-t border-black/8 bg-white" data-testid="section-features">
         <div className="max-w-[1440px] mx-auto grid grid-cols-2 lg:grid-cols-4">
           {features.map((f, i) => (
             <motion.div
@@ -953,7 +1001,7 @@ export default function Home() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-black mb-1 leading-tight">{f.label}</h3>
-                <p className="text-xs text-black/38">{f.sub}</p>
+                <p className="text-xs text-black/40">{f.sub}</p>
               </div>
             </motion.div>
           ))}
