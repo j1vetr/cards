@@ -304,6 +304,7 @@ function ProductMarqueeScene({ products }: { products: Product[] }) {
         <Link
           href="/magaza"
           data-testid="link-marquee-shop"
+          aria-label="Tüm ürünleri gör"
           className="hover:text-polen-orange transition-colors"
         >
           Tüm Ürünler ↗
@@ -319,6 +320,7 @@ function ProductMarqueeScene({ products }: { products: Product[] }) {
               data-testid={`link-marquee-product-${p.id}-${i}`}
               data-cursor="hover"
               data-cursor-label={p.name}
+              aria-label={`${p.name} ürün sayfası`}
               className="group shrink-0 w-[260px] lg:w-[320px]"
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-zinc-900">
@@ -380,7 +382,6 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
   // total horizontal travel calibrated to item count
   const travel = useMemo(() => {
     if (items.length <= 3) return 0;
-    // each card ~ 38vw on desktop; show 3 then translate to expose remaining
     return -(items.length - 2) * 36;
   }, [items.length]);
   const x = useTransform(scrollYProgress, [0, 1], ['0vw', `${travel}vw`]);
@@ -391,9 +392,89 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
   const [counterDisplay, setCounterDisplay] = useState(1);
   useMotionValueEvent(counter, 'change', (v) => setCounterDisplay(Math.round(v)));
 
-  if (items.length === 0) return null;
+  // Detect mobile so we can skip the pinned scroll mechanism and use snap-x scroll instead
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const update = () => setIsMobile(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
 
-  // Section height: 320vh for 5 items, +60vh per extra
+  // ── Mobile fallback: native snap-x scroll, no pinning ──
+  if (isMobile) {
+    return (
+      <section
+        className="relative bg-[#0c0a09] text-white py-16"
+        data-testid="scene-pinned-showcase"
+        aria-label="Ürün vitrini"
+      >
+        <div className="px-5 mb-6 flex items-center justify-between text-[10px] font-mono tracking-[0.28em] uppercase text-white/55">
+          <span>— 03 / Vitrin</span>
+          <Link
+            href="/magaza"
+            className="hover:text-polen-orange transition-colors"
+            data-testid="link-pinned-all"
+            aria-label="Tüm ürünleri gör"
+          >
+            Tümü ↗
+          </Link>
+        </div>
+        <div
+          className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide pl-5 pr-5"
+          style={{ scrollPaddingLeft: '20px', WebkitOverflowScrolling: 'touch' }}
+        >
+          {items.map((p, idx) => (
+            <Link
+              key={p.id}
+              href={`/urun/${p.slug}`}
+              data-testid={`link-pinned-product-${p.id}`}
+              aria-label={`${p.name} ürün sayfası`}
+              className="group relative shrink-0 snap-start"
+              style={{ width: '78vw' }}
+            >
+              <div className="relative aspect-[4/5] overflow-hidden bg-zinc-900">
+                <img
+                  src={p.images?.[0] || ''}
+                  alt={p.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                <div className="absolute top-4 left-4 text-[10px] font-mono tracking-[0.28em] text-white/65">
+                  {String(idx + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
+                </div>
+                {p.discountBadge && (
+                  <div className="absolute top-4 right-4 bg-polen-orange text-white text-[10px] font-bold tracking-[0.2em] px-2.5 py-1 uppercase">
+                    {p.discountBadge}
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <div className="text-[10px] font-mono tracking-[0.28em] uppercase text-white/55 mb-2">
+                    Doğal Taş
+                  </div>
+                  <h3 className="font-display text-xl leading-[1.05] mb-2">{p.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-semibold text-polen-orange">
+                      {formatPrice(p.basePrice)} ₺
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.22em] uppercase font-medium text-white/85">
+                      İncele
+                      <ArrowUpRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // Section height: 240vh for 3 items, +50vh per extra
   const sectionVh = 240 + Math.max(0, items.length - 3) * 50;
 
   return (
@@ -402,21 +483,21 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
       className="relative bg-[#0c0a09] text-white"
       style={{ height: `${sectionVh}vh` }}
       data-testid="scene-pinned-showcase"
+      aria-label="Ürün vitrini"
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center">
-        {/* Eyebrow header */}
         <div className="absolute top-0 left-0 right-0 px-5 lg:px-10 pt-8 lg:pt-10 flex items-center justify-between text-[10px] font-mono tracking-[0.28em] uppercase text-white/55 z-20">
           <span>— 03 / Vitrin</span>
           <Link
             href="/magaza"
             className="hover:text-polen-orange transition-colors"
             data-testid="link-pinned-all"
+            aria-label="Tüm ürünleri gör"
           >
             Tümü ↗
           </Link>
         </div>
 
-        {/* Horizontal track */}
         <motion.div
           style={{ x }}
           className="flex items-center gap-8 lg:gap-12 pl-[8vw] pr-[40vw] will-change-transform"
@@ -428,6 +509,7 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
               data-testid={`link-pinned-product-${p.id}`}
               data-cursor="hover"
               data-cursor-label="Görüntüle"
+              aria-label={`${p.name} ürün sayfası`}
               className="group relative shrink-0"
               style={{ width: 'min(540px, 38vw)' }}
             >
@@ -440,7 +522,6 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-105"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                {/* Index */}
                 <div className="absolute top-5 left-5 text-[10px] font-mono tracking-[0.28em] text-white/65">
                   {String(idx + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
                 </div>
@@ -449,7 +530,6 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
                     {p.discountBadge}
                   </div>
                 )}
-                {/* Caption */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
                   <div className="text-[10px] font-mono tracking-[0.28em] uppercase text-white/55 mb-2">
                     Doğal Taş
@@ -472,7 +552,6 @@ function PinnedShowcaseSceneInner({ items }: { items: Product[] }) {
           ))}
         </motion.div>
 
-        {/* Bottom rail: counter + progress */}
         <div className="absolute bottom-8 lg:bottom-12 left-5 lg:left-10 right-5 lg:right-10 flex items-center gap-6 z-20">
           <div className="text-[11px] font-mono tracking-[0.28em] uppercase text-white/65">
             <span className="text-white">{String(counterDisplay).padStart(2, '0')}</span>
@@ -543,6 +622,7 @@ function BentoMosaicScene({ products }: { products: Product[] }) {
         <Link
           href="/magaza"
           data-testid="link-bento-all"
+          aria-label="Tüm koleksiyonu gör"
           className="text-black/70 hover:text-polen-orange transition-colors"
         >
           Tüm Koleksiyon ↗
@@ -584,8 +664,11 @@ function BentoCard({ product }: { product: Product }) {
       data-testid={`card-bento-${product.id}`}
       data-cursor="hover"
       data-cursor-label="Görüntüle"
+      aria-label={`${product.name} ürün sayfası`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
       className="relative block w-full h-full overflow-hidden bg-stone-200 group"
     >
       <motion.img
@@ -675,11 +758,17 @@ function CategoryBentoScene({
         const idx = hashStr(root.id) % pool.length;
         image = pool[idx].images[0];
       }
+      const subTitles = (root.children || [])
+        .filter((c) => c.isActive && c.type === 'category' && c.category)
+        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+        .slice(0, 4)
+        .map((c) => c.title);
       return {
         root,
         image,
         href: getRootHref(root),
         count: pool.length,
+        subTitles,
       };
     });
   }, [menuRoots, products]);
@@ -697,6 +786,7 @@ function CategoryBentoScene({
         <Link
           href="/magaza"
           data-testid="link-category-bento-all"
+          aria-label="Mağazaya git"
           className="text-white/85 hover:text-polen-orange transition-colors"
         >
           Mağaza ↗
@@ -724,6 +814,7 @@ function CategoryBentoScene({
                 href={it.href}
                 count={it.count}
                 index={i}
+                subTitles={it.subTitles}
               />
             </motion.div>
           );
@@ -739,12 +830,14 @@ function CategoryCard({
   href,
   count,
   index,
+  subTitles,
 }: {
   title: string;
   image: string | null;
   href: string;
   count: number;
   index: number;
+  subTitles: string[];
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -753,8 +846,11 @@ function CategoryCard({
       data-testid={`card-category-${title.toLowerCase().replace(/\s+/g, '-')}`}
       data-cursor="hover"
       data-cursor-label={title}
+      aria-label={`${title} koleksiyonunu gör`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
       className="relative block w-full h-full overflow-hidden bg-zinc-900 group"
     >
       {image ? (
@@ -773,7 +869,7 @@ function CategoryCard({
       {/* Veil */}
       <motion.div
         className="absolute inset-0 bg-black"
-        animate={{ opacity: hovered ? 0.25 : 0.55 }}
+        animate={{ opacity: hovered ? 0.3 : 0.55 }}
         transition={{ duration: 0.5 }}
       />
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-black/40 to-transparent" />
@@ -786,6 +882,34 @@ function CategoryCard({
           <span className="text-white/40"> · {count} ürün</span>
         )}
       </div>
+
+      {/* Subcategory chips — reveal on hover */}
+      {subTitles.length > 0 && (
+        <div
+          aria-hidden="true"
+          className="absolute top-12 left-3 right-3 lg:top-14 lg:left-4 lg:right-4 flex flex-wrap gap-1.5"
+        >
+          {subTitles.map((t, ci) => (
+            <motion.span
+              key={t}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{
+                opacity: hovered ? 1 : 0,
+                y: hovered ? 0 : -6,
+              }}
+              transition={{
+                duration: 0.4,
+                delay: hovered ? 0.05 + ci * 0.05 : 0,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="inline-block text-[9px] lg:text-[10px] font-mono tracking-[0.18em] uppercase text-white/85 bg-white/10 border border-white/20 backdrop-blur-sm px-2 py-1"
+              data-testid={`chip-subcat-${title.toLowerCase().replace(/\s+/g, '-')}-${ci}`}
+            >
+              {t}
+            </motion.span>
+          ))}
+        </div>
+      )}
 
       {/* Bottom title */}
       <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-6 flex items-end justify-between gap-3">
@@ -824,24 +948,69 @@ function StatementMarqueeScene() {
     '✦',
   ];
   const doubled = [...items, ...items, ...items];
+
+  const stats = [
+    { n: '500+', l: 'Tamamlanan Proje' },
+    { n: '10+', l: 'Yıllık Tecrübe' },
+    { n: '%100', l: 'Türk Mermeri' },
+    { n: '81', l: 'İl Teslimat' },
+  ];
+
+  const statsRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(statsRef, { once: true, amount: 0.4 });
+
   return (
     <section
-      className="relative bg-[hsl(var(--polen-stone))] text-white py-10 lg:py-14 overflow-hidden border-y border-white/10"
+      className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden border-y border-white/10"
       data-testid="scene-statement-marquee"
+      aria-label="Marka bilgi şeridi"
     >
-      <div className="flex items-center gap-12 lg:gap-16 animate-marquee-slow whitespace-nowrap">
-        {doubled.map((t, i) => (
-          <span
-            key={i}
-            className={`font-display uppercase ${
-              t.length === 1
-                ? 'text-polen-orange text-2xl lg:text-3xl'
-                : 'text-3xl lg:text-5xl tracking-[0.02em]'
-            }`}
-          >
-            {t}
-          </span>
-        ))}
+      {/* Marquee row */}
+      <div className="py-10 lg:py-14 overflow-hidden">
+        <div className="flex items-center gap-12 lg:gap-16 animate-marquee-slow whitespace-nowrap">
+          {doubled.map((t, i) => (
+            <span
+              key={i}
+              className={`font-display uppercase ${
+                t.length === 1
+                  ? 'text-polen-orange text-2xl lg:text-3xl'
+                  : 'text-3xl lg:text-5xl tracking-[0.02em]'
+              }`}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div
+        ref={statsRef}
+        className="border-t border-white/10 px-5 lg:px-10 py-10 lg:py-14"
+        data-testid="strip-stats"
+      >
+        <div className="max-w-[1500px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-6 lg:gap-x-12">
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.l}
+              initial={{ opacity: 0, y: 24 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.7, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-start"
+              data-testid={`stat-${i}`}
+            >
+              <div
+                className="font-display text-white leading-[0.95]"
+                style={{ fontSize: 'clamp(40px, 6vw, 88px)', letterSpacing: '-0.02em' }}
+              >
+                {s.n}
+              </div>
+              <div className="mt-3 text-[10px] lg:text-[11px] tracking-[0.24em] uppercase text-white/55 font-mono">
+                {s.l}
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -867,7 +1036,7 @@ function FinalCtaScene() {
         <h2
           className="font-display uppercase text-black leading-[0.92]"
           style={{
-            fontSize: 'clamp(48px, 11vw, 200px)',
+            fontSize: 'clamp(40px, 8.5vw, 152px)',
             letterSpacing: '-0.03em',
           }}
         >
@@ -877,15 +1046,23 @@ function FinalCtaScene() {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="block"
           >
-            Mekânınız için
+            Mekânınıza
           </motion.span>
           <motion.span
             initial={{ opacity: 0, y: 60 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            className="block"
+          >
+            doğanın ihtişamını
+          </motion.span>
+          <motion.span
+            initial={{ opacity: 0, y: 60 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 1, delay: 0.24, ease: [0.16, 1, 0.3, 1] }}
             className="block text-polen-orange"
           >
-            Doğru Taş
+            taşıyalım.
           </motion.span>
         </h2>
 
@@ -904,6 +1081,7 @@ function FinalCtaScene() {
             data-testid="link-final-cta-shop"
             data-cursor="cta"
             data-cursor-label="Keşfet"
+            aria-label="Tüm koleksiyonu keşfet"
             className="group inline-flex items-center gap-4 self-start"
           >
             <span className="inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-black text-white group-hover:bg-polen-orange transition-colors">
