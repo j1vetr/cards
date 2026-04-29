@@ -73,6 +73,7 @@ interface Order {
   couponCode?: string;
   total: string;
   status: string;
+  paymentMethod?: string | null;
   paymentStatus: string;
   trackingNumber?: string;
   trackingUrl?: string;
@@ -294,6 +295,60 @@ export default function AdminOrderDetail() {
     }
   };
 
+  const handleConfirmBankTransfer = async () => {
+    if (!order) return;
+    if (!window.confirm('Havale ödemesini onaylamak istediğinizden emin misiniz? Stok düşülecek ve müşteriye onay bildirimi gönderilecek.')) {
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/confirm-bank-transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Havale onaylanamadı');
+      }
+      const updated = await res.json();
+      setOrder({ ...order, ...updated });
+      setStatus(updated.status);
+    } catch (error) {
+      console.error('Confirm bank transfer failed:', error);
+      window.alert((error as Error).message || 'Havale onaylanamadı');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleRejectBankTransfer = async () => {
+    if (!order) return;
+    const reason = window.prompt('Reddetme sebebi (müşteri görmez, dahili not):', 'Havale alınamadı');
+    if (reason === null) return;
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/reject-bank-transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Havale reddedilemedi');
+      }
+      const updated = await res.json();
+      setOrder({ ...order, ...updated });
+      setStatus(updated.status);
+    } catch (error) {
+      console.error('Reject bank transfer failed:', error);
+      window.alert((error as Error).message || 'Havale reddedilemedi');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleAddNote = async () => {
     if (!newNote.trim() || !order) return;
     try {
@@ -362,7 +417,7 @@ export default function AdminOrderDetail() {
         <Card className="p-5 sm:p-6 mb-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <h1
                   className="text-[18px] sm:text-[20px] font-semibold tracking-tight text-neutral-900"
                   data-testid="text-order-number"
@@ -373,6 +428,15 @@ export default function AdminOrderDetail() {
                   <StatusIcon className="w-3 h-3 mr-1" />
                   {currentStatus.label}
                 </StatusBadge>
+                {order.paymentMethod === 'bank_transfer' && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 h-5 rounded-md bg-polen-orange/15 border border-polen-orange/40 text-[10.5px] font-semibold text-black uppercase tracking-wider"
+                    data-testid="badge-bank-transfer"
+                  >
+                    🏦 Havale
+                    {order.paymentStatus === 'awaiting_transfer' && ' · Bekliyor'}
+                  </span>
+                )}
               </div>
               <p className="text-[12px] text-neutral-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
                 <span className="inline-flex items-center gap-1">
@@ -404,6 +468,53 @@ export default function AdminOrderDetail() {
             </div>
           </div>
         </Card>
+
+        {/* Havale onay/red bandı */}
+        {order.paymentMethod === 'bank_transfer' && order.paymentStatus === 'awaiting_transfer' && (
+          <Card
+            className="p-5 sm:p-6 mb-5 border-l-4 border-l-polen-orange bg-polen-orange/[0.06]"
+            data-testid="card-bank-transfer-action"
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-10 h-10 bg-polen-orange/20 flex items-center justify-center shrink-0 rounded-md">
+                  <span className="text-xl">🏦</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-neutral-900 mb-0.5">
+                    Havale Ödemesi Bekleniyor
+                  </p>
+                  <p className="text-[12px] text-neutral-600 leading-relaxed">
+                    ENPARA hesabınıza <span className="font-semibold text-neutral-900">₺{formatCurrency(order.total)}</span> tutarında ödeme geldiğinde onaylayın.
+                    Onayda stok düşülür ve müşteriye sipariş onay bildirimi gönderilir.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleRejectBankTransfer}
+                  disabled={isUpdating}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50 text-[12px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  data-testid="button-reject-bank-transfer"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  Reddet
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmBankTransfer}
+                  disabled={isUpdating}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-[12px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  data-testid="button-confirm-bank-transfer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Havaleyi Onayla
+                </button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-5">
           {/* LEFT COLUMN */}

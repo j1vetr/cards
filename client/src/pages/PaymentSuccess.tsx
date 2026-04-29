@@ -15,6 +15,7 @@ import {
   Check as CheckIcon,
   AlertTriangle,
   Phone,
+  Clock,
 } from 'lucide-react';
 
 export default function PaymentSuccess() {
@@ -22,15 +23,27 @@ export default function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedIban, setCopiedIban] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank_transfer'>('card');
   const cancelledRef = useRef(false);
 
   useEffect(() => {
     cancelledRef.current = false;
     const params = new URLSearchParams(window.location.search);
     const oid = params.get('oid');
+    const method = params.get('method');
 
     if (!oid) {
       setError('Sipariş bulunamadı');
+      setLoading(false);
+      return;
+    }
+
+    if (method === 'bank_transfer') {
+      // Bank transfer orders are confirmed server-side at submit time;
+      // no payment polling required — show success immediately.
+      setPaymentMethod('bank_transfer');
+      setOrderNumber(oid);
       setLoading(false);
       return;
     }
@@ -68,6 +81,14 @@ export default function PaymentSuccess() {
       cancelledRef.current = true;
     };
   }, []);
+
+  const copyIban = async () => {
+    try {
+      await navigator.clipboard.writeText('TR28 0015 7000 0000 0149 6995 20');
+      setCopiedIban(true);
+      setTimeout(() => setCopiedIban(false), 1800);
+    } catch {}
+  };
 
   const copyOrderNumber = async () => {
     if (!orderNumber) return;
@@ -126,6 +147,7 @@ export default function PaymentSuccess() {
   }
 
   // ── Success ───────────────────────────────────────────────
+  const isBankTransfer = paymentMethod === 'bank_transfer';
   return (
     <div className="min-h-screen bg-[#faf7f1] flex flex-col overflow-x-hidden">
       <Header />
@@ -143,7 +165,11 @@ export default function PaymentSuccess() {
             transition={{ type: 'spring', stiffness: 220, damping: 18 }}
             className="w-20 h-20 mx-auto mb-5 rounded-full bg-polen-orange flex items-center justify-center shadow-[0_8px_24px_-6px_rgba(253,181,29,0.55)]"
           >
-            <CheckCircle2 className="w-10 h-10 text-black" strokeWidth={2.2} />
+            {isBankTransfer ? (
+              <span className="text-3xl">🏦</span>
+            ) : (
+              <CheckCircle2 className="w-10 h-10 text-black" strokeWidth={2.2} />
+            )}
           </motion.div>
 
           <motion.h1
@@ -153,7 +179,7 @@ export default function PaymentSuccess() {
             className="font-display text-2xl sm:text-3xl tracking-[0.14em] uppercase text-black mb-3"
             data-testid="text-order-success"
           >
-            Ödemeniz Alındı
+            {isBankTransfer ? 'Siparişiniz Alındı' : 'Ödemeniz Alındı'}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 8 }}
@@ -161,7 +187,9 @@ export default function PaymentSuccess() {
             transition={{ delay: 0.14 }}
             className="text-sm text-black/60 max-w-md mx-auto"
           >
-            Siparişiniz başarıyla oluşturuldu. Onay e-postası birazdan gelecek.
+            {isBankTransfer
+              ? 'Havale ödemeniz alındığında siparişiniz onaylanıp hazırlığa alınacak.'
+              : 'Siparişiniz başarıyla oluşturuldu. Onay e-postası birazdan gelecek.'}
           </motion.p>
         </div>
       </section>
@@ -203,9 +231,11 @@ export default function PaymentSuccess() {
               </div>
               <div className="text-right">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-black/45 font-medium mb-1.5">
-                  Tahmini Teslim
+                  {isBankTransfer ? 'Durum' : 'Tahmini Teslim'}
                 </p>
-                <p className="text-sm font-semibold text-black">2-4 İş Günü</p>
+                <p className={`text-sm font-semibold ${isBankTransfer ? 'text-polen-orange' : 'text-black'}`}>
+                  {isBankTransfer ? 'Havale Bekleniyor' : '2-4 İş Günü'}
+                </p>
               </div>
             </div>
 
@@ -220,6 +250,54 @@ export default function PaymentSuccess() {
             </Link>
           </motion.div>
 
+          {/* Banka bilgileri (sadece havale) */}
+          {isBankTransfer && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.21 }}
+              className="bg-polen-orange/[0.08] border border-polen-orange/30 p-5 sm:p-6 mb-5"
+              data-testid="card-bank-info"
+            >
+              <p className="text-[10px] tracking-[0.2em] uppercase text-polen-orange font-semibold mb-3">
+                Banka Bilgileri
+              </p>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-black/55">Banka</span>
+                  <span className="font-semibold text-black">ENPARA (QNB Finansbank)</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-black/55">Hesap Sahibi</span>
+                  <span className="font-semibold text-black">Salih Kapıcıoğlu</span>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-black/55 text-xs">IBAN</span>
+                  <div className="flex items-center gap-2 bg-white border border-black/8 px-3 py-2.5">
+                    <span className="font-mono text-[13px] sm:text-sm font-bold text-black flex-1 break-all" data-testid="text-iban">
+                      TR28 0015 7000 0000 0149 6995 20
+                    </span>
+                    <button
+                      onClick={copyIban}
+                      className="p-1.5 text-black/45 hover:text-polen-orange hover:bg-black/[0.04] transition-colors rounded shrink-0"
+                      aria-label="IBAN'ı kopyala"
+                      data-testid="button-copy-iban"
+                    >
+                      {copiedIban ? (
+                        <CheckIcon className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
+                      ) : (
+                        <Copy className="w-4 h-4" strokeWidth={2} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-black/60 leading-relaxed">
+                Açıklama alanına <span className="font-mono font-semibold text-black">#{orderNumber}</span> yazmanız işlemi hızlandırır. Ödemeniz onaylandıktan sonra siparişiniz hazırlığa alınır.
+              </p>
+            </motion.div>
+          )}
+
           {/* Timeline */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -231,26 +309,48 @@ export default function PaymentSuccess() {
               Şimdi Ne Olacak?
             </h3>
             <ol className="relative">
-              {[
-                {
-                  icon: Package,
-                  title: 'Sipariş Hazırlanıyor',
-                  desc: '1 iş günü içinde ürünleriniz özenle paketlenir.',
-                  active: true,
-                },
-                {
-                  icon: Truck,
-                  title: 'Kargoya Veriliyor',
-                  desc: 'Takip numarası SMS ve e-posta ile bildirilir.',
-                  active: false,
-                },
-                {
-                  icon: Home,
-                  title: 'Adresinizde',
-                  desc: 'Anlaşmalı kargo ile kapınıza kadar teslim.',
-                  active: false,
-                },
-              ].map((step, i, arr) => {
+              {(isBankTransfer
+                ? [
+                    {
+                      icon: Clock,
+                      title: 'Havale Bekleniyor',
+                      desc: 'Yukarıdaki IBAN üzerinden ödemenizi yapın.',
+                      active: true,
+                    },
+                    {
+                      icon: CheckCircle2,
+                      title: 'Sipariş Onayı',
+                      desc: 'Ödemeniz hesaba geçince siparişiniz onaylanır ve onay e-postası gönderilir.',
+                      active: false,
+                    },
+                    {
+                      icon: Package,
+                      title: 'Hazırlık ve Kargo',
+                      desc: '1 iş günü içinde paketlenir, takip numarası iletilir.',
+                      active: false,
+                    },
+                  ]
+                : [
+                    {
+                      icon: Package,
+                      title: 'Sipariş Hazırlanıyor',
+                      desc: '1 iş günü içinde ürünleriniz özenle paketlenir.',
+                      active: true,
+                    },
+                    {
+                      icon: Truck,
+                      title: 'Kargoya Veriliyor',
+                      desc: 'Takip numarası SMS ve e-posta ile bildirilir.',
+                      active: false,
+                    },
+                    {
+                      icon: Home,
+                      title: 'Adresinizde',
+                      desc: 'Anlaşmalı kargo ile kapınıza kadar teslim.',
+                      active: false,
+                    },
+                  ]
+              ).map((step, i, arr) => {
                 const Icon = step.icon;
                 const isLast = i === arr.length - 1;
                 return (

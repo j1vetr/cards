@@ -479,6 +479,112 @@ function shippingNotificationTemplate(order: Order): string {
   `, { preheader: `#${order.orderNumber} kargoda — takip: ${order.trackingNumber || 'yakında'}`, title: 'Kargoya Verildi' });
 }
 
+function bankTransferPendingTemplate(order: Order, items: OrderItemForEmail[], siteUrl: string = CONTACT.siteUrl): string {
+  const itemRows = items.map(item => {
+    const img = item.productImage;
+    const thumbCell = img
+      ? `<td width="64" style="padding:14px 12px 14px 0;border-bottom:1px solid ${BRAND.borderSoft};vertical-align:top;">
+          <img src="${escapeHtml(img)}" alt="${escapeHtml(item.productName)}" width="64" height="64" style="display:block;width:64px;height:64px;border:1px solid ${BRAND.borderSoft};object-fit:cover;-ms-interpolation-mode:bicubic;" />
+        </td>`
+      : '';
+    return `
+    <tr>
+      ${thumbCell}
+      <td style="padding:14px 0;border-bottom:1px solid ${BRAND.borderSoft};vertical-align:top;">
+        <div style="font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:14px;font-weight:600;line-height:1.4;">${escapeHtml(item.productName)}</div>
+        ${item.variantDetails ? `<div style="font-family:Helvetica,Arial,sans-serif;color:${BRAND.muted};font-size:12px;line-height:1.5;margin-top:3px;">${escapeHtml(item.variantDetails)}</div>` : ''}
+        <div style="font-family:Helvetica,Arial,sans-serif;color:${BRAND.muted};font-size:12px;line-height:1.5;margin-top:3px;">Adet: ${escapeHtml(item.quantity)}</div>
+      </td>
+      <td align="right" style="padding:14px 0;border-bottom:1px solid ${BRAND.borderSoft};vertical-align:top;font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:14px;font-weight:700;white-space:nowrap;">${escapeHtml(item.subtotal)}&nbsp;₺</td>
+    </tr>`;
+  }).join('');
+
+  const trackingUrl = `${siteUrl}/siparis-takip?no=${encodeURIComponent(order.orderNumber)}`;
+  const orderDate = new Date(order.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  return wrapTemplate(`
+    ${H1('Havalenizi bekliyoruz.')}
+    ${Lede(`Teşekkürler ${escapeHtml(order.customerName)} — siparişiniz oluşturuldu. Aşağıdaki ENPARA hesabımıza ödemenizi gönderdiğinizde sipariş hazırlığa alınacak.`)}
+
+    ${infoCard(`
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td class="stack-col" style="vertical-align:top;width:50%;">
+            <div style="font-size:11px;color:${BRAND.muted};letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">Sipariş No</div>
+            <div style="font-size:18px;color:${BRAND.ink};font-weight:700;margin-top:4px;font-family:'Courier New',monospace;letter-spacing:0.5px;">#${escapeHtml(order.orderNumber)}</div>
+          </td>
+          <td class="stack-col" align="right" style="vertical-align:top;width:50%;">
+            <div style="font-size:11px;color:${BRAND.muted};letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">Tarih</div>
+            <div style="font-size:14px;color:${BRAND.ink};font-weight:600;margin-top:4px;">${orderDate}</div>
+          </td>
+        </tr>
+      </table>
+    `)}
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:${BRAND.primary};margin:18px 0;">
+      <tr>
+        <td align="center" style="padding:18px 24px;font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:14px;font-weight:600;line-height:1.5;">
+          🏦 <strong>Havale ile %10 indirim uygulandı.</strong><br/>
+          <span style="font-size:13px;font-weight:500;">Ödenecek tutar: <strong>${escapeHtml(order.total)}&nbsp;₺</strong></span>
+        </td>
+      </tr>
+    </table>
+
+    ${sectionTitle('Banka Bilgileri')}
+    ${infoCard(`
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="padding:6px 0;font-size:12px;color:${BRAND.muted};letter-spacing:1.2px;text-transform:uppercase;font-weight:600;width:38%;">Banka</td>
+          <td style="padding:6px 0;font-size:14px;color:${BRAND.ink};font-weight:700;">ENPARA (QNB Finansbank)</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:12px;color:${BRAND.muted};letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">Ad Soyad</td>
+          <td style="padding:6px 0;font-size:14px;color:${BRAND.ink};font-weight:700;">Salih Kapıcıoğlu</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:12px;color:${BRAND.muted};letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">IBAN</td>
+          <td style="padding:6px 0;font-size:14px;color:${BRAND.ink};font-weight:700;font-family:'Courier New',monospace;letter-spacing:0.5px;">TR28 0015 7000 0000 0149 6995 20</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:12px;color:${BRAND.muted};letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">Tutar</td>
+          <td style="padding:6px 0;font-size:15px;color:${BRAND.primaryDeep};font-weight:800;">${escapeHtml(order.total)}&nbsp;₺</td>
+        </tr>
+      </table>
+    `)}
+
+    ${P('Havaleniz hesabımıza ulaştıktan sonra siparişiniz onaylanır ve hazırlanmaya başlar. Onay verildiğinde size ayrıca e-posta ve WhatsApp ile bilgilendirme gönderilecektir.')}
+
+    ${emailButton(trackingUrl, 'Siparişimi Takip Et')}
+
+    ${sectionTitle('Sipariş İçeriği')}
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top:1px solid ${BRAND.borderSoft};margin-top:6px;">
+      ${itemRows}
+    </table>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:10px;">
+      <tr>
+        <td style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;color:${BRAND.body};font-size:13px;">Ara Toplam</td>
+        <td align="right" style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:13px;font-weight:600;white-space:nowrap;">${escapeHtml(order.subtotal)}&nbsp;₺</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;color:${BRAND.body};font-size:13px;">Kargo</td>
+        <td align="right" style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:13px;font-weight:600;white-space:nowrap;">${parseFloat(order.shippingCost) === 0 ? 'Ücretsiz' : escapeHtml(order.shippingCost) + '&nbsp;₺'}</td>
+      </tr>
+      ${order.discountAmount && parseFloat(order.discountAmount) > 0 ? `
+      <tr>
+        <td style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;color:${BRAND.body};font-size:13px;">İndirim ${order.couponCode ? `(${escapeHtml(order.couponCode)})` : '(Havale)'}</td>
+        <td align="right" style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;color:${BRAND.primaryDeep};font-size:13px;font-weight:700;white-space:nowrap;">−${escapeHtml(order.discountAmount)}&nbsp;₺</td>
+      </tr>` : ''}
+      <tr>
+        <td style="padding:14px 0 0 0;border-top:2px solid ${BRAND.ink};font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:15px;font-weight:700;letter-spacing:0.5px;">Ödenecek Toplam</td>
+        <td align="right" style="padding:14px 0 0 0;border-top:2px solid ${BRAND.ink};font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:18px;font-weight:800;white-space:nowrap;">${escapeHtml(order.total)}&nbsp;₺</td>
+      </tr>
+    </table>
+
+    ${Small(`Sorularınız için <a href="tel:${CONTACT.phoneTel}" style="color:${BRAND.primaryDeep};text-decoration:none;font-weight:600;">${CONTACT.phoneDisplay}</a>`)}
+  `, { preheader: `#${order.orderNumber} — Havale onayı bekleniyor (${order.total} ₺)`, title: 'Havalenizi Bekliyoruz' });
+}
+
 function adminOrderNotificationTemplate(order: Order, items: OrderItem[]): string {
   const itemRows = items.map(item => `
     <tr>
@@ -783,18 +889,78 @@ export async function sendAdminOrderNotificationEmail(order: Order, items: Order
       console.log('[Email] Admin email not configured');
       return { success: false, error: 'Admin e-posta adresi ayarlanmamış' };
     }
-    
+
+    const isBankTransfer = order.paymentMethod === 'bank_transfer';
+    const subjectPrefix = isBankTransfer ? '[HAVALE - Onay Bekliyor] ' : '';
+    const bankTransferAlert = isBankTransfer
+      ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#fff3cd;border:2px solid #fdb51d;margin:0 0 18px 0;">
+          <tr>
+            <td style="padding:14px 18px;font-family:Helvetica,Arial,sans-serif;color:#1a1612;font-size:14px;font-weight:700;">
+              ⚠️ ÖDEME YÖNTEMİ: HAVALE — Onay Bekliyor<br/>
+              <span style="font-size:12px;font-weight:500;color:#52483a;">Hesap hareketlerini kontrol edip admin panelinden onaylayın.</span>
+            </td>
+          </tr>
+        </table>`
+      : '';
+
+    let html = adminOrderNotificationTemplate(order, items);
+    if (bankTransferAlert) {
+      html = html.replace('${content}', '');
+      html = html.replace(
+        /(<td class="px-mobile"[^>]*>)\s*/,
+        `$1${bankTransferAlert}`
+      );
+    }
+
     await transporter.sendMail({
       from: `"Polen Stone Sistem" <${fromEmail}>`,
       to: adminEmail,
-      subject: `Yeni Sipariş - #${order.orderNumber} - ${order.total}₺`,
-      html: adminOrderNotificationTemplate(order, items),
+      subject: `${subjectPrefix}Yeni Sipariş - #${order.orderNumber} - ${order.total}₺`,
+      html,
     });
     
-    console.log(`[Email] Admin notification sent to ${adminEmail}`);
+    console.log(`[Email] Admin notification sent to ${adminEmail}${isBankTransfer ? ' (BANK_TRANSFER)' : ''}`);
     return { success: true };
   } catch (error: any) {
     console.error('[Email] Failed to send admin notification:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function sendBankTransferPendingEmail(order: Order, items: OrderItem[]): Promise<EmailResult> {
+  try {
+    const transporter = await createTransporter();
+    if (!transporter) {
+      return { success: false, error: 'SMTP yapılandırması eksik' };
+    }
+
+    const settings = await storage.getSiteSettings();
+    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com.tr';
+
+    const enrichedItems: OrderItemForEmail[] = await Promise.all(
+      items.map(async (item) => {
+        if (!item.productId) return item;
+        try {
+          const product = await storage.getProduct(item.productId);
+          const firstImage = product?.images && product.images.length > 0 ? product.images[0] : null;
+          return { ...item, productImage: firstImage };
+        } catch {
+          return item;
+        }
+      })
+    );
+
+    await transporter.sendMail({
+      from: `"Polen Stone" <${fromEmail}>`,
+      to: order.customerEmail,
+      subject: `Havalenizi Bekliyoruz - #${order.orderNumber}`,
+      html: bankTransferPendingTemplate(order, enrichedItems),
+    });
+
+    console.log(`[Email] Bank transfer pending email sent to ${order.customerEmail}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Email] Failed to send bank transfer pending email:', error);
     return { success: false, error: error.message };
   }
 }

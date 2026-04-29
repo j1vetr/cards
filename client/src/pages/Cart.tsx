@@ -291,6 +291,16 @@ export default function Cart() {
                     </motion.div>
                   </Link>
 
+                  <div
+                    className="mt-3 px-3 py-2.5 bg-polen-orange/10 border border-polen-orange/30 flex items-start gap-2"
+                    data-testid="info-bank-transfer-discount"
+                  >
+                    <span className="text-[15px] leading-none mt-0.5">🏦</span>
+                    <p className="text-[12px] text-black/75 leading-snug">
+                      <span className="font-semibold text-black">Havale ile %10 indirim</span> — ödeme adımında seçin.
+                    </p>
+                  </div>
+
                   <Link href="/">
                     <Button variant="ghost" className="w-full mt-3 text-sm text-black/35 hover:text-black hover:bg-transparent" data-testid="button-continue">
                       Alışverişe Devam Et

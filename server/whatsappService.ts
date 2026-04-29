@@ -14,7 +14,9 @@ export type WhatsAppEvent =
   | 'order_shipped_customer'
   | 'order_delivered_customer'
   | 'order_cancelled_customer'
-  | 'order_cancelled_admin';
+  | 'order_cancelled_admin'
+  | 'order_bank_transfer_pending_customer'
+  | 'order_bank_transfer_admin';
 
 export const WHATSAPP_EVENT_LABELS: Record<WhatsAppEvent, string> = {
   order_received_customer: 'Sipariş alındı (müşteriye)',
@@ -24,6 +26,8 @@ export const WHATSAPP_EVENT_LABELS: Record<WhatsAppEvent, string> = {
   order_delivered_customer: 'Teslim edildi (müşteriye)',
   order_cancelled_customer: 'Sipariş iptal edildi (müşteriye)',
   order_cancelled_admin: 'Sipariş iptal edildi (yöneticiye)',
+  order_bank_transfer_pending_customer: 'Havale ödeme alındı – onay bekleniyor (müşteriye)',
+  order_bank_transfer_admin: 'Havale ile ödeme – kontrol et (yöneticiye)',
 };
 
 export const DEFAULT_TEMPLATES: Record<WhatsAppEvent, string> = {
@@ -41,6 +45,10 @@ export const DEFAULT_TEMPLATES: Record<WhatsAppEvent, string> = {
     'ℹ️ *Sipariş iptal bildirimi*\n\nMerhaba {{musteriAdi}}, *{{siparisNo}}* numaralı siparişiniz iptal edilmiştir. Detaylı bilgi veya yardım için bizimle iletişime geçebilirsiniz.\n\n— {{siteAdi}}',
   order_cancelled_admin:
     'Sipariş iptal edildi!\n\nSipariş No: {{siparisNo}}\nMüşteri: {{musteriAdi}}\nTutar: {{toplam}} TL',
+  order_bank_transfer_pending_customer:
+    '🏦 *Siparişiniz alındı – Havale onayı bekleniyor*\n\nMerhaba {{musteriAdi}}, *{{siparisNo}}* numaralı siparişiniz başarıyla oluşturuldu.\n\nÖdemenizi aşağıdaki hesaba *{{toplam}} TL* olarak gönderebilirsiniz:\n\nBanka: ENPARA (QNB Finansbank)\nIBAN: TR28 0015 7000 0000 0149 6995 20\nAd Soyad: Salih Kapıcıoğlu\n\nHavaleniz hesabımıza ulaştığında siparişiniz hazırlanmaya başlanacak ve size tekrar bilgi vereceğiz.\n\n— {{siteAdi}}',
+  order_bank_transfer_admin:
+    '⚠️ *HAVALE İLE ÖDEME — KONTROL ET*\n\nMüşteri havale yöntemiyle yeni bir sipariş oluşturdu.\n\nSipariş No: {{siparisNo}}\nMüşteri: {{musteriAdi}}\nTelefon: {{musteriTelefon}}\nTutar: {{toplam}} TL\n\nHesap hareketlerini kontrol edip admin panelinden onaylayabilirsin.',
 };
 
 const DEFAULT_ENDPOINT = 'http://127.0.0.1:3225/api/send-message';
@@ -219,6 +227,12 @@ export async function sendOrderCancelledToCustomer(order: Order) {
 }
 export async function sendOrderCancelledToAdmin(order: Order) {
   return sendEventToAdmin(order, 'order_cancelled_admin');
+}
+export async function sendBankTransferPendingToCustomer(order: Order) {
+  return sendEventToCustomer(order, 'order_bank_transfer_pending_customer');
+}
+export async function sendBankTransferPendingToAdmin(order: Order) {
+  return sendEventToAdmin(order, 'order_bank_transfer_admin');
 }
 
 export async function sendTestWhatsApp(rawPhone: string, customMessage?: string): Promise<WhatsAppResult> {

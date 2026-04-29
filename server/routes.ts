@@ -22,7 +22,8 @@ import {
   sendPasswordResetEmail,
   sendReviewRequestEmail,
   sendTestEmail,
-  sendAbandonedCartEmail 
+  sendAbandonedCartEmail,
+  sendBankTransferPendingEmail,
 } from "./emailService";
 import {
   sendOrderReceivedToCustomer,
@@ -32,8 +33,11 @@ import {
   sendOrderDeliveredToCustomer,
   sendOrderCancelledToCustomer,
   sendOrderCancelledToAdmin,
+  sendBankTransferPendingToCustomer,
+  sendBankTransferPendingToAdmin,
   sendTestWhatsApp,
 } from "./whatsappService";
+import { BANK_TRANSFER_DISCOUNT_RATE } from "./bankTransfer";
 import {
   createCheckoutFormInitialize,
   retrieveCheckoutForm,
@@ -2063,6 +2067,182 @@ export async function registerRoutes(
     }
   });
 
+  // ── Havale (Bank Transfer) Ödeme ──────────────────────────────────────
+  // Müşteri havale (EFT) seçtiğinde sepet doğrulanır, %10 indirim uygulanır,
+  // sipariş 'pending' / 'awaiting_transfer' olarak oluşturulur. Stok düşmez,
+  // iyzico'ya gidilmez. Admin onayında stok düşer, kupon redeem edilir,
+  // standart sipariş onay e-posta + WhatsApp tetiklenir.
+  app.post("/api/payment/bank-transfer", async (req: Request, res) => {
+    try {
+      const cartToken = getOrCreateCartToken(req, res);
+      const payload = await getAuthPayload(req, res);
+      const userId = payload?.type === 'user' ? payload.userId ?? null : null;
+      const cartItems = await storage.getCartItems(cartToken);
+
+      if (cartItems.length === 0) {
+        return res.status(400).json({ error: "Sepet boş" });
+      }
+
+      const { customerName, customerEmail, customerPhone, address, city, district, postalCode, country, couponCode, createAccount, accountPassword } = req.body;
+      const selectedCountry = country || 'Türkiye';
+
+      if (!customerName || !customerEmail || !customerPhone || !address || !city || !district) {
+        return res.status(400).json({ error: "Lütfen tüm alanları doldurun" });
+      }
+
+      let accountPasswordHash: string | null = null;
+      if (createAccount && accountPassword) {
+        if (accountPassword.length < 6) {
+          return res.status(400).json({ error: "Şifre en az 6 karakter olmalı" });
+        }
+        const existingUser = await storage.getUserByEmail(customerEmail);
+        if (existingUser) {
+          return res.status(400).json({ error: "Bu e-posta adresi zaten kayıtlı. Giriş yaparak devam edebilirsiniz." });
+        }
+        accountPasswordHash = await bcrypt.hash(accountPassword, 10);
+      }
+
+      // Server-side cart validation
+      let serverSubtotal = 0;
+      const cartItemsForOrder: Array<{
+        productId: string;
+        variantId: string | null;
+        quantity: number;
+        productName: string;
+        variantDetails: string | null;
+        price: string;
+      }> = [];
+
+      for (const cartItem of cartItems) {
+        const variant = cartItem.variantId
+          ? await storage.getProductVariant(cartItem.variantId)
+          : null;
+        const actualProductId = variant?.productId || cartItem.productId;
+        const product = await storage.getProduct(actualProductId);
+        if (product) {
+          const itemPrice = parseFloat(product.basePrice);
+          serverSubtotal += itemPrice * cartItem.quantity;
+          cartItemsForOrder.push({
+            productId: product.id,
+            variantId: variant?.id || null,
+            quantity: cartItem.quantity,
+            productName: product.name,
+            variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() : null,
+            price: product.basePrice,
+          });
+        }
+      }
+
+      // Coupon validation
+      let validatedCoupon = null;
+      let couponDiscount = 0;
+      let couponFreeShipping = false;
+      if (couponCode) {
+        const couponResult = await storage.validateCoupon(couponCode, serverSubtotal, userId || undefined);
+        if (couponResult.valid && couponResult.coupon) {
+          validatedCoupon = couponResult.coupon;
+          couponFreeShipping = validatedCoupon.freeShipping || false;
+          if (validatedCoupon.discountType === 'percentage') {
+            couponDiscount = (serverSubtotal * parseFloat(validatedCoupon.discountValue)) / 100;
+          } else {
+            couponDiscount = parseFloat(validatedCoupon.discountValue);
+          }
+          if (validatedCoupon.maxDiscountAmount) {
+            couponDiscount = Math.min(couponDiscount, parseFloat(validatedCoupon.maxDiscountAmount));
+          }
+          couponDiscount = Math.min(couponDiscount, serverSubtotal);
+        }
+      }
+
+      // Shipping
+      const FREE_SHIPPING_THRESHOLD = 2500;
+      const DOMESTIC_SHIPPING_COST = 200;
+      const INTERNATIONAL_SHIPPING_COST = 2500;
+      const IRAQ_SHIPPING_COST = 5700;
+      const isDomestic = selectedCountry === 'Türkiye';
+      const isIraq = selectedCountry === 'Irak';
+      let shippingCost = isDomestic
+        ? (serverSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : DOMESTIC_SHIPPING_COST)
+        : isIraq ? IRAQ_SHIPPING_COST : INTERNATIONAL_SHIPPING_COST;
+      if (couponFreeShipping) shippingCost = 0;
+
+      // Bank transfer 10% discount applies to (subtotal - couponDiscount + shippingCost)
+      const baseAfterCoupon = Math.max(0, serverSubtotal - couponDiscount) + shippingCost;
+      const bankTransferDiscount = Math.round(baseAfterCoupon * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100;
+      const totalDiscount = couponDiscount + bankTransferDiscount;
+      const serverTotal = Math.max(0, serverSubtotal - totalDiscount + shippingCost);
+
+      const orderNumber = `PLN${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+      // Optional account creation
+      if (createAccount && accountPasswordHash) {
+        try {
+          const nameParts = customerName.trim().split(/\s+/);
+          await storage.createUser({
+            email: customerEmail,
+            passwordHash: accountPasswordHash,
+            firstName: nameParts[0] || customerName,
+            lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : '',
+            phone: customerPhone,
+          });
+        } catch (err) {
+          console.error('[bank-transfer] Account auto-create failed:', err);
+        }
+      }
+
+      const order = await storage.createOrder({
+        orderNumber,
+        customerName,
+        customerEmail,
+        customerPhone,
+        shippingAddress: { address, city, district, postalCode: postalCode || '', country: selectedCountry },
+        subtotal: serverSubtotal.toFixed(2),
+        shippingCost: shippingCost.toFixed(2),
+        discountAmount: totalDiscount.toFixed(2),
+        couponCode: validatedCoupon?.code || null,
+        total: serverTotal.toFixed(2),
+        status: 'pending',
+        paymentMethod: 'bank_transfer',
+        paymentStatus: 'awaiting_transfer',
+      });
+
+      // Create order items but DO NOT reduce stock yet — admin must confirm transfer first.
+      for (const item of cartItemsForOrder) {
+        await storage.createOrderItem({
+          orderId: order.id,
+          productId: item.productId,
+          variantId: item.variantId,
+          productName: item.productName,
+          variantDetails: item.variantDetails,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
+        });
+      }
+
+      // Clear cart so user doesn't accidentally re-checkout
+      await storage.clearCart(cartToken);
+
+      // Notifications (best-effort)
+      const orderItems = await storage.getOrderItems(order.id);
+      sendBankTransferPendingEmail(order, orderItems).catch(err => console.error('[Email] Bank transfer pending email failed:', err));
+      sendAdminOrderNotificationEmail(order, orderItems).catch(err => console.error('[Email] Admin notification (bank transfer) failed:', err));
+      sendBankTransferPendingToCustomer(order).catch(err => console.error('[WhatsApp] Bank transfer pending (customer) failed:', err));
+      sendBankTransferPendingToAdmin(order).catch(err => console.error('[WhatsApp] Bank transfer pending (admin) failed:', err));
+
+      res.json({
+        success: true,
+        orderNumber: order.orderNumber,
+        orderId: order.id,
+        total: order.total,
+        bankTransferDiscount: bankTransferDiscount.toFixed(2),
+      });
+    } catch (error) {
+      console.error('[bank-transfer] Order creation error:', error);
+      res.status(500).json({ error: "Sipariş oluşturulamadı" });
+    }
+  });
+
   // iyzico Callback - browser POSTs here after Checkout Form completes.
   // The legacy /api/payment/callback path is kept as an alias for older webhooks.
   const iyzicoCallbackHandler = async (req: Request, res: Response) => {
@@ -3784,6 +3964,145 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Order cancellation error:', error);
       res.status(500).json({ error: "Failed to cancel order" });
+    }
+  });
+
+  // ── Bank Transfer (Havale) Onaylama ────────────────────────────────────
+  // Admin havale ödemesini onaylar: paymentStatus -> paid, status -> confirmed,
+  // stok düşer, kupon redeem edilir, müşteriye sipariş onay e-posta + WhatsApp
+  // bildirimi gönderilir.
+  app.post("/api/admin/orders/:id/confirm-bank-transfer", requireAdmin, async (req, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
+
+      if (order.paymentMethod !== 'bank_transfer') {
+        return res.status(400).json({ error: "Bu sipariş havale ödeme değil" });
+      }
+      if (order.paymentStatus !== 'awaiting_transfer') {
+        return res.status(400).json({ error: "Sipariş zaten işlem görmüş" });
+      }
+
+      const orderItems = await storage.getOrderItems(order.id);
+
+      // Reduce stock now (was deferred at order creation time)
+      for (const item of orderItems) {
+        if (item.variantId) {
+          const variant = await storage.getProductVariant(item.variantId);
+          if (variant) {
+            const newStock = Math.max(0, variant.stock - item.quantity);
+            await storage.updateProductVariant(item.variantId, { stock: newStock });
+            await storage.createStockAdjustment({
+              variantId: item.variantId,
+              previousStock: variant.stock,
+              newStock,
+              adjustmentType: 'sale',
+              reason: `Havale onayı: ${order.orderNumber}`,
+            });
+          }
+        }
+      }
+
+      // Coupon redemption
+      if (order.couponCode) {
+        try {
+          const coupon = await storage.getCouponByCode(order.couponCode);
+          if (coupon) {
+            await storage.redeemCoupon(coupon.id, order.id, null, parseFloat(order.discountAmount || '0'));
+            if (coupon.isInfluencerCode) {
+              let commission = 0;
+              const orderTotal = parseFloat(order.total);
+              switch (coupon.commissionType) {
+                case 'percentage':
+                  commission = (orderTotal * parseFloat(coupon.commissionValue || '0')) / 100;
+                  break;
+                case 'per_use':
+                  commission = parseFloat(coupon.commissionValue || '0');
+                  break;
+              }
+              if (commission > 0) {
+                const currentCommission = parseFloat(coupon.totalCommissionEarned || '0');
+                await storage.updateCoupon(coupon.id, {
+                  totalCommissionEarned: (currentCommission + commission).toFixed(2),
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[bank-transfer confirm] Coupon redeem failed:', err);
+        }
+      }
+
+      const updatedOrder = await storage.updateOrder(req.params.id, {
+        status: 'confirmed',
+        paymentStatus: 'paid',
+      });
+
+      await storage.createOrderNote({
+        orderId: req.params.id,
+        authorType: 'admin',
+        noteType: 'status_change',
+        content: 'Havale ödemesi onaylandı.',
+        isPrivate: false,
+      });
+
+      // Standard order received notifications now that payment is confirmed
+      if (updatedOrder) {
+        sendOrderConfirmationEmail(updatedOrder, orderItems).catch(err =>
+          console.error('[Email] Order confirmation (bank transfer confirmed) failed:', err)
+        );
+        sendOrderReceivedToCustomer(updatedOrder).catch(err =>
+          console.error('[WhatsApp] Order received (bank transfer confirmed) failed:', err)
+        );
+      }
+
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('[bank-transfer confirm] error:', error);
+      res.status(500).json({ error: "Havale onaylanamadı" });
+    }
+  });
+
+  // ── Bank Transfer (Havale) Reddetme ────────────────────────────────────
+  // Admin havale ödemesini reddeder: sipariş iptal edilir (stok düşmemişti,
+  // restore gerekmiyor), müşteriye iptal bildirimi gönderilir.
+  app.post("/api/admin/orders/:id/reject-bank-transfer", requireAdmin, async (req, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
+
+      if (order.paymentMethod !== 'bank_transfer') {
+        return res.status(400).json({ error: "Bu sipariş havale ödeme değil" });
+      }
+      if (order.paymentStatus !== 'awaiting_transfer') {
+        return res.status(400).json({ error: "Sipariş zaten işlem görmüş" });
+      }
+
+      const updatedOrder = await storage.updateOrder(req.params.id, {
+        status: 'cancelled',
+        paymentStatus: 'failed',
+        cancelledAt: order.cancelledAt || new Date(),
+      });
+
+      const reason = (req.body?.reason as string) || 'Havale ödemesi alınamadı';
+      await storage.createOrderNote({
+        orderId: req.params.id,
+        authorType: 'admin',
+        noteType: 'status_change',
+        content: `Havale reddedildi. Sebep: ${reason}`,
+        isPrivate: false,
+      });
+
+      if (updatedOrder) {
+        sendOrderCancelledToCustomer(updatedOrder).catch(err =>
+          console.error('[WhatsApp] Cancelled (bank transfer rejected) failed:', err)
+        );
+      }
+
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('[bank-transfer reject] error:', error);
+      res.status(500).json({ error: "Havale reddedilemedi" });
     }
   });
 

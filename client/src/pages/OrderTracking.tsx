@@ -29,6 +29,8 @@ interface OrderDetail {
   id: string;
   orderNumber: string;
   status: string;
+  paymentMethod?: string | null;
+  paymentStatus?: string | null;
   customerName: string;
   createdAt: string;
   processingAt?: string | null;
@@ -457,13 +459,60 @@ export default function OrderTracking() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-polen-orange/15 text-black border border-polen-orange/40 text-[12px] font-semibold tracking-[0.06em] uppercase"
                         data-testid="text-order-status"
                       >
-                        <currentStatus.icon className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        {currentStatus.label}
+                        {order.paymentMethod === 'bank_transfer' && order.paymentStatus === 'awaiting_transfer' ? (
+                          <>🏦 Havale Bekleniyor</>
+                        ) : (
+                          <>
+                            <currentStatus.icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                            {currentStatus.label}
+                          </>
+                        )}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Havale bekleme uyarısı */}
+              {order.paymentMethod === 'bank_transfer' && order.paymentStatus === 'awaiting_transfer' && (
+                <div
+                  className="bg-polen-orange/[0.08] border border-polen-orange/30 p-5 sm:p-6"
+                  data-testid="card-awaiting-transfer"
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 bg-polen-orange/20 flex items-center justify-center shrink-0">
+                      <span className="text-xl">🏦</span>
+                    </div>
+                    <div>
+                      <p className="font-display text-base tracking-[0.1em] uppercase text-black mb-1">
+                        Havale Ödemesi Bekleniyor
+                      </p>
+                      <p className="text-[13px] text-black/65 leading-relaxed">
+                        Aşağıdaki banka hesabına ödemeniz geçtiğinde siparişiniz onaylanıp hazırlığa alınacak.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-white border border-black/8 p-4 space-y-2 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-black/55">Banka</span>
+                      <span className="font-semibold text-black">ENPARA (QNB Finansbank)</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-black/55">Hesap Sahibi</span>
+                      <span className="font-semibold text-black">Salih Kapıcıoğlu</span>
+                    </div>
+                    <div className="flex flex-col gap-1 pt-1">
+                      <span className="text-black/55 text-xs">IBAN</span>
+                      <span className="font-mono text-[13px] sm:text-sm font-bold text-black break-all" data-testid="text-bank-iban">
+                        TR28 0015 7000 0000 0149 6995 20
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-black/55 leading-relaxed">
+                    Açıklamaya <span className="font-mono font-semibold text-black">#{order.orderNumber}</span> yazmanız işlemi hızlandırır.
+                  </p>
+                </div>
+              )}
 
               {/* Timeline — sipariş aşamaları */}
               {order.status !== 'cancelled' && (

@@ -43,7 +43,20 @@ interface Order {
   };
   total: string;
   status: string;
+  paymentMethod?: string | null;
+  paymentStatus?: string | null;
   createdAt: string;
+}
+
+function BankTransferBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 h-5 rounded-md bg-polen-orange/15 border border-polen-orange/40 text-[10.5px] font-semibold text-black uppercase tracking-wider"
+      data-testid="badge-bank-transfer"
+    >
+      🏦 Havale
+    </span>
+  );
 }
 
 type StatusTone = 'neutral' | 'amber' | 'blue' | 'indigo' | 'emerald' | 'red' | 'orange';
@@ -782,9 +795,12 @@ export default function OrdersPanel() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="font-mono text-[12px] text-neutral-700">
-                          {order.orderNumber}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-[12px] text-neutral-700">
+                            {order.orderNumber}
+                          </span>
+                          {order.paymentMethod === 'bank_transfer' && <BankTransferBadge />}
+                        </div>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="text-[12px] text-neutral-600">
@@ -853,9 +869,12 @@ export default function OrdersPanel() {
                         <p className="text-[13px] font-medium text-neutral-900 truncate">
                           {order.customerName}
                         </p>
-                        <p className="text-[11px] text-neutral-500 font-mono truncate">
-                          {order.orderNumber}
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-[11px] text-neutral-500 font-mono truncate">
+                            {order.orderNumber}
+                          </p>
+                          {order.paymentMethod === 'bank_transfer' && <BankTransferBadge />}
+                        </div>
                       </div>
                     </div>
                     <span className="text-[13px] font-semibold text-neutral-900 shrink-0 tabular-nums">

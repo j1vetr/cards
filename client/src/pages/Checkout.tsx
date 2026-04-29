@@ -64,6 +64,10 @@ export default function Checkout() {
   const [stepErrors, setStepErrors] = useState<Record<number, string[]>>({});
   const [savedOrderTotal, setSavedOrderTotal] = useState<number | null>(null);
   
+  // Payment method tab (card | bank_transfer)
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank_transfer'>('card');
+  const [bankTransferLoading, setBankTransferLoading] = useState(false);
+
   // iyzico Checkout Form State
   const [checkoutFormContent, setCheckoutFormContent] = useState<string | null>(null);
   const [paymentPageUrl, setPaymentPageUrl] = useState<string | null>(null);
@@ -204,6 +208,11 @@ export default function Checkout() {
   
   const discount = calculateDiscount();
   const total = subtotal - discount + shippingCost;
+  const BANK_TRANSFER_DISCOUNT_RATE = 0.10;
+  const bankTransferDiscount = paymentMethod === 'bank_transfer'
+    ? Math.round(total * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100
+    : 0;
+  const finalTotal = total - bankTransferDiscount;
 
   // Coupon validation handler
   const handleApplyCoupon = async () => {
@@ -306,13 +315,68 @@ export default function Checkout() {
   const handleNextStep = () => {
     if (validateStep(currentStep)) {
       if (currentStep === 2) {
-        // When moving to step 3 (payment), initiate iyzico Checkout Form
-        initiatePayment();
+        // Move to payment step. If card tab is selected, kick off iyzico now.
+        setCurrentStep(3);
+        if (paymentMethod === 'card' && !checkoutFormContent && !paymentPageUrl) {
+          initiatePayment();
+        }
       } else {
         setCurrentStep(prev => Math.min(prev + 1, 4));
       }
     }
   };
+
+  // Submit a bank transfer order (no iyzico). Backend creates a pending order
+  // and waits for admin to confirm the wire transfer.
+  const handleBankTransferSubmit = async () => {
+    if (items.length === 0) {
+      toast({ title: 'Hata', description: 'Sepetiniz boş', variant: 'destructive' });
+      return;
+    }
+    setBankTransferLoading(true);
+    setPaymentError(null);
+    try {
+      const res = await fetch('/api/payment/bank-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          address: formData.address,
+          city: formData.city,
+          district: formData.district,
+          postalCode: formData.postalCode,
+          country: formData.country,
+          couponCode: appliedCoupon?.code || null,
+          createAccount: !user && createAccount,
+          accountPassword: !user && createAccount ? accountPassword : null,
+        }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sipariş oluşturulamadı');
+      clearCart();
+      navigate(`/odeme-basarili?oid=${encodeURIComponent(data.orderNumber)}&method=bank_transfer`);
+    } catch (error: any) {
+      setPaymentError(error.message || 'Sipariş oluşturulamadı');
+      toast({
+        title: 'Hata',
+        description: error.message || 'Sipariş oluşturulamadı',
+        variant: 'destructive',
+      });
+    } finally {
+      setBankTransferLoading(false);
+    }
+  };
+
+  // When user switches back to card tab on step 3, ensure iyzico form is loaded.
+  useEffect(() => {
+    if (currentStep === 3 && paymentMethod === 'card' && !checkoutFormContent && !paymentPageUrl && !paymentLoading) {
+      initiatePayment();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, currentStep]);
 
   // Initiate iyzico Checkout Form
   const initiatePayment = async () => {
@@ -1053,13 +1117,50 @@ export default function Checkout() {
                       exit={{ opacity: 0, y: -20 }}
                       className="bg-white border border-black/8 rounded-none p-4 sm:p-6 overflow-hidden"
                     >
-                      <div className="flex items-center gap-3 mb-6">
+                      <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-stone-100 flex items-center justify-center">
                           <CreditCard className="w-5 h-5 text-black/50" />
                         </div>
                         <h2 className="font-display text-xl tracking-wide">
-                          KREDİ KARTI İLE ÖDE
+                          ÖDEME YÖNTEMİ
                         </h2>
+                      </div>
+
+                      {/* Payment method tabs */}
+                      <div className="grid grid-cols-2 gap-0 mb-6 border border-black/12">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('card')}
+                          className={`h-12 px-3 text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center justify-center gap-2 ${
+                            paymentMethod === 'card'
+                              ? 'bg-black text-white'
+                              : 'bg-white text-black/60 hover:bg-stone-50'
+                          }`}
+                          data-testid="tab-payment-card"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          KREDİ KARTI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('bank_transfer')}
+                          className={`h-12 px-3 text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center justify-center gap-2 relative ${
+                            paymentMethod === 'bank_transfer'
+                              ? 'bg-black text-white'
+                              : 'bg-white text-black/60 hover:bg-stone-50'
+                          }`}
+                          data-testid="tab-payment-bank-transfer"
+                        >
+                          <span className="text-base">🏦</span>
+                          HAVALE
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 ${
+                            paymentMethod === 'bank_transfer'
+                              ? 'bg-polen-orange text-black'
+                              : 'bg-polen-orange/15 text-polen-orange'
+                          }`}>
+                            -%10
+                          </span>
+                        </button>
                       </div>
 
                       {paymentError && (
@@ -1071,7 +1172,94 @@ export default function Checkout() {
                         </div>
                       )}
 
-                      {paymentPageUrl ? (
+                      {paymentMethod === 'bank_transfer' ? (
+                        <div className="space-y-4" data-testid="bank-transfer-panel">
+                          <div className="bg-polen-orange/10 border border-polen-orange/30 p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 bg-polen-orange/20 flex items-center justify-center shrink-0">
+                                <span className="text-lg">🏦</span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-black">Havale ile %10 indirim kazandınız!</p>
+                                <p className="text-xs text-black/65 mt-1 leading-snug">
+                                  Aşağıdaki banka bilgilerine ödemenizi yaptıktan sonra siparişiniz onaylanıp hazırlığa alınır.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border border-black/10 p-4 space-y-3">
+                            <h3 className="font-display text-sm tracking-wider text-black/85">BANKA BİLGİLERİ</h3>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between gap-3">
+                                <span className="text-black/55">Banka</span>
+                                <span className="font-medium text-black" data-testid="text-bank-name">ENPARA (QNB Finansbank)</span>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <span className="text-black/55">Hesap Sahibi</span>
+                                <span className="font-medium text-black" data-testid="text-bank-holder">Salih Kapıcıoğlu</span>
+                              </div>
+                              <div className="flex justify-between gap-3 items-start">
+                                <span className="text-black/55 shrink-0">IBAN</span>
+                                <span className="font-mono text-[13px] font-semibold text-black text-right break-all" data-testid="text-bank-iban">
+                                  TR28 0015 7000 0000 0149 6995 20
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-stone-50 border border-black/8 p-4 space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-black/55">Sipariş Toplamı</span>
+                              <span className="text-black/70 line-through">{total.toLocaleString('tr-TR')} ₺</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-polen-orange font-medium">Havale İndirimi (%10)</span>
+                              <span className="text-polen-orange font-medium" data-testid="text-bank-discount">
+                                -{bankTransferDiscount.toLocaleString('tr-TR')} ₺
+                              </span>
+                            </div>
+                            <div className="h-px bg-black/8" />
+                            <div className="flex justify-between items-end">
+                              <span className="font-bold text-black">Ödenecek Tutar</span>
+                              <span className="font-bold text-2xl text-black" data-testid="text-bank-final-total">
+                                {finalTotal.toLocaleString('tr-TR')} ₺
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-black/50 leading-relaxed">
+                            Stoklar onaylanana kadar rezerve edilmez. Ödemeniz banka hesabımıza geçtikten sonra siparişiniz onaylanır ve hazırlığa alınır.
+                          </p>
+
+                          <div className="flex gap-3 pt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setCurrentStep(2)}
+                              className="flex-1 h-12 border-black/15 hover:bg-black/4 text-black rounded-none"
+                              data-testid="button-bank-back"
+                            >
+                              Geri
+                            </Button>
+                            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="flex-[2]">
+                              <Button
+                                type="button"
+                                onClick={handleBankTransferSubmit}
+                                disabled={bankTransferLoading}
+                                className="w-full h-12 bg-black text-white hover:bg-black/85 font-bold tracking-wider rounded-none"
+                                data-testid="button-bank-confirm"
+                              >
+                                {bankTransferLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <>SİPARİŞİ ONAYLA · {finalTotal.toLocaleString('tr-TR')} ₺</>
+                                )}
+                              </Button>
+                            </motion.div>
+                          </div>
+                        </div>
+                      ) : paymentPageUrl ? (
                         <div className="space-y-4">
                           <div className="bg-white border border-black/8 rounded-none overflow-hidden">
                             <iframe
@@ -1323,10 +1511,19 @@ export default function Checkout() {
                       </div>
                     </div>
                   )}
+                  {paymentMethod === 'bank_transfer' && bankTransferDiscount > 0 && (
+                    <div className="flex justify-between text-polen-orange">
+                      <span className="flex items-center gap-1">
+                        <span>🏦</span>
+                        Havale İndirimi (%10)
+                      </span>
+                      <span data-testid="text-bank-transfer-discount">-{bankTransferDiscount.toLocaleString('tr-TR')} ₺</span>
+                    </div>
+                  )}
                   <div className="h-px bg-black/8" />
                   <div className="flex justify-between text-base">
                     <span className="font-bold">Toplam</span>
-                    <span className="font-bold text-xl" data-testid="text-total">{total.toLocaleString('tr-TR')} ₺</span>
+                    <span className="font-bold text-xl" data-testid="text-total">{finalTotal.toLocaleString('tr-TR')} ₺</span>
                   </div>
                 </div>
 
