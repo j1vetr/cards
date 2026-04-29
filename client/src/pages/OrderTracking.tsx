@@ -232,33 +232,65 @@ export default function OrderTracking() {
           aria-hidden
           className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-polen-orange to-transparent"
         />
-        <div className="max-w-3xl mx-auto px-5 lg:px-8 pt-12 pb-10 text-center">
-          <motion.div
-            initial={{ scale: 0, rotate: -15 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 18 }}
-            className="w-20 h-20 mx-auto mb-5 rounded-full bg-polen-orange flex items-center justify-center shadow-[0_8px_24px_-6px_rgba(253,181,29,0.55)]"
-          >
-            <Package className="w-9 h-9 text-black" strokeWidth={2} />
-          </motion.div>
+        <div className="max-w-4xl mx-auto px-5 lg:px-8 pt-12 pb-10">
+          {/* Mobil — dikey ortalı */}
+          <div className="flex flex-col items-center text-center sm:hidden">
+            <motion.div
+              initial={{ scale: 0, rotate: -15 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+              className="w-20 h-20 mb-5 rounded-full bg-polen-orange flex items-center justify-center shadow-[0_8px_24px_-6px_rgba(253,181,29,0.55)]"
+            >
+              <Package className="w-9 h-9 text-black" strokeWidth={2} />
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="font-display text-2xl tracking-[0.14em] uppercase text-black mb-3"
+              data-testid="text-page-title"
+            >
+              Sipariş Takip
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14 }}
+              className="text-sm text-black/60 max-w-md"
+            >
+              Sipariş numaranızı girerek siparişinizin güncel durumunu öğrenin.
+            </motion.p>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="font-display text-2xl sm:text-3xl tracking-[0.14em] uppercase text-black mb-3"
-            data-testid="text-page-title"
-          >
-            Sipariş Takip
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14 }}
-            className="text-sm text-black/60 max-w-md mx-auto"
-          >
-            Sipariş numaranızı girerek siparişinizin güncel durumunu öğrenin.
-          </motion.p>
+          {/* Masaüstü — yatay, ortalı */}
+          <div className="hidden sm:flex items-center justify-center gap-6">
+            <motion.div
+              initial={{ scale: 0, rotate: -15 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+              className="w-20 h-20 rounded-full bg-polen-orange flex items-center justify-center shadow-[0_8px_24px_-6px_rgba(253,181,29,0.55)] shrink-0"
+            >
+              <Package className="w-9 h-9 text-black" strokeWidth={2} />
+            </motion.div>
+            <div className="text-left">
+              <motion.h1
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.08 }}
+                className="font-display text-3xl tracking-[0.14em] uppercase text-black mb-2"
+              >
+                Sipariş Takip
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.14 }}
+                className="text-sm text-black/60 max-w-md"
+              >
+                Sipariş numaranızı girerek siparişinizin güncel durumunu öğrenin.
+              </motion.p>
+            </div>
+          </div>
         </div>
       </section>
 
