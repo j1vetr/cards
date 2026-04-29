@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { Link } from 'wouter';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Package, 
-  Truck, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Search,
+  Package,
+  Truck,
+  CheckCircle2,
+  Clock,
   XCircle,
-  MapPin,
+  Home,
   Loader2,
   AlertCircle,
-  ExternalLink
+  ArrowRight,
+  Copy,
+  Check as CheckIcon,
+  ExternalLink,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface OrderDetail {
@@ -43,53 +48,44 @@ interface OrderDetail {
   }>;
 }
 
-const statusConfig: Record<string, { 
-  label: string; 
-  color: string; 
-  icon: React.ElementType; 
-  bg: string;
-  description: string;
-  step: number;
-}> = {
-  pending: { 
-    label: 'Beklemede', 
-    color: 'text-yellow-400', 
-    icon: Clock, 
-    bg: 'bg-yellow-400/10',
+const statusConfig: Record<
+  string,
+  {
+    label: string;
+    icon: React.ElementType;
+    description: string;
+    step: number;
+  }
+> = {
+  pending: {
+    label: 'Beklemede',
+    icon: Clock,
     description: 'Siparişiniz onay bekliyor',
-    step: 1
+    step: 1,
   },
-  processing: { 
-    label: 'Hazırlanıyor', 
-    color: 'text-blue-400', 
-    icon: Package, 
-    bg: 'bg-blue-400/10',
+  processing: {
+    label: 'Hazırlanıyor',
+    icon: Package,
     description: 'Siparişiniz hazırlanıyor',
-    step: 2
+    step: 2,
   },
-  shipped: { 
-    label: 'Kargoda', 
-    color: 'text-purple-400', 
-    icon: Truck, 
-    bg: 'bg-purple-400/10',
+  shipped: {
+    label: 'Kargoda',
+    icon: Truck,
     description: 'Siparişiniz kargoya verildi',
-    step: 3
+    step: 3,
   },
-  completed: { 
-    label: 'Teslim Edildi', 
-    color: 'text-green-400', 
-    icon: CheckCircle2, 
-    bg: 'bg-green-400/10',
+  completed: {
+    label: 'Teslim Edildi',
+    icon: CheckCircle2,
     description: 'Siparişiniz teslim edildi',
-    step: 4
+    step: 4,
   },
-  cancelled: { 
-    label: 'İptal Edildi', 
-    color: 'text-red-400', 
-    icon: XCircle, 
-    bg: 'bg-red-400/10',
+  cancelled: {
+    label: 'İptal Edildi',
+    icon: XCircle,
     description: 'Sipariş iptal edildi',
-    step: 0
+    step: 0,
   },
 };
 
@@ -97,7 +93,7 @@ const steps = [
   { id: 1, label: 'Onaylandı', icon: CheckCircle2 },
   { id: 2, label: 'Hazırlanıyor', icon: Package },
   { id: 3, label: 'Kargoda', icon: Truck },
-  { id: 4, label: 'Teslim Edildi', icon: MapPin },
+  { id: 4, label: 'Teslim Edildi', icon: Home },
 ];
 
 export default function OrderTracking() {
@@ -106,16 +102,14 @@ export default function OrderTracking() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [location] = useLocation();
+  const [copied, setCopied] = useState(false);
 
-  // Auto-fill from URL and auto-search
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const noParam = urlParams.get('no');
-    
+
     if (noParam) {
       setOrderNumber(noParam);
-      // Auto-search when order number is in URL
       searchOrder(noParam);
     }
   }, []);
@@ -132,10 +126,10 @@ export default function OrderTracking() {
 
     try {
       const params = new URLSearchParams({ orderNumber: searchOrderNumber.trim() });
-      
+
       const res = await fetch(`/api/orders/track?${params.toString()}`);
       const data = await res.json();
-      
+
       if (res.ok) {
         setOrder(data);
       } else {
@@ -153,50 +147,83 @@ export default function OrderTracking() {
     searchOrder(orderNumber);
   };
 
+  const copyTracking = async () => {
+    if (!order?.trackingNumber) return;
+    try {
+      await navigator.clipboard.writeText(order.trackingNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  };
+
   const currentStatus = order ? statusConfig[order.status] || statusConfig.pending : null;
   const currentStep = currentStatus?.step || 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#faf7f1] flex flex-col overflow-x-hidden">
       <Header />
-      
-      <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
+
+      {/* Üst — sayfa başlığı */}
+      <section className="relative bg-white border-b border-black/[0.06]">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-polen-orange to-transparent"
+        />
+        <div className="max-w-3xl mx-auto px-5 lg:px-8 pt-12 pb-10 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+            className="w-20 h-20 mx-auto mb-5 rounded-full bg-polen-orange flex items-center justify-center shadow-[0_8px_24px_-6px_rgba(253,181,29,0.55)]"
           >
-            <h1 className="font-display text-3xl sm:text-4xl tracking-wide mb-4" data-testid="text-page-title">
-              SİPARİŞ TAKİP
-            </h1>
-            <p className="text-muted-foreground">
-              Sipariş numaranızı girerek siparişinizin durumunu öğrenin
-            </p>
+            <Package className="w-9 h-9 text-black" strokeWidth={2} />
           </motion.div>
 
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.08 }}
+            className="font-display text-2xl sm:text-3xl tracking-[0.14em] uppercase text-black mb-3"
+            data-testid="text-page-title"
+          >
+            Sipariş Takip
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14 }}
+            className="text-sm text-black/60 max-w-md mx-auto"
+          >
+            Sipariş numaranızı girerek siparişinizin güncel durumunu öğrenin.
+          </motion.p>
+        </div>
+      </section>
+
+      <main className="flex-1 px-4 sm:px-6 py-10">
+        <div className="max-w-2xl mx-auto">
+          {/* Arama formu */}
+          <motion.form
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
             onSubmit={handleSearch}
-            className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-8"
+            className="bg-white border border-black/[0.08] p-5 sm:p-6 mb-5"
           >
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-black/55 font-medium mb-2">
                   Sipariş Numarası *
                 </label>
                 <Input
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   placeholder="PS-XXXXXX"
-                  className="h-12 bg-zinc-800 border-zinc-700 focus:border-white"
+                  className="h-12 bg-[#faf7f1] border-black/15 text-black placeholder:text-black/30 focus:border-polen-orange rounded-none"
                   data-testid="input-order-number"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-black/55 font-medium mb-2">
                   E-posta (Opsiyonel)
                 </label>
                 <Input
@@ -204,31 +231,34 @@ export default function OrderTracking() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ornek@email.com"
-                  className="h-12 bg-zinc-800 border-zinc-700 focus:border-white"
+                  className="h-12 bg-[#faf7f1] border-black/15 text-black placeholder:text-black/30 focus:border-polen-orange rounded-none"
                   data-testid="input-email"
                 />
               </div>
             </div>
-            
+
             {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400" />
-                <span className="text-sm text-red-400">{error}</span>
+              <div
+                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-sm flex items-center gap-2"
+                data-testid="text-error"
+              >
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span className="text-sm text-red-700">{error}</span>
               </div>
             )}
-            
+
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-white text-black hover:bg-white/90 font-bold tracking-wide"
+              className="w-full h-12 bg-polen-orange text-black hover:bg-[hsl(var(--polen-orange-deep))] hover:text-white font-semibold tracking-[0.1em] uppercase text-[12px] rounded-none"
               data-testid="button-search-order"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <Search className="w-5 h-5 mr-2" />
-                  SİPARİŞİMİ BUL
+                  <Search className="w-4 h-4 mr-2" strokeWidth={2.5} />
+                  Siparişimi Bul
                 </>
               )}
             </Button>
@@ -236,58 +266,140 @@ export default function OrderTracking() {
 
           {order && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
+              transition={{ delay: 0.05 }}
+              className="space-y-5"
             >
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              {/* Sipariş üst bilgisi */}
+              <div className="bg-white border border-black/[0.08] p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
-                    <h2 className="text-xl font-semibold text-white">
-                      Sipariş #{order.orderNumber}
-                    </h2>
-                    <p className="text-sm text-zinc-500 mt-1">
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-black/45 font-medium mb-1.5">
+                      Sipariş No
+                    </p>
+                    <p
+                      className="font-mono text-xl sm:text-2xl font-bold text-black tracking-wide"
+                      data-testid="text-order-number"
+                    >
+                      #{order.orderNumber}
+                    </p>
+                    <p className="text-xs text-black/50 mt-2">
                       {new Date(order.createdAt).toLocaleDateString('tr-TR', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
                       })}
                     </p>
                   </div>
                   {currentStatus && (
-                    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium ${currentStatus.bg} ${currentStatus.color}`}>
-                      <currentStatus.icon className="w-4 h-4" />
-                      {currentStatus.label}
-                    </span>
+                    <div className="text-right">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-black/45 font-medium mb-1.5">
+                        Durum
+                      </p>
+                      <span
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-polen-orange/15 text-black border border-polen-orange/40 text-[12px] font-semibold tracking-[0.06em] uppercase"
+                        data-testid="text-order-status"
+                      >
+                        <currentStatus.icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        {currentStatus.label}
+                      </span>
+                    </div>
                   )}
                 </div>
+              </div>
 
-                {order.status !== 'cancelled' && (
-                  <div className="mb-8">
-                    <div className="flex justify-between items-center relative">
-                      <div className="absolute left-0 right-0 top-1/2 h-1 bg-zinc-800 -translate-y-1/2 z-0" />
-                      <div 
-                        className="absolute left-0 top-1/2 h-1 bg-green-500 -translate-y-1/2 z-0 transition-all duration-500"
-                        style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+              {/* Timeline — sipariş aşamaları */}
+              {order.status !== 'cancelled' && (
+                <div className="bg-white border border-black/[0.08] p-5 sm:p-6">
+                  <h3 className="text-[11px] tracking-[0.2em] uppercase text-black/55 font-semibold mb-6">
+                    Sipariş Aşamaları
+                  </h3>
+
+                  {/* Mobil — dikey timeline */}
+                  <ol className="relative sm:hidden">
+                    {steps.map((step, i, arr) => {
+                      const isCompleted = currentStep > step.id;
+                      const isCurrent = currentStep === step.id;
+                      const isLast = i === arr.length - 1;
+                      const StepIcon = step.icon;
+                      return (
+                        <li
+                          key={step.id}
+                          className="flex gap-4 pb-5 last:pb-0 relative"
+                          data-testid={`timeline-step-${step.id}`}
+                        >
+                          {!isLast && (
+                            <span
+                              aria-hidden
+                              className={`absolute left-[18px] top-9 bottom-0 w-px ${
+                                isCompleted ? 'bg-polen-orange' : 'bg-black/10'
+                              }`}
+                            />
+                          )}
+                          <div
+                            className={`relative w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                              isCompleted || isCurrent
+                                ? 'bg-polen-orange text-black'
+                                : 'bg-black/[0.05] text-black/35'
+                            }`}
+                          >
+                            <StepIcon className="w-4 h-4" strokeWidth={2} />
+                          </div>
+                          <div className="flex-1 pt-1.5">
+                            <p
+                              className={`text-[13px] font-semibold ${
+                                isCompleted || isCurrent ? 'text-black' : 'text-black/55'
+                              }`}
+                            >
+                              {step.label}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+
+                  {/* Masaüstü — yatay timeline */}
+                  <div className="hidden sm:block">
+                    <div className="flex justify-between items-start relative">
+                      <div className="absolute left-5 right-5 top-5 h-px bg-black/10 z-0" />
+                      <div
+                        className="absolute left-5 top-5 h-px bg-polen-orange z-0 transition-all duration-500"
+                        style={{
+                          width: `calc(${
+                            ((Math.max(currentStep, 1) - 1) / (steps.length - 1)) * 100
+                          }% - ${
+                            ((Math.max(currentStep, 1) - 1) / (steps.length - 1)) * 40
+                          }px)`,
+                        }}
                       />
-                      {steps.map((step, index) => {
+                      {steps.map((step) => {
                         const isCompleted = currentStep > step.id;
                         const isCurrent = currentStep === step.id;
                         const StepIcon = step.icon;
                         return (
-                          <div key={step.id} className="relative z-10 flex flex-col items-center">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                              isCompleted ? 'bg-green-500 text-white' :
-                              isCurrent ? 'bg-white text-black' :
-                              'bg-zinc-800 text-zinc-500'
-                            }`}>
-                              <StepIcon className="w-5 h-5" />
+                          <div
+                            key={step.id}
+                            className="relative z-10 flex flex-col items-center flex-1"
+                            data-testid={`timeline-step-${step.id}`}
+                          >
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                isCompleted || isCurrent
+                                  ? 'bg-polen-orange text-black shadow-[0_4px_14px_-4px_rgba(253,181,29,0.6)]'
+                                  : 'bg-[#faf7f1] border border-black/15 text-black/35'
+                              }`}
+                            >
+                              <StepIcon className="w-4 h-4" strokeWidth={2} />
                             </div>
-                            <span className={`text-xs mt-2 ${
-                              isCompleted || isCurrent ? 'text-white' : 'text-zinc-500'
-                            }`}>
+                            <span
+                              className={`text-[11px] mt-3 font-semibold tracking-[0.06em] uppercase ${
+                                isCompleted || isCurrent ? 'text-black' : 'text-black/45'
+                              }`}
+                            >
                               {step.label}
                             </span>
                           </div>
@@ -295,115 +407,176 @@ export default function OrderTracking() {
                       })}
                     </div>
                   </div>
-                )}
 
-                {order.status === 'shipped' && (
-                  <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/30 rounded-xl p-6 mb-6">
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                      <img 
-                        src="https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg" 
-                        alt="DHL" 
-                        className="h-8"
-                      />
-                      <span className="text-yellow-400 font-medium">Express</span>
-                    </div>
-                    
-                    <div className="text-center mb-4">
-                      <p className="text-xs text-zinc-400 uppercase tracking-wider mb-2">Kargo Takip Numarası</p>
-                      <p className="text-2xl font-mono font-bold text-white tracking-widest">
-                        {order.trackingNumber || 'Bekleniyor...'}
-                      </p>
-                    </div>
-                    
-                    {order.trackingNumber && (
-                      <a
-                        href={order.trackingUrl || `https://www.dhl.com/tr-tr/home/tracking.html?tracking-id=${order.trackingNumber}&submit=1`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-bold transition-colors"
-                      >
-                        <Truck className="w-5 h-5" />
-                        DHL'DE TAKİP ET
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                  {currentStatus && (
+                    <p className="text-[12px] text-black/55 mt-6 text-center leading-relaxed">
+                      {currentStatus.description}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* DHL takip kartı */}
+              {order.trackingNumber && (
+                <div
+                  className="relative bg-white border border-polen-orange/40 p-5 sm:p-6"
+                  data-testid="card-tracking"
+                >
+                  <div
+                    aria-hidden
+                    className="absolute inset-x-0 top-0 h-1 bg-polen-orange"
+                  />
+                  <div className="flex items-center gap-2 mb-4">
+                    <Truck className="w-4 h-4 text-black/70" strokeWidth={2} />
+                    <span className="text-[11px] tracking-[0.2em] uppercase text-black/55 font-semibold">
+                      Kargo Takibi
+                    </span>
+                    {order.shippingCarrier && (
+                      <span className="ml-auto text-[11px] text-black/50 font-medium">
+                        {order.shippingCarrier}
+                      </span>
                     )}
                   </div>
-                )}
 
-                {order.trackingNumber && order.status !== 'shipped' && (
-                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4 mb-6">
-                    <p className="text-sm text-zinc-400 mb-1">Kargo Takip Numarası</p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-mono font-bold text-white">
+                  <div className="text-center mb-5">
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-black/45 font-medium mb-2">
+                      Takip Numarası
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <p
+                        className="font-mono text-xl sm:text-2xl font-bold text-black tracking-widest break-all"
+                        data-testid="text-tracking-number"
+                      >
                         {order.trackingNumber}
                       </p>
-                      {order.trackingUrl && (
-                        <a
-                          href={order.trackingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-zinc-200 transition-colors"
-                        >
-                          Kargo Takibi
-                        </a>
-                      )}
+                      <button
+                        onClick={copyTracking}
+                        className="p-1.5 text-black/45 hover:text-polen-orange hover:bg-black/[0.04] transition-colors rounded shrink-0"
+                        aria-label="Takip numarasını kopyala"
+                        data-testid="button-copy-tracking"
+                      >
+                        {copied ? (
+                          <CheckIcon className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
+                        ) : (
+                          <Copy className="w-4 h-4" strokeWidth={2} />
+                        )}
+                      </button>
                     </div>
-                    {order.shippingCarrier && (
-                      <p className="text-sm text-zinc-500 mt-1">{order.shippingCarrier}</p>
+                    {copied && (
+                      <p className="text-[11px] text-emerald-600 mt-2">Kopyalandı</p>
                     )}
                   </div>
-                )}
 
-                <div>
-                  <h3 className="text-sm font-medium text-zinc-400 mb-3 uppercase tracking-wider">Ürünler</h3>
-                  <div className="space-y-3">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl">
-                        <div>
-                          <p className="font-medium text-white">{item.productName}</p>
-                          {item.variantDetails && (
-                            <p className="text-sm text-zinc-500">{item.variantDetails}</p>
-                          )}
-                          <p className="text-sm text-zinc-400">Adet: {item.quantity}</p>
-                        </div>
-                        <p className="font-semibold text-white">{item.subtotal}₺</p>
-                      </div>
-                    ))}
-                  </div>
+                  <a
+                    href={
+                      order.trackingUrl ||
+                      `https://www.dhl.com/tr-tr/home/tracking.html?tracking-id=${order.trackingNumber}&submit=1`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full h-12 bg-polen-orange text-black hover:bg-[hsl(var(--polen-orange-deep))] hover:text-white transition-colors font-semibold tracking-[0.1em] uppercase text-[12px]"
+                    data-testid="link-tracking-external"
+                  >
+                    Kargoda Takip Et
+                    <ExternalLink className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  </a>
                 </div>
+              )}
 
-                <div className="mt-6 pt-6 border-t border-zinc-800">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-zinc-400 mb-2 uppercase tracking-wider">Teslimat Adresi</h3>
-                      <div className="p-4 bg-zinc-800/50 rounded-xl">
-                        <p className="text-white">{order.customerName}</p>
-                        <p className="text-zinc-400">{order.shippingAddress.address}</p>
-                        <p className="text-zinc-400">
-                          {order.shippingAddress.district}, {order.shippingAddress.city} {order.shippingAddress.postalCode}
+              {/* Ürünler */}
+              <div className="bg-white border border-black/[0.08] p-5 sm:p-6">
+                <h3 className="text-[11px] tracking-[0.2em] uppercase text-black/55 font-semibold mb-4 flex items-center gap-2">
+                  <ShoppingBag className="w-3.5 h-3.5" strokeWidth={2} />
+                  Ürünler
+                </h3>
+                <div className="divide-y divide-black/[0.06]">
+                  {order.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                      data-testid={`row-item-${item.id}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="text-[13px] font-semibold text-black"
+                          data-testid={`text-product-${item.id}`}
+                        >
+                          {item.productName}
                         </p>
+                        {item.variantDetails && (
+                          <p className="text-[11px] text-black/50 mt-0.5">
+                            {item.variantDetails}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-black/55 mt-1">Adet: {item.quantity}</p>
                       </div>
+                      <p className="text-[13px] font-bold text-black whitespace-nowrap">
+                        {item.subtotal}₺
+                      </p>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-zinc-400 mb-2 uppercase tracking-wider">Özet</h3>
-                      <div className="p-4 bg-zinc-800/50 rounded-xl space-y-2">
-                        <div className="flex justify-between text-zinc-400">
-                          <span>Kargo</span>
-                          <span>{parseFloat(order.shippingCost) === 0 ? 'Ücretsiz' : `${order.shippingCost}₺`}</span>
-                        </div>
-                        <div className="flex justify-between text-white font-semibold text-lg pt-2 border-t border-zinc-700">
-                          <span>Toplam</span>
-                          <span>{order.total}₺</span>
-                        </div>
-                      </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Adres + özet */}
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div className="bg-white border border-black/[0.08] p-5">
+                  <h3 className="text-[11px] tracking-[0.2em] uppercase text-black/55 font-semibold mb-3">
+                    Teslimat Adresi
+                  </h3>
+                  <p className="text-[13px] font-semibold text-black mb-1">
+                    {order.customerName}
+                  </p>
+                  <p className="text-[12px] text-black/65 leading-relaxed">
+                    {order.shippingAddress.address}
+                  </p>
+                  <p className="text-[12px] text-black/65 leading-relaxed">
+                    {order.shippingAddress.district}, {order.shippingAddress.city}{' '}
+                    {order.shippingAddress.postalCode}
+                  </p>
+                </div>
+                <div className="bg-white border border-black/[0.08] p-5">
+                  <h3 className="text-[11px] tracking-[0.2em] uppercase text-black/55 font-semibold mb-3">
+                    Özet
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[12px] text-black/65">
+                      <span>Kargo</span>
+                      <span>
+                        {parseFloat(order.shippingCost) === 0
+                          ? 'Ücretsiz'
+                          : `${order.shippingCost}₺`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[14px] font-bold text-black pt-2 border-t border-black/10">
+                      <span>Toplam</span>
+                      <span data-testid="text-order-total">{order.total}₺</span>
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Geri dön CTA */}
+              <div className="pt-2">
+                <Link href="/">
+                  <Button
+                    className="w-full h-12 bg-polen-orange text-black hover:bg-[hsl(var(--polen-orange-deep))] hover:text-white font-semibold tracking-[0.1em] uppercase text-[12px] group rounded-none"
+                    data-testid="button-continue-shopping"
+                  >
+                    Alışverişe Devam Et
+                    <ArrowRight
+                      className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"
+                      strokeWidth={2.5}
+                    />
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
