@@ -375,7 +375,7 @@ export default function ProductDetail() {
         title={product.name}
         description={
           product.description?.replace(/<[^>]*>/g, '').slice(0, 160) ||
-          `${product.name} — Polen Stone premium doğal taş & mermer.`
+          `${product.name}. Polen Stone premium doğal taş ve mermer koleksiyonundan.`
         }
         image={images[0]}
         url={`/urun/${product.slug}`}

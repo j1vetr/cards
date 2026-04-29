@@ -18,6 +18,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
+import { SEO } from '@/components/SEO';
 
 export default function PaymentSuccess() {
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export default function PaymentSuccess() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#faf7f1] flex flex-col">
+        <SEO title="Sipariş Onayı" description="Polen Stone sipariş onay sayfası." url="/odeme-basarili" noIndex />
         <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
           <div className="text-center max-w-md mx-auto">

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
+import { SEO } from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -554,6 +555,7 @@ export default function Checkout() {
   if (orderComplete) {
     return (
       <div className="min-h-screen bg-background overflow-x-hidden">
+        <SEO title="Ödeme" description="Polen Stone güvenli ödeme sayfası." url="/odeme" noIndex />
         <Header />
         <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6">
           <motion.div 

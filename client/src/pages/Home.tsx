@@ -560,8 +560,9 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="Polen Stone — Doğal Taş & Mermer"
-        description="Polen Stone — Premium doğal taş ve mermer markası. Mermer, granit, traverten ve oniks koleksiyonu ile mekânlarınıza doğanın ihtişamını taşıyın."
+        title="Doğal Taş ve Mermer Koleksiyonu"
+        description="Polen Stone, premium mermer, granit, traverten ve oniks koleksiyonu sunan doğal taş markasıdır. Mekânlarınıza doğanın ihtişamını taşıyın."
+        url="/"
       />
       <Header />
       <MotionConfig reducedMotion="user">

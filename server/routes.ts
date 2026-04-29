@@ -320,7 +320,72 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
+  // Dynamic sitemap.xml — categories + products + static pages
+  app.get(["/sitemap.xml", "/sitemap_index.xml"], async (_req, res) => {
+    try {
+      const baseUrl = "https://polenstone.com.tr";
+      const today = new Date().toISOString().split("T")[0];
+
+      const staticPages: Array<{ loc: string; priority: string; changefreq: string }> = [
+        { loc: "/", priority: "1.0", changefreq: "daily" },
+        { loc: "/magaza", priority: "0.9", changefreq: "daily" },
+        { loc: "/hakkimizda", priority: "0.6", changefreq: "monthly" },
+        { loc: "/teslimat-kosullari", priority: "0.4", changefreq: "yearly" },
+        { loc: "/mesafeli-satis-sozlesmesi", priority: "0.4", changefreq: "yearly" },
+        { loc: "/iptal-ve-iade", priority: "0.4", changefreq: "yearly" },
+        { loc: "/kvkk", priority: "0.4", changefreq: "yearly" },
+      ];
+
+      const [categories, products] = await Promise.all([
+        storage.getCategories().catch(() => []),
+        storage.getAllProducts().catch(() => []),
+      ]);
+
+      const escapeXml = (str: string) =>
+        str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+
+      const urls: string[] = [];
+
+      for (const page of staticPages) {
+        urls.push(
+          `  <url>\n    <loc>${baseUrl}${page.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`
+        );
+      }
+
+      for (const cat of categories) {
+        if (!cat?.slug) continue;
+        urls.push(
+          `  <url>\n    <loc>${baseUrl}/kategori/${escapeXml(cat.slug)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
+        );
+      }
+
+      for (const product of products) {
+        if (!product?.slug) continue;
+        const lastmod = (product as any).updatedAt
+          ? new Date((product as any).updatedAt).toISOString().split("T")[0]
+          : today;
+        urls.push(
+          `  <url>\n    <loc>${baseUrl}/urun/${escapeXml(product.slug)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
+        );
+      }
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
+
+      res.set("Content-Type", "application/xml; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=3600");
+      res.send(xml);
+    } catch (error) {
+      console.error("[sitemap] generation failed:", error);
+      res.status(500).type("text/plain").send("Sitemap generation failed");
+    }
+  });
+
   // Social Media Crawler Detection - serves pre-rendered OG tags for bots
   const crawlerPatterns = [
     'facebookexternalhit',
@@ -4863,17 +4928,34 @@ export async function registerRoutes(
 
   // Robots.txt
   app.get("/robots.txt", (req, res) => {
-    const baseUrl = req.protocol + '://' + req.get('host');
+    const host = req.get('host') || '';
+    const isProd = host.includes('polenstone.com.tr');
+    const baseUrl = isProd
+      ? 'https://polenstone.com.tr'
+      : `${req.protocol}://${host}`;
     const robotsTxt = `User-agent: *
 Allow: /
+
+Disallow: /sepet
+Disallow: /odeme
+Disallow: /odeme-basarili
+Disallow: /odeme-basarisiz
+Disallow: /siparis-takip
+Disallow: /hesabim
+Disallow: /hesabim/
+Disallow: /giris
+Disallow: /kayit
+Disallow: /sifremi-unuttum
+Disallow: /sifre-sifirla
+Disallow: /toov-admin
 Disallow: /toov-admin/
 Disallow: /api/
-Disallow: /odeme
-Disallow: /hesabim
+Disallow: /uploads/temp/
 
 Sitemap: ${baseUrl}/sitemap.xml
 `;
-    res.set('Content-Type', 'text/plain');
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
     res.send(robotsTxt);
   });
 

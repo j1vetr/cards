@@ -6,6 +6,7 @@ interface SEOProps {
   image?: string;
   url?: string;
   type?: 'website' | 'product' | 'article';
+  noIndex?: boolean;
   product?: {
     name: string;
     price: number;
@@ -19,8 +20,8 @@ interface SEOProps {
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const DEFAULT_TITLE = 'Polen Stone — Doğal Taş & Mermer';
-const DEFAULT_DESCRIPTION = 'Polen Stone — Premium doğal taş ve mermer markası. Mekânlarınıza doğanın ihtişamını taşıyın.';
+const DEFAULT_TITLE = 'Polen Stone | Doğal Taş ve Mermer';
+const DEFAULT_DESCRIPTION = 'Polen Stone, premium mermer, granit, traverten ve oniks koleksiyonu sunan doğal taş markasıdır. Mekânlarınıza doğanın ihtişamını taşıyın.';
 const SITE_NAME = 'Polen Stone';
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -30,6 +31,7 @@ export function SEO({
   image,
   url,
   type = 'website',
+  noIndex = false,
   product,
   breadcrumbs
 }: SEOProps) {
@@ -48,6 +50,7 @@ export function SEO({
     };
 
     updateMetaTag('meta[name="description"]', description);
+    updateMetaTag('meta[name="robots"]', noIndex ? 'noindex, nofollow' : 'index, follow');
 
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonical) {
@@ -166,7 +169,7 @@ export function SEO({
       const managedCanonical = document.querySelector('link[rel="canonical"][data-managed="seo"]');
       if (managedCanonical) managedCanonical.remove();
     };
-  }, [fullTitle, description, fullUrl, type, imageUrl, product, breadcrumbs]);
+  }, [fullTitle, description, fullUrl, type, imageUrl, noIndex, product, breadcrumbs]);
 
   return null;
 }

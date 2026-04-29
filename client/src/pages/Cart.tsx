@@ -5,6 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import { Minus, Plus, Trash2, ShoppingBag, Truck, Shield, RotateCcw, ArrowRight, Package } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SEO } from '@/components/SEO';
 
 interface Product {
   id: string;
@@ -58,6 +59,7 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden w-full">
+      <SEO title="Sepetim" description="Polen Stone alışveriş sepetiniz." url="/sepet" noIndex />
       <Header />
 
       <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6 w-full box-border">

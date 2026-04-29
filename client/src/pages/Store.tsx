@@ -128,7 +128,7 @@ export default function Store() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       <SEO
         title="Mağaza"
-        description="Polen Stone doğal taş ve mermer koleksiyonu — Tüm ürünleri keşfedin"
+        description="Polen Stone doğal taş ve mermer koleksiyonunun tamamı. Mermer, granit, traverten ve oniks ürünlerini keşfedin."
         url="/magaza"
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },

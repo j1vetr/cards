@@ -2,10 +2,12 @@ import { Link } from 'wouter';
 import { Header } from '@/components/Header';
 import { Home, ArrowLeft, Search, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SEO } from '@/components/SEO';
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Sayfa Bulunamadı" description="Aradığınız sayfa mevcut değil." noIndex />
       <Header />
       
       <main className="pt-20 lg:pt-6 pb-12 px-4 sm:px-6">

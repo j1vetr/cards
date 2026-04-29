@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import { SEO } from '@/components/SEO';
 import { Lock, ArrowRight, CheckCircle2, KeyRound, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -98,6 +99,7 @@ export default function ResetPassword() {
   if (validating) {
     return (
       <div className="min-h-screen bg-background">
+        <SEO title="Şifre Sıfırla" description="Polen Stone hesap şifrenizi yenileyin." url="/sifre-sifirla" noIndex />
         <Header />
         <main className="pt-20 min-h-screen flex items-center justify-center p-6">
           <div className="text-center">

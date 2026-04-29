@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowUpRight, Check } from 'lucide-react';
 import { AuthCrossLinkCTA } from '@/components/AuthCrossLinkCTA';
@@ -83,6 +84,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO title="Üye Ol" description="Polen Stone üyelik kaydı." url="/kayit" noIndex />
       <Header />
 
       <main className="pt-20">

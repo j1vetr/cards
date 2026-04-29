@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, RefreshCw, Phone, CreditCard, ShieldCheck, Wallet } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 
 export default function PaymentFail() {
   const [merchantOid, setMerchantOid] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export default function PaymentFail() {
 
   return (
     <div className="min-h-screen bg-[#faf7f1] flex flex-col overflow-x-hidden">
+      <SEO title="Ödeme Başarısız" description="Ödeme tamamlanamadı." url="/odeme-basarisiz" noIndex />
       <Header />
 
       {/* Üst — uyarı banneri */}

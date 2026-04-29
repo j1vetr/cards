@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { SEO } from '@/components/SEO';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 import {
   Search,
@@ -227,6 +228,7 @@ export default function OrderTracking() {
 
   return (
     <div className="min-h-screen bg-[#faf7f1] flex flex-col overflow-x-hidden">
+      <SEO title="Sipariş Takip" description="Polen Stone sipariş durumu sorgulama." url="/siparis-takip" noIndex />
       <Header />
 
       {/* Üst — sayfa başlığı */}

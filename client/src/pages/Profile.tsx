@@ -31,6 +31,7 @@ import {
   Home
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -335,6 +336,7 @@ export default function Profile() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-white">
+        <SEO title="Hesabım" description="Polen Stone hesap bilgileriniz, siparişleriniz ve adresleriniz." url="/hesabim" noIndex />
         <Header />
         <main className="pt-20 lg:pt-8 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-black/30" />
