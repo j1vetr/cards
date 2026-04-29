@@ -104,16 +104,34 @@ export function useAdminDashboardData({
     onSuccess: onLoggedOut,
   });
 
+  // Ürün değişimleri admin Stok/İstatistik tablarını ve frontend katalog
+  // cache'ini etkiler — hepsini birden geçersiz kılıyoruz ki ctrl+R gerekmeden
+  // her sayfa otomatik yenilensin.
+  const invalidateProductRelated = () => {
+    queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-inventory'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-low-stock'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+  };
+
+  const invalidateCategoryRelated = () => {
+    queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
+  };
+
   const deleteProductMutation = useMutation({
     mutationFn: async (id: string) =>
       (await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })).json(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }),
+    onSuccess: invalidateProductRelated,
   });
 
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: string) =>
       (await fetch(`/api/admin/categories/${id}`, { method: 'DELETE' })).json(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] }),
+    onSuccess: invalidateCategoryRelated,
   });
 
   const deleteUserMutation = useMutation({
@@ -135,7 +153,7 @@ export function useAdminDashboardData({
       ).json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      invalidateProductRelated();
       onProductSaved();
     },
   });
@@ -153,7 +171,7 @@ export function useAdminDashboardData({
       ).json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
+      invalidateCategoryRelated();
       onCategorySaved();
     },
   });
