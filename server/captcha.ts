@@ -1,6 +1,9 @@
 // Cloudflare Turnstile captcha doğrulama yardımcısı.
-// - Production'da TURNSTILE_SECRET_KEY zorunludur (fail closed).
-// - Geliştirme ortamında secret yoksa otomatik bypass eder.
+// - Önce admin panelinden kaydedilen secret okunur (site_settings.turnstile_secret_key).
+// - Yoksa env (TURNSTILE_SECRET_KEY) fallback'i denenir.
+// - Production'da hiçbiri yoksa fail closed.
+
+import { storage } from './storage';
 
 const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
@@ -11,18 +14,28 @@ export interface TurnstileVerifyResult {
   errorCodes?: string[];
 }
 
+async function getSecret(): Promise<string | null> {
+  try {
+    const fromDb = await storage.getSiteSetting('turnstile_secret_key');
+    if (fromDb && fromDb.trim()) return fromDb.trim();
+  } catch (err) {
+    console.error('[Turnstile] secret DB lookup failed:', err);
+  }
+  return process.env.TURNSTILE_SECRET_KEY || null;
+}
+
 /**
  * Cloudflare Turnstile token'ını doğrular.
  *
- * - Production'da (NODE_ENV=production) TURNSTILE_SECRET_KEY zorunludur.
- *   Tanımlı değilse istek reddedilir (fail closed).
+ * - Önce admin panelinden kaydedilen secret okunur, yoksa env fallback.
+ * - Production'da hiçbiri yoksa fail closed.
  * - Diğer ortamlarda secret yoksa bypass — yerel/staging davranışı.
  */
 export async function verifyTurnstile(
   token: string | undefined | null,
   remoteIp?: string,
 ): Promise<TurnstileVerifyResult> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret = await getSecret();
 
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {

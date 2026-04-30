@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound } from 'lucide-react';
+import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound, ShieldCheck } from 'lucide-react';
 
 type WhatsAppEvent =
   | 'order_received_customer'
@@ -84,6 +84,8 @@ export default function SettingsPanel() {
     wpileti_api_key: '',
     wpileti_endpoint: 'http://127.0.0.1:3225/api/send-message',
     wpileti_admin_phone: '',
+    turnstile_site_key: '',
+    turnstile_secret_key: '',
     ...Object.fromEntries(WHATSAPP_EVENTS.flatMap(({ key, defaultTpl }) => [
       [`wpileti_evt_${key}`, 'true'],
       [`wpileti_tpl_${key}`, defaultTpl],
@@ -931,6 +933,62 @@ export default function SettingsPanel() {
               Test Gönder
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-neutral-200 rounded-xl p-6" data-testid="card-turnstile">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-orange-50 rounded-lg">
+            <ShieldCheck className="w-5 h-5 text-orange-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-neutral-900">Cloudflare Turnstile (Captcha)</h3>
+            <p className="text-sm text-neutral-500">
+              Misafir yorumlarda spam'i önlemek için kullanılan Cloudflare Turnstile anahtarları.
+              Anahtarları{' '}
+              <a
+                href="https://dash.cloudflare.com/?to=/:account/turnstile"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                Cloudflare panelinden
+              </a>{' '}
+              alabilirsiniz.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-500 mb-2">Site Key</label>
+            <input
+              type="text"
+              value={settings.turnstile_site_key}
+              onChange={(e) => setSettings(s => ({ ...s, turnstile_site_key: e.target.value }))}
+              placeholder="0x4AAAAA..."
+              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 font-mono text-sm"
+              data-testid="input-turnstile-site-key"
+            />
+            <p className="text-xs text-neutral-500 mt-1">Tarayıcıda görünür. Ürün sayfasındaki yorum kutusunu çalıştırır.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-500 mb-2">Secret Key</label>
+            <input
+              type="password"
+              value={settings.turnstile_secret_key}
+              onChange={(e) => setSettings(s => ({ ...s, turnstile_secret_key: e.target.value }))}
+              placeholder="0x4AAAAA..."
+              autoComplete="new-password"
+              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 font-mono text-sm"
+              data-testid="input-turnstile-secret-key"
+            />
+            <p className="text-xs text-neutral-500 mt-1">Sunucuda saklanır, asla görüntülenmez. Token doğrulamada kullanılır.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+          Boş bırakılırsa sunucudaki ortam değişkenleri (TURNSTILE_SITE_KEY / TURNSTILE_SECRET_KEY) kullanılır. Production'da her ikisi de boşsa misafir yorumları reddedilir.
         </div>
       </div>
 

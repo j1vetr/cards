@@ -1805,9 +1805,15 @@ export async function registerRoutes(
   });
 
   // Reviews API
-  app.get("/api/config/captcha", (_req, res) => {
-    const siteKey = process.env.TURNSTILE_SITE_KEY || '';
-    res.json({ provider: 'turnstile', siteKey });
+  app.get("/api/config/captcha", async (_req, res) => {
+    try {
+      const fromDb = (await storage.getSiteSetting('turnstile_site_key')) || '';
+      const siteKey = fromDb.trim() || process.env.TURNSTILE_SITE_KEY || '';
+      res.json({ provider: 'turnstile', siteKey });
+    } catch (err) {
+      console.error('[Captcha] config lookup failed:', err);
+      res.json({ provider: 'turnstile', siteKey: process.env.TURNSTILE_SITE_KEY || '' });
+    }
   });
 
   app.get("/api/products/:productId/reviews", async (req, res) => {
@@ -4751,6 +4757,9 @@ export async function registerRoutes(
       if (settings.wpileti_api_key) {
         settings.wpileti_api_key = '••••••••';
       }
+      if (settings.turnstile_secret_key) {
+        settings.turnstile_secret_key = '••••••••';
+      }
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -4766,6 +4775,9 @@ export async function registerRoutes(
       }
       if (settings.wpileti_api_key === '••••••••') {
         delete settings.wpileti_api_key;
+      }
+      if (settings.turnstile_secret_key === '••••••••') {
+        delete settings.turnstile_secret_key;
       }
       await storage.setSiteSettings(settings);
       res.json({ success: true });
