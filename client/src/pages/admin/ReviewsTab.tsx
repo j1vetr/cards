@@ -226,7 +226,7 @@ function ReviewCard({ review }: { review: AdminReview }) {
             Onayla
           </button>
         )}
-        {status === 'pending' && !showRejectForm && (
+        {(status === 'pending' || status === 'approved') && !showRejectForm && (
           <button
             onClick={() => setShowRejectForm(true)}
             className="px-3 py-1.5 bg-white border border-neutral-300 text-neutral-700 text-[12px] font-semibold rounded hover:bg-neutral-50 inline-flex items-center gap-1.5"
