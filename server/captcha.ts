@@ -1,6 +1,6 @@
 // Cloudflare Turnstile captcha doğrulama yardımcısı.
-// Geliştirme ortamında secret yoksa otomatik bypass eder.
-// Production'da TURNSTILE_SECRET_KEY zorunludur.
+// - Production'da TURNSTILE_SECRET_KEY zorunludur (fail closed).
+// - Geliştirme ortamında secret yoksa otomatik bypass eder.
 
 const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
@@ -14,10 +14,9 @@ export interface TurnstileVerifyResult {
 /**
  * Cloudflare Turnstile token'ını doğrular.
  *
- * - Sunucuda TURNSTILE_SECRET_KEY tanımlı değilse, bypass eder
- *   (development davranışı). Bu sayede yerel kurulumda captcha
- *   olmadan da yorum gönderilebilir.
- * - Tanımlıysa Cloudflare'ın siteverify endpoint'i çağrılır.
+ * - Production'da (NODE_ENV=production) TURNSTILE_SECRET_KEY zorunludur.
+ *   Tanımlı değilse istek reddedilir (fail closed).
+ * - Diğer ortamlarda secret yoksa bypass — yerel/staging davranışı.
  */
 export async function verifyTurnstile(
   token: string | undefined | null,
@@ -25,8 +24,15 @@ export async function verifyTurnstile(
 ): Promise<TurnstileVerifyResult> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
 
-  // Secret yoksa bypass — development / staging davranışı.
   if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[Turnstile] TURNSTILE_SECRET_KEY tanımlı değil — production istek reddedildi.');
+      return {
+        success: false,
+        error: 'Captcha doğrulaması yapılandırılmamış. Lütfen yöneticiyle iletişime geçin.',
+        errorCodes: ['missing-secret-key'],
+      };
+    }
     return { success: true, bypassed: true };
   }
 

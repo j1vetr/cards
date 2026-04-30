@@ -1,4 +1,26 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+interface TurnstileApi {
+  render: (
+    el: HTMLElement,
+    opts: {
+      sitekey: string;
+      callback?: (token: string) => void;
+      'expired-callback'?: () => void;
+      'error-callback'?: () => void;
+      theme?: 'light' | 'dark' | 'auto';
+    },
+  ) => string;
+  remove: (id: string) => void;
+  reset: (id: string) => void;
+}
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
 import { Link, useParams } from 'wouter';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -121,7 +143,16 @@ export default function ProductDetail() {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const turnstileWidgetIdRef = useRef<string | null>(null);
-  const turnstileSiteKey = (import.meta as any).env?.VITE_TURNSTILE_SITE_KEY as string | undefined;
+  const { data: captchaConfig } = useQuery({
+    queryKey: ['/api/config/captcha'],
+    queryFn: async () => {
+      const res = await fetch('/api/config/captcha');
+      if (!res.ok) return { provider: 'turnstile', siteKey: '' };
+      return res.json() as Promise<{ provider: string; siteKey: string }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const turnstileSiteKey = captchaConfig?.siteKey || '';
 
   // Refs
   const ctaSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -262,7 +293,7 @@ export default function ProductDetail() {
 
   const resetTurnstile = useCallback(() => {
     setCaptchaToken(null);
-    const ts = (window as any).turnstile;
+    const ts = window.turnstile;
     if (ts && turnstileWidgetIdRef.current) {
       try { ts.reset(turnstileWidgetIdRef.current); } catch {}
     }
@@ -331,7 +362,7 @@ export default function ProductDetail() {
     let pollId: number | undefined;
 
     const tryRender = () => {
-      const ts = (window as any).turnstile;
+      const ts = window.turnstile;
       if (cancelled) return;
       if (!ts || typeof ts.render !== 'function') {
         pollId = window.setTimeout(tryRender, 250);
@@ -357,7 +388,7 @@ export default function ProductDetail() {
     return () => {
       cancelled = true;
       if (pollId) clearTimeout(pollId);
-      const ts = (window as any).turnstile;
+      const ts = window.turnstile;
       if (ts && turnstileWidgetIdRef.current) {
         try { ts.remove(turnstileWidgetIdRef.current); } catch {}
         turnstileWidgetIdRef.current = null;

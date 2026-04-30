@@ -1073,6 +1073,53 @@ export async function sendGuestReviewApprovedEmail(
   }
 }
 
+export interface GuestReviewRejectedPayload {
+  to: string;
+  guestName: string;
+  productName: string;
+  reason: string;
+}
+
+export async function sendGuestReviewRejectedEmail(
+  payload: GuestReviewRejectedPayload,
+): Promise<EmailResult> {
+  try {
+    const transporter = await createTransporter();
+    if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
+
+    const settings = await storage.getSiteSettings();
+    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com.tr';
+
+    const html = wrapTemplate(`
+      ${H1('Yorumunuz onaylanmadı.')}
+      ${Lede(`Merhaba ${escapeHtml(payload.guestName)}, <strong>${escapeHtml(payload.productName)}</strong> ürünü için gönderdiğiniz değerlendirme aşağıdaki gerekçeyle yayınlanmadı. Yeni bir yorum göndermekten çekinmeyin.`)}
+
+      ${infoCard(`
+        <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;color:#7c2d12;text-transform:uppercase;letter-spacing:0.05em;">Gerekçe</p>
+        <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.5;">${escapeHtml(payload.reason)}</p>
+      `)}
+
+      ${Small('Polen Stone — doğal taşın sıcaklığını evinize taşıyoruz.')}
+    `, {
+      preheader: `Yorumunuz onaylanmadı — ${payload.productName}`,
+      title: 'Yorumunuz onaylanmadı',
+    });
+
+    await transporter.sendMail({
+      from: `"Polen Stone" <${fromEmail}>`,
+      to: payload.to,
+      subject: `Yorumunuz onaylanmadı — ${payload.productName}`,
+      html,
+    });
+
+    console.log(`[Email] Guest review rejected email sent to ${payload.to}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Email] Failed to send guest review rejected:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function sendBankTransferPendingEmail(order: Order, items: OrderItem[]): Promise<EmailResult> {
   try {
     const transporter = await createTransporter();

@@ -99,7 +99,13 @@ import { eq, and, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum } f
 export interface ReviewAdminRow {
   id: string;
   productId: string;
+  productName: string;
+  productSlug: string;
+  productImage: string | null;
   userId: string | null;
+  userFirstName: string | null;
+  userLastName: string | null;
+  userEmail: string | null;
   guestName: string | null;
   guestEmail: string | null;
   rating: number;
@@ -110,15 +116,6 @@ export interface ReviewAdminRow {
   approvedAt: Date | null;
   approvedBy: string | null;
   createdAt: Date;
-  product: {
-    id: string;
-    name: string;
-    slug: string;
-    image: string | null;
-  };
-  author:
-    | { type: 'user'; displayName: string; email: string | null }
-    | { type: 'guest'; displayName: string; email: string | null };
 }
 
 export interface AdminStats {
@@ -1080,7 +1077,13 @@ export class DbStorage implements IStorage {
     return rows.map(r => ({
       id: r.id,
       productId: r.productId,
+      productName: r.productName || 'Silinmiş ürün',
+      productSlug: r.productSlug || '',
+      productImage: r.productImage,
       userId: r.userId,
+      userFirstName: r.userFirstName,
+      userLastName: r.userLastName,
+      userEmail: r.userEmail,
       guestName: r.guestName,
       guestEmail: r.guestEmail,
       rating: r.rating,
@@ -1091,23 +1094,6 @@ export class DbStorage implements IStorage {
       approvedAt: r.approvedAt,
       approvedBy: r.approvedBy,
       createdAt: r.createdAt,
-      product: {
-        id: r.productId,
-        name: r.productName || 'Silinmiş ürün',
-        slug: r.productSlug || '',
-        image: r.productImage,
-      },
-      author: r.userId
-        ? {
-            type: 'user' as const,
-            displayName: [r.userFirstName, r.userLastName].filter(Boolean).join(' ') || (r.userEmail ?? 'Üye'),
-            email: r.userEmail,
-          }
-        : {
-            type: 'guest' as const,
-            displayName: r.guestName || 'Misafir',
-            email: r.guestEmail,
-          },
     }));
   }
 

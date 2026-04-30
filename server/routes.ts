@@ -26,6 +26,7 @@ import {
   sendBankTransferPendingEmail,
   sendAdminReviewNotificationEmail,
   sendGuestReviewApprovedEmail,
+  sendGuestReviewRejectedEmail,
   type AdminReviewNotificationPayload,
 } from "./emailService";
 import { verifyTurnstile, getClientIp } from "./captcha";
@@ -1794,6 +1795,11 @@ export async function registerRoutes(
   });
 
   // Reviews API
+  app.get("/api/config/captcha", (_req, res) => {
+    const siteKey = process.env.TURNSTILE_SITE_KEY || '';
+    res.json({ provider: 'turnstile', siteKey });
+  });
+
   app.get("/api/products/:productId/reviews", async (req, res) => {
     try {
       const reviews = await storage.getProductReviews(req.params.productId);
@@ -1850,22 +1856,20 @@ export async function registerRoutes(
         });
 
         // Bildirim — admin'e yeni yorum bekliyor
-        try {
-          const user = await storage.getUser(userId);
-          const author = user
-            ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
-            : 'Üye';
-          notifyAdminNewReview({
-            productName: product.name,
-            productSlug: product.slug,
-            authorName: author,
-            authorEmail: user?.email || null,
-            rating,
-            title: cleanTitle || null,
-            content: cleanContent || null,
-            isGuest: false,
-          }).catch(err => console.error('[Reviews] notify admin failed:', err));
-        } catch {}
+        const user = await storage.getUser(userId);
+        const author = user
+          ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+          : 'Üye';
+        notifyAdminNewReview({
+          productName: product.name,
+          productSlug: product.slug,
+          authorName: author,
+          authorEmail: user?.email || null,
+          rating,
+          title: cleanTitle || null,
+          content: cleanContent || null,
+          isGuest: false,
+        }).catch(err => console.error('[Reviews] notify admin failed:', err));
 
         return res.status(201).json({
           ...review,
@@ -1914,18 +1918,16 @@ export async function registerRoutes(
       });
 
       // Bildirim — admin'e yeni misafir yorumu bekliyor
-      try {
-        notifyAdminNewReview({
-          productName: product.name,
-          productSlug: product.slug,
-          authorName: trimmedName,
-          authorEmail: trimmedEmail,
-          rating,
-          title: cleanTitle || null,
-          content: cleanContent || null,
-          isGuest: true,
-        }).catch(err => console.error('[Reviews] notify admin failed:', err));
-      } catch {}
+      notifyAdminNewReview({
+        productName: product.name,
+        productSlug: product.slug,
+        authorName: trimmedName,
+        authorEmail: trimmedEmail,
+        rating,
+        title: cleanTitle || null,
+        content: cleanContent || null,
+        isGuest: true,
+      }).catch(err => console.error('[Reviews] notify admin failed:', err));
 
       return res.status(201).json({
         ...review,
@@ -2004,6 +2006,19 @@ export async function registerRoutes(
       if (!review) return res.status(404).json({ error: "Yorum bulunamadı" });
 
       const updated = await storage.rejectReview(req.params.id, reason, adminId);
+
+      if (review.guestEmail && review.guestName) {
+        const product = await storage.getProduct(review.productId);
+        if (product) {
+          sendGuestReviewRejectedEmail({
+            to: review.guestEmail,
+            guestName: review.guestName,
+            productName: product.name,
+            reason,
+          }).catch(err => console.error('[Admin Reviews] guest reject email failed:', err));
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error('[Admin Reviews] reject error:', error);
