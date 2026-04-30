@@ -699,6 +699,16 @@ export async function registerRoutes(
     next();
   };
 
+  // Typed accessor — `requireAdmin` middleware'inden sonra çağrılırsa
+  // her zaman string döner. `(req as any).adminId` cast'lerini kapsüller.
+  const getAdminId = (req: Request): string => {
+    const id = (req as Request & { adminId?: unknown }).adminId;
+    if (typeof id !== 'string' || !id) {
+      throw new Error('Admin context missing — requireAdmin middleware did not run.');
+    }
+    return id;
+  };
+
   // Allowed upload types for security
   const ALLOWED_UPLOAD_TYPES = ['products', 'categories', 'hero', 'branding'];
 
@@ -1966,7 +1976,7 @@ export async function registerRoutes(
 
   app.post("/api/admin/reviews/:id/approve", requireAdmin, async (req, res) => {
     try {
-      const adminId = (req as any).adminId as string;
+      const adminId = getAdminId(req);
       const review = await storage.getReviewById(req.params.id);
       if (!review) return res.status(404).json({ error: "Yorum bulunamadı" });
 
@@ -1985,7 +1995,9 @@ export async function registerRoutes(
               rating: review.rating,
             }).catch(err => console.error('[Reviews] approval email failed:', err));
           }
-        } catch {}
+        } catch (err) {
+          console.error('[Reviews] product lookup for approval email failed:', err);
+        }
       }
 
       res.json(updated);
@@ -1997,7 +2009,7 @@ export async function registerRoutes(
 
   app.post("/api/admin/reviews/:id/reject", requireAdmin, async (req, res) => {
     try {
-      const adminId = (req as any).adminId as string;
+      const adminId = getAdminId(req);
       const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim().slice(0, 500) : '';
       if (!reason) {
         return res.status(400).json({ error: "Lütfen reddetme nedenini belirtin." });

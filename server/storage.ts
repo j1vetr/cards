@@ -94,7 +94,7 @@ import {
   type MarketplaceSyncRun,
   type InsertMarketplaceSyncRun,
 } from "@shared/schema";
-import { eq, and, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum } from "drizzle-orm";
+import { eq, and, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum, type SQL } from "drizzle-orm";
 
 export interface PublicProductReview {
   id: string;
@@ -1062,7 +1062,7 @@ export class DbStorage implements IStorage {
       productImage: sql<string | null>`(${products.images}->>0)`,
     };
 
-    let whereClause: any = undefined;
+    let whereClause: SQL | undefined;
     if (filter === 'pending') {
       whereClause = and(eq(productReviews.isApproved, false), sql`${productReviews.rejectionReason} IS NULL`);
     } else if (filter === 'approved') {
