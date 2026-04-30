@@ -53,7 +53,7 @@ export const DEFAULT_TEMPLATES: Record<WhatsAppEvent, string> = {
   order_bank_transfer_admin:
     '⚠️ *HAVALE İLE ÖDEME — KONTROL ET*\n\nMüşteri havale yöntemiyle yeni bir sipariş oluşturdu.\n\nSipariş No: {{siparisNo}}\nMüşteri: {{musteriAdi}}\nTelefon: {{musteriTelefon}}\nTutar: {{toplam}} TL\n\nHesap hareketlerini kontrol edip admin panelinden onaylayabilirsin.',
   review_pending_admin:
-    '💬 *YENİ YORUM ONAY BEKLİYOR*\n\nÜrün: *{{urunAdi}}*\nYazan: {{yorumYazari}} {{misafirEtiketi}}\nPuan: {{yildizlar}} ({{puan}}/5)\n{{baslikSatiri}}{{icerikSatiri}}\nAdmin panelinden onaylamak için: {{siteAdi}}/toov-admin?tab=reviews',
+    '💬 *YENİ YORUM ONAY BEKLİYOR*\n\nÜrün: *{{urunAdi}}*\nYazan: {{yorumYazari}} {{misafirEtiketi}}\nPuan: {{yildizlar}} ({{puan}}/5)\n{{baslikSatiri}}{{icerikSatiri}}\nAdmin panelinden onaylamak için: {{adminPanelUrl}}',
 };
 
 const DEFAULT_ENDPOINT = 'http://127.0.0.1:3225/api/send-message';
@@ -267,6 +267,7 @@ export async function sendReviewPendingToAdmin(payload: ReviewPendingPayload): P
   const baslikSatiri = payload.title ? `Başlık: _${truncate(payload.title, 80)}_\n` : '';
   const icerikSatiri = payload.content ? `Yorum: "${truncate(payload.content, 200)}"\n\n` : '\n';
 
+  const siteUrl = process.env.SITE_URL || 'https://polenstone.com.tr';
   const vars: Record<string, string> = {
     urunAdi: payload.productName,
     yorumYazari: payload.authorName,
@@ -276,6 +277,7 @@ export async function sendReviewPendingToAdmin(payload: ReviewPendingPayload): P
     baslikSatiri,
     icerikSatiri,
     siteAdi: config.siteName,
+    adminPanelUrl: `${siteUrl}/toov-admin?tab=reviews`,
   };
 
   const message = renderTemplate(config.templates.review_pending_admin, vars);
