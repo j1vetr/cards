@@ -6440,25 +6440,24 @@ ${items.join("\n")}
       const brandColor = '#fdb51d';
       const darkColor = '#1a1a1a';
 
-      const svgLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-logo.svg');
-      const pngLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-icon.png');
+      const brandingDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding');
+      const logoFiles = ['polen-logo.png', 'polen-logo.svg', 'polen-icon.png', 'hank-logo.svg', 'hank-icon.png'];
 
       let logoAdded = false;
-      if (fs.existsSync(svgLogoPath)) {
+      for (const logoFile of logoFiles) {
+        if (logoAdded) break;
+        const logoPath = path.join(brandingDir, logoFile);
+        if (!fs.existsSync(logoPath)) continue;
         try {
-          const pngBuf = await sharp(svgLogoPath).resize(140).png().toBuffer();
-          doc.image(pngBuf, marginL, 30, { width: 100 });
+          if (logoFile.endsWith('.svg')) {
+            const pngBuf = await sharp(logoPath).resize(140).png().toBuffer();
+            doc.image(pngBuf, marginL, 30, { width: 100 });
+          } else {
+            doc.image(logoPath, marginL, 30, { width: 100 });
+          }
           logoAdded = true;
         } catch (logoErr) {
-          console.warn('[Wholesale PDF] SVG logo conversion failed:', logoErr);
-        }
-      }
-      if (!logoAdded && fs.existsSync(pngLogoPath)) {
-        try {
-          doc.image(pngLogoPath, marginL, 30, { width: 80 });
-          logoAdded = true;
-        } catch (logoErr) {
-          console.warn('[Wholesale PDF] PNG logo embed failed:', logoErr);
+          console.warn(`[Wholesale PDF] Logo embed failed (${logoFile}):`, logoErr);
         }
       }
       if (!logoAdded) {
@@ -6603,12 +6602,12 @@ ${items.join("\n")}
 
         if (rate > 0) {
           doc.fontSize(7).font(fontR).fillColor('#999999');
-          doc.text(
-            `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
-            colPrice,
-            currentY + 15,
-            { width: colPriceW, align: 'right', strike: true },
-          );
+          const listPriceText = `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`;
+          doc.text(listPriceText, colPrice, currentY + 15, { width: colPriceW, align: 'right' });
+          const textWidth = doc.widthOfString(listPriceText);
+          const strikeX = colPrice + colPriceW - textWidth;
+          const strikeY = currentY + 15 + 4;
+          doc.save().moveTo(strikeX, strikeY).lineTo(strikeX + textWidth, strikeY).lineWidth(0.5).stroke('#999999').restore();
 
           doc.fontSize(8).font(fontB).fillColor('#16a34a');
           doc.text(
