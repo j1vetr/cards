@@ -4226,6 +4226,16 @@ export async function registerRoutes(
         shippingCarrier,
       });
       if (!order) return res.status(404).json({ error: "Order not found" });
+
+      if (trackingNumber && (order.status === 'shipped' || order.status === 'delivered')) {
+        sendOrderShippedToCustomer(order).catch(err =>
+          console.error('[WhatsApp] Shipping notification (tracking update) failed:', err)
+        );
+        sendShippingNotificationEmail(order).catch(err =>
+          console.error('[Email] Shipping notification (tracking update) failed:', err)
+        );
+      }
+
       res.json(order);
     } catch (error) {
       res.status(500).json({ error: "Failed to update tracking" });
