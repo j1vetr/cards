@@ -6457,6 +6457,8 @@ ${items.join("\n")}
       const logoFiles = ['polen-logo.png', 'polen-logo.svg', 'polen-icon.png', 'hank-logo.svg', 'hank-icon.png'];
 
       let logoAdded = false;
+      const logoTopY = 30;
+      const logoHeight = 60;
       for (const logoFile of logoFiles) {
         if (logoAdded) break;
         const logoPath = path.join(brandingDir, logoFile);
@@ -6464,9 +6466,9 @@ ${items.join("\n")}
         try {
           if (logoFile.endsWith('.svg')) {
             const pngBuf = await sharp(logoPath).resize(140).png().toBuffer();
-            doc.image(pngBuf, marginL, 30, { width: 100 });
+            doc.image(pngBuf, marginL, logoTopY, { height: logoHeight });
           } else {
-            doc.image(logoPath, marginL, 30, { width: 100 });
+            doc.image(logoPath, marginL, logoTopY, { height: logoHeight });
           }
           logoAdded = true;
         } catch (logoErr) {
@@ -6474,58 +6476,60 @@ ${items.join("\n")}
         }
       }
       if (!logoAdded) {
-        doc.fontSize(24).font(fontB).fillColor(darkColor).text('Polen Stone', marginL, 35);
+        doc.fontSize(22).font(fontB).fillColor(darkColor).text('Polen Stone', marginL, logoTopY + 15);
       }
-
-      doc.rect(marginL, 90, usableW, 2).fill(brandColor);
-
-      doc.fontSize(20).font(fontB).fillColor(darkColor).text('TOPTAN FİYAT LİSTESİ', marginL, 105);
 
       const dateStr = new Date().toLocaleDateString('tr-TR', {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
       });
-      doc.fontSize(10).font(fontR).fillColor('#666666');
-      doc.text(`Tarih: ${dateStr}`, marginL, 132);
-      if (rate > 0) {
-        doc.text(`İndirim Oranı: %${rate}`, marginL, 147);
-      }
-      doc.text(`Toplam Ürün: ${filteredProducts.length}`, marginL, rate > 0 ? 162 : 147);
 
+      const rightColX = 300;
+      const rightColW = pageW - marginR - rightColX;
+      doc.fontSize(18).font(fontB).fillColor(darkColor).text('TOPTAN FİYAT LİSTESİ', rightColX, logoTopY, { width: rightColW, align: 'right' });
+      doc.fontSize(9).font(fontR).fillColor('#666666');
+      doc.text(dateStr, rightColX, logoTopY + 25, { width: rightColW, align: 'right' });
+      if (rate > 0) {
+        doc.text(`İndirim: %${rate}`, rightColX, logoTopY + 38, { width: rightColW, align: 'right' });
+      }
+      doc.text(`${filteredProducts.length} ürün`, rightColX, logoTopY + (rate > 0 ? 51 : 38), { width: rightColW, align: 'right' });
       if (categoryId) {
         const catName = catMap.get(categoryId) || '';
         if (catName) {
-          doc.text(`Kategori: ${catName}`, marginL, rate > 0 ? 177 : 162);
+          doc.text(catName, rightColX, logoTopY + (rate > 0 ? 64 : 51), { width: rightColW, align: 'right' });
         }
       }
 
+      const separatorY = logoTopY + logoHeight + 8;
+      doc.rect(marginL, separatorY, usableW, 2).fill(brandColor);
+
       const colImg = marginL;
-      const colImgW = 45;
-      const colName = colImg + colImgW + 5;
-      const colNameW = 195;
-      const colCat = colName + colNameW + 5;
-      const colCatW = 80;
-      const colPrice = colCat + colCatW + 5;
-      const colPriceW = 70;
-      const colDisc = colPrice + colPriceW + 5;
+      const colImgW = 42;
+      const colName = colImg + colImgW + 4;
+      const colNameW = rate > 0 ? 210 : 260;
+      const colCat = colName + colNameW + 4;
+      const colCatW = 60;
+      const colPrice = colCat + colCatW + 4;
+      const colPriceW = rate > 0 ? 65 : 90;
+      const colDisc = colPrice + colPriceW + 4;
       const colDiscW = 70;
-      const colBadge = colDisc + colDiscW + 5;
-      const colBadgeW = 40;
-      const headerY = rate > 0 ? (categoryId ? 200 : 190) : (categoryId ? 185 : 175);
+      const colBadge = colDisc + colDiscW + 4;
+      const colBadgeW = 28;
+      const headerY = separatorY + 10;
 
       const drawTableHeader = (y: number) => {
-        doc.rect(marginL, y, usableW, 22).fill(darkColor);
+        doc.rect(marginL, y, usableW, 20).fill(darkColor);
         doc.fontSize(7).font(fontB).fillColor('#ffffff');
-        doc.text('Görsel', colImg + 3, y + 7, { width: colImgW, align: 'center' });
-        doc.text('Ürün Adı', colName, y + 7, { width: colNameW });
-        doc.text('Kategori', colCat, y + 7, { width: colCatW });
-        doc.text('Liste Fiyatı', colPrice, y + 7, { width: colPriceW, align: 'right' });
+        doc.text('', colImg + 2, y + 6, { width: colImgW, align: 'center' });
+        doc.text('Ürün Adı', colName, y + 6, { width: colNameW });
+        doc.text('Kategori', colCat, y + 6, { width: colCatW });
+        doc.text('Liste Fiyatı', colPrice, y + 6, { width: colPriceW, align: 'right' });
         if (rate > 0) {
-          doc.text('İndirimli', colDisc, y + 7, { width: colDiscW, align: 'right' });
-          doc.text('%', colBadge, y + 7, { width: colBadgeW, align: 'center' });
+          doc.text('İndirimli Fiyat', colDisc, y + 6, { width: colDiscW, align: 'right' });
+          doc.text('İnd.', colBadge, y + 6, { width: colBadgeW, align: 'center' });
         }
-        return y + 22;
+        return y + 20;
       };
 
       const allowedHosts = ['polenstone.com', 'cdn.polenstone.com', 'img.trendyol.com', 'cdn.dsmcdn.com'];
@@ -6591,7 +6595,7 @@ ${items.join("\n")}
         const cachedImg = imageCache.get(p.id);
         if (cachedImg) {
           try {
-            doc.image(cachedImg, colImg + 3, currentY + 4, { width: 42, height: 42 });
+            doc.image(cachedImg, colImg + 2, currentY + 4, { width: 38, height: 42 });
           } catch (imgErr) {
             console.warn(`[Wholesale PDF] Image embed failed for product ${p.id}:`, imgErr instanceof Error ? imgErr.message : imgErr);
           }
