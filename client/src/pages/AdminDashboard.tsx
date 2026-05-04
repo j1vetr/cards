@@ -205,6 +205,7 @@ export default function AdminDashboard() {
           <WholesaleTab
             products={products}
             categories={categories}
+            allVariants={allVariants}
             productsLoading={productsLoading}
           />
         )}

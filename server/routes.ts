@@ -11,7 +11,7 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, coupons, products, stockAdjustments, productCategories } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
 import { 
   sendWelcomeEmail, 
@@ -6389,8 +6389,21 @@ ${items.join("\n")}
       const { discountRate = 0, productIds, categoryId } = req.body;
       const rate = Math.max(0, Math.min(99, Number(discountRate) || 0));
 
+      const allVariants = await db.select().from(productVariants);
+      const stockByProduct = new Map<string, number>();
+      const variantCountByProduct = new Map<string, number>();
+      for (const v of allVariants) {
+        stockByProduct.set(v.productId, (stockByProduct.get(v.productId) || 0) + (v.stock || 0));
+        variantCountByProduct.set(v.productId, (variantCountByProduct.get(v.productId) || 0) + 1);
+      }
+
       let filteredProducts = await storage.getAllProducts();
-      filteredProducts = filteredProducts.filter((p) => p.isActive);
+      filteredProducts = filteredProducts.filter((p) => {
+        if (!p.isActive) return false;
+        const variantCount = variantCountByProduct.get(p.id) || 0;
+        if (variantCount === 0) return true;
+        return (stockByProduct.get(p.id) || 0) > 0;
+      });
 
       if (productIds && Array.isArray(productIds) && productIds.length > 0) {
         const idSet = new Set(productIds as string[]);

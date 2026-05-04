@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Download, Percent, ImageIcon, Loader2, Search } from 'lucide-react';
-import type { Product, Category } from './_shared/types';
+import type { Product, Category, ProductVariant } from './_shared/types';
 import {
   PageHeader,
   Card,
@@ -13,6 +13,7 @@ import {
 interface WholesaleTabProps {
   products: Product[];
   categories: Category[];
+  allVariants: ProductVariant[];
   productsLoading?: boolean;
 }
 
@@ -27,6 +28,7 @@ function formatPrice(value: string | number): string {
 export default function WholesaleTab({
   products,
   categories,
+  allVariants,
   productsLoading,
 }: WholesaleTabProps) {
   const [discountRate, setDiscountRate] = useState<number>(0);
@@ -40,8 +42,14 @@ export default function WholesaleTab({
   }, [queryClient]);
 
   const activeProducts = useMemo(() => {
-    return products.filter((p) => p.isActive);
-  }, [products]);
+    return products.filter((p) => {
+      if (!p.isActive) return false;
+      const variants = allVariants.filter((v) => v.productId === p.id);
+      if (variants.length === 0) return true;
+      const totalStock = variants.reduce((s, v) => s + (v.stock || 0), 0);
+      return totalStock > 0;
+    });
+  }, [products, allVariants]);
 
   const filteredProducts = useMemo(() => {
     let list = activeProducts;
