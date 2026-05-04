@@ -6386,8 +6386,26 @@ ${items.join("\n")}
   // ==========================================================================
   app.post("/api/admin/wholesale/pdf", requireAdmin, async (req, res) => {
     try {
-      const { discountRate = 0, productIds, categoryId } = req.body;
-      const rate = Math.max(0, Math.min(99, Number(discountRate) || 0));
+      const { discountRate = 0, productIds, categoryId, categoryDiscounts, productDiscounts } = req.body;
+      const generalRate = Math.max(0, Math.min(99, Number(discountRate) || 0));
+
+      const catDiscountMap = new Map<string, number>();
+      if (categoryDiscounts && typeof categoryDiscounts === 'object') {
+        for (const [catId, r] of Object.entries(categoryDiscounts)) {
+          const rv = Math.max(0, Math.min(99, Number(r) || 0));
+          if (rv > 0) catDiscountMap.set(catId, rv);
+        }
+      }
+
+      const prodDiscountMap = new Map<string, number>();
+      if (productDiscounts && typeof productDiscounts === 'object') {
+        for (const [pid, r] of Object.entries(productDiscounts)) {
+          const rv = Math.max(0, Math.min(99, Number(r) || 0));
+          if (rv > 0) prodDiscountMap.set(pid, rv);
+        }
+      }
+
+      const hasAnyDiscount = generalRate > 0 || catDiscountMap.size > 0 || prodDiscountMap.size > 0;
 
       const allVariants = await db.select().from(productVariants);
       const stockByProduct = new Map<string, number>();
@@ -6442,8 +6460,26 @@ ${items.join("\n")}
       const fontR = fs.existsSync(regularFontPath) ? 'Inter' : 'Helvetica';
       const fontB = fs.existsSync(boldFontPath) ? 'Inter-Bold' : 'Helvetica-Bold';
 
+      const getEffectiveRate = (productId: string, pCatId: string | null): number => {
+        const pRate = prodDiscountMap.get(productId);
+        if (pRate !== undefined && pRate > 0) return pRate;
+
+        const catIds: string[] = [];
+        if (pCatId) catIds.push(pCatId);
+        const extraCats = productCategoryMap.get(productId) || [];
+        for (const cid of extraCats) {
+          if (!catIds.includes(cid)) catIds.push(cid);
+        }
+        for (const cid of catIds) {
+          const cRate = catDiscountMap.get(cid);
+          if (cRate !== undefined && cRate > 0) return cRate;
+        }
+
+        return generalRate;
+      };
+
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Toptan-Fiyat-Listesi-${rate}%-${new Date().toISOString().slice(0, 10)}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="Toptan-Fiyat-Listesi-${new Date().toISOString().slice(0, 10)}.pdf"`);
       doc.pipe(res);
 
       const pageW = 595.28;
@@ -6490,14 +6526,25 @@ ${items.join("\n")}
       doc.fontSize(18).font(fontB).fillColor(darkColor).text('TOPTAN FİYAT LİSTESİ', rightColX, logoTopY, { width: rightColW, align: 'right' });
       doc.fontSize(9).font(fontR).fillColor('#666666');
       doc.text(dateStr, rightColX, logoTopY + 25, { width: rightColW, align: 'right' });
-      if (rate > 0) {
-        doc.text(`İndirim: %${rate}`, rightColX, logoTopY + 38, { width: rightColW, align: 'right' });
+      let infoY = logoTopY + 38;
+      if (generalRate > 0) {
+        doc.text(`Genel İndirim: %${generalRate}`, rightColX, infoY, { width: rightColW, align: 'right' });
+        infoY += 13;
       }
-      doc.text(`${filteredProducts.length} ürün`, rightColX, logoTopY + (rate > 0 ? 51 : 38), { width: rightColW, align: 'right' });
+      if (catDiscountMap.size > 0) {
+        doc.text(`${catDiscountMap.size} kategori özel indirimli`, rightColX, infoY, { width: rightColW, align: 'right' });
+        infoY += 13;
+      }
+      if (prodDiscountMap.size > 0) {
+        doc.text(`${prodDiscountMap.size} ürün özel indirimli`, rightColX, infoY, { width: rightColW, align: 'right' });
+        infoY += 13;
+      }
+      doc.text(`${filteredProducts.length} ürün`, rightColX, infoY, { width: rightColW, align: 'right' });
+      infoY += 13;
       if (categoryId) {
         const catName = catMap.get(categoryId) || '';
         if (catName) {
-          doc.text(catName, rightColX, logoTopY + (rate > 0 ? 64 : 51), { width: rightColW, align: 'right' });
+          doc.text(catName, rightColX, infoY, { width: rightColW, align: 'right' });
         }
       }
 
@@ -6507,11 +6554,11 @@ ${items.join("\n")}
       const colImg = marginL;
       const colImgW = 42;
       const colName = colImg + colImgW + 4;
-      const colNameW = rate > 0 ? 210 : 260;
+      const colNameW = hasAnyDiscount ? 210 : 260;
       const colCat = colName + colNameW + 4;
       const colCatW = 60;
       const colPrice = colCat + colCatW + 4;
-      const colPriceW = rate > 0 ? 65 : 90;
+      const colPriceW = hasAnyDiscount ? 65 : 90;
       const colDisc = colPrice + colPriceW + 4;
       const colDiscW = 70;
       const colBadge = colDisc + colDiscW + 4;
@@ -6525,7 +6572,7 @@ ${items.join("\n")}
         doc.text('Ürün Adı', colName, y + 6, { width: colNameW });
         doc.text('Kategori', colCat, y + 6, { width: colCatW });
         doc.text('Liste Fiyatı', colPrice, y + 6, { width: colPriceW, align: 'right' });
-        if (rate > 0) {
+        if (hasAnyDiscount) {
           doc.text('İndirimli Fiyat', colDisc, y + 6, { width: colDiscW, align: 'right' });
           doc.text('İnd.', colBadge, y + 6, { width: colBadgeW, align: 'center' });
         }
@@ -6615,9 +6662,10 @@ ${items.join("\n")}
         doc.text(catNames || '—', colCat, currentY + 15, { width: colCatW, lineBreak: true, height: 20 });
 
         const basePrice = parseFloat(p.basePrice);
-        const discountedPrice = rate > 0 ? basePrice * (1 - rate / 100) : basePrice;
+        const effectiveRate = getEffectiveRate(p.id, p.categoryId);
+        const discountedPrice = effectiveRate > 0 ? basePrice * (1 - effectiveRate / 100) : basePrice;
 
-        if (rate > 0) {
+        if (hasAnyDiscount && effectiveRate > 0) {
           doc.fontSize(7).font(fontR).fillColor('#999999');
           const listPriceText = `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`;
           doc.text(listPriceText, colPrice, currentY + 15, { width: colPriceW, align: 'right' });
@@ -6635,7 +6683,17 @@ ${items.join("\n")}
           );
 
           doc.fontSize(7).font(fontB).fillColor(brandColor);
-          doc.text(`%${rate}`, colBadge, currentY + 15, { width: colBadgeW, align: 'center' });
+          doc.text(`%${effectiveRate}`, colBadge, currentY + 15, { width: colBadgeW, align: 'center' });
+        } else if (hasAnyDiscount && effectiveRate === 0) {
+          doc.fontSize(8).font(fontB).fillColor(darkColor);
+          doc.text(
+            `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
+            colPrice,
+            currentY + 15,
+            { width: colPriceW, align: 'right' },
+          );
+          doc.fontSize(8).font(fontR).fillColor('#999999');
+          doc.text('—', colDisc, currentY + 15, { width: colDiscW, align: 'right' });
         } else {
           doc.fontSize(8).font(fontB).fillColor(darkColor);
           doc.text(
