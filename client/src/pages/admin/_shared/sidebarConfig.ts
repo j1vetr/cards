@@ -12,6 +12,7 @@ import {
   Database,
   Ticket,
   MessageSquare,
+  HandCoins,
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
@@ -30,6 +31,7 @@ export const VALID_TABS: TabType[] = [
   'marketplaces',
   'coupons',
   'reviews',
+  'wholesale',
 ];
 
 export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
@@ -50,7 +52,10 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
   },
   {
     title: 'Satış & Siparişler',
-    items: [{ id: 'orders', icon: ShoppingCart, label: 'Siparişler' }],
+    items: [
+      { id: 'orders', icon: ShoppingCart, label: 'Siparişler' },
+      { id: 'wholesale', icon: HandCoins, label: 'Toptan Satış' },
+    ],
   },
   {
     title: 'Pazarlama',

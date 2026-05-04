@@ -145,4 +145,5 @@ export type TabType =
   | 'menu'
   | 'marketplaces'
   | 'coupons'
-  | 'reviews';
+  | 'reviews'
+  | 'wholesale';

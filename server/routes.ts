@@ -6384,6 +6384,222 @@ ${items.join("\n")}
   // ==========================================================================
   // Marketplaces (Trendyol / N11 / Hepsiburada ...) — admin-only
   // ==========================================================================
+  app.post("/api/admin/wholesale/pdf", requireAdmin, async (req, res) => {
+    try {
+      const { discountRate = 0, productIds, categoryId } = req.body;
+      const rate = Math.max(0, Math.min(99, Number(discountRate) || 0));
+
+      let allProducts = await storage.getAllProducts();
+      allProducts = allProducts.filter((p: any) => p.isActive);
+
+      if (productIds && Array.isArray(productIds) && productIds.length > 0) {
+        const idSet = new Set(productIds);
+        allProducts = allProducts.filter((p: any) => idSet.has(p.id));
+      } else if (categoryId) {
+        allProducts = allProducts.filter((p: any) =>
+          p.categoryId === categoryId || (p.categoryIds || []).includes(categoryId),
+        );
+      }
+
+      const allCategories = await storage.getAllCategories();
+      const catMap = new Map(allCategories.map((c: any) => [c.id, c.name]));
+
+      const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+
+      const fontPath = path.join(process.cwd(), 'public', 'fonts');
+      const regularFontPath = path.join(fontPath, 'inter-regular.ttf');
+      const boldFontPath = path.join(fontPath, 'inter-bold.ttf');
+      if (fs.existsSync(regularFontPath) && fs.existsSync(boldFontPath)) {
+        doc.registerFont('Inter', regularFontPath);
+        doc.registerFont('Inter-Bold', boldFontPath);
+      }
+      const fontR = fs.existsSync(regularFontPath) ? 'Inter' : 'Helvetica';
+      const fontB = fs.existsSync(boldFontPath) ? 'Inter-Bold' : 'Helvetica-Bold';
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Toptan-Fiyat-Listesi-${rate}%-${new Date().toISOString().slice(0, 10)}.pdf"`);
+      doc.pipe(res);
+
+      const pageW = 595.28;
+      const marginL = 40;
+      const marginR = 40;
+      const usableW = pageW - marginL - marginR;
+      const brandColor = '#fdb51d';
+      const darkColor = '#1a1a1a';
+
+      const svgLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-logo.svg');
+      const pngLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-icon.png');
+
+      let logoAdded = false;
+      if (fs.existsSync(svgLogoPath)) {
+        try {
+          const pngBuf = await sharp(svgLogoPath).resize(140).png().toBuffer();
+          doc.image(pngBuf, marginL, 30, { width: 100 });
+          logoAdded = true;
+        } catch {}
+      }
+      if (!logoAdded && fs.existsSync(pngLogoPath)) {
+        try {
+          doc.image(pngLogoPath, marginL, 30, { width: 80 });
+          logoAdded = true;
+        } catch {}
+      }
+      if (!logoAdded) {
+        doc.fontSize(24).font(fontB).fillColor(darkColor).text('Polen Stone', marginL, 35);
+      }
+
+      doc.rect(marginL, 90, usableW, 2).fill(brandColor);
+
+      doc.fontSize(20).font(fontB).fillColor(darkColor).text('TOPTAN FİYAT LİSTESİ', marginL, 105);
+
+      const dateStr = new Date().toLocaleDateString('tr-TR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      });
+      doc.fontSize(10).font(fontR).fillColor('#666666');
+      doc.text(`Tarih: ${dateStr}`, marginL, 132);
+      if (rate > 0) {
+        doc.text(`İndirim Oranı: %${rate}`, marginL, 147);
+      }
+      doc.text(`Toplam Ürün: ${allProducts.length}`, marginL, rate > 0 ? 162 : 147);
+
+      if (categoryId) {
+        const catName = catMap.get(categoryId) || '';
+        if (catName) {
+          doc.text(`Kategori: ${catName}`, marginL, rate > 0 ? 177 : 162);
+        }
+      }
+
+      const colImg = marginL;
+      const colImgW = 45;
+      const colName = colImg + colImgW + 5;
+      const colNameW = 195;
+      const colCat = colName + colNameW + 5;
+      const colCatW = 80;
+      const colPrice = colCat + colCatW + 5;
+      const colPriceW = 70;
+      const colDisc = colPrice + colPriceW + 5;
+      const colDiscW = 70;
+      const colBadge = colDisc + colDiscW + 5;
+      const colBadgeW = 40;
+      const headerY = rate > 0 ? (categoryId ? 200 : 190) : (categoryId ? 185 : 175);
+
+      const drawTableHeader = (y: number) => {
+        doc.rect(marginL, y, usableW, 22).fill(darkColor);
+        doc.fontSize(7).font(fontB).fillColor('#ffffff');
+        doc.text('Görsel', colImg + 3, y + 7, { width: colImgW, align: 'center' });
+        doc.text('Ürün Adı', colName, y + 7, { width: colNameW });
+        doc.text('Kategori', colCat, y + 7, { width: colCatW });
+        doc.text('Liste Fiyatı', colPrice, y + 7, { width: colPriceW, align: 'right' });
+        if (rate > 0) {
+          doc.text('İndirimli', colDisc, y + 7, { width: colDiscW, align: 'right' });
+          doc.text('%', colBadge, y + 7, { width: colBadgeW, align: 'center' });
+        }
+        return y + 22;
+      };
+
+      let currentY = drawTableHeader(headerY);
+      const rowH = 50;
+      const pageBottom = 790;
+
+      for (let i = 0; i < allProducts.length; i++) {
+        if (currentY + rowH > pageBottom) {
+          doc.addPage();
+          currentY = drawTableHeader(40);
+        }
+
+        const p = allProducts[i] as any;
+        const bgColor = i % 2 === 0 ? '#ffffff' : '#f8f8f8';
+        doc.rect(marginL, currentY, usableW, rowH).fill(bgColor);
+        doc.rect(marginL, currentY, usableW, rowH).stroke('#e5e5e5');
+
+        const imgSrc = p.images?.[0];
+        if (imgSrc) {
+          try {
+            let imageUrl = imgSrc;
+            if (imageUrl.startsWith('/uploads/')) {
+              imageUrl = `https://polenstone.com${imageUrl}`;
+            }
+            if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+              const imgRes = await fetch(imageUrl);
+              if (imgRes.ok) {
+                const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+                const optimized = await sharp(imgBuf).resize(80, 80, { fit: 'cover' }).jpeg({ quality: 70 }).toBuffer();
+                doc.image(optimized, colImg + 3, currentY + 4, { width: 42, height: 42 });
+              }
+            }
+          } catch {}
+        }
+
+        doc.fontSize(8).font(fontB).fillColor(darkColor);
+        doc.text(p.name, colName, currentY + 8, { width: colNameW, lineBreak: true, height: 22 });
+        if (p.sku) {
+          doc.fontSize(6).font(fontR).fillColor('#888888');
+          doc.text(`SKU: ${p.sku}`, colName, currentY + 32, { width: colNameW });
+        }
+
+        const catIds = p.categoryIds?.length ? p.categoryIds : p.categoryId ? [p.categoryId] : [];
+        const catNames = catIds.map((id: string) => catMap.get(id)).filter(Boolean).join(', ');
+        doc.fontSize(7).font(fontR).fillColor('#666666');
+        doc.text(catNames || '—', colCat, currentY + 15, { width: colCatW, lineBreak: true, height: 20 });
+
+        const basePrice = parseFloat(p.basePrice);
+        const discountedPrice = rate > 0 ? basePrice * (1 - rate / 100) : basePrice;
+
+        if (rate > 0) {
+          doc.fontSize(7).font(fontR).fillColor('#999999');
+          doc.text(
+            `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
+            colPrice,
+            currentY + 15,
+            { width: colPriceW, align: 'right', strike: true },
+          );
+
+          doc.fontSize(8).font(fontB).fillColor('#16a34a');
+          doc.text(
+            `${discountedPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
+            colDisc,
+            currentY + 15,
+            { width: colDiscW, align: 'right' },
+          );
+
+          doc.fontSize(7).font(fontB).fillColor(brandColor);
+          doc.text(`%${rate}`, colBadge, currentY + 15, { width: colBadgeW, align: 'center' });
+        } else {
+          doc.fontSize(8).font(fontB).fillColor(darkColor);
+          doc.text(
+            `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
+            colPrice,
+            currentY + 15,
+            { width: colPriceW, align: 'right' },
+          );
+        }
+
+        currentY += rowH;
+      }
+
+      const range = doc.bufferedPageRange();
+      for (let pi = range.start; pi < range.start + range.count; pi++) {
+        doc.switchToPage(pi);
+        doc.fontSize(7).font(fontR).fillColor('#999999');
+        doc.text(
+          `Sayfa ${pi + 1} / ${range.count}`,
+          marginL,
+          pageBottom + 5,
+          { width: usableW, align: 'center' },
+        );
+      }
+
+      doc.end();
+    } catch (error) {
+      console.error('[Wholesale PDF] Error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'PDF oluşturma hatası' });
+      }
+    }
+  });
+
   const { registerMarketplaceRoutes } = await import("./marketplaces/routes");
   registerMarketplaceRoutes(app, requireAdmin);
 
