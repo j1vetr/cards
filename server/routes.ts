@@ -4224,6 +4224,17 @@ export async function registerRoutes(
       const order = await storage.getOrder(req.params.id);
       if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
 
+      // Çift gönderme koruması: notlarda zaten "Aras Kargo API'ye kayıt gönderildi" varsa tekrar gönderme
+      const existingNotes = await storage.getOrderNotes(req.params.id);
+      const alreadySent = existingNotes.some(n => n.content.includes("Aras Kargo API'ye kayıt gönderildi"));
+      if (alreadySent && !req.query.force) {
+        return res.json({
+          success: false,
+          alreadySent: true,
+          error: 'Bu sipariş daha önce Aras Kargo sistemine gönderildi. Tekrar göndermek için force=1 parametresi ekleyin.',
+        });
+      }
+
       const addr = order.shippingAddress as any;
       const addressLine = [addr?.address, addr?.district, addr?.city].filter(Boolean).join(', ');
       const isWorldwide = addr?.country && addr.country.toLowerCase() !== 'türkiye' && addr.country.toLowerCase() !== 'turkey' && addr.country !== 'TR';
@@ -4590,25 +4601,36 @@ window.addEventListener('load', function() {
 
       const result = await queryShipmentByIntegrationCode(order.orderNumber);
 
-      // If tracking number found and order doesn't have one yet, save it
+      // If tracking number found and order doesn't have one yet, save it + trigger notifications
+      let savedToOrder = false;
       if (result.success && result.found && result.trackingNumber && !order.trackingNumber) {
+        savedToOrder = true;
         const trackingUrl = `https://kargotakip.araskargo.com.tr/mainpage.aspx?code=${result.trackingNumber}`;
         await storage.updateOrderTracking(req.params.id, {
           trackingNumber: result.trackingNumber,
           trackingUrl,
           shippingCarrier: 'Aras Kargo',
         });
+        let updatedOrder = order;
         if (order.status !== 'shipped' && order.status !== 'delivered') {
-          await storage.updateOrder(req.params.id, { status: 'shipped', shippedAt: new Date() });
+          updatedOrder = (await storage.updateOrder(req.params.id, { status: 'shipped', shippedAt: new Date() })) || order;
         }
         await storage.createOrderNote({
           orderId: req.params.id,
           content: `Aras Kargo takip numarası otomatik alındı: ${result.trackingNumber}`,
           authorId: 'system',
         });
+        // Send WhatsApp + email shipping notification (same as manual tracking update)
+        const orderForNotif = { ...updatedOrder, trackingNumber: result.trackingNumber, trackingUrl, shippingCarrier: 'Aras Kargo' };
+        sendOrderShippedToCustomer(orderForNotif as any).catch(err =>
+          console.error('[ArasKargo] WhatsApp shipping notification failed:', err)
+        );
+        sendShippingNotificationEmail(orderForNotif as any).catch(err =>
+          console.error('[ArasKargo] Email shipping notification failed:', err)
+        );
       }
 
-      res.json({ ...result, savedToOrder: result.success && result.found && !!result.trackingNumber && !order.trackingNumber });
+      res.json({ ...result, savedToOrder });
     } catch (error: any) {
       console.error('[ArasKargo] Query status error:', error);
       res.status(500).json({ success: false, error: error.message || 'Durum sorgulanamadı' });

@@ -28,6 +28,8 @@ export async function getArasCredentials(): Promise<ArasCredentials> {
   };
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
 function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('90') && digits.length >= 12) return digits.slice(2);
@@ -37,9 +39,12 @@ function normalizePhone(phone: string): string {
 
 function toUpperTurkish(str: string): string {
   return str
-    .replace(/ı/g, 'I').replace(/i/g, 'İ')
-    .replace(/ş/g, 'Ş').replace(/ğ/g, 'Ğ')
-    .replace(/ü/g, 'Ü').replace(/ö/g, 'Ö')
+    .replace(/ı/g, 'I')
+    .replace(/i/g, 'İ')
+    .replace(/ş/g, 'Ş')
+    .replace(/ğ/g, 'Ğ')
+    .replace(/ü/g, 'Ü')
+    .replace(/ö/g, 'Ö')
     .replace(/ç/g, 'Ç')
     .toUpperCase();
 }
@@ -53,11 +58,67 @@ function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
+/**
+ * Extract the text content of the FIRST matching XML tag.
+ */
+function parseXmlText(xml: string, tagName: string): string {
+  const m = xml.match(new RegExp(`<(?:\\w+:)?${tagName}[^>]*>([^<]*)<\\/(?:\\w+:)?${tagName}>`, 'i'));
+  return m ? m[1].trim() : '';
+}
+
+/**
+ * Extract all text values from an array XML field (ArrayOfString → <string> elements).
+ * Only returns leaf-text nodes (no nested tags).
+ */
+function parseStringArray(xml: string, parentTag: string): string[] {
+  const parentRe = new RegExp(`<(?:\\w+:)?${parentTag}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${parentTag}>`, 'gi');
+  const results: string[] = [];
+  let parentMatch;
+  while ((parentMatch = parentRe.exec(xml)) !== null) {
+    const inner = parentMatch[1];
+    const stringRe = /<(?:\w+:)?string[^>]*>([^<]*)<\/(?:\w+:)?string>/gi;
+    let sm;
+    while ((sm = stringRe.exec(inner)) !== null) {
+      const val = sm[1].trim();
+      if (val) results.push(val);
+    }
+  }
+  return results;
+}
+
+/**
+ * Extract base64 binary values from ArrayOfBase64Binary → <base64Binary> elements.
+ */
+function parseBase64BinaryArray(xml: string, parentTag: string): string[] {
+  const parentRe = new RegExp(`<(?:\\w+:)?${parentTag}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${parentTag}>`, 'gi');
+  const results: string[] = [];
+  let parentMatch;
+  while ((parentMatch = parentRe.exec(xml)) !== null) {
+    const inner = parentMatch[1];
+    const binRe = /<(?:\w+:)?base64Binary[^>]*>([^<]+)<\/(?:\w+:)?base64Binary>/gi;
+    let bm;
+    while ((bm = binRe.exec(inner)) !== null) {
+      const val = bm[1].trim();
+      if (val) results.push(val);
+    }
+    // Also try bare base64Binary at root level (some SOAP impls omit wrapper)
+    if (results.length === 0) {
+      const bareRe = /^([A-Za-z0-9+/\r\n]+=*)$/m;
+      const val = inner.replace(/<[^>]+>/g, '').trim();
+      if (val && bareRe.test(val)) results.push(val);
+    }
+  }
+  return results;
+}
+
+// ── SetOrder ───────────────────────────────────────────────────────────────
+
 export interface SetOrderResult {
   success: boolean;
   resultCode?: number;
   resultMessage?: string;
   integrationCode?: string;
+  barcodeNumber?: string;
   error?: string;
 }
 
@@ -81,6 +142,7 @@ export async function createShipment(params: {
   const districtName = toUpperTurkish(params.district);
   const tradingWaybillNumber = params.orderNumber.slice(0, 16);
   const integrationCode = params.orderNumber.slice(0, 32);
+  // BarcodeNumber: alphanumeric only, max 64 chars
   const barcodeNumber = params.orderNumber.replace(/[^A-Za-z0-9]/g, '').slice(0, 32) || integrationCode.slice(0, 32);
   const desi = creds.defaultDesi;
   const fullAddress = params.address.slice(0, 250);
@@ -135,16 +197,26 @@ export async function createShipment(params: {
     });
 
     const text = await response.text();
-    console.log('[ArasKargo] SetOrder response:', text.slice(0, 500));
+    console.log('[ArasKargo] SetOrder response:', text.slice(0, 600));
 
+    // SetOrder returns ArrayOfOrderResultInfo → each has ResultCode + ResultMessage
     const resultCodeMatch = text.match(/<(?:\w+:)?ResultCode[^>]*>(\d+)<\/(?:\w+:)?ResultCode>/i);
     const resultMessageMatch = text.match(/<(?:\w+:)?ResultMessage[^>]*>([^<]*)<\/(?:\w+:)?ResultMessage>/i);
 
     const resultCode = resultCodeMatch ? parseInt(resultCodeMatch[1]) : -999;
-    const resultMessage = resultMessageMatch ? resultMessageMatch[1] : 'Yanıt ayrıştırılamadı';
+    const resultMessage = resultMessageMatch ? resultMessageMatch[1].trim() : '';
 
     if (resultCode === 0) {
-      return { success: true, resultCode, resultMessage: 'Kayıt başarıyla oluşturuldu', integrationCode };
+      return { success: true, resultCode, resultMessage: resultMessage || 'Kayıt başarıyla oluşturuldu', integrationCode, barcodeNumber };
+    }
+
+    if (resultCode === -999) {
+      // Could not parse resultCode — check for common error patterns
+      if (text.includes('401') || text.includes('Unauthorized')) {
+        return { success: false, error: 'Kimlik doğrulama hatası. Kullanıcı adı/şifre kontrol edin.' };
+      }
+      // No result code at all might mean XML parse error on Aras side
+      return { success: false, error: `Beklenmeyen yanıt: ${text.slice(0, 200)}` };
     }
 
     return { success: false, resultCode, resultMessage: resultMessage || `Hata kodu: ${resultCode}` };
@@ -154,165 +226,17 @@ export async function createShipment(params: {
   }
 }
 
-export interface BarcodeModel {
-  SenderAccountName?: string;
-  SenderAddress?: string;
-  SenderAddress2?: string;
-  ReceiverAccountName?: string;
-  ReceiverAddress?: string;
-  ReceiverAddress2?: string;
-  ReceiverAddress3?: string;
-  ReceiverPhone?: string;
-  ReceiverTown?: string;
-  ReceiverCity?: string;
-  DeliveryUnitName?: string;
-  InvoiceNumber?: string;
-  IntegrationCode?: string;
-  BarcodeNumber?: string;
-  Volume?: number;
-  TotalVolume?: number;
-  BarcodeDate?: string;
-}
-
-export interface LabelDataResult {
-  success: boolean;
-  images?: string[];
-  zebraPdf?: string[];
-  zebraZpl?: string[];
-  barcodeModels?: BarcodeModel[];
-  trackingNumber?: string;
-  message?: string;
-  error?: string;
-}
-
-function parseBase64Array(xml: string, tagName: string): string[] {
-  const results: string[] = [];
-  const re = new RegExp(`<(?:\\w+:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${tagName}>`, 'gi');
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    const val = m[1].trim();
-    if (val && !val.includes('<')) results.push(val);
-  }
-  return results;
-}
-
-function parseXmlText(xml: string, tagName: string): string {
-  const m = xml.match(new RegExp(`<(?:\\w+:)?${tagName}[^>]*>([^<]*)<\\/(?:\\w+:)?${tagName}>`, 'i'));
-  return m ? m[1].trim() : '';
-}
-
-function parseBarcodeModels(xml: string): BarcodeModel[] {
-  const models: BarcodeModel[] = [];
-  const blockRe = /<(?:\w+:)?BarcodeModel[^>]*>([\s\S]*?)<\/(?:\w+:)?BarcodeModel>/gi;
-  let block;
-  while ((block = blockRe.exec(xml)) !== null) {
-    const b = block[1];
-    models.push({
-      SenderAccountName: parseXmlText(b, 'SenderAccountName'),
-      SenderAddress: parseXmlText(b, 'SenderAddress'),
-      SenderAddress2: parseXmlText(b, 'SenderAddress2'),
-      ReceiverAccountName: parseXmlText(b, 'ReceiverAccountName'),
-      ReceiverAddress: parseXmlText(b, 'ReceiverAddress'),
-      ReceiverAddress2: parseXmlText(b, 'ReceiverAddress2'),
-      ReceiverAddress3: parseXmlText(b, 'ReceiverAddress3'),
-      ReceiverPhone: parseXmlText(b, 'ReceiverPhone'),
-      ReceiverTown: parseXmlText(b, 'ReceiverTown'),
-      ReceiverCity: parseXmlText(b, 'ReceiverCity'),
-      DeliveryUnitName: parseXmlText(b, 'DeliveryUnitName'),
-      InvoiceNumber: parseXmlText(b, 'InvoiceNumber'),
-      IntegrationCode: parseXmlText(b, 'IntegrationCode'),
-      BarcodeNumber: parseXmlText(b, 'BarcodeNumber'),
-      BarcodeDate: parseXmlText(b, 'BarcodeDate'),
-    });
-  }
-  return models;
-}
-
-export async function getLabelData(integrationCode: string): Promise<LabelDataResult> {
-  const creds = await getArasCredentials();
-
-  if (!creds.username || !creds.password) {
-    return { success: false, error: 'Aras Kargo API bilgileri eksik.' };
-  }
-
-  const soapBody = `<?xml version="1.0" encoding="utf-8"?>
-<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-  <soap12:Body>
-    <GetLabelDummy xmlns="http://tempuri.org/">
-      <Username>${escapeXml(creds.username)}</Username>
-      <Password>${escapeXml(creds.password)}</Password>
-      <integrationCode>${escapeXml(integrationCode.slice(0, 32))}</integrationCode>
-    </GetLabelDummy>
-  </soap12:Body>
-</soap12:Envelope>`;
-
-  try {
-    const response = await fetch(creds.setorderUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/soap+xml; charset=utf-8; action="http://tempuri.org/GetLabelDummy"',
-        'Accept': 'application/soap+xml, text/xml',
-      },
-      body: soapBody,
-      signal: AbortSignal.timeout(30000),
-    });
-
-    const text = await response.text();
-    console.log('[ArasKargo] GetLabelDummy response length:', text.length);
-
-    const resultCodeMatch = text.match(/<(?:\w+:)?ResultCode[^>]*>(\d+)<\/(?:\w+:)?ResultCode>/i);
-    const resultCode = resultCodeMatch ? parseInt(resultCodeMatch[1]) : -999;
-
-    if (resultCode !== 0 && resultCode !== -999) {
-      const msg = parseXmlText(text, 'Message');
-      return { success: false, error: msg || `Hata kodu: ${resultCode}` };
-    }
-
-    const images = parseBase64Array(text, 'base64Binary');
-    const zebraPdf = parseBase64Array(text, 'ZebraPdf').concat(
-      parseBase64Array(text, 'string').filter(s => s.length > 200)
-    );
-
-    const zebraZpl: string[] = [];
-    const zplRe = /<(?:\w+:)?ZebraZpl[^>]*>([\s\S]*?)<\/(?:\w+:)?ZebraZpl>/gi;
-    let zplBlock;
-    while ((zplBlock = zplRe.exec(text)) !== null) {
-      const inner = zplBlock[1];
-      const strings = inner.match(/<(?:\w+:)?string[^>]*>([^<]+)<\/(?:\w+:)?string>/gi) || [];
-      strings.forEach(s => {
-        const v = s.replace(/<[^>]+>/g, '').trim();
-        if (v) zebraZpl.push(v);
-      });
-    }
-
-    const barcodeModels = parseBarcodeModels(text);
-    const trackingNumber = parseXmlText(text, 'TrackingNumber');
-    const message = parseXmlText(text, 'Message');
-
-    return {
-      success: true,
-      images,
-      zebraPdf: zebraPdf.length ? zebraPdf : undefined,
-      zebraZpl: zebraZpl.length ? zebraZpl : undefined,
-      barcodeModels,
-      trackingNumber: trackingNumber || undefined,
-      message: message || undefined,
-    };
-  } catch (error: any) {
-    console.error('[ArasKargo] GetLabelDummy error:', error);
-    return { success: false, error: `Bağlantı hatası: ${error.message}` };
-  }
-}
+// ── GetOrderWithIntegrationCode ───────────────────────────────────────────
+// Returns ArrayOfOrder — the Order type has TradingWaybillNumber (= Aras tracking no)
+// and PieceDetails[].BarcodeNumber.
 
 export interface QueryShipmentResult {
   success: boolean;
   found?: boolean;
-  trackingNumber?: string;
-  cargoStatus?: string;
-  statusCode?: number;
-  deliveryDate?: string;
-  deliveredTo?: string;
-  waybillNumber?: string;
+  trackingNumber?: string;   // TradingWaybillNumber assigned by Aras
+  barcodeNumber?: string;    // PieceDetail.BarcodeNumber (for label)
+  integrationCode?: string;
+  unitId?: string;           // UnitID (receiving branch)
   error?: string;
 }
 
@@ -346,54 +270,200 @@ export async function queryShipmentByIntegrationCode(integrationCode: string): P
     });
 
     const text = await response.text();
-    console.log('[ArasKargo] QueryShipment response:', text.slice(0, 800));
+    console.log('[ArasKargo] QueryShipment response:', text.slice(0, 1000));
 
-    const resultCodeMatch = text.match(/<(?:\w+:)?ResultCode[^>]*>(\d+)<\/(?:\w+:)?ResultCode>/i);
-    const resultCode = resultCodeMatch ? parseInt(resultCodeMatch[1]) : -999;
-
-    if (resultCode !== 0 && resultCode !== -999) {
-      const resultMessageMatch = text.match(/<(?:\w+:)?ResultMessage[^>]*>([^<]*)<\/(?:\w+:)?ResultMessage>/i);
-      return {
-        success: false,
-        found: false,
-        error: resultMessageMatch ? resultMessageMatch[1] : `Hata kodu: ${resultCode}`,
-      };
+    // Check for a top-level fault / error
+    if (text.includes('<faultcode>') || text.includes('<Fault>')) {
+      const faultMsg = parseXmlText(text, 'faultstring') || parseXmlText(text, 'Reason');
+      return { success: false, found: false, error: faultMsg || 'SOAP hatası alındı' };
     }
 
-    const trackingMatch = text.match(/<(?:\w+:)?CargoTrackingNumber[^>]*>([^<]+)<\/(?:\w+:)?CargoTrackingNumber>/i)
-      || text.match(/<(?:\w+:)?TrackingNumber[^>]*>([^<]+)<\/(?:\w+:)?TrackingNumber>/i)
-      || text.match(/<(?:\w+:)?KargoTakipNo[^>]*>([^<]+)<\/(?:\w+:)?KargoTakipNo>/i);
-    const waybillMatch = text.match(/<(?:\w+:)?WaybillNumber[^>]*>([^<]+)<\/(?:\w+:)?WaybillNumber>/i)
-      || text.match(/<(?:\w+:)?IrsaliyeNo[^>]*>([^<]+)<\/(?:\w+:)?IrsaliyeNo>/i);
-    const statusMatch = text.match(/<(?:\w+:)?Status[^>]*>([^<]+)<\/(?:\w+:)?Status>/i)
-      || text.match(/<(?:\w+:)?Durum[^>]*>([^<]+)<\/(?:\w+:)?Durum>/i);
-    const deliveryDateMatch = text.match(/<(?:\w+:)?DeliveryDate[^>]*>([^<]+)<\/(?:\w+:)?DeliveryDate>/i)
-      || text.match(/<(?:\w+:)?TeslimTarihi[^>]*>([^<]+)<\/(?:\w+:)?TeslimTarihi>/i);
-    const deliveredToMatch = text.match(/<(?:\w+:)?ReceiverName[^>]*>([^<]+)<\/(?:\w+:)?ReceiverName>/i)
-      || text.match(/<(?:\w+:)?TeslimAlan[^>]*>([^<]+)<\/(?:\w+:)?TeslimAlan>/i);
+    // Response is GetOrderWithIntegrationCodeResult → ArrayOfOrder → Order[]
+    // Extract the first <Order> block
+    const orderBlockRe = /<(?:\w+:)?Order[^>]*>([\s\S]*?)<\/(?:\w+:)?Order>/i;
+    const orderMatch = text.match(orderBlockRe);
 
-    const trackingNumber = trackingMatch?.[1]?.trim();
-    const waybillNumber = waybillMatch?.[1]?.trim();
-
-    if (!trackingNumber && !waybillNumber) {
+    if (!orderMatch) {
       return {
         success: true,
         found: false,
-        error: 'Şube henüz irsaliye oluşturmadı. Kargo fiziksel olarak şubeye teslim edilince takip numarası oluşacak.',
+        error: 'Kayıt bulunamadı. Sipariş henüz Aras sistemine işlenmemiş olabilir.',
+      };
+    }
+
+    const orderBlock = orderMatch[1];
+
+    // TradingWaybillNumber is the key field — Aras populates this with their internal tracking no
+    const tradingWaybillNumber = parseXmlText(orderBlock, 'TradingWaybillNumber');
+    const foundIntegrationCode = parseXmlText(orderBlock, 'IntegrationCode');
+    const unitId = parseXmlText(orderBlock, 'UnitID');
+
+    // Barcode from first PieceDetail
+    const pieceDetailMatch = orderBlock.match(/<(?:\w+:)?PieceDetail[^>]*>([\s\S]*?)<\/(?:\w+:)?PieceDetail>/i);
+    const barcodeNumber = pieceDetailMatch ? parseXmlText(pieceDetailMatch[1], 'BarcodeNumber') : '';
+
+    // Aras considers order "found" if there's data and TradingWaybillNumber is populated
+    const trackingNumber = tradingWaybillNumber || barcodeNumber;
+
+    if (!trackingNumber) {
+      return {
+        success: true,
+        found: false,
+        error: 'Sipariş Aras sisteminde bulundu ancak henüz irsaliye/barkod oluşturulmadı. Kargo şubeye fiziksel teslimden sonra tekrar sorgulayın.',
       };
     }
 
     return {
       success: true,
       found: true,
-      trackingNumber: trackingNumber || waybillNumber,
-      waybillNumber,
-      cargoStatus: statusMatch?.[1]?.trim(),
-      deliveryDate: deliveryDateMatch?.[1]?.trim(),
-      deliveredTo: deliveredToMatch?.[1]?.trim(),
+      trackingNumber,
+      barcodeNumber: barcodeNumber || undefined,
+      integrationCode: foundIntegrationCode || undefined,
+      unitId: unitId || undefined,
     };
   } catch (error: any) {
     console.error('[ArasKargo] QueryShipment error:', error);
+    return { success: false, error: `Bağlantı hatası: ${error.message}` };
+  }
+}
+
+// ── GetLabelDummy ─────────────────────────────────────────────────────────
+// Returns DummyBarcodeResponse: Images (ArrayOfBase64Binary), ZebraPdf (ArrayOfString),
+// ZebraZpl (ArrayOfString), ZebraEpl (ArrayOfString), BarcodeModelLst, TrackingNumber
+
+export interface BarcodeModel {
+  SenderAccountName?: string;
+  SenderAddress?: string;
+  SenderAddress2?: string;
+  ReceiverAccountName?: string;
+  ReceiverAddress?: string;
+  ReceiverAddress2?: string;
+  ReceiverAddress3?: string;
+  ReceiverPhone?: string;
+  ReceiverTown?: string;
+  ReceiverCity?: string;
+  DeliveryUnitName?: string;
+  InvoiceNumber?: string;
+  IntegrationCode?: string;
+  BarcodeNumber?: string;
+  BarcodeDate?: string;
+}
+
+export interface LabelDataResult {
+  success: boolean;
+  images?: string[];         // base64 PNG from ArrayOfBase64Binary
+  zebraPdf?: string[];       // base64 PDF strings from ArrayOfString
+  zebraZpl?: string[];       // ZPL strings for thermal printers
+  barcodeModels?: BarcodeModel[];
+  trackingNumber?: string;
+  message?: string;
+  error?: string;
+}
+
+function parseBarcodeModels(xml: string): BarcodeModel[] {
+  const models: BarcodeModel[] = [];
+  const blockRe = /<(?:\w+:)?BarcodeModel[^>]*>([\s\S]*?)<\/(?:\w+:)?BarcodeModel>/gi;
+  let block;
+  while ((block = blockRe.exec(xml)) !== null) {
+    const b = block[1];
+    models.push({
+      SenderAccountName: parseXmlText(b, 'SenderAccountName'),
+      SenderAddress: parseXmlText(b, 'SenderAddress'),
+      SenderAddress2: parseXmlText(b, 'SenderAddress2'),
+      ReceiverAccountName: parseXmlText(b, 'ReceiverAccountName'),
+      ReceiverAddress: parseXmlText(b, 'ReceiverAddress'),
+      ReceiverAddress2: parseXmlText(b, 'ReceiverAddress2'),
+      ReceiverAddress3: parseXmlText(b, 'ReceiverAddress3'),
+      ReceiverPhone: parseXmlText(b, 'ReceiverPhone'),
+      ReceiverTown: parseXmlText(b, 'ReceiverTown'),
+      ReceiverCity: parseXmlText(b, 'ReceiverCity'),
+      DeliveryUnitName: parseXmlText(b, 'DeliveryUnitName'),
+      InvoiceNumber: parseXmlText(b, 'InvoiceNumber'),
+      IntegrationCode: parseXmlText(b, 'IntegrationCode'),
+      BarcodeNumber: parseXmlText(b, 'BarcodeNumber'),
+      BarcodeDate: parseXmlText(b, 'BarcodeDate'),
+    });
+  }
+  return models;
+}
+
+export async function getLabelData(integrationCode: string): Promise<LabelDataResult> {
+  const creds = await getArasCredentials();
+
+  if (!creds.username || !creds.password) {
+    return { success: false, error: 'Aras Kargo API bilgileri eksik. Ayarlar > Aras Kargo bölümünden API bilgilerini girin.' };
+  }
+
+  const soapBody = `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GetLabelDummy xmlns="http://tempuri.org/">
+      <Username>${escapeXml(creds.username)}</Username>
+      <Password>${escapeXml(creds.password)}</Password>
+      <integrationCode>${escapeXml(integrationCode.slice(0, 32))}</integrationCode>
+    </GetLabelDummy>
+  </soap12:Body>
+</soap12:Envelope>`;
+
+  try {
+    const response = await fetch(creds.setorderUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/soap+xml; charset=utf-8; action="http://tempuri.org/GetLabelDummy"',
+        'Accept': 'application/soap+xml, text/xml',
+      },
+      body: soapBody,
+      signal: AbortSignal.timeout(30000),
+    });
+
+    const text = await response.text();
+    console.log('[ArasKargo] GetLabelDummy response length:', text.length, '| first 300:', text.slice(0, 300));
+
+    // DummyBarcodeResponse has ResultCode
+    const resultCodeMatch = text.match(/<(?:\w+:)?ResultCode[^>]*>(\d+)<\/(?:\w+:)?ResultCode>/i);
+    const resultCode = resultCodeMatch ? parseInt(resultCodeMatch[1]) : -999;
+
+    if (resultCode !== 0 && resultCode !== -999) {
+      const msg = parseXmlText(text, 'Message');
+      return {
+        success: false,
+        error: msg || `Aras API hata kodu: ${resultCode}. Sipariş önce "API'ye Gönder" ile kaydedilmiş olmalıdır.`,
+      };
+    }
+
+    // Images → ArrayOfBase64Binary → base64Binary elements
+    const images = parseBase64BinaryArray(text, 'Images');
+
+    // ZebraPdf → ArrayOfString → string elements (each is a base64-encoded PDF)
+    const zebraPdf = parseStringArray(text, 'ZebraPdf');
+
+    // ZebraZpl → ArrayOfString → string elements (ZPL commands)
+    const zebraZpl = parseStringArray(text, 'ZebraZpl');
+
+    const barcodeModels = parseBarcodeModels(text);
+    const trackingNumber = parseXmlText(text, 'TrackingNumber');
+    const message = parseXmlText(text, 'Message');
+
+    const hasContent = images.length > 0 || zebraPdf.length > 0 || barcodeModels.length > 0;
+
+    if (!hasContent && resultCode === -999) {
+      return {
+        success: false,
+        error: 'Etiket verisi alınamadı. Sipariş önce "API\'ye Gönder" ile Aras sistemine kaydedilmelidir.',
+      };
+    }
+
+    return {
+      success: true,
+      images,
+      zebraPdf: zebraPdf.length ? zebraPdf : undefined,
+      zebraZpl: zebraZpl.length ? zebraZpl : undefined,
+      barcodeModels,
+      trackingNumber: trackingNumber || undefined,
+      message: message || undefined,
+    };
+  } catch (error: any) {
+    console.error('[ArasKargo] GetLabelDummy error:', error);
     return { success: false, error: `Bağlantı hatası: ${error.message}` };
   }
 }

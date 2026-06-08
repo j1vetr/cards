@@ -159,7 +159,8 @@ export default function AdminOrderDetail() {
   } | null>(null);
   const [arasCreating, setArasCreating] = useState(false);
   const [arasQuerying, setArasQuerying] = useState(false);
-  const [arasMessage, setArasMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [arasMessage, setArasMessage] = useState<{ type: 'success' | 'error' | 'warn'; text: string } | null>(null);
+  const [arasAlreadySent, setArasAlreadySent] = useState(false);
   useEffect(() => {
     let cancelled = false;
     const fetchOrder = async () => {
@@ -283,12 +284,14 @@ export default function AdminOrderDetail() {
     }
   };
 
-  const handleArasCreate = async () => {
+  const handleArasCreate = async (force = false) => {
     if (!order) return;
     setArasCreating(true);
     setArasMessage(null);
+    setArasAlreadySent(false);
     try {
-      const res = await fetch(`/api/admin/orders/${order.id}/aras-kargo/create`, {
+      const url = `/api/admin/orders/${order.id}/aras-kargo/create${force ? '?force=1' : ''}`;
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -301,6 +304,9 @@ export default function AdminOrderDetail() {
           content: `Aras Kargo API'ye kayıt gönderildi. Entegrasyon kodu: ${data.integrationCode}`,
           createdAt: new Date().toISOString(),
         }, ...prev]);
+      } else if (data.alreadySent) {
+        setArasAlreadySent(true);
+        setArasMessage({ type: 'warn', text: 'Bu sipariş daha önce Aras sistemine gönderildi.' });
       } else {
         setArasMessage({ type: 'error', text: data.error || data.resultMessage || 'Kargo oluşturulamadı' });
       }
@@ -898,9 +904,21 @@ export default function AdminOrderDetail() {
                   <div className={`text-[11.5px] px-3 py-2 rounded-md leading-relaxed ${
                     arasMessage.type === 'success'
                       ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                      : arasMessage.type === 'warn'
+                      ? 'bg-amber-50 border border-amber-200 text-amber-800'
                       : 'bg-red-50 border border-red-200 text-red-700'
                   }`} data-testid="text-aras-message">
                     {arasMessage.text}
+                    {arasAlreadySent && (
+                      <button
+                        type="button"
+                        onClick={() => handleArasCreate(true)}
+                        disabled={arasCreating}
+                        className="ml-2 underline text-amber-700 hover:text-amber-900 font-semibold"
+                      >
+                        Tekrar gönder
+                      </button>
+                    )}
                   </div>
                 )}
 
