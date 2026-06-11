@@ -1,6 +1,5 @@
 import { Link } from 'wouter';
 import { Instagram, MapPin, Phone, Mail } from 'lucide-react';
-import polenLogo from '@assets/Polen-Sticker-1.pdf_1777239312980.png';
 
 const legalLinks = [
   { href: '/teslimat-kosullari', label: 'Teslimat Koşulları', testId: 'link-footer-delivery' },
@@ -31,17 +30,16 @@ export function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-5">
             <Link href="/" className="inline-block mb-6" data-testid="link-footer-logo">
-              <img
-                src={polenLogo}
-                alt="Marka"
-                className="h-16 w-auto object-contain brightness-0 invert opacity-90"
-              />
+              <div className="flex flex-col leading-none">
+                <span className="font-display text-[11px] tracking-[0.36em] uppercase text-white/30 font-light">Ecarte</span>
+                <span className="font-display text-[26px] tracking-[0.14em] uppercase text-white font-bold">JEANS</span>
+              </div>
             </Link>
             <p className="text-white/50 text-[13.5px] leading-[1.75] max-w-sm mb-6">
-              Kadın, erkek ve çocuk giyiminde yüzlerce marka ve binlerce model. Güncel koleksiyon, güvenli ödeme, hızlı kargo.
+              Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânıyla Türkiye'nin kaliteli jean markası.
             </p>
             <a
-              href="https://www.instagram.com/polenstonecom/"
+              href="https://www.instagram.com/ecartejeans/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2.5 text-white/60 hover:text-[hsl(var(--polen-orange))] transition-colors text-[13px] font-medium group"
@@ -50,7 +48,7 @@ export function Footer() {
               <span className="w-8 h-8 rounded-full border border-white/15 group-hover:border-[hsl(var(--polen-orange))]/60 flex items-center justify-center transition-colors">
                 <Instagram className="w-3.5 h-3.5" strokeWidth={1.75} />
               </span>
-              @marka
+              @ecartejeans
             </a>
           </div>
 
@@ -93,8 +91,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-3.5 h-3.5 text-[hsl(var(--polen-orange))]/70 shrink-0" strokeWidth={1.75} />
-                <a href="mailto:info@polenstone.com" className="hover:text-white transition-colors" data-testid="link-footer-email">
-                  info@polenstone.com
+                <a href="mailto:info@ecartejeans.com" className="hover:text-white transition-colors" data-testid="link-footer-email">
+                  info@ecartejeans.com
                 </a>
               </li>
             </ul>
@@ -124,7 +122,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 lg:mt-16 pt-6 border-t border-white/[0.07] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[12px] text-white/30">
-            © 2026 Marka. Tüm hakları saklıdır.
+            © 2026 Ecarte Jeans. Tüm hakları saklıdır.
           </p>
           <div className="flex items-center gap-2 text-[11px] text-white/25">
             <span>Tasarım & Geliştirme</span>

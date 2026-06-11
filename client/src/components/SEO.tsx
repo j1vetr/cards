@@ -20,9 +20,9 @@ interface SEOProps {
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const DEFAULT_TITLE = 'Marka | Giyim & Moda';
-const DEFAULT_DESCRIPTION = 'Marka, Türkiye\'nin önde gelen online giyim mağazasıdır. Kadın, erkek ve çocuk giyiminde güncel koleksiyon sizi bekliyor.';
-const SITE_NAME = 'Marka';
+const DEFAULT_TITLE = 'Ecarte Jeans | Premium Denim & Jean Koleksiyonu';
+const DEFAULT_DESCRIPTION = 'Ecarte Jeans — Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı. Türkiye\'nin kaliteli jean markası.';
+const SITE_NAME = 'Ecarte Jeans';
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 export function SEO({ 
@@ -80,15 +80,15 @@ export function SEO({
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Marka',
+      name: 'Ecarte Jeans',
       url: BASE_URL,
       logo: `${BASE_URL}/logo.png`,
       sameAs: [
-        'https://instagram.com/polenstone',
+        'https://instagram.com/ecartejeans',
       ],
       contactPoint: {
         '@type': 'ContactPoint',
-        email: 'info@polenstone.com',
+        email: 'info@ecartejeans.com',
         contactType: 'customer service'
       }
     });
@@ -113,7 +113,7 @@ export function SEO({
         sku: product.sku,
         brand: {
           '@type': 'Brand',
-          name: product.brand || 'Marka'
+          name: product.brand || 'Ecarte Jeans'
         },
         category: product.category,
         offers: {
@@ -124,7 +124,7 @@ export function SEO({
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
-            name: 'Marka'
+            name: 'Ecarte Jeans'
           }
         }
       });
@@ -147,7 +147,7 @@ export function SEO({
       schemas.push({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: 'Marka',
+        name: 'Ecarte Jeans',
         url: BASE_URL,
         potentialAction: {
           '@type': 'SearchAction',

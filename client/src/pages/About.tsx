@@ -31,7 +31,7 @@ export default function About() {
     <div className="min-h-screen bg-stone-50">
       <SEO
         title="Hakkımızda"
-        description="Marka — Türkiye'nin önde gelen online giyim platformu. Yüzlerce marka ve binlerce model, hızlı teslimat."
+        description="Ecarte Jeans — Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı."
       />
       <Header />
 
@@ -262,7 +262,7 @@ export default function About() {
                     </div>
                     <div>
                       <p className="text-sm text-black/55 mb-1">E-posta</p>
-                      <a href="mailto:info@polenstone.com" className="font-medium text-black hover:text-polen-orange transition-colors" data-testid="link-email">info@polenstone.com</a>
+                      <a href="mailto:info@ecartejeans.com" className="font-medium text-black hover:text-polen-orange transition-colors" data-testid="link-email">info@ecartejeans.com</a>
                     </div>
                   </div>
                 </div>

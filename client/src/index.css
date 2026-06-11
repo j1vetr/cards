@@ -53,21 +53,21 @@
   --secondary-foreground: 0 0% 14%;
   --muted: 0 0% 96%;
   --muted-foreground: 0 0% 46%;
-  --accent: 340 62% 44%;
+  --accent: 220 65% 36%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 78% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 340 62% 44%;
+  --border: 220 10% 90%;
+  --input: 220 10% 90%;
+  --ring: 220 65% 36%;
   --radius: 0.25rem;
 
-  /* Brand tokens — kept for backward compat, now fashion palette */
-  --polen-orange: 340 62% 44%;
-  --polen-orange-deep: 340 68% 36%;
-  --polen-stone: 220 5% 10%;
-  --polen-cream: 340 10% 97%;
-  --polen-vein: 0 0% 84%;
+  /* Brand tokens — Ecarte Jeans denim palette */
+  --polen-orange: 220 65% 36%;
+  --polen-orange-deep: 220 72% 27%;
+  --polen-stone: 220 18% 12%;
+  --polen-cream: 218 30% 96%;
+  --polen-vein: 220 15% 82%;
 }
 
 .dark {

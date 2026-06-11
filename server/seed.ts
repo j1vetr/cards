@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 async function seed() {
   try {
-    console.log("Starting Polen Stone database seed...");
+    console.log("Starting Ecarte Jeans database seed...");
 
     const isProduction = process.env.NODE_ENV === "production";
 
@@ -156,7 +156,7 @@ async function seed() {
       }
     }
 
-    console.log(`\n✅ Polen Stone seed completed. ${createdProductCount} new products inserted.`);
+    console.log(`\n✅ Ecarte Jeans seed completed. ${createdProductCount} new products inserted.`);
     if (!isProduction) {
       console.log("\nDev admin credentials (local only):");
       console.log("  Username: admin");

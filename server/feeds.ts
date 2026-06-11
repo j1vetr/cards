@@ -1,7 +1,7 @@
 import { storage, db } from "./storage";
 import { productVariants } from "@shared/schema";
 
-const SITE_URL = "https://polenstone.com";
+const SITE_URL = "https://ecartejeans.com";
 const BRAND_NAME = "Marka";
 
 function escapeXml(value: string | null | undefined): string {

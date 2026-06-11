@@ -11,7 +11,7 @@
  *   - Görseller içerik hash'i ile dedupe edilir, sharp ile optimize edilir,
  *     `client/public/uploads/products/` altına yazılır.
  *   - Trendyol'da olmayan ürün soft-delete (isActive=false), tekrar gelirse re-activate.
- *   - Eşlenmemiş kategoriden gelen ürün için geçici Polen Stone kategorisi
+ *   - Eşlenmemiş kategoriden gelen ürün için geçici Ecarte Jeans kategorisi
  *     otomatik oluşturulur (Türkçe karakter normalize edilmiş slug).
  */
 
@@ -469,7 +469,7 @@ async function syncImages(
 }
 
 /**
- * Kategori upsert — Trendyol kategorisi → Polen Stone kategorisi.
+ * Kategori upsert — Trendyol kategorisi → Ecarte Jeans kategorisi.
  *
  * `cameFromTree=true` ise externalName güvenilir leaf adıdır. Bu durumda mevcut
  * mapping admin tarafından elle yönetiliyorsa korunur; aksi halde (auto-create
@@ -525,7 +525,7 @@ async function ensureSiteCategory(
     // kategorisi orphan kalabilir; UI zaten 200+ display_order'da gizliyor.
   }
 
-  // Henüz eşlenmemiş veya remap gerekiyor → leaf adıyla bir Polen Stone
+  // Henüz eşlenmemiş veya remap gerekiyor → leaf adıyla bir Ecarte Jeans
   // kategorisi bul (slug eşleşirse var olanı kullan), yoksa yarat (200+).
   const slug = turkishSlugify(externalName);
   let siteCat = await storage.getCategoryBySlug(slug);

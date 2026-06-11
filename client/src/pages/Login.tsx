@@ -40,7 +40,7 @@ export default function Login() {
 
   return (
     <div className="bg-white">
-      <SEO title="Giriş Yap" description="Marka üyelik girişi." url="/giris" noIndex />
+      <SEO title="Giriş Yap" description="Ecarte Jeans üyelik girişi." url="/giris" noIndex />
       <Header />
 
       <main className="pt-[60px] lg:pt-0">

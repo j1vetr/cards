@@ -128,12 +128,12 @@ export default function CancellationPolicy() {
                 <ul>
                   <li>İade/iptal işlemleri 6502 sayılı Kanun ve Mesafeli Satış Sözleşmeleri Yönetmeliği'ne uygun şekilde yürütülür.</li>
                   <li>İşlem için sipariş numaranızı hazır bulundurunuz.</li>
-                  <li>Tüm başvurular <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine yazılı olarak yapılmalıdır.</li>
+                  <li>Tüm başvurular <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazılı olarak yapılmalıdır.</li>
                 </ul>
 
                 <h2>2) Sipariş İptali</h2>
                 <ul>
-                  <li><strong>Kargo çıkışından önce:</strong> Sipariş numaranızla birlikte <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine yazarak iptal talebinde bulunabilirsiniz. Mümkünse aynı gün işleme alınır.</li>
+                  <li><strong>Kargo çıkışından önce:</strong> Sipariş numaranızla birlikte <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazarak iptal talebinde bulunabilirsiniz. Mümkünse aynı gün işleme alınır.</li>
                   <li><strong>Kargo çıkışından sonra:</strong> İptal yapılamaz. Bu durumda <strong>iade</strong> süreci uygulanır.</li>
                 </ul>
 
@@ -144,13 +144,13 @@ export default function CancellationPolicy() {
                 <ul>
                   <li>Ürün kullanılmamış, orijinal ambalajında, etiketleri tam ve yeniden satılabilir durumda olmalıdır.</li>
                   <li>Fatura, aksesuar, hediye/promosyon ürünleri ve tüm parçalar eksiksiz gönderilmelidir.</li>
-                  <li>Cayma hakkı bildirimi <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine yazılı olarak yapılmalıdır.</li>
+                  <li>Cayma hakkı bildirimi <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazılı olarak yapılmalıdır.</li>
                 </ul>
 
                 <h2>4) İade Süreci</h2>
                 <p>İade süreci şu şekilde işler:</p>
                 <ol>
-                  <li>İade talebinizi <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine iletin ve <strong>sipariş numaranızı</strong> belirtin.</li>
+                  <li>İade talebinizi <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine iletin ve <strong>sipariş numaranızı</strong> belirtin.</li>
                   <li>Onay sonrası ürünü <strong>orijinal ambalajında</strong>, fatura ve aksesuarlarıyla birlikte paketleyin.</li>
                   <li>Belirtilen adrese kargo ile gönderin.</li>
                   <li>Ürün tarafımıza ulaştığında kontrol edilir.</li>
@@ -166,12 +166,12 @@ export default function CancellationPolicy() {
 
                 <h2>6) Ürün Değişimi</h2>
                 <p>
-                  Renk, ton veya ölçü değişikliği için <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresinden bilgi verebilirsiniz. Değişim için ürünün orijinal ambalajında ve işlem görmemiş halde olması, ayrıca iade koşullarını karşılaması gerekir.
+                  Renk, ton veya ölçü değişikliği için <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresinden bilgi verebilirsiniz. Değişim için ürünün orijinal ambalajında ve işlem görmemiş halde olması, ayrıca iade koşullarını karşılaması gerekir.
                 </p>
 
                 <h2>7) Hasarlı veya Hatalı Ürün</h2>
                 <p>
-                  Teslimat sırasında veya açılışta fark edilen hasar ya da üretim hatasını <strong>24 saat</strong> içinde <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine bildirin. Fotoğraflı belge gönderilmesi süreci hızlandırır.
+                  Teslimat sırasında veya açılışta fark edilen hasar ya da üretim hatasını <strong>24 saat</strong> içinde <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine bildirin. Fotoğraflı belge gönderilmesi süreci hızlandırır.
                 </p>
 
                 <h2>8) Kargo Ücreti</h2>
@@ -183,7 +183,7 @@ export default function CancellationPolicy() {
                 <h2>9) İletişim</h2>
                 <p>İade ve iptal işlemleri için destek ekibimize ulaşabilirsiniz:</p>
                 <ul>
-                  <li><strong>E-posta:</strong> <a href="mailto:info@polenstone.com">info@polenstone.com</a></li>
+                  <li><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></li>
                   <li><strong>Telefon:</strong> <a href="tel:+905326956183">0532 695 61 83</a></li>
                 </ul>
               </div>

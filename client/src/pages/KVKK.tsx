@@ -76,14 +76,14 @@ export default function KVKK() {
                   KVKK (Kişisel Verilerin Korunması Kanunu) kapsamında kişisel verilerinizi işleyen veri sorumlusu aşağıdaki şekildedir:
                 </p>
                 <p><strong>Marka Giyim & Moda</strong></p>
-                <p><strong>Web Sitesi:</strong> <a href="https://www.polenstone.com">www.polenstone.com</a></p>
-                <p><strong>E-posta:</strong> <a href="mailto:info@polenstone.com">info@polenstone.com</a></p>
+                <p><strong>Web Sitesi:</strong> <a href="https://www.ecartejeans.com">www.ecartejeans.com</a></p>
+                <p><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></p>
                 <p><strong>Telefon:</strong> <a href="tel:+905326956183">0532 695 61 83</a></p>
                 <p><strong>Adres:</strong> Yunus Emre, Barbaros Blv. 42 d, 34791 Sancaktepe / İstanbul</p>
 
                 <h2>2) Kişisel Verilerin Toplanma Yöntemi</h2>
                 <p>
-                  Kişisel verileriniz; <strong>www.polenstone.com</strong> web sitesi, sosyal medya hesaplarımız, müşteri destek hattı, e-posta veya fiziksel formlar aracılığıyla tamamen veya kısmen otomatik yollarla toplanmaktadır.
+                  Kişisel verileriniz; <strong>www.ecartejeans.com</strong> web sitesi, sosyal medya hesaplarımız, müşteri destek hattı, e-posta veya fiziksel formlar aracılığıyla tamamen veya kısmen otomatik yollarla toplanmaktadır.
                 </p>
 
                 <h2>3) Kişisel Verilerin İşlenme Amaçları</h2>
@@ -146,7 +146,7 @@ export default function KVKK() {
                   KVKK kapsamındaki haklarınızı kullanmak için, kimliğinizi doğrulayacak belgelerle birlikte aşağıdaki yöntemlerle başvuru yapabilirsiniz:
                 </p>
                 <ul>
-                  <li><strong>E-posta:</strong> <a href="mailto:info@polenstone.com">info@polenstone.com</a></li>
+                  <li><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></li>
                   <li><strong>Adres:</strong> Yunus Emre, Barbaros Blv. 42 d, 34791 Sancaktepe / İstanbul</li>
                 </ul>
                 <p>
@@ -160,7 +160,7 @@ export default function KVKK() {
 
                 <h2>11) Güncellemeler ve Değişiklikler</h2>
                 <p>
-                  Bu Aydınlatma Metni, mevzuat değişiklikleri ve şirket politikalarına uygun olarak güncellenebilir. Güncel versiyon her zaman <strong>www.polenstone.com</strong> adresinde yayınlanır.
+                  Bu Aydınlatma Metni, mevzuat değişiklikleri ve şirket politikalarına uygun olarak güncellenebilir. Güncel versiyon her zaman <strong>www.ecartejeans.com</strong> adresinde yayınlanır.
                 </p>
               </div>
             </div>

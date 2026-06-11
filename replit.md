@@ -1,7 +1,7 @@
-# Polen Stone E-Commerce Platform
+# Ecarte Jeans E-Commerce Platform
 
 ## Overview
-Polen Stone (Polen Stone Doğal Taş & Mermer) is a full-stack e-commerce platform for natural stone and marble products in the Turkish market. Customers browse marble, granite, travertine, and onyx categories, request samples, and place orders; administrators manage products, categories, and orders. The brand identity centers on Turkish stone craftsmanship, with a warm cream/stone palette and a terracotta-orange accent.
+Ecarte Jeans is a full-stack e-commerce platform for premium denim and jeans products in the Turkish market. The platform serves both individual retail customers and wholesale (toptan) buyers. Customers browse jean categories (Kadın, Erkek, Çocuk, fit types), place orders, and request bulk quotes; administrators manage products, categories, and orders. The brand identity centers on premium denim craftsmanship, with a deep denim-blue accent on a clean white/dark palette.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -10,14 +10,16 @@ Preferred communication style: Simple, everyday language.
 All user-visible date/time rendering for orders (admin panel, customer profile, order tracking, emails, WhatsApp messages) uses helpers in `shared/dateFormat.ts` (`formatTRDate`, `formatTRDateTime`, `formatTRDateNumeric`, `formatTRDateShort`, `formatTRTime`, `formatTRDateTimeNumeric`). Helpers always render in `Europe/Istanbul` timezone with `tr-TR` locale via `Intl.DateTimeFormat`, so the production server's UTC clock does not bleed into the UI. Do not call `toLocaleString('tr-TR')` or `date-fns/format` directly on order timestamps — use the helpers.
 
 ## Brand & Theme
-- **Brand**: Polen Stone Doğal Taş & Mermer
-- **Domain**: polenstone.com · **Email**: info@polenstone.com · **Instagram**: @polenstone
-- **Logo**: Text wordmark "POLEN STONE" (orange "STONE"). User will upload a custom logo asset later.
-- **Color tokens** (in `client/src/index.css`):
-  - `--polen-orange` — terracotta accent
-  - `--polen-stone` — deep stone gray
-  - `--polen-cream` — warm off-white background
-- **Typography**: Existing display font kept; orange accent reserved for stroke headlines and brand wordmark.
+- **Brand**: Ecarte Jeans
+- **Domain**: ecartejeans.com · **Email**: info@ecartejeans.com · **Instagram**: @ecartejeans
+- **Logo**: Text wordmark "ECARTE / JEANS" (two-line stacked, "Ecarte" light small caps, "JEANS" bold). User will upload actual logo asset — replace text wordmark in Header.tsx and Footer.tsx when received.
+- **Color tokens** (in `client/src/index.css`, token names kept for backward compat):
+  - `--polen-orange: 220 65% 36%` — deep denim indigo/blue (primary accent)
+  - `--polen-orange-deep: 220 72% 27%` — darker indigo for hover states
+  - `--polen-stone: 220 18% 12%` — near-black charcoal (header/footer bg)
+  - `--polen-cream: 218 30% 96%` — light blue-tinted off-white
+- **Typography**: Oswald display font for wordmark/headlines; Inter for body. Blue accent used for CTA buttons, badges, accent text.
+- **Business model**: Both bireysel (retail) and toptan (wholesale) — announcement bar highlights "Toptan Satış Mevcut".
 
 ## System Architecture
 

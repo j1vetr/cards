@@ -12,7 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import polenLogo from '@assets/Polen-Sticker-1.pdf_1777239312980.png';
 
 interface MenuItemData {
   id: string;
@@ -117,11 +116,11 @@ export function Header() {
             data-testid="bar-announcement"
           >
             <div className="flex items-center justify-center gap-6 px-10 h-9 text-[11px] tracking-[0.18em] uppercase font-medium">
-              <span className="hidden sm:inline">Ücretsiz Kargo · 500₺ ve üzeri</span>
+              <span className="hidden sm:inline">Toptan Satış Mevcut</span>
               <span className="text-white/40">·</span>
-              <span>Kolay İade Garantisi</span>
+              <span>Ücretsiz Kargo · 500₺ ve üzeri</span>
               <span className="text-white/40 hidden sm:inline">·</span>
-              <span className="hidden sm:inline">Güvenli Ödeme</span>
+              <span className="hidden sm:inline">Kolay İade Garantisi</span>
             </div>
             <button
               onClick={() => setAnnounceClosed(true)}
@@ -156,12 +155,10 @@ export function Header() {
             </button>
 
             <Link href="/" data-testid="link-logo-mobile" className="block absolute left-1/2 -translate-x-1/2">
-              <img
-                src={polenLogo}
-                alt="Marka"
-                className="h-10 w-auto object-contain"
-                data-testid="img-logo-mobile"
-              />
+              <div className="flex flex-col leading-none text-center" data-testid="img-logo-mobile">
+                <span className="font-display text-[9px] tracking-[0.36em] uppercase text-black/40 font-light">Ecarte</span>
+                <span className="font-display text-[15px] tracking-[0.18em] uppercase text-black font-bold">JEANS</span>
+              </div>
             </Link>
 
             <div className="flex items-center gap-0.5">
@@ -200,12 +197,10 @@ export function Header() {
 
             {/* Logo */}
             <Link href="/" data-testid="link-logo" className="block">
-              <img
-                src={polenLogo}
-                alt="Marka"
-                className="h-11 w-auto object-contain"
-                data-testid="img-logo"
-              />
+              <div className="flex flex-col leading-none" data-testid="img-logo">
+                <span className="font-display text-[10px] tracking-[0.36em] uppercase text-black/40 font-light">Ecarte</span>
+                <span className="font-display text-[19px] tracking-[0.16em] uppercase text-black font-bold">JEANS</span>
+              </div>
             </Link>
 
             {/* Nav */}
@@ -393,12 +388,10 @@ export function Header() {
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
                 <Link href="/" onClick={() => setMobileOpen(false)} data-testid="link-mobile-logo">
-                  <img
-                    src={polenLogo}
-                    alt="Marka"
-                    className="h-10 w-auto object-contain brightness-0 invert"
-                    data-testid="img-logo-mobile-drawer"
-                  />
+                  <div className="flex flex-col leading-none" data-testid="img-logo-mobile-drawer">
+                    <span className="font-display text-[9px] tracking-[0.36em] uppercase text-white/40 font-light">Ecarte</span>
+                    <span className="font-display text-[16px] tracking-[0.18em] uppercase text-white font-bold">JEANS</span>
+                  </div>
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}

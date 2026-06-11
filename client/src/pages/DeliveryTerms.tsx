@@ -109,13 +109,13 @@ export default function DeliveryTerms() {
                 <ul>
                   <li>Ürünü teslim alırken paketi mutlaka kontrol edin.</li>
                   <li>Hasar veya eksiklik durumunda kargo görevlisi eşliğinde <strong>tutanak</strong> tutturun.</li>
-                  <li>Hasarlı ürünler için 24 saat içinde <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine bilgi verin.</li>
+                  <li>Hasarlı ürünler için 24 saat içinde <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine bilgi verin.</li>
                 </ul>
 
                 <h2>7) Adres Değişikliği</h2>
                 <p>
                   Siparişiniz henüz kargoya verilmediyse, teslimat adresinizi değiştirmek için
-                  <a href="mailto:info@polenstone.com"> info@polenstone.com</a> adresi üzerinden bizimle
+                  <a href="mailto:info@ecartejeans.com"> info@ecartejeans.com</a> adresi üzerinden bizimle
                   iletişime geçebilirsiniz.
                 </p>
 
@@ -129,7 +129,7 @@ export default function DeliveryTerms() {
                 <h2>9) İletişim</h2>
                 <p>Kargo ve teslimatla ilgili sorularınız için bizimle iletişime geçebilirsiniz:</p>
                 <ul>
-                  <li><strong>E-posta:</strong> <a href="mailto:info@polenstone.com">info@polenstone.com</a></li>
+                  <li><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></li>
                   <li><strong>Telefon:</strong> <a href="tel:+905326956183">0532 695 61 83</a></li>
                 </ul>
               </div>

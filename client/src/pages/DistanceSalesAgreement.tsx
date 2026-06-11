@@ -75,13 +75,13 @@ export default function DistanceSalesAgreement() {
                 <p><strong>Satıcı:</strong> Marka Giyim & Moda</p>
                 <p><strong>Adres:</strong> Yunus Emre, Barbaros Blv. 42 d, 34791 Sancaktepe / İstanbul</p>
                 <p><strong>Telefon:</strong> <a href="tel:+905326956183">0532 695 61 83</a></p>
-                <p><strong>E-posta:</strong> <a href="mailto:info@polenstone.com">info@polenstone.com</a></p>
-                <p><strong>Web Sitesi:</strong> <a href="https://www.polenstone.com">www.polenstone.com</a></p>
+                <p><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></p>
+                <p><strong>Web Sitesi:</strong> <a href="https://www.ecartejeans.com">www.ecartejeans.com</a></p>
                 <p><strong>Alıcı:</strong> Polenstone.com.tr üzerinden sipariş veren müşteridir. Alıcının adı, soyadı, adresi ve iletişim bilgileri sipariş formunda yer alır.</p>
 
                 <h2>2) Sözleşmenin Konusu</h2>
                 <p>
-                  Bu sözleşmenin konusu, alıcının <strong>www.polenstone.com</strong> web sitesinden elektronik ortamda sipariş verdiği ürünün satışı, teslimatı, ödemesi ve tarafların 6502 sayılı Kanun ile Mesafeli Satışlar Yönetmeliği hükümleri doğrultusunda hak ve yükümlülüklerinin belirlenmesidir.
+                  Bu sözleşmenin konusu, alıcının <strong>www.ecartejeans.com</strong> web sitesinden elektronik ortamda sipariş verdiği ürünün satışı, teslimatı, ödemesi ve tarafların 6502 sayılı Kanun ile Mesafeli Satışlar Yönetmeliği hükümleri doğrultusunda hak ve yükümlülüklerinin belirlenmesidir.
                 </p>
 
                 <h2>3) Ürün/Hizmet Bilgileri</h2>
@@ -104,7 +104,7 @@ export default function DistanceSalesAgreement() {
                   <strong>Alıcı, ürünü teslim aldığı tarihten itibaren 14 gün içinde</strong> herhangi bir gerekçe göstermeksizin cayma hakkını kullanabilir. Bu hakkın kullanılabilmesi için ürünün kullanılmamış, orijinal ambalajında ve yeniden satılabilir durumda olması gerekir.
                 </p>
                 <p>
-                  Cayma hakkını kullanmak isteyen alıcılar bu süre içinde <a href="mailto:info@polenstone.com">info@polenstone.com</a> adresine yazılı olarak bildirmelidir.
+                  Cayma hakkını kullanmak isteyen alıcılar bu süre içinde <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazılı olarak bildirmelidir.
                 </p>
 
                 <h2>7) Cayma Hakkının Kullanılamayacağı Durumlar</h2>
@@ -142,7 +142,7 @@ export default function DistanceSalesAgreement() {
 
                 <h2>13) Yürürlük</h2>
                 <p>
-                  Alıcı, <strong>www.polenstone.com</strong> üzerinden sipariş vererek bu sözleşmenin tüm şartlarını elektronik olarak kabul etmiş sayılır. Bu sözleşme, siparişin tamamlanmasıyla yürürlüğe girer.
+                  Alıcı, <strong>www.ecartejeans.com</strong> üzerinden sipariş vererek bu sözleşmenin tüm şartlarını elektronik olarak kabul etmiş sayılır. Bu sözleşme, siparişin tamamlanmasıyla yürürlüğe girer.
                 </p>
               </div>
             </div>

@@ -313,7 +313,7 @@ async function generateQuotePdfBuffer(quote: any, dealer: any, items: any[]): Pr
       
       // Footer
       doc.fontSize(8).font(fontRegular).fillColor('#999999');
-      doc.text('Marka | www.polenstone.com | info@polenstone.com', 50, 780, { align: 'center', width: 495 });
+      doc.text('Marka | www.ecartejeans.com | info@ecartejeans.com', 50, 780, { align: 'center', width: 495 });
       
       doc.end();
     } catch (error) {
@@ -345,7 +345,7 @@ export async function registerRoutes(
   // Dynamic sitemap.xml — categories + products + static pages
   app.get(["/sitemap.xml", "/sitemap_index.xml"], async (_req, res) => {
     try {
-      const baseUrl = "https://polenstone.com";
+      const baseUrl = "https://ecartejeans.com";
       const today = new Date().toISOString().split("T")[0];
 
       const staticPages: Array<{ loc: string; priority: string; changefreq: string }> = [
@@ -2227,7 +2227,7 @@ export async function registerRoutes(
 
       // Get base URL for callback - use production domain in prod
       const baseUrl = process.env.NODE_ENV === 'production' 
-        ? (process.env.PUBLIC_BASE_URL || 'https://polenstone.com')
+        ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
         : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
       // Add shipping as a basket line so sum(basketItems.price) === priceTry
@@ -2540,7 +2540,7 @@ export async function registerRoutes(
   // The legacy /api/payment/callback path is kept as an alias for older webhooks.
   const iyzicoCallbackHandler = async (req: Request, res: Response) => {
     const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.PUBLIC_BASE_URL || 'https://polenstone.com')
+      ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
       : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
     const sendRedirect = (path: string) => res.redirect(303, `${baseUrl}${path}`);
@@ -2860,7 +2860,7 @@ export async function registerRoutes(
     try {
       const apiKey = (await storage.getSiteSetting('iyzico_api_key')) || '';
       const secretKey = (await storage.getSiteSetting('iyzico_secret_key')) || '';
-      const baseUrl = process.env.PUBLIC_BASE_URL || 'https://polenstone.com';
+      const baseUrl = process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com';
       res.json({
         configured: Boolean(apiKey && secretKey),
         apiKeyMasked: maskSecret(apiKey),
@@ -4490,7 +4490,7 @@ export async function registerRoutes(
     <div class="header-brand">MARKA <span>GİYİM</span></div>
     <div class="header-sub">
       Giyim &amp; Moda<br>
-      polenstone.com · info@polenstone.com
+      ecartejeans.com · info@ecartejeans.com
     </div>
   </div>
 
@@ -5658,9 +5658,9 @@ window.addEventListener('load', function() {
   // Robots.txt
   app.get("/robots.txt", (req, res) => {
     const host = req.get('host') || '';
-    const isProd = host.includes('polenstone.com');
+    const isProd = host.includes('ecartejeans.com');
     const baseUrl = isProd
-      ? 'https://polenstone.com'
+      ? 'https://ecartejeans.com'
       : `${req.protocol}://${host}`;
     const robotsTxt = `User-agent: *
 Allow: /
@@ -6073,7 +6073,7 @@ Sitemap: ${baseUrl}/sitemap.xml
           try {
             let imageUrl = item.productImage;
             if (imageUrl.startsWith('/uploads/')) {
-              imageUrl = `https://polenstone.com${imageUrl}`;
+              imageUrl = `https://ecartejeans.com${imageUrl}`;
             }
             
             if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
@@ -6144,7 +6144,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       
       // Footer
       doc.fontSize(8).font(fontRegular).fillColor('#999999');
-      doc.text('Marka | www.polenstone.com | info@polenstone.com', 50, 780, { align: 'center', width: 495 });
+      doc.text('Marka | www.ecartejeans.com | info@ecartejeans.com', 50, 780, { align: 'center', width: 495 });
       
       doc.end();
     } catch (error) {
@@ -6751,7 +6751,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       const allCategories = await storage.getCategories();
       const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
 
-      const baseUrl = "https://polenstone.com";
+      const baseUrl = "https://ecartejeans.com";
       const items: string[] = [];
 
       for (const product of allProducts) {
@@ -7058,7 +7058,7 @@ ${items.join("\n")}
         return y + 20;
       };
 
-      const allowedHosts = ['polenstone.com', 'cdn.polenstone.com', 'img.trendyol.com', 'cdn.dsmcdn.com'];
+      const allowedHosts = ['ecartejeans.com', 'cdn.ecartejeans.com', 'img.trendyol.com', 'cdn.dsmcdn.com'];
       const isAllowedHost = (url: string): boolean => {
         try {
           const u = new URL(url);
@@ -7071,7 +7071,7 @@ ${items.join("\n")}
         try {
           let imageUrl = src;
           if (imageUrl.startsWith('/uploads/')) {
-            imageUrl = `https://polenstone.com${imageUrl}`;
+            imageUrl = `https://ecartejeans.com${imageUrl}`;
           }
           if (!isAllowedHost(imageUrl)) return null;
           const controller = new AbortController();
@@ -7191,7 +7191,7 @@ ${items.join("\n")}
         doc.switchToPage(pi);
         doc.rect(marginL, pageBottom - 2, usableW, 0.5).fill('#e5e5e5');
         doc.fontSize(7).font(fontR).fillColor('#999999');
-        doc.text('polenstone.com', marginL, pageBottom + 4);
+        doc.text('ecartejeans.com', marginL, pageBottom + 4);
         doc.text(
           `Sayfa ${pi + 1} / ${range.count}`,
           marginL,

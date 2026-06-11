@@ -70,13 +70,13 @@ const BRAND = {
 const CONTACT = {
   phoneDisplay: '0532 695 61 83',
   phoneTel: '+905326956183',
-  email: 'info@polenstone.com',
+  email: 'info@ecartejeans.com',
   addressLine1: 'Yunus Emre, Barbaros Blv. 42 d',
   addressLine2: '34791 Sancaktepe / İstanbul',
-  site: 'polenstone.com',
-  siteUrl: 'https://polenstone.com',
+  site: 'ecartejeans.com',
+  siteUrl: 'https://ecartejeans.com',
   whatsapp: 'https://wa.me/905326956183',
-  instagram: 'https://www.instagram.com/polenstonecom/',
+  instagram: 'https://www.instagram.com/ecartejeans/',
 };
 
 function escapeHtml(s: string | number | undefined | null): string {
@@ -775,7 +775,7 @@ export async function sendWelcomeEmail(user: User): Promise<EmailResult> {
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     const userName = user.firstName || 'Değerli Müşterimiz';
     
@@ -802,7 +802,7 @@ export async function sendOrderConfirmationEmail(order: Order, items: OrderItem[
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
 
     // Ürün görsellerini products tablosundan zenginleştir (thumbnail için)
     const enrichedItems: OrderItemForEmail[] = await Promise.all(
@@ -841,7 +841,7 @@ export async function sendPreparingNotificationEmail(order: Order): Promise<Emai
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
       from: `"Marka" <${fromEmail}>`,
@@ -866,7 +866,7 @@ export async function sendShippingNotificationEmail(order: Order): Promise<Email
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
       from: `"Marka" <${fromEmail}>`,
@@ -891,7 +891,7 @@ export async function sendAdminOrderNotificationEmail(order: Order, items: Order
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     const adminEmail = settings.admin_email;
     
     if (!adminEmail) {
@@ -957,7 +957,7 @@ export async function sendAdminReviewNotificationEmail(
     if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
 
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     const adminEmail = settings.admin_email;
     if (!adminEmail) return { success: false, error: 'Admin e-posta adresi ayarlanmamış' };
 
@@ -1045,7 +1045,7 @@ export async function sendGuestReviewApprovedEmail(
     if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
 
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
 
     const stars = '★'.repeat(payload.rating) + '☆'.repeat(5 - payload.rating);
     const productUrl = `${CONTACT.siteUrl}/urun/${payload.productSlug}`;
@@ -1096,7 +1096,7 @@ export async function sendGuestReviewRejectedEmail(
     if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
 
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
 
     const html = wrapTemplate(`
       ${H1('Yorumunuz onaylanmadı.')}
@@ -1136,7 +1136,7 @@ export async function sendBankTransferPendingEmail(order: Order, items: OrderIte
     }
 
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
 
     const enrichedItems: OrderItemForEmail[] = await Promise.all(
       items.map(async (item) => {
@@ -1174,8 +1174,8 @@ export async function sendPasswordResetEmail(user: User, resetToken: string): Pr
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
-    const siteUrl = settings.site_url || 'https://polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
+    const siteUrl = settings.site_url || 'https://ecartejeans.com';
     
     const resetLink = `${siteUrl}/sifre-sifirla?token=${resetToken}`;
     const userName = user.firstName || 'Değerli Müşterimiz';
@@ -1208,7 +1208,7 @@ export async function sendReviewRequestEmail(
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
       from: `"Marka" <${fromEmail}>`,
@@ -1233,7 +1233,7 @@ export async function sendTestEmail(toEmail: string): Promise<EmailResult> {
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
       from: `"Marka" <${fromEmail}>`,
@@ -1272,8 +1272,8 @@ export async function sendAbandonedCartEmail(
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
-    const siteUrl = settings.site_url || 'https://polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
+    const siteUrl = settings.site_url || 'https://ecartejeans.com';
     
     await transporter.sendMail({
       from: `"Marka" <${fromEmail}>`,
@@ -1361,7 +1361,7 @@ export async function sendQuoteEmail(
     }
     
     const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@polenstone.com';
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
       from: `"Marka B2B" <${fromEmail}>`,

@@ -41,10 +41,10 @@ function useMounted() {
 // ─────────────────────────────────────────────
 
 const heroCategories = [
-  { label: 'Kadın', href: '/magaza?kategori=kadin' },
-  { label: 'Erkek', href: '/magaza?kategori=erkek' },
-  { label: 'Çocuk', href: '/magaza?kategori=cocuk' },
-  { label: 'Aksesuar', href: '/magaza?kategori=aksesuar' },
+  { label: 'Kadın Jean', href: '/magaza?kategori=kadin-jean' },
+  { label: 'Erkek Jean', href: '/magaza?kategori=erkek-jean' },
+  { label: 'Çocuk Jean', href: '/magaza?kategori=cocuk-jean' },
+  { label: 'Toptan Satış', href: '/hakkimizda' },
 ];
 
 function HeroScene() {
@@ -59,7 +59,7 @@ function HeroSceneStatic() {
     <section
       className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
       style={{ minHeight: 'calc(100svh - 96px)' }}
-      aria-label="Marka giyim koleksiyonu"
+      aria-label="Ecarte Jeans denim koleksiyonu"
       data-testid="scene-hero"
     >
       <HeroContent />
@@ -107,7 +107,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
       <W {...props} className="relative z-10 flex flex-col items-center">
         {/* Eyebrow */}
         <span className="block text-[10px] font-mono tracking-[0.36em] uppercase text-white/50 mb-8 lg:mb-10">
-          Marka · 2026 · Yeni Sezon
+          Ecarte Jeans · 2026 · Yeni Sezon
         </span>
 
         {/* Main headline */}
@@ -122,7 +122,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
 
         {/* Sub copy */}
         <p className="mt-6 lg:mt-8 max-w-[480px] text-[13px] lg:text-[15px] leading-relaxed text-white/60 font-light">
-          Kadın, erkek ve çocuk giyiminde yüzlerce marka. Güncel koleksiyon, güvenli ödeme, hızlı kargo.
+          Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı.
         </p>
 
         {/* Category pills */}
