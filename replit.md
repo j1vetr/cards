@@ -12,7 +12,9 @@ All user-visible date/time rendering for orders (admin panel, customer profile, 
 ## Brand & Theme
 - **Brand**: Ecarte Jeans
 - **Domain**: ecartejeans.com · **Email**: info@ecartejeans.com · **Instagram**: @ecartejeans
-- **Logo**: Text wordmark "ECARTE / JEANS" (two-line stacked, "Ecarte" light small caps, "JEANS" bold). User will upload actual logo asset — replace text wordmark in Header.tsx and Footer.tsx when received.
+- **Logo**: Horizontal wordmark — tiger mascot left, "ECARTE JEANS" text right. Two versions in `client/public/`:
+  - `ecarte-logo-dark.png` — dark/black design, transparent bg → use on white/light backgrounds with `style={{ mixBlendMode: 'multiply' }}`
+  - `ecarte-logo-white.png` — white design, transparent bg → use on dark navy backgrounds with `style={{ mixBlendMode: 'screen' }}`
 - **Color tokens** (in `client/src/index.css`, token names kept for backward compat):
   - `--polen-orange: 220 65% 36%` — deep denim indigo/blue (primary accent)
   - `--polen-orange-deep: 220 72% 27%` — darker indigo for hover states

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, type Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/hooks/useCart';
@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 interface MenuItemData {
@@ -99,8 +100,8 @@ export function Header() {
   };
 
   const navLinkCls = (active: boolean) =>
-    `inline-flex items-center gap-1 text-[11px] font-medium tracking-[0.10em] uppercase transition-colors whitespace-nowrap ${
-      active ? 'text-black' : 'text-black/55 hover:text-black'
+    `inline-flex items-center gap-1 text-[11.5px] font-semibold tracking-[0.14em] uppercase transition-colors whitespace-nowrap ${
+      active ? 'text-[hsl(var(--polen-orange))]' : 'text-black/60 hover:text-black'
     }`;
 
   return (
@@ -115,16 +116,16 @@ export function Header() {
             className="relative overflow-hidden bg-[hsl(var(--polen-stone))] text-white"
             data-testid="bar-announcement"
           >
-            <div className="flex items-center justify-center gap-6 px-10 h-9 text-[11px] tracking-[0.18em] uppercase font-medium">
+            <div className="flex items-center justify-center gap-5 px-10 h-9 text-[10.5px] tracking-[0.20em] uppercase font-medium">
               <span className="hidden sm:inline">Toptan Satış Mevcut</span>
-              <span className="text-white/40">·</span>
-              <span>Ücretsiz Kargo · 500₺ ve üzeri</span>
-              <span className="text-white/40 hidden sm:inline">·</span>
-              <span className="hidden sm:inline">Kolay İade Garantisi</span>
+              <span className="text-white/30 hidden sm:inline">·</span>
+              <span>Ücretsiz Kargo — 500₺ ve üzeri</span>
+              <span className="text-white/30 hidden sm:inline">·</span>
+              <span className="hidden sm:inline">30 Gün İade Garantisi</span>
             </div>
             <button
               onClick={() => setAnnounceClosed(true)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/50 hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/40 hover:text-white transition-colors"
               aria-label="Kapat"
               data-testid="button-close-announcement"
             >
@@ -136,29 +137,30 @@ export function Header() {
 
       {/* ── Main header ── */}
       <header
-        className={`sticky top-0 left-0 right-0 z-40 bg-white border-b border-black/[0.07] transition-shadow duration-300 ${scrolled ? 'shadow-[0_2px_20px_-4px_rgba(0,0,0,0.12)]' : ''}`}
+        className={`sticky top-0 left-0 right-0 z-40 bg-white border-b border-black/[0.08] transition-all duration-300 ${scrolled ? 'shadow-[0_4px_24px_-6px_rgba(0,0,0,0.10)]' : ''}`}
         data-testid="header"
       >
-        <div className="h-[60px] max-w-[1400px] mx-auto px-4 lg:px-8 flex items-center">
+        <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
 
           {/* ── Mobile layout ── */}
-          <div className="lg:hidden flex items-center justify-between w-full">
+          <div className="lg:hidden flex items-center justify-between h-[64px]">
             <button
               data-testid="button-mobile-menu"
               onClick={() => setMobileOpen(true)}
-              className="flex flex-col gap-[5.5px] p-2 -ml-2"
+              className="flex flex-col gap-[5px] p-2 -ml-2"
               aria-label="Menü"
             >
-              <span className="block h-[1.5px] w-5 bg-black rounded-full" />
-              <span className="block h-[1.5px] w-3.5 bg-black rounded-full" />
-              <span className="block h-[1.5px] w-5 bg-black rounded-full" />
+              <span className="block h-[1.5px] w-[22px] bg-black rounded-full" />
+              <span className="block h-[1.5px] w-[15px] bg-black rounded-full" />
+              <span className="block h-[1.5px] w-[22px] bg-black rounded-full" />
             </button>
 
-            <Link href="/" data-testid="link-logo-mobile" className="block absolute left-1/2 -translate-x-1/2">
+            <Link href="/" data-testid="link-logo-mobile" className="absolute left-1/2 -translate-x-1/2">
               <img
-                src="/ecarte-logo.webp"
+                src="/ecarte-logo-dark.png"
                 alt="Ecarte Jeans"
-                className="h-11 w-11 object-contain rounded-sm"
+                className="h-9 w-auto object-contain"
+                style={{ mixBlendMode: 'multiply' }}
                 data-testid="img-logo-mobile"
               />
             </Link>
@@ -166,17 +168,14 @@ export function Header() {
             <div className="flex items-center gap-0.5">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2 text-black/60 hover:text-black transition-colors"
+                className="p-2 text-black/55 hover:text-black transition-colors"
                 data-testid="button-search-mobile"
                 aria-label="Ara"
               >
                 <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
               </button>
               <Link href="/sepet" data-testid="link-cart-mobile">
-                <button
-                  className="p-2 text-black/60 hover:text-black transition-colors relative"
-                  aria-label="Sepet"
-                >
+                <button className="p-2 text-black/55 hover:text-black transition-colors relative" aria-label="Sepet">
                   <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
                   <AnimatePresence>
                     {totalItems > 0 && (
@@ -195,20 +194,21 @@ export function Header() {
           </div>
 
           {/* ── Desktop layout ── */}
-          <div className="hidden lg:grid grid-cols-[220px_1fr_220px] items-center w-full gap-6">
+          <div className="hidden lg:flex items-center h-[76px] gap-8 xl:gap-12">
 
             {/* Logo */}
-            <Link href="/" data-testid="link-logo" className="block">
+            <Link href="/" data-testid="link-logo" className="shrink-0">
               <img
-                src="/ecarte-logo.webp"
+                src="/ecarte-logo-dark.png"
                 alt="Ecarte Jeans"
-                className="h-12 w-12 object-contain rounded-sm"
+                className="h-[52px] w-auto object-contain"
+                style={{ mixBlendMode: 'multiply' }}
                 data-testid="img-logo"
               />
             </Link>
 
-            {/* Nav */}
-            <nav className="flex items-center justify-center gap-5 xl:gap-7">
+            {/* Nav — grows to fill space, items centered */}
+            <nav className="flex-1 flex items-center justify-center gap-6 xl:gap-8">
               {useMenuTree ? (
                 menuRoots.map((root) => {
                   const children = (root.children || []).filter(c => c.isActive);
@@ -218,31 +218,28 @@ export function Header() {
                         <DropdownMenuTrigger asChild>
                           <button className={navLinkCls(false)} data-testid={`button-nav-root-${root.id}`}>
                             {root.title}
-                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                            <ChevronDown className="w-2.5 h-2.5 opacity-50" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="center"
-                          sideOffset={16}
-                          className="bg-white border-black/8 shadow-xl rounded-none p-2 min-w-[220px]"
+                          sideOffset={14}
+                          className="bg-white border-black/8 shadow-xl rounded-none p-1.5 min-w-[200px]"
                         >
                           {children.length === 0 ? (
                             <DropdownMenuItem disabled className="text-[11px] text-black/35 py-2 px-3">
-                              Henüz alt kategori yok
+                              Alt kategori yok
                             </DropdownMenuItem>
-                          ) : children.map(child => {
-                            const href = hrefForMenu(child);
-                            return (
-                              <DropdownMenuItem
-                                key={child.id}
-                                onClick={() => navigate(href)}
-                                className="text-[11px] tracking-[0.12em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-[hsl(var(--polen-orange))] cursor-pointer py-2.5 px-3 rounded-none"
-                                data-testid={`link-mega-${child.id}`}
-                              >
-                                {child.title}
-                              </DropdownMenuItem>
-                            );
-                          })}
+                          ) : children.map(child => (
+                            <DropdownMenuItem
+                              key={child.id}
+                              onClick={() => navigate(hrefForMenu(child))}
+                              className="text-[11.5px] tracking-[0.14em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-[hsl(var(--polen-orange))] cursor-pointer py-2.5 px-3 rounded-none font-medium"
+                              data-testid={`link-mega-${child.id}`}
+                            >
+                              {child.title}
+                            </DropdownMenuItem>
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     );
@@ -261,29 +258,26 @@ export function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className={navLinkCls(location.startsWith('/kategori/'))} data-testid="button-nav-kategoriler">
-                      Kategoriler <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                      Kategoriler <ChevronDown className="w-2.5 h-2.5 opacity-50" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="center"
-                    sideOffset={16}
-                    className="bg-white border-black/8 shadow-xl rounded-none p-2"
-                    style={{ minWidth: visibleCategories.length > 6 ? 440 : 200 }}
+                    sideOffset={14}
+                    className="bg-white border-black/8 shadow-xl rounded-none p-1.5"
+                    style={{ minWidth: visibleCategories.length > 6 ? 400 : 180 }}
                   >
                     {visibleCategories.length === 0 ? (
-                      <DropdownMenuItem onClick={() => navigate('/magaza')} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5 px-3">
+                      <DropdownMenuItem onClick={() => navigate('/magaza')} className="text-[11px] tracking-wider uppercase cursor-pointer py-2.5 px-3">
                         Tüm Ürünler
                       </DropdownMenuItem>
                     ) : (
-                      <div
-                        className="grid gap-x-1 gap-y-0"
-                        style={{ gridTemplateColumns: visibleCategories.length > 6 ? 'repeat(2, 1fr)' : '1fr' }}
-                      >
+                      <div className="grid gap-x-1" style={{ gridTemplateColumns: visibleCategories.length > 6 ? 'repeat(2, 1fr)' : '1fr' }}>
                         {visibleCategories.map((c) => (
                           <DropdownMenuItem
                             key={c.id}
                             onClick={() => navigate(`/kategori/${c.slug}`)}
-                            className="text-[11px] tracking-[0.12em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-[hsl(var(--polen-orange))] cursor-pointer py-2.5 px-3 rounded-none"
+                            className="text-[11.5px] tracking-[0.12em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-[hsl(var(--polen-orange))] cursor-pointer py-2.5 px-3 rounded-none font-medium"
                             data-testid={`link-cat-${c.slug}`}
                           >
                             {c.name}
@@ -303,58 +297,93 @@ export function Header() {
               </Link>
             </nav>
 
-            {/* Icons */}
-            <div className="flex items-center justify-end gap-1">
+            {/* Right icons */}
+            <div className="shrink-0 flex items-center gap-0.5">
+              {/* Search */}
               <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2.5 text-black/55 hover:text-black transition-colors"
+                className="p-2.5 text-black/50 hover:text-black transition-colors"
                 data-testid="button-search"
                 aria-label="Ara"
               >
-                <Search className="w-[20px] h-[20px]" strokeWidth={1.8} />
+                <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
               </button>
 
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-2.5 text-black/55 hover:text-black transition-colors" data-testid="button-account" aria-label="Hesabım">
-                      <User className="w-[20px] h-[20px]" strokeWidth={1.8} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white border-black/8 shadow-lg rounded-none min-w-[180px]">
-                    <DropdownMenuItem disabled className="text-[10px] tracking-widest text-black/30 uppercase">{user.firstName || user.email}</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/hesabim')} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
-                      <User className="w-4 h-4 mr-2" />Hesabım
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { logout(); navigate('/'); }} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5">
-                      <LogOut className="w-4 h-4 mr-2" />Çıkış Yap
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-black/10">
-                  <Link href="/giris" data-testid="link-header-giris">
-                    <span className="text-[11px] tracking-[0.12em] uppercase font-medium text-black/60 hover:text-black transition-colors cursor-pointer px-2 py-1">
-                      Giriş
-                    </span>
-                  </Link>
-                  <Link href="/kayit" data-testid="link-header-kayit">
-                    <span className="inline-flex items-center px-4 py-2 text-[11px] tracking-[0.12em] uppercase font-semibold text-white bg-[hsl(var(--polen-stone))] hover:bg-[hsl(var(--polen-orange))] transition-colors cursor-pointer">
-                      Kayıt Ol
-                    </span>
-                  </Link>
-                </div>
-              )}
+              {/* Account */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-2.5 text-black/50 hover:text-black transition-colors"
+                    data-testid="button-account"
+                    aria-label="Hesabım"
+                  >
+                    <User className="w-[19px] h-[19px]" strokeWidth={1.8} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={10} className="bg-white border-black/8 shadow-xl rounded-none min-w-[210px] p-0">
+                  {user ? (
+                    <>
+                      <div className="px-4 py-3 border-b border-black/[0.06]">
+                        <p className="text-[10px] tracking-[0.22em] uppercase text-black/35 font-medium">Hesabım</p>
+                        <p className="text-[13px] font-semibold text-black mt-0.5 truncate">{user.firstName || user.email}</p>
+                      </div>
+                      <div className="py-1.5">
+                        <DropdownMenuItem
+                          onClick={() => navigate('/hesabim')}
+                          className="text-[12px] tracking-[0.10em] uppercase font-medium text-black hover:bg-[hsl(var(--polen-cream))] cursor-pointer py-2.5 px-4 rounded-none"
+                        >
+                          <User className="w-3.5 h-3.5 mr-2.5 opacity-40" /> Hesabım
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="my-1 bg-black/[0.06]" />
+                        <DropdownMenuItem
+                          onClick={() => { logout(); navigate('/'); }}
+                          className="text-[12px] tracking-[0.10em] uppercase font-medium text-black/50 hover:bg-[hsl(var(--polen-cream))] hover:text-black cursor-pointer py-2.5 px-4 rounded-none"
+                        >
+                          <LogOut className="w-3.5 h-3.5 mr-2.5 opacity-40" /> Çıkış Yap
+                        </DropdownMenuItem>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="px-4 py-3 border-b border-black/[0.06]">
+                        <p className="text-[10px] tracking-[0.22em] uppercase text-black/35 font-medium">Hesabım</p>
+                        <p className="text-[12px] text-black/55 mt-0.5">Giriş yapın veya üye olun</p>
+                      </div>
+                      <div className="py-1.5">
+                        <DropdownMenuItem
+                          onClick={() => navigate('/giris')}
+                          className="text-[12px] tracking-[0.10em] uppercase font-medium text-black hover:bg-[hsl(var(--polen-cream))] cursor-pointer py-2.5 px-4 rounded-none"
+                          data-testid="link-header-giris"
+                        >
+                          <User className="w-3.5 h-3.5 mr-2.5 opacity-40" /> Giriş Yap
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => navigate('/kayit')}
+                          className="text-[12px] tracking-[0.10em] uppercase font-semibold text-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-cream))] cursor-pointer py-2.5 px-4 rounded-none"
+                          data-testid="link-header-kayit"
+                        >
+                          <UserPlus className="w-3.5 h-3.5 mr-2.5 opacity-60" /> Üye Ol
+                        </DropdownMenuItem>
+                      </div>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
+              {/* Cart */}
               <Link href="/sepet" data-testid="link-cart">
-                <button className="p-2.5 text-black/55 hover:text-black transition-colors relative ml-1" aria-label="Sepet" data-testid="button-cart">
-                  <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.8} />
+                <button
+                  className="p-2.5 text-black/50 hover:text-black transition-colors relative"
+                  aria-label="Sepet"
+                  data-testid="button-cart"
+                >
+                  <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
                   <AnimatePresence>
                     {totalItems > 0 && (
                       <motion.span
                         key="badge"
                         initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 bg-[hsl(var(--polen-orange))] text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
+                        className="absolute top-1 right-1 min-w-[16px] h-[16px] px-1 bg-[hsl(var(--polen-orange))] text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
                       >
                         {totalItems > 9 ? '9+' : totalItems}
                       </motion.span>
@@ -363,6 +392,7 @@ export function Header() {
                 </button>
               </Link>
             </div>
+
           </div>
         </div>
       </header>
@@ -377,7 +407,7 @@ export function Header() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
               data-testid="overlay-mobile-menu"
             />
 
@@ -390,18 +420,19 @@ export function Header() {
               data-testid="drawer-mobile-menu"
             >
               {/* Drawer header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 shrink-0">
                 <Link href="/" onClick={() => setMobileOpen(false)} data-testid="link-mobile-logo">
                   <img
-                    src="/ecarte-logo.webp"
+                    src="/ecarte-logo-white.png"
                     alt="Ecarte Jeans"
-                    className="h-11 w-11 object-contain rounded-sm"
+                    className="h-9 w-auto object-contain"
+                    style={{ mixBlendMode: 'screen' }}
                     data-testid="img-logo-mobile-drawer"
                   />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="p-2 text-white/60 hover:text-white transition-colors"
+                  className="p-2 text-white/50 hover:text-white transition-colors"
                   data-testid="button-close-menu"
                   aria-label="Kapat"
                 >
@@ -410,7 +441,7 @@ export function Header() {
               </div>
 
               {/* Nav list */}
-              <nav className="flex-1 overflow-y-auto py-4">
+              <nav className="flex-1 overflow-y-auto py-2">
                 <motion.ul
                   variants={drawerStagger.container}
                   initial="initial"
@@ -418,40 +449,35 @@ export function Header() {
                   exit="initial"
                   className="px-6 flex flex-col"
                 >
-                  <motion.li variants={drawerStagger.item} className="border-b border-white/[0.08]">
-                    <Link
-                      href="/"
-                      onClick={() => setMobileOpen(false)}
-                      className="group flex items-center justify-between py-4"
-                      data-testid="link-mobile-home"
-                    >
-                      <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">Ana Sayfa</span>
-                      <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
+                  <motion.li variants={drawerStagger.item} className="border-b border-white/[0.07]">
+                    <Link href="/" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-home">
+                      <span className="text-[14px] font-semibold tracking-[0.10em] uppercase text-white/80 group-hover:text-white transition-colors">Ana Sayfa</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
                     </Link>
                   </motion.li>
 
                   {useMenuTree ? (
-                    menuRoots.map((root, idx) => {
+                    menuRoots.map((root) => {
                       const children = (root.children || []).filter(c => c.isActive);
                       const isSubmenu = root.type === 'submenu';
                       const isOpen = !!mobileSubOpen[root.id];
 
                       if (isSubmenu) {
                         return (
-                          <motion.li key={root.id} variants={drawerStagger.item} className="border-b border-white/[0.08]">
+                          <motion.li key={root.id} variants={drawerStagger.item} className="border-b border-white/[0.07]">
                             <button
                               onClick={() => setMobileSubOpen(s => ({ ...s, [root.id]: !s[root.id] }))}
                               className="group w-full flex items-center justify-between py-4"
                               data-testid={`button-mobile-group-${root.id}`}
                               aria-expanded={isOpen}
                             >
-                              <span className={`text-[15px] font-medium tracking-[0.06em] uppercase transition-colors ${isOpen ? 'text-[hsl(var(--polen-orange))]' : 'text-white/90 group-hover:text-white'}`}>
+                              <span className={`text-[14px] font-semibold tracking-[0.10em] uppercase transition-colors ${isOpen ? 'text-[hsl(var(--polen-orange))]' : 'text-white/80 group-hover:text-white'}`}>
                                 {root.title}
                               </span>
                               <motion.span
                                 animate={{ rotate: isOpen ? 45 : 0 }}
                                 transition={{ duration: 0.25 }}
-                                className={`transition-colors ${isOpen ? 'text-[hsl(var(--polen-orange))]' : 'text-white/30'}`}
+                                className={isOpen ? 'text-[hsl(var(--polen-orange))]' : 'text-white/20'}
                               >
                                 <ArrowUpRight className="w-4 h-4" />
                               </motion.span>
@@ -463,23 +489,20 @@ export function Header() {
                                   animate={{ height: 'auto', opacity: 1 }}
                                   exit={{ height: 0, opacity: 0 }}
                                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                  className="overflow-hidden pl-4 border-l border-[hsl(var(--polen-orange))]/30 ml-1 mb-3"
+                                  className="overflow-hidden pl-4 border-l border-[hsl(var(--polen-orange))]/25 ml-1 mb-3"
                                 >
-                                  {children.map(child => {
-                                    const href = hrefForMenu(child);
-                                    return (
-                                      <li key={child.id}>
-                                        <Link
-                                          href={href}
-                                          onClick={() => setMobileOpen(false)}
-                                          className="flex items-center py-2 text-[13px] tracking-[0.10em] uppercase text-white/60 hover:text-white transition-colors"
-                                          data-testid={`link-mobile-mega-${child.id}`}
-                                        >
-                                          {child.title}
-                                        </Link>
-                                      </li>
-                                    );
-                                  })}
+                                  {children.map(child => (
+                                    <li key={child.id}>
+                                      <Link
+                                        href={hrefForMenu(child)}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center py-2.5 text-[12.5px] tracking-[0.12em] uppercase text-white/55 hover:text-white transition-colors font-medium"
+                                        data-testid={`link-mobile-mega-${child.id}`}
+                                      >
+                                        {child.title}
+                                      </Link>
+                                    </li>
+                                  ))}
                                 </motion.ul>
                               )}
                             </AnimatePresence>
@@ -489,47 +512,37 @@ export function Header() {
 
                       const href = hrefForMenu(root);
                       return (
-                        <motion.li key={root.id} variants={drawerStagger.item} className="border-b border-white/[0.08]">
-                          <Link
-                            href={href}
-                            onClick={() => setMobileOpen(false)}
-                            className="group flex items-center justify-between py-4"
-                            data-testid={`link-mobile-root-${root.id}`}
-                          >
-                            <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">{root.title}</span>
-                            <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
+                        <motion.li key={root.id} variants={drawerStagger.item} className="border-b border-white/[0.07]">
+                          <Link href={href} onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid={`link-mobile-root-${root.id}`}>
+                            <span className="text-[14px] font-semibold tracking-[0.10em] uppercase text-white/80 group-hover:text-white transition-colors">{root.title}</span>
+                            <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
                           </Link>
                         </motion.li>
                       );
                     })
                   ) : (
                     visibleCategories.map((c) => (
-                      <motion.li key={c.id} variants={drawerStagger.item} className="border-b border-white/[0.08]">
-                        <Link
-                          href={`/kategori/${c.slug}`}
-                          onClick={() => setMobileOpen(false)}
-                          className="group flex items-center justify-between py-4"
-                          data-testid={`link-mobile-cat-${c.slug}`}
-                        >
-                          <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">{c.name}</span>
-                          <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
+                      <motion.li key={c.id} variants={drawerStagger.item} className="border-b border-white/[0.07]">
+                        <Link href={`/kategori/${c.slug}`} onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid={`link-mobile-cat-${c.slug}`}>
+                          <span className="text-[14px] font-semibold tracking-[0.10em] uppercase text-white/80 group-hover:text-white transition-colors">{c.name}</span>
+                          <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-[hsl(var(--Polen-orange))] transition-colors" />
                         </Link>
                       </motion.li>
                     ))
                   )}
 
-                  <motion.li variants={drawerStagger.item} className="border-b border-white/[0.08]">
+                  <motion.li variants={drawerStagger.item} className="border-b border-white/[0.07]">
                     <Link href="/magaza" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-magaza">
-                      <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">Mağaza</span>
-                      <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
+                      <span className="text-[14px] font-semibold tracking-[0.10em] uppercase text-white/80 group-hover:text-white transition-colors">Mağaza</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-[hsl(var(--Polen-orange))] transition-colors" />
                     </Link>
                   </motion.li>
 
                   {user && (
-                    <motion.li variants={drawerStagger.item} className="border-b border-white/[0.08]">
+                    <motion.li variants={drawerStagger.item} className="border-b border-white/[0.07]">
                       <Link href="/hesabim" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-hesabim">
-                        <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">Hesabım</span>
-                        <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
+                        <span className="text-[14px] font-semibold tracking-[0.10em] uppercase text-white/80 group-hover:text-white transition-colors">Hesabım</span>
+                        <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-[hsl(var(--Polen-orange))] transition-colors" />
                       </Link>
                     </motion.li>
                   )}
@@ -537,11 +550,11 @@ export function Header() {
               </nav>
 
               {/* Auth / CTA */}
-              <div className="shrink-0 p-6 border-t border-white/10">
+              <div className="shrink-0 px-6 py-5 border-t border-white/10">
                 {user ? (
                   <button
                     onClick={() => { logout(); setMobileOpen(false); navigate('/'); }}
-                    className="w-full flex items-center justify-center gap-2 py-3 text-[11px] tracking-[0.16em] uppercase font-medium text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-colors"
                     data-testid="button-mobile-logout"
                   >
                     <LogOut className="w-4 h-4" /> Çıkış Yap
@@ -551,7 +564,7 @@ export function Header() {
                     <Link
                       href="/giris"
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center py-3 text-[11px] tracking-[0.14em] uppercase font-medium text-white border border-white/25 hover:border-white/60 transition-colors"
+                      className="flex items-center justify-center py-3.5 text-[11px] tracking-[0.16em] uppercase font-semibold text-white border border-white/25 hover:border-white/60 transition-colors"
                       data-testid="link-mobile-giris"
                     >
                       Giriş Yap
@@ -559,10 +572,10 @@ export function Header() {
                     <Link
                       href="/kayit"
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center py-3 text-[11px] tracking-[0.14em] uppercase font-semibold text-white bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
+                      className="flex items-center justify-center py-3.5 text-[11px] tracking-[0.16em] uppercase font-semibold text-white bg-[hsl(var(--Polen-orange))] hover:bg-[hsl(var(--Polen-orange-deep))] transition-colors"
                       data-testid="link-mobile-kayit"
                     >
-                      Kayıt Ol
+                      Üye Ol
                     </Link>
                   </div>
                 )}

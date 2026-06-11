@@ -31,9 +31,10 @@ export function Footer() {
           <div className="lg:col-span-5">
             <Link href="/" className="inline-block mb-6" data-testid="link-footer-logo">
               <img
-                src="/ecarte-logo.webp"
+                src="/ecarte-logo-white.png"
                 alt="Ecarte Jeans"
-                className="h-20 w-20 object-contain rounded"
+                className="h-12 w-auto object-contain"
+                style={{ mixBlendMode: 'screen' }}
               />
             </Link>
             <p className="text-white/50 text-[13.5px] leading-[1.75] max-w-sm mb-6">
