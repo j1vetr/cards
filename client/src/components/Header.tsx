@@ -106,26 +106,49 @@ export function Header() {
 
   return (
     <>
-      {/* ── Announcement bar ── */}
+      {/* ── Announcement bar — marquee ── */}
       <AnimatePresence initial={false}>
         {!announceClosed && (
           <motion.div
             initial={{ height: 36, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 1, 1] }}
-            className="relative overflow-hidden bg-[hsl(var(--polen-stone))] text-white"
+            className="relative overflow-hidden bg-[hsl(var(--polen-stone))] text-white h-9"
             data-testid="bar-announcement"
           >
-            <div className="flex items-center justify-center gap-5 px-10 h-9 text-[10.5px] tracking-[0.20em] uppercase font-medium">
-              <span className="hidden sm:inline">Toptan Satış Mevcut</span>
-              <span className="text-white/30 hidden sm:inline">·</span>
-              <span>Ücretsiz Kargo — 500₺ ve üzeri</span>
-              <span className="text-white/30 hidden sm:inline">·</span>
-              <span className="hidden sm:inline">30 Gün İade Garantisi</span>
+            <style>{`
+              @keyframes marquee-scroll {
+                0%   { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+              }
+              .marquee-track {
+                display: flex;
+                width: max-content;
+                animation: marquee-scroll 28s linear infinite;
+              }
+              .marquee-track:hover { animation-play-state: paused; }
+            `}</style>
+            <div className="flex items-center h-9 overflow-hidden">
+              <div className="marquee-track text-[10.5px] tracking-[0.20em] uppercase font-medium whitespace-nowrap">
+                {[0, 1].map(i => (
+                  <span key={i} className="flex items-center">
+                    <span className="px-6">Toptan Satış Mevcut</span>
+                    <span className="text-white/30">✦</span>
+                    <span className="px-6">Ücretsiz Kargo — 500₺ ve Üzeri</span>
+                    <span className="text-white/30">✦</span>
+                    <span className="px-6">30 Gün İade Garantisi</span>
+                    <span className="text-white/30">✦</span>
+                    <span className="px-6">Yeni Sezon Koleksiyonu</span>
+                    <span className="text-white/30">✦</span>
+                    <span className="px-6">Hızlı Teslimat</span>
+                    <span className="text-white/30">✦</span>
+                  </span>
+                ))}
+              </div>
             </div>
             <button
               onClick={() => setAnnounceClosed(true)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/40 hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/40 hover:text-white transition-colors z-10"
               aria-label="Kapat"
               data-testid="button-close-announcement"
             >
@@ -194,14 +217,14 @@ export function Header() {
           </div>
 
           {/* ── Desktop layout ── */}
-          <div className="hidden lg:flex items-center h-[76px] gap-8 xl:gap-12">
+          <div className="hidden lg:flex items-center h-[88px] gap-8 xl:gap-12">
 
             {/* Logo */}
             <Link href="/" data-testid="link-logo" className="shrink-0">
               <img
                 src="/ecarte-logo-dark.png"
                 alt="Ecarte Jeans"
-                className="h-[52px] w-auto object-contain"
+                className="h-[68px] w-auto object-contain"
                 style={{ mixBlendMode: 'multiply' }}
                 data-testid="img-logo"
               />
