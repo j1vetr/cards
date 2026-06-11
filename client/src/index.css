@@ -41,33 +41,33 @@
 }
 
 :root {
-  --background: 35 25% 98%;
-  --foreground: 24 10% 12%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 6%;
   --card: 0 0% 100%;
-  --card-foreground: 24 10% 12%;
+  --card-foreground: 0 0% 6%;
   --popover: 0 0% 100%;
-  --popover-foreground: 24 10% 12%;
-  --primary: 24 10% 12%;
-  --primary-foreground: 35 25% 98%;
-  --secondary: 32 18% 94%;
-  --secondary-foreground: 24 10% 16%;
-  --muted: 32 18% 94%;
-  --muted-foreground: 24 6% 42%;
-  --accent: 41 98% 55%;
+  --popover-foreground: 0 0% 6%;
+  --primary: 0 0% 6%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 14%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 46%;
+  --accent: 340 62% 44%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 78% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border: 30 16% 88%;
-  --input: 30 16% 88%;
-  --ring: 41 98% 55%;
-  --radius: 0.5rem;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 340 62% 44%;
+  --radius: 0.25rem;
 
-  /* Polen Stone brand tokens */
-  --polen-orange: 41 98% 55%;
-  --polen-orange-deep: 38 95% 47%;
-  --polen-stone: 30 8% 22%;
-  --polen-cream: 35 30% 96%;
-  --polen-vein: 30 12% 78%;
+  /* Brand tokens — kept for backward compat, now fashion palette */
+  --polen-orange: 340 62% 44%;
+  --polen-orange-deep: 340 68% 36%;
+  --polen-stone: 220 5% 10%;
+  --polen-cream: 340 10% 97%;
+  --polen-vein: 0 0% 84%;
 }
 
 .dark {

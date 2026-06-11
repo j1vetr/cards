@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight, Phone, Mail } from 'lucide-react';
+import { ShoppingBag, Search, X, User, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, type Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/hooks/useCart';
@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import polenLogo from '@assets/Polen-Sticker-1.pdf_1777239312980.png';
-import marbleHero from '@assets/generated_images/polen-hero-1.png';
 
 interface MenuItemData {
   id: string;
@@ -37,12 +36,12 @@ interface CategoryData {
   image?: string | null;
 }
 
-const stagger: { container: Variants; item: Variants } = {
-  container: { animate: { transition: { staggerChildren: 0.05 } } },
+const drawerStagger: { container: Variants; item: Variants } = {
+  container: { animate: { transition: { staggerChildren: 0.04 } } },
   item: {
-    initial: { y: 60, opacity: 0 },
-    animate: { y: 0, opacity: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
-    exit: { y: -40, opacity: 0, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] as [number, number, number, number] } },
+    initial: { x: -24, opacity: 0 },
+    animate: { x: 0, opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
+    exit: { x: -12, opacity: 0, transition: { duration: 0.25 } },
   },
 };
 
@@ -52,13 +51,12 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileSubOpen, setMobileSubOpen] = useState<Record<string, boolean>>({});
+  const [announceClosed, setAnnounceClosed] = useState(false);
   const { totalItems } = useCart();
   const { user, logout } = useAuth();
   const { scrollY } = useScroll();
 
-  // Brand bar yaklaşık 116px; eşiği biraz aşağı çekip kompakt logo'nun
-  // brand bar viewport'tan çıktıktan sonra belirmesini sağlıyoruz.
-  useMotionValueEvent(scrollY, 'change', (v) => setScrolled(v > 110));
+  useMotionValueEvent(scrollY, 'change', (v) => setScrolled(v > 10));
 
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden';
@@ -86,13 +84,10 @@ export function Header() {
     staleTime: 60000,
   });
 
-  // Hide legacy categories (display_order >= 100); show only stone categories
   const visibleCategories = categoriesData
     .filter(c => (c.displayOrder ?? 0) < 100)
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
-  // Menu_items tablosundan beslenen yapı (admin "Otomatik Gruplandır" ile oluşturulur).
-  // Eğer hiç menu item yoksa, eski davranışa (visibleCategories) düşeriz.
   const menuRoots = [...menuTree]
     .filter(m => m.isActive && !m.parentId)
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
@@ -104,181 +99,136 @@ export function Header() {
     return '#';
   };
 
-  // Üst nav artık sadece menü ağacından besleniyor; "Mağaza" / "Hakkımızda" çıkarıldı.
   const navLinkCls = (active: boolean) =>
-    `relative inline-flex items-center gap-1 whitespace-nowrap text-[9.5px] xl:text-[10px] font-medium tracking-[0.06em] xl:tracking-[0.10em] uppercase transition-colors nav-link-hover ${active ? 'text-black' : 'text-black/70 hover:text-black'}`;
+    `inline-flex items-center gap-1 text-[11px] font-medium tracking-[0.10em] uppercase transition-colors whitespace-nowrap ${
+      active ? 'text-black' : 'text-black/55 hover:text-black'
+    }`;
 
   return (
     <>
-      {/* ── Brand bar (desktop): E-Posta · Logo · Telefon
-          Normal akışta durur; scroll edilince doğal olarak yukarı kayar. ── */}
-      <div className="hidden lg:block bg-white border-b border-black/[0.06]">
-        <div className="max-w-[1400px] mx-auto px-8 py-4 grid grid-cols-3 items-center gap-6">
-          {/* Sol: E-Posta */}
-          <a
-            href="mailto:info@polenstone.com"
-            data-testid="link-header-email"
-            aria-label="E-posta gönder"
-            className="justify-self-start group flex items-center gap-3"
+      {/* ── Announcement bar ── */}
+      <AnimatePresence initial={false}>
+        {!announceClosed && (
+          <motion.div
+            initial={{ height: 36, opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 1, 1] }}
+            className="relative overflow-hidden bg-[hsl(var(--polen-stone))] text-white"
+            data-testid="bar-announcement"
           >
-            <span className="w-11 h-11 rounded-full border border-black/10 group-hover:border-polen-orange flex items-center justify-center shrink-0 transition-colors">
-              <Mail className="w-[17px] h-[17px] text-black/70 group-hover:text-polen-orange transition-colors" strokeWidth={1.75} />
-            </span>
-            <span className="flex flex-col leading-tight whitespace-nowrap">
-              <span className="text-[9px] tracking-[0.22em] uppercase text-black/45 font-mono">E-Posta</span>
-              <span className="text-[13px] font-semibold text-black tracking-wide group-hover:text-polen-orange transition-colors" data-testid="text-header-email">info@polenstone.com</span>
-            </span>
-          </a>
+            <div className="flex items-center justify-center gap-6 px-10 h-9 text-[11px] tracking-[0.18em] uppercase font-medium">
+              <span className="hidden sm:inline">Ücretsiz Kargo · 500₺ ve üzeri</span>
+              <span className="text-white/40">·</span>
+              <span>Kolay İade Garantisi</span>
+              <span className="text-white/40 hidden sm:inline">·</span>
+              <span className="hidden sm:inline">Güvenli Ödeme</span>
+            </div>
+            <button
+              onClick={() => setAnnounceClosed(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/50 hover:text-white transition-colors"
+              aria-label="Kapat"
+              data-testid="button-close-announcement"
+            >
+              <X className="w-3 h-3" strokeWidth={2} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Orta: Logo */}
-          <Link href="/" data-testid="link-logo" className="justify-self-center block">
-            <img
-              src={polenLogo}
-              alt="Marka — Giyim & Moda"
-              className="h-[96px] w-auto object-contain"
-              data-testid="img-logo"
-            />
-          </Link>
-
-          {/* Sağ: Telefon */}
-          <a
-            href="tel:+905326956183"
-            data-testid="link-header-phone"
-            aria-label="Telefonla ara"
-            className="justify-self-end group flex items-center gap-3"
-          >
-            <span className="w-11 h-11 rounded-full border border-black/10 group-hover:border-polen-orange flex items-center justify-center shrink-0 transition-colors">
-              <Phone className="w-[17px] h-[17px] text-black/70 group-hover:text-polen-orange transition-colors" strokeWidth={1.75} />
-            </span>
-            <span className="flex flex-col leading-tight whitespace-nowrap">
-              <span className="text-[9px] tracking-[0.22em] uppercase text-black/45 font-mono">Bize Ulaşın</span>
-              <span className="text-[13px] font-semibold text-black tracking-wide group-hover:text-polen-orange transition-colors" data-testid="text-header-phone">0532 695 61 83</span>
-            </span>
-          </a>
-        </div>
-      </div>
-
-      {/* ── Main header (nav bar) — desktop'ta sticky, mobile'da fixed ── */}
-      <motion.header
-        initial={false}
-        animate={{ height: scrolled ? 64 : 72 }}
-        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
-        className={`fixed lg:sticky top-0 left-0 right-0 z-40 bg-white border-b border-black/8 flex items-center lg:!h-auto transition-shadow duration-300 ${scrolled ? 'lg:shadow-[0_4px_18px_-8px_rgba(0,0,0,0.18)]' : ''}`}
-        style={{ willChange: 'height' }}
+      {/* ── Main header ── */}
+      <header
+        className={`sticky top-0 left-0 right-0 z-40 bg-white border-b border-black/[0.07] transition-shadow duration-300 ${scrolled ? 'shadow-[0_2px_20px_-4px_rgba(0,0,0,0.12)]' : ''}`}
+        data-testid="header"
       >
-        <div className="w-full max-w-[1400px] mx-auto px-4 lg:px-8 lg:py-3">
-          {/* ── Mobile layout: hamburger / centered logo / icons ── */}
-          <div className="grid lg:hidden grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div className="h-[60px] max-w-[1400px] mx-auto px-4 lg:px-8 flex items-center">
+
+          {/* ── Mobile layout ── */}
+          <div className="lg:hidden flex items-center justify-between w-full">
             <button
               data-testid="button-mobile-menu"
               onClick={() => setMobileOpen(true)}
-              className="justify-self-start flex flex-col gap-[5px] p-2 -ml-2 group"
+              className="flex flex-col gap-[5.5px] p-2 -ml-2"
               aria-label="Menü"
             >
-              <span className="block h-px w-5 bg-black transition-all group-hover:w-6" />
-              <span className="block h-px w-4 bg-black transition-all group-hover:w-6" />
-              <span className="block h-px w-6 bg-black" />
+              <span className="block h-[1.5px] w-5 bg-black rounded-full" />
+              <span className="block h-[1.5px] w-3.5 bg-black rounded-full" />
+              <span className="block h-[1.5px] w-5 bg-black rounded-full" />
             </button>
 
-            <Link href="/" data-testid="link-logo-mobile-header" className="justify-self-center block">
-              <motion.img
+            <Link href="/" data-testid="link-logo-mobile" className="block absolute left-1/2 -translate-x-1/2">
+              <img
                 src={polenLogo}
-                alt="Marka — Giyim & Moda"
-                animate={{ height: scrolled ? 60 : 72 }}
-                transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
-                className="w-auto object-contain"
-                data-testid="img-logo-mobile-header"
-                style={{ willChange: 'height' }}
+                alt="Marka"
+                className="h-10 w-auto object-contain"
+                data-testid="img-logo-mobile"
               />
             </Link>
 
-            <div className="justify-self-end flex items-center gap-0.5">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
+            <div className="flex items-center gap-0.5">
+              <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2.5 text-black/65 hover:text-polen-orange transition-colors"
+                className="p-2 text-black/60 hover:text-black transition-colors"
                 data-testid="button-search-mobile"
                 aria-label="Ara"
               >
-                <Search className="w-[18px] h-[18px]" strokeWidth={1.75} />
-              </motion.button>
+                <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
+              </button>
               <Link href="/sepet" data-testid="link-cart-mobile">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  className="p-2.5 text-black/65 hover:text-polen-orange transition-colors relative"
+                <button
+                  className="p-2 text-black/60 hover:text-black transition-colors relative"
                   aria-label="Sepet"
                 >
-                  <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                  <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
                   <AnimatePresence>
                     {totalItems > 0 && (
                       <motion.span
-                        key="badge-mobile"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="absolute top-1 right-1 min-w-[16px] h-[16px] px-1 bg-polen-orange text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
+                        key="badge-m"
+                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                        className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 bg-[hsl(var(--polen-orange))] text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
                       >
                         {totalItems > 9 ? '9+' : totalItems}
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </motion.button>
+                </button>
               </Link>
             </div>
           </div>
 
-          {/* ── Desktop layout: sadece nav + ikonlar (logo üst brand bar'da) ── */}
-          <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center gap-10 xl:gap-16">
+          {/* ── Desktop layout ── */}
+          <div className="hidden lg:grid grid-cols-[220px_1fr_220px] items-center w-full gap-6">
 
-            {/* Sol: scroll edildiğinde küçük logo görünür */}
-            <div className="justify-self-start flex items-center min-w-0 h-[44px]">
-              <AnimatePresence>
-                {scrolled && (
-                  <motion.div
-                    key="scrolled-logo"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-                  >
-                    <Link href="/" data-testid="link-logo-compact" className="block shrink-0">
-                      <img
-                        src={polenLogo}
-                        alt="Marka"
-                        className="h-[44px] w-auto object-contain"
-                      />
-                    </Link>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Logo */}
+            <Link href="/" data-testid="link-logo" className="block">
+              <img
+                src={polenLogo}
+                alt="Marka"
+                className="h-11 w-auto object-contain"
+                data-testid="img-logo"
+              />
+            </Link>
 
-            {/* Orta: Desktop nav — 8 ana grup, alt kategoriler dropdown'da */}
-            <nav className="justify-self-center flex items-center gap-3 xl:gap-5 min-w-0">
+            {/* Nav */}
+            <nav className="flex items-center justify-center gap-5 xl:gap-7">
               {useMenuTree ? (
                 menuRoots.map((root) => {
                   const children = (root.children || []).filter(c => c.isActive);
-
-                  // submenu → dropdown ile alt kategoriler
                   if (root.type === 'submenu') {
                     return (
                       <DropdownMenu key={root.id}>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            className={navLinkCls(false)}
-                            data-testid={`button-nav-root-${root.id}`}
-                          >
+                          <button className={navLinkCls(false)} data-testid={`button-nav-root-${root.id}`}>
                             {root.title}
-                            <ChevronDown className="w-2.5 h-2.5" />
+                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
-                          align="start"
-                          sideOffset={18}
-                          className="bg-white border-black/8 shadow-xl rounded-none p-2 min-w-[260px]"
+                          align="center"
+                          sideOffset={16}
+                          className="bg-white border-black/8 shadow-xl rounded-none p-2 min-w-[220px]"
                         >
                           {children.length === 0 ? (
-                            <DropdownMenuItem disabled className="text-[11px] text-black/40 py-2 px-3">
+                            <DropdownMenuItem disabled className="text-[11px] text-black/35 py-2 px-3">
                               Henüz alt kategori yok
                             </DropdownMenuItem>
                           ) : children.map(child => {
@@ -287,7 +237,7 @@ export function Header() {
                               <DropdownMenuItem
                                 key={child.id}
                                 onClick={() => navigate(href)}
-                                className="text-[11px] tracking-[0.14em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-polen-orange cursor-pointer py-2 px-3 rounded-none transition-colors"
+                                className="text-[11px] tracking-[0.12em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-[hsl(var(--polen-orange))] cursor-pointer py-2.5 px-3 rounded-none"
                                 data-testid={`link-mega-${child.id}`}
                               >
                                 {child.title}
@@ -298,58 +248,43 @@ export function Header() {
                       </DropdownMenu>
                     );
                   }
-
-                  // root tek başına category/link → düz nav linki
                   const href = hrefForMenu(root);
                   const isActive =
                     (root.type === 'category' && root.category && location === `/kategori/${root.category.slug}`) ||
                     (root.type === 'link' && root.url && location === root.url) || false;
                   return (
-                    <Link
-                      key={root.id}
-                      href={href}
-                      className={navLinkCls(isActive)}
-                      data-testid={`link-nav-root-${root.id}`}
-                    >
+                    <Link key={root.id} href={href} className={navLinkCls(isActive)} data-testid={`link-nav-root-${root.id}`}>
                       {root.title}
                     </Link>
                   );
                 })
               ) : (
-                // Fallback: menü ağacı boşsa basit "Kategoriler" dropdown
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button
-                      className={navLinkCls(location.startsWith('/kategori/'))}
-                      data-testid="button-nav-kategoriler"
-                    >
-                      Kategoriler
-                      <ChevronDown className="w-2.5 h-2.5" />
+                    <button className={navLinkCls(location.startsWith('/kategori/'))} data-testid="button-nav-kategoriler">
+                      Kategoriler <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    align="start"
-                    sideOffset={20}
-                    className="bg-white border-black/8 shadow-xl rounded-none p-5"
-                    style={{ minWidth: visibleCategories.length > 6 ? 520 : 240 }}
+                    align="center"
+                    sideOffset={16}
+                    className="bg-white border-black/8 shadow-xl rounded-none p-2"
+                    style={{ minWidth: visibleCategories.length > 6 ? 440 : 200 }}
                   >
                     {visibleCategories.length === 0 ? (
-                      <DropdownMenuItem
-                        onClick={() => navigate('/magaza')}
-                        className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5"
-                      >
+                      <DropdownMenuItem onClick={() => navigate('/magaza')} className="text-[11px] tracking-wider uppercase text-black hover:bg-black/5 cursor-pointer py-2.5 px-3">
                         Tüm Ürünler
                       </DropdownMenuItem>
                     ) : (
                       <div
-                        className="grid gap-x-2 gap-y-0.5"
-                        style={{ gridTemplateColumns: visibleCategories.length > 6 ? 'repeat(2, minmax(0, 1fr))' : '1fr' }}
+                        className="grid gap-x-1 gap-y-0"
+                        style={{ gridTemplateColumns: visibleCategories.length > 6 ? 'repeat(2, 1fr)' : '1fr' }}
                       >
                         {visibleCategories.map((c) => (
                           <DropdownMenuItem
                             key={c.id}
                             onClick={() => navigate(`/kategori/${c.slug}`)}
-                            className="text-[11px] tracking-[0.16em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-polen-orange cursor-pointer py-2.5 px-3 rounded-none transition-colors"
+                            className="text-[11px] tracking-[0.12em] uppercase text-black hover:bg-[hsl(var(--polen-cream))] hover:text-[hsl(var(--polen-orange))] cursor-pointer py-2.5 px-3 rounded-none"
                             data-testid={`link-cat-${c.slug}`}
                           >
                             {c.name}
@@ -360,27 +295,32 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+
+              <Link href="/magaza" className={navLinkCls(location === '/magaza')} data-testid="link-nav-magaza">
+                Mağaza
+              </Link>
+              <Link href="/hakkimizda" className={navLinkCls(location === '/hakkimizda')} data-testid="link-nav-about">
+                Hakkımızda
+              </Link>
             </nav>
 
-            {/* Right: Icons */}
-            <div className="justify-self-end flex items-center gap-2 xl:gap-3 shrink-0">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
+            {/* Icons */}
+            <div className="flex items-center justify-end gap-1">
+              <button
                 onClick={() => setSearchOpen(true)}
-                className="p-3 text-black/65 hover:text-polen-orange transition-colors"
+                className="p-2.5 text-black/55 hover:text-black transition-colors"
                 data-testid="button-search"
                 aria-label="Ara"
               >
-                <Search className="w-[22px] h-[22px]" strokeWidth={1.75} />
-              </motion.button>
+                <Search className="w-[20px] h-[20px]" strokeWidth={1.8} />
+              </button>
 
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <motion.button whileTap={{ scale: 0.9 }} className="p-3 text-black/65 hover:text-polen-orange transition-colors flex items-center gap-2" data-testid="button-account" aria-label="Hesabım">
-                      <User className="w-[18px] h-[18px]" strokeWidth={1.75} />
-                      <span className="text-[11px] tracking-[0.18em] uppercase font-medium hidden xl:inline">Hesabım</span>
-                    </motion.button>
+                    <button className="p-2.5 text-black/55 hover:text-black transition-colors" data-testid="button-account" aria-label="Hesabım">
+                      <User className="w-[20px] h-[20px]" strokeWidth={1.8} />
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-white border-black/8 shadow-lg rounded-none min-w-[180px]">
                     <DropdownMenuItem disabled className="text-[10px] tracking-widest text-black/30 uppercase">{user.firstName || user.email}</DropdownMenuItem>
@@ -393,183 +333,128 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center gap-2 xl:gap-3 ml-2 pl-4 xl:pl-5 border-l border-black/10">
-                  <Link href="/giris" data-testid="link-header-giris" aria-label="Giriş Yap">
-                    <motion.span
-                      whileTap={{ scale: 0.97 }}
-                      className="inline-flex items-center whitespace-nowrap px-3 xl:px-4 py-2 text-[10.5px] xl:text-[11px] tracking-[0.14em] xl:tracking-[0.18em] uppercase font-medium text-black/70 hover:text-polen-orange transition-colors cursor-pointer"
-                    >
-                      Giriş Yap
-                    </motion.span>
+                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-black/10">
+                  <Link href="/giris" data-testid="link-header-giris">
+                    <span className="text-[11px] tracking-[0.12em] uppercase font-medium text-black/60 hover:text-black transition-colors cursor-pointer px-2 py-1">
+                      Giriş
+                    </span>
                   </Link>
                   <Link href="/kayit" data-testid="link-header-kayit">
-                    <motion.span
-                      whileTap={{ scale: 0.97 }}
-                      className="inline-flex items-center whitespace-nowrap px-3.5 xl:px-5 py-2 text-[10.5px] xl:text-[11px] tracking-[0.14em] xl:tracking-[0.18em] uppercase font-bold text-white bg-polen-orange hover:bg-[hsl(var(--polen-orange-deep))] transition-colors cursor-pointer"
-                    >
+                    <span className="inline-flex items-center px-4 py-2 text-[11px] tracking-[0.12em] uppercase font-semibold text-white bg-[hsl(var(--polen-stone))] hover:bg-[hsl(var(--polen-orange))] transition-colors cursor-pointer">
                       Kayıt Ol
-                    </motion.span>
+                    </span>
                   </Link>
                 </div>
               )}
 
-              <Link href="/sepet">
-                <motion.button whileTap={{ scale: 0.9 }} className="p-3 text-black/65 hover:text-polen-orange transition-colors relative" data-testid="button-cart" aria-label="Sepet">
-                  <ShoppingBag className="w-[22px] h-[22px]" strokeWidth={1.75} />
+              <Link href="/sepet" data-testid="link-cart">
+                <button className="p-2.5 text-black/55 hover:text-black transition-colors relative ml-1" aria-label="Sepet" data-testid="button-cart">
+                  <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.8} />
                   <AnimatePresence>
                     {totalItems > 0 && (
                       <motion.span
                         key="badge"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-polen-orange text-white text-[10px] font-bold flex items-center justify-center rounded-full leading-none"
+                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                        className="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 bg-[hsl(var(--polen-orange))] text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
                       >
                         {totalItems > 9 ? '9+' : totalItems}
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </motion.button>
+                </button>
               </Link>
             </div>
           </div>
         </div>
-      </motion.header>
+      </header>
 
-      {/* ── Mobile editorial menu ── */}
+      {/* ── Mobile drawer ── */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-black/55 backdrop-blur-md"
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               data-testid="overlay-mobile-menu"
             />
 
-            {/* Drawer */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 left-0 z-50 w-[92%] max-w-[420px] bg-white flex flex-col overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.25)]"
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 left-0 z-50 w-[88%] max-w-[400px] bg-[hsl(var(--polen-stone))] text-white flex flex-col shadow-2xl"
               data-testid="drawer-mobile-menu"
             >
-              {/* ── Hero panel: soft marble bg, compact logo only ── */}
-              <div className="relative h-[150px] shrink-0 overflow-hidden border-b border-black/8">
-                <img
-                  src={marbleHero}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                  aria-hidden="true"
-                />
-                {/* Bright cream/white veil so logo reads cleanly */}
-                <div className="absolute inset-0 bg-white/72" />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/45" />
-
-                {/* Close button — top-right */}
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+                <Link href="/" onClick={() => setMobileOpen(false)} data-testid="link-mobile-logo">
+                  <img
+                    src={polenLogo}
+                    alt="Marka"
+                    className="h-10 w-auto object-contain brightness-0 invert"
+                    data-testid="img-logo-mobile-drawer"
+                  />
+                </Link>
+                <button
                   onClick={() => setMobileOpen(false)}
-                  className="group absolute top-3 right-3 z-10 p-1.5 text-black/70 hover:text-black transition-colors"
+                  className="p-2 text-white/60 hover:text-white transition-colors"
                   data-testid="button-close-menu"
-                  aria-label="Menüyü Kapat"
+                  aria-label="Kapat"
                 >
-                  <span className="absolute inset-0 m-auto w-8 h-8 rounded-full border border-black/15 group-hover:border-black/45 transition-colors" />
-                  <X className="relative w-3.5 h-3.5" strokeWidth={1.75} />
-                </motion.button>
-
-                {/* Centered, compact logo */}
-                <div className="absolute inset-0 z-[5] flex items-center justify-center">
-                  <Link
-                    href="/"
-                    onClick={() => setMobileOpen(false)}
-                    className="block"
-                    data-testid="link-mobile-logo"
-                  >
-                    <img
-                      src={polenLogo}
-                      alt="Marka"
-                      className="h-[120px] w-[120px] object-contain"
-                      data-testid="img-logo-mobile-drawer"
-                    />
-                  </Link>
-                </div>
+                  <X className="w-5 h-5" strokeWidth={1.5} />
+                </button>
               </div>
 
-              {/* ── Editorial nav list ── */}
-              <nav className="flex-1 overflow-y-auto bg-white pt-2">
+              {/* Nav list */}
+              <nav className="flex-1 overflow-y-auto py-4">
                 <motion.ul
-                  variants={stagger.container}
+                  variants={drawerStagger.container}
                   initial="initial"
                   animate="animate"
                   exit="initial"
-                  className="flex flex-col px-5"
+                  className="px-6 flex flex-col"
                 >
-                  {/* Ana Sayfa — sabit ilk satır */}
-                  <motion.li variants={stagger.item} className="border-t border-black/[0.08]">
+                  <motion.li variants={drawerStagger.item} className="border-b border-white/[0.08]">
                     <Link
                       href="/"
                       onClick={() => setMobileOpen(false)}
-                      className="group relative flex items-baseline justify-between py-2.5"
+                      className="group flex items-center justify-between py-4"
                       data-testid="link-mobile-home"
                     >
-                      <span className="flex items-baseline gap-3">
-                        <span className="text-[9px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
-                          01
-                        </span>
-                        <span className="font-display text-[17px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
-                          Ana Sayfa
-                        </span>
-                      </span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
+                      <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">Ana Sayfa</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
                     </Link>
                   </motion.li>
 
-                  {/* 8 ana grup — kompakt liste, alta inmemesi için sıkıştırılmış padding/font */}
                   {useMenuTree ? (
                     menuRoots.map((root, idx) => {
                       const children = (root.children || []).filter(c => c.isActive);
                       const isSubmenu = root.type === 'submenu';
                       const isOpen = !!mobileSubOpen[root.id];
-                      const number = String(idx + 2).padStart(2, '0');
 
                       if (isSubmenu) {
                         return (
-                          <motion.li key={root.id} variants={stagger.item} className="border-t border-black/[0.08]">
+                          <motion.li key={root.id} variants={drawerStagger.item} className="border-b border-white/[0.08]">
                             <button
                               onClick={() => setMobileSubOpen(s => ({ ...s, [root.id]: !s[root.id] }))}
-                              className="group relative w-full flex items-baseline justify-between py-2.5"
+                              className="group w-full flex items-center justify-between py-4"
                               data-testid={`button-mobile-group-${root.id}`}
                               aria-expanded={isOpen}
                             >
-                              <span className="flex items-baseline gap-3">
-                                <span className={`text-[9px] font-mono tracking-[0.18em] transition-colors ${isOpen ? 'text-polen-orange' : 'text-black/30 group-hover:text-polen-orange'}`}>
-                                  {number}
-                                </span>
-                                <span className={`font-display text-[17px] leading-none tracking-[0.01em] transition-colors ${isOpen ? 'text-polen-orange' : 'text-black group-hover:text-polen-orange'}`}>
-                                  {root.title}
-                                </span>
-                                <span className="text-[9px] text-black/35 self-center">({children.length})</span>
+                              <span className={`text-[15px] font-medium tracking-[0.06em] uppercase transition-colors ${isOpen ? 'text-[hsl(var(--polen-orange))]' : 'text-white/90 group-hover:text-white'}`}>
+                                {root.title}
                               </span>
                               <motion.span
-                                animate={{ rotate: isOpen ? 90 : 0 }}
-                                transition={{ duration: 0.3 }}
-                                className={`${isOpen ? 'text-polen-orange' : 'text-black/30'} transition-colors`}
+                                animate={{ rotate: isOpen ? 45 : 0 }}
+                                transition={{ duration: 0.25 }}
+                                className={`transition-colors ${isOpen ? 'text-[hsl(var(--polen-orange))]' : 'text-white/30'}`}
                               >
-                                <span className="block w-3 h-3 relative">
-                                  <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-current" />
-                                  <motion.span
-                                    animate={{ scaleY: isOpen ? 0 : 1 }}
-                                    transition={{ duration: 0.22 }}
-                                    className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-current"
-                                  />
-                                </span>
+                                <ArrowUpRight className="w-4 h-4" />
                               </motion.span>
                             </button>
                             <AnimatePresence initial={false}>
@@ -578,24 +463,20 @@ export function Header() {
                                   initial={{ height: 0, opacity: 0 }}
                                   animate={{ height: 'auto', opacity: 1 }}
                                   exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                                  className="overflow-hidden pl-7 border-l border-polen-orange/30 ml-[3px] mb-2"
+                                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                  className="overflow-hidden pl-4 border-l border-[hsl(var(--polen-orange))]/30 ml-1 mb-3"
                                 >
-                                  {children.length === 0 ? (
-                                    <li className="text-[10px] text-black/35 py-1.5">Henüz alt kategori yok</li>
-                                  ) : children.map(child => {
+                                  {children.map(child => {
                                     const href = hrefForMenu(child);
                                     return (
                                       <li key={child.id}>
                                         <Link
                                           href={href}
                                           onClick={() => setMobileOpen(false)}
-                                          className="group flex items-baseline gap-2 py-1.5 text-black/70 hover:text-polen-orange transition-colors"
+                                          className="flex items-center py-2 text-[13px] tracking-[0.10em] uppercase text-white/60 hover:text-white transition-colors"
                                           data-testid={`link-mobile-mega-${child.id}`}
                                         >
-                                          <span className="text-[11px] tracking-[0.12em] uppercase">
-                                            {child.title}
-                                          </span>
+                                          {child.title}
                                         </Link>
                                       </li>
                                     );
@@ -606,84 +487,72 @@ export function Header() {
                           </motion.li>
                         );
                       }
-                      // root tek başına category/link → düz satır
+
                       const href = hrefForMenu(root);
                       return (
-                        <motion.li key={root.id} variants={stagger.item} className="border-t border-black/[0.08]">
+                        <motion.li key={root.id} variants={drawerStagger.item} className="border-b border-white/[0.08]">
                           <Link
                             href={href}
                             onClick={() => setMobileOpen(false)}
-                            className="group relative flex items-baseline justify-between py-2.5"
+                            className="group flex items-center justify-between py-4"
                             data-testid={`link-mobile-root-${root.id}`}
                           >
-                            <span className="flex items-baseline gap-3">
-                              <span className="text-[9px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
-                                {number}
-                              </span>
-                              <span className="font-display text-[17px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
-                                {root.title}
-                              </span>
-                            </span>
-                            <ArrowUpRight className="w-3.5 h-3.5 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
+                            <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">{root.title}</span>
+                            <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
                           </Link>
                         </motion.li>
                       );
                     })
                   ) : (
-                    // Fallback: menü ağacı boşsa eski kategori listesi
-                    visibleCategories.map((c, idx) => (
-                      <motion.li key={c.id} variants={stagger.item} className="border-t border-black/[0.08]">
+                    visibleCategories.map((c) => (
+                      <motion.li key={c.id} variants={drawerStagger.item} className="border-b border-white/[0.08]">
                         <Link
                           href={`/kategori/${c.slug}`}
                           onClick={() => setMobileOpen(false)}
-                          className="group relative flex items-baseline justify-between py-2.5"
+                          className="group flex items-center justify-between py-4"
                           data-testid={`link-mobile-cat-${c.slug}`}
                         >
-                          <span className="flex items-baseline gap-3">
-                            <span className="text-[9px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
-                              {String(idx + 2).padStart(2, '0')}
-                            </span>
-                            <span className="font-display text-[17px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
-                              {c.name}
-                            </span>
-                          </span>
-                          <ArrowUpRight className="w-3.5 h-3.5 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
+                          <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">{c.name}</span>
+                          <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
                         </Link>
                       </motion.li>
                     ))
                   )}
 
+                  <motion.li variants={drawerStagger.item} className="border-b border-white/[0.08]">
+                    <Link href="/magaza" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-magaza">
+                      <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">Mağaza</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
+                    </Link>
+                  </motion.li>
+
                   {user && (
-                    <motion.li variants={stagger.item} className="border-t border-b border-black/[0.08]">
-                      <Link
-                        href="/hesabim"
-                        onClick={() => setMobileOpen(false)}
-                        className="group relative flex items-baseline justify-between py-2.5"
-                        data-testid="link-mobile-hesabim"
-                      >
-                        <span className="flex items-baseline gap-3">
-                          <span className="text-[9px] font-mono tracking-[0.18em] text-black/30 group-hover:text-polen-orange transition-colors">
-                            ★
-                          </span>
-                          <span className="font-display text-[17px] leading-none tracking-[0.01em] text-black group-hover:text-polen-orange transition-colors">
-                            Hesabım
-                          </span>
-                        </span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-black/25 rotate-45 group-hover:rotate-0 group-hover:text-polen-orange transition-all duration-300" />
+                    <motion.li variants={drawerStagger.item} className="border-b border-white/[0.08]">
+                      <Link href="/hesabim" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-hesabim">
+                        <span className="text-[15px] font-medium tracking-[0.06em] uppercase text-white/90 group-hover:text-white transition-colors">Hesabım</span>
+                        <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--polen-orange))] transition-colors" />
                       </Link>
                     </motion.li>
                   )}
                 </motion.ul>
               </nav>
 
-              {/* ── Bottom: auth + cart CTA ── */}
-              <div className="shrink-0">
-                {!user && (
-                  <div className="grid grid-cols-2 border-t border-black/8">
+              {/* Auth / CTA */}
+              <div className="shrink-0 p-6 border-t border-white/10">
+                {user ? (
+                  <button
+                    onClick={() => { logout(); setMobileOpen(false); navigate('/'); }}
+                    className="w-full flex items-center justify-center gap-2 py-3 text-[11px] tracking-[0.16em] uppercase font-medium text-white/60 hover:text-white border border-white/20 hover:border-white/50 transition-colors"
+                    data-testid="button-mobile-logout"
+                  >
+                    <LogOut className="w-4 h-4" /> Çıkış Yap
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
                     <Link
                       href="/giris"
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium text-black/75 hover:text-polen-orange hover:bg-black/[0.03] transition-colors border-r border-black/8"
+                      className="flex items-center justify-center py-3 text-[11px] tracking-[0.14em] uppercase font-medium text-white border border-white/25 hover:border-white/60 transition-colors"
                       data-testid="link-mobile-giris"
                     >
                       Giriş Yap
@@ -691,34 +560,13 @@ export function Header() {
                     <Link
                       href="/kayit"
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center py-3.5 text-[11px] tracking-[0.18em] uppercase font-bold text-white bg-polen-orange hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
+                      className="flex items-center justify-center py-3 text-[11px] tracking-[0.14em] uppercase font-semibold text-white bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
                       data-testid="link-mobile-kayit"
                     >
                       Kayıt Ol
                     </Link>
                   </div>
                 )}
-                <Link
-                  href="/sepet"
-                  onClick={() => setMobileOpen(false)}
-                  className="group relative bg-black hover:bg-polen-orange transition-colors duration-500 px-6 py-4 flex items-center justify-between text-white"
-                  data-testid="link-mobile-sepet"
-                >
-                  <span className="flex items-center gap-3">
-                    <ShoppingBag className="w-4 h-4" strokeWidth={1.75} />
-                    <span className="font-display text-[16px] tracking-[0.04em]">
-                      Sepeti Görüntüle
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-3">
-                    {totalItems > 0 && (
-                      <span className="min-w-[24px] h-[24px] px-2 bg-polen-orange group-hover:bg-white text-white group-hover:text-polen-orange text-[11px] font-bold flex items-center justify-center rounded-full transition-colors">
-                        {totalItems}
-                      </span>
-                    )}
-                    <ArrowUpRight className="w-4 h-4 transition-transform duration-500 group-hover:rotate-45" strokeWidth={1.75} />
-                  </span>
-                </Link>
               </div>
             </motion.div>
           </>

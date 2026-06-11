@@ -3,7 +3,7 @@ import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
 import { Link } from 'wouter';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import {
   motion,
   useScroll,
@@ -11,19 +11,18 @@ import {
   useInView,
   useReducedMotion,
   MotionConfig,
+  AnimatePresence,
 } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, ArrowRight } from 'lucide-react';
 import { useProducts, type Product } from '@/hooks/useProducts';
-import heroBgImage from '@assets/generated_images/polen-hero-dark-1.png';
+import { useQuery } from '@tanstack/react-query';
 
-// Replace heroBgImage with a full-bleed fashion model photo once available.
-
-// UTILITIES
-
-function hashStr(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
-  return Math.abs(h);
+interface CategoryData {
+  id: string;
+  name: string;
+  slug: string;
+  displayOrder: number;
+  image?: string | null;
 }
 
 function formatPrice(p: string | number) {
@@ -31,41 +30,22 @@ function formatPrice(p: string | number) {
   return n.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
 }
 
-// REVEAL WORD — text reveal animation
-
-function RevealWord({
-  text,
-  delay = 0,
-  className = '',
-}: {
-  text: string;
-  delay?: number;
-  className?: string;
-}) {
-  return (
-    <span className={`inline-block overflow-hidden align-bottom ${className}`}>
-      <motion.span
-        initial={{ y: '110%' }}
-        animate={{ y: '0%' }}
-        transition={{ duration: 1.05, delay, ease: [0.16, 1, 0.3, 1] }}
-        className="inline-block"
-      >
-        {text}
-      </motion.span>
-    </span>
-  );
-}
-
-// Gate that defers children until after first paint so framer-motion's useScroll can safely attach to DOM refs.
 function useMounted() {
   const [m, setM] = useState(false);
-  useEffect(() => {
-    setM(true);
-  }, []);
+  useEffect(() => { setM(true); }, []);
   return m;
 }
 
-// SCENE 01 — HERO (cinematic)
+// ─────────────────────────────────────────────
+// SCENE 01 — HERO (typographic editorial)
+// ─────────────────────────────────────────────
+
+const heroCategories = [
+  { label: 'Kadın', href: '/magaza?kategori=kadin' },
+  { label: 'Erkek', href: '/magaza?kategori=erkek' },
+  { label: 'Çocuk', href: '/magaza?kategori=cocuk' },
+  { label: 'Aksesuar', href: '/magaza?kategori=aksesuar' },
+];
 
 function HeroScene() {
   const mounted = useMounted();
@@ -77,331 +57,342 @@ function HeroScene() {
 function HeroSceneStatic() {
   return (
     <section
-      className="relative h-[100svh] min-h-[560px] w-full overflow-hidden bg-black lg:h-[calc(100svh-200px)] lg:min-h-[560px]"
-      aria-label="Marka giyim tanıtım"
+      className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
+      style={{ minHeight: 'calc(100svh - 96px)' }}
+      aria-label="Marka giyim koleksiyonu"
+      data-testid="scene-hero"
     >
-      <img
-        src={heroBgImage}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      <div className="absolute inset-0 bg-black/50" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-      <HeroOverlayContent />
+      <HeroContent />
     </section>
   );
 }
 
-
 function HeroSceneInner() {
   const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ['start start', 'end start'],
-  });
-
-  const [isTouch, setIsTouch] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(pointer: coarse), (max-width: 1023px)');
-    const update = () => setIsTouch(mql.matches);
-    update();
-    mql.addEventListener('change', update);
-    return () => mql.removeEventListener('change', update);
-  }, []);
-
-  const videoY = useTransform(scrollYProgress, [0, 1], ['0%', isTouch ? '0%' : '20%']);
-  const titleY = useTransform(scrollYProgress, [0, 1], ['0%', isTouch ? '0%' : '-30%']);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.7], [1, isTouch ? 1 : 0]);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '12%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
     <section
       ref={heroRef}
-      className="relative h-[100svh] min-h-[560px] w-full overflow-hidden bg-black text-white lg:h-[calc(100svh-200px)] lg:min-h-[560px]"
+      className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
+      style={{ minHeight: 'calc(100svh - 96px)' }}
       data-testid="scene-hero"
     >
-      <motion.div className="absolute inset-0 z-0" style={{ y: videoY }}>
-        <img
-          src={heroBgImage}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* %50 sabit siyah örtü — başlığın okunabilirliği için */}
-        <div className="absolute inset-0 bg-black/50" />
-        {/* CTA bölgesinde ekstra kontrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-      </motion.div>
-
-      <motion.div
-        className="absolute inset-0 z-10"
-        style={{ y: titleY, opacity: titleOpacity }}
-      >
-        <HeroOverlayContent animated />
+      <motion.div style={{ y, opacity }} className="h-full w-full">
+        <HeroContent animated />
       </motion.div>
     </section>
   );
 }
 
-// HERO ÜZERİNDE BAŞLIK & CTA — masaüstü ve mobil için ayrı içerikler
-function HeroOverlayContent({ animated = false }: { animated?: boolean }) {
-  const Wrap: any = animated ? motion.div : 'div';
-  const wrapProps = animated
-    ? {
-        initial: { opacity: 0, y: 20 },
-        animate: { opacity: 1, y: 0 },
-        transition: { delay: 0.4, duration: 1.0, ease: [0.16, 1, 0.3, 1] },
-      }
+function HeroContent({ animated = false }: { animated?: boolean }) {
+  const W: any = animated ? motion.div : 'div';
+  const props = animated
+    ? { initial: { opacity: 0, y: 32 }, animate: { opacity: 1, y: 0 }, transition: { duration: 1.1, ease: [0.16, 1, 0.3, 1] } }
     : {};
 
   return (
-    <div className="relative h-full w-full">
-      {/* ── MOBİL — kısa ve vurucu ── */}
-      <div className="lg:hidden h-full w-full flex flex-col items-center justify-center text-center px-6">
-        <Wrap {...wrapProps}>
-          <h1
-            className="font-display text-white uppercase leading-[1.05]"
-            style={{ fontSize: 'clamp(40px, 11vw, 64px)', letterSpacing: '-0.02em', fontWeight: 700 }}
-            data-testid="text-hero-title-mobile"
-          >
-            Yeni Sezon
-            <span className="block text-polen-orange mt-5">Koleksiyon</span>
-          </h1>
-          <p className="mt-5 text-[11px] tracking-[0.22em] uppercase text-white/75 font-mono">
-            Kadın · Erkek · Aksesuar · Spor
-          </p>
+    <div className="relative flex flex-col items-center justify-center text-center px-6 py-24 lg:py-32" style={{ minHeight: 'inherit' }}>
+      {/* Decorative background text */}
+      <span
+        aria-hidden
+        className="pointer-events-none select-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display uppercase leading-none text-white/[0.03] overflow-hidden"
+        style={{ fontSize: 'clamp(120px, 20vw, 300px)' }}
+      >
+        FASHION
+      </span>
+
+      <W {...props} className="relative z-10 flex flex-col items-center">
+        {/* Eyebrow */}
+        <span className="block text-[10px] font-mono tracking-[0.36em] uppercase text-white/50 mb-8 lg:mb-10">
+          Marka · 2026 · Yeni Sezon
+        </span>
+
+        {/* Main headline */}
+        <h1
+          className="font-display uppercase text-white leading-[0.92] text-center"
+          style={{ fontSize: 'clamp(52px, 9.5vw, 148px)', letterSpacing: '-0.025em' }}
+          data-testid="text-hero-title"
+        >
+          <span className="block">Tarzını</span>
+          <span className="block text-[hsl(var(--polen-orange))]">Keşfet</span>
+        </h1>
+
+        {/* Sub copy */}
+        <p className="mt-6 lg:mt-8 max-w-[480px] text-[13px] lg:text-[15px] leading-relaxed text-white/60 font-light">
+          Kadın, erkek ve çocuk giyiminde yüzlerce marka. Güncel koleksiyon, güvenli ödeme, hızlı kargo.
+        </p>
+
+        {/* Category pills */}
+        <div className="mt-8 lg:mt-10 flex flex-wrap items-center justify-center gap-2">
+          {heroCategories.map((cat) => (
+            <Link
+              key={cat.label}
+              href={cat.href}
+              className="px-4 py-2 text-[11px] tracking-[0.18em] uppercase font-medium text-white/70 border border-white/20 hover:border-white/60 hover:text-white transition-all duration-200"
+              data-testid={`link-hero-pill-${cat.label.toLowerCase()}`}
+            >
+              {cat.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-10 lg:mt-12 flex flex-col sm:flex-row items-center gap-4">
           <Link
             href="/magaza"
-            data-testid="link-hero-cta-mobile"
-            className="inline-flex items-center gap-2 mt-8 px-6 py-3 bg-polen-orange text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-polen-orange/90 transition-colors"
+            data-testid="link-hero-cta"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-[hsl(var(--polen-orange))] text-white text-[12px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
           >
             Koleksiyonu Keşfet
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-4 h-4" />
           </Link>
-        </Wrap>
-      </div>
-
-      {/* ── MASAÜSTÜ — başlık tek satır, içerik tam ortada ── */}
-      <div className="hidden lg:flex h-full w-full items-center justify-center">
-        <div className="w-full max-w-[1500px] mx-auto px-10 py-16 xl:py-20 text-center">
-          <Wrap {...wrapProps} className="flex flex-col items-center">
-            <h1
-              className="font-display text-white uppercase whitespace-nowrap"
-              style={{
-                fontSize: 'clamp(40px, 4.6vw, 84px)',
-                lineHeight: 1,
-                letterSpacing: '-0.03em',
-                fontWeight: 700,
-              }}
-              data-testid="text-hero-title"
-            >
-              Yeni Sezon <span className="text-polen-orange">Koleksiyonu Keşfet</span>
-            </h1>
-
-            <span aria-hidden className="block w-16 h-px bg-polen-orange mt-8 mb-6" />
-
-            <p className="max-w-[640px] text-[14px] xl:text-[15px] leading-relaxed text-white/80">
-              Kadın, erkek ve çocuk giyiminde yüzlerce marka ve binlerce model. Trendyol ile senkronize güncel koleksiyon, kapınıza hızlı teslimat.
-            </p>
-
-            <Link
-              href="/magaza"
-              data-testid="link-hero-cta"
-              className="inline-flex items-center gap-3 mt-10 px-8 py-4 bg-polen-orange text-white text-[12px] tracking-[0.24em] uppercase font-semibold hover:bg-polen-orange/90 transition-colors"
-            >
-              Koleksiyonu Keşfet
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </Wrap>
+          <Link
+            href="/hakkimizda"
+            data-testid="link-hero-about"
+            className="inline-flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-white/55 hover:text-white transition-colors"
+          >
+            Hakkımızda <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
-      </div>
+
+        {/* Scroll indicator */}
+        <div className="mt-16 lg:mt-20 flex flex-col items-center gap-2 text-white/30" aria-hidden>
+          <span className="text-[9px] font-mono tracking-[0.28em] uppercase">Keşfet</span>
+          <motion.span
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+            className="block w-px h-8 bg-white/20 rounded-full"
+          />
+        </div>
+      </W>
     </div>
   );
 }
 
-// SCENE 02 — AUTO-SLIDE SHOWCASE (yatay otomatik kayan vitrin)
+// ─────────────────────────────────────────────
+// SCENE 02 — CATEGORIES (bold 2x2 grid)
+// ─────────────────────────────────────────────
 
-function PinnedShowcaseScene({ products }: { products: Product[] }) {
-  const items = useMemo(() => {
-    if (!products?.length) return [];
-    const featured = products.filter((p) => p.isFeatured && p.images?.length);
-    const news = products.filter((p) => p.isNew && !p.isFeatured && p.images?.length);
-    const rest = products.filter((p) => !p.isFeatured && !p.isNew && p.images?.length);
-    return [...featured, ...news, ...rest].slice(0, 16);
-  }, [products]);
+function CategoryScene({ categories, products }: { categories: CategoryData[]; products: Product[] }) {
+  const fashionCats = categories
+    .filter(c => (c.displayOrder ?? 0) >= 100)
+    .slice(0, 4);
 
-  if (items.length === 0) return null;
+  if (fashionCats.length === 0) return null;
 
-  const doubled = [...items, ...items];
+  // Find first product image per category (used as tile background if no category image)
+  const catImgMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    fashionCats.forEach(cat => {
+      if (cat.image) { map[cat.id] = cat.image; return; }
+      const prod = products.find(p =>
+        Array.isArray((p as any).categoryIds)
+          ? (p as any).categoryIds.includes(cat.id)
+          : (p as any).categoryId === cat.id
+      );
+      if (prod?.images?.[0]) map[cat.id] = prod.images[0];
+    });
+    return map;
+  }, [fashionCats, products]);
 
   return (
     <section
-      className="relative bg-[#0c0a09] text-white py-14 lg:py-20 overflow-hidden border-y border-white/10"
-      data-testid="scene-showcase"
-      aria-label="Vitrin — öne çıkan ürünler"
+      className="bg-white py-16 lg:py-24 px-5 lg:px-10"
+      data-testid="scene-categories"
+      aria-label="Kategoriler"
     >
-      <div className="px-5 lg:px-10 mb-8 lg:mb-10 flex items-center justify-between text-[10px] font-mono tracking-[0.28em] uppercase text-white/55">
-        <span>— 02 / Vitrin</span>
-        <Link
-          href="/magaza"
-          data-testid="link-showcase-all"
-          className="hover:text-polen-orange transition-colors inline-flex items-center gap-2"
-          aria-label="Tüm ürünleri gör"
-        >
-          Tümü <ArrowUpRight className="w-3 h-3" />
-        </Link>
-      </div>
-
-      <div className="relative">
-        {/* Sağ ve sol fade mask: kartların sert kesilmesi yerine zarifçe sönmesi için */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 lg:w-24 bg-gradient-to-r from-[#0c0a09] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 lg:w-24 bg-gradient-to-l from-[#0c0a09] to-transparent" />
-        <div className="flex animate-marquee-hero">
-          {[0, 1].map((groupIdx) => (
-            <div
-              key={groupIdx}
-              className="flex gap-5 lg:gap-8 pr-5 lg:pr-8 shrink-0"
-              aria-hidden={groupIdx === 1 ? true : undefined}
+      <div className="max-w-[1400px] mx-auto">
+        {/* Section header */}
+        <div className="flex items-end justify-between mb-8 lg:mb-12 gap-4">
+          <div>
+            <span className="block text-[10px] font-mono tracking-[0.30em] uppercase text-black/35 mb-3">— Koleksiyonlar</span>
+            <h2
+              className="font-display uppercase text-black leading-[0.94]"
+              style={{ fontSize: 'clamp(24px, 3.5vw, 48px)', letterSpacing: '-0.02em' }}
             >
-              {items.map((p, i) => (
-                <Link
-                  key={`${groupIdx}-${p.id}-${i}`}
-                  href={`/urun/${p.slug}`}
-                  data-testid={`link-showcase-product-${p.id}-${groupIdx}-${i}`}
-                  aria-label={`${p.name} ürün sayfası`}
-                  className="group shrink-0 w-[260px] lg:w-[340px]"
-                >
-                  <div className="relative aspect-[4/5] overflow-hidden bg-zinc-900">
-                    <img
-                      src={p.images?.[0] || ''}
-                      alt={p.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 to-transparent" />
-                    {p.discountBadge && (
-                      <div className="absolute top-3 right-3 bg-polen-orange text-white text-[10px] font-bold tracking-[0.2em] px-2 py-1 uppercase">
-                        {p.discountBadge}
-                      </div>
-                    )}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-5 flex items-end justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/55 mb-1">
-                          Giyim
-                        </div>
-                        <div className="text-sm lg:text-base font-medium text-white truncate">
-                          {p.name}
-                        </div>
-                      </div>
-                      <div className="text-sm lg:text-base font-semibold text-polen-orange whitespace-nowrap">
-                        {formatPrice(p.basePrice)} ₺
-                      </div>
-                    </div>
+              Kategori Keşfi
+            </h2>
+          </div>
+          <Link
+            href="/magaza"
+            className="shrink-0 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.22em] uppercase text-black/50 hover:text-black transition-colors"
+            data-testid="link-categories-all"
+          >
+            Tümü <ArrowUpRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        {/* Grid: 2 cols on mobile, 4 on lg */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          {fashionCats.map((cat, i) => {
+            const bg = catImgMap[cat.id];
+            return (
+              <Link
+                key={cat.id}
+                href={`/kategori/${cat.slug}`}
+                data-testid={`link-category-tile-${cat.slug}`}
+                className="group relative overflow-hidden aspect-[3/4] block"
+              >
+                {/* Background */}
+                {bg ? (
+                  <img
+                    src={bg}
+                    alt={cat.name}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: [
+                        'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)',
+                        'linear-gradient(135deg,#0f0c29 0%,#302b63 100%)',
+                        'linear-gradient(135deg,#141e30 0%,#243b55 100%)',
+                        'linear-gradient(135deg,#200122 0%,#6f0000 100%)',
+                      ][i % 4]
+                    }}
+                  />
+                )}
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+                {/* Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-6">
+                  <div className="text-[9px] font-mono tracking-[0.24em] uppercase text-white/50 mb-1.5">
+                    Koleksiyon
                   </div>
-                </Link>
-              ))}
-            </div>
-          ))}
+                  <div
+                    className="font-display uppercase text-white leading-none"
+                    style={{ fontSize: 'clamp(16px, 2.2vw, 26px)' }}
+                  >
+                    {cat.name}
+                  </div>
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] tracking-[0.20em] uppercase text-white/60 group-hover:text-white transition-colors">
+                    Keşfet <ArrowUpRight className="w-3 h-3 translate-y-[-1px] group-hover:translate-x-0.5 group-hover:-translate-y-[2px] transition-transform" />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-// SCENE 03 — PRODUCTS GRID (sade ürün listesi)
+// ─────────────────────────────────────────────
+// SCENE 03 — FEATURED PRODUCTS (clean grid)
+// ─────────────────────────────────────────────
 
-function ProductGridScene({ products }: { products: Product[] }) {
+function ProductScene({ products }: { products: Product[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.1 });
+
   const items = useMemo(() => {
     if (!products?.length) return [];
-    const pool = products.filter((p) => p.images?.length);
-    const seed = 1729;
-    const shuffled = [...pool]
-      .map((p, i) => ({ p, key: hashStr(`${p.id}:${seed}:${i}`) }))
-      .sort((a, b) => a.key - b.key)
-      .map((x) => x.p);
-    return shuffled.slice(0, 12);
+    const featured = products.filter(p => p.isFeatured && p.images?.length);
+    const rest = products.filter(p => !p.isFeatured && p.images?.length);
+    return [...featured, ...rest].slice(0, 8);
   }, [products]);
 
   if (items.length === 0) return null;
 
   return (
     <section
-      className="relative bg-[hsl(var(--polen-cream))] text-black py-16 lg:py-24 px-5 lg:px-10"
-      data-testid="scene-product-grid"
-      aria-label="Ürünler"
+      ref={ref}
+      className="bg-[hsl(var(--polen-cream))] py-16 lg:py-24 px-5 lg:px-10"
+      data-testid="scene-products"
+      aria-label="Öne çıkan ürünler"
     >
-      <div className="max-w-[1320px] mx-auto flex items-end justify-between mb-8 lg:mb-12 gap-6">
-        <div>
-          <div className="text-[10px] font-mono tracking-[0.28em] uppercase text-black/45 mb-3">
-            — 03 / Ürünler
+      <div className="max-w-[1400px] mx-auto">
+        <div className="flex items-end justify-between mb-8 lg:mb-12 gap-4">
+          <div>
+            <span className="block text-[10px] font-mono tracking-[0.30em] uppercase text-black/35 mb-3">— Öne Çıkanlar</span>
+            <h2
+              className="font-display uppercase text-black leading-[0.94]"
+              style={{ fontSize: 'clamp(24px, 3.5vw, 48px)', letterSpacing: '-0.02em' }}
+            >
+              Yeni Gelenler
+            </h2>
           </div>
-          <h2
-            className="font-display uppercase text-black leading-[0.95]"
-            style={{
-              fontSize: 'clamp(28px, 4vw, 56px)',
-              letterSpacing: '-0.02em',
-            }}
+          <Link
+            href="/magaza"
+            data-testid="link-products-all"
+            className="shrink-0 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.22em] uppercase text-black/50 hover:text-black transition-colors"
           >
-            Editörün Seçimi
-          </h2>
+            Tümünü Gör <ArrowUpRight className="w-3 h-3" />
+          </Link>
         </div>
-        <Link
-          href="/magaza"
-          data-testid="link-grid-all"
-          className="shrink-0 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.24em] uppercase text-black/70 hover:text-polen-orange transition-colors"
-          aria-label="Tüm ürünleri gör"
-        >
-          Tümünü Gör <ArrowUpRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
 
-      <div className="max-w-[1320px] mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-        {items.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
+        <motion.div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5"
+          initial={false}
+          animate={inView ? 'visible' : 'hidden'}
+          variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+        >
+          {items.map((p) => (
+            <motion.div
+              key={p.id}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+              }}
+            >
+              <ProductCard product={p} />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="mt-10 lg:mt-14 flex justify-center">
+          <Link
+            href="/magaza"
+            data-testid="link-products-cta"
+            className="inline-flex items-center gap-3 px-10 py-4 border border-black/20 text-[12px] tracking-[0.22em] uppercase font-medium text-black hover:bg-black hover:text-white hover:border-black transition-all duration-300"
+          >
+            Tüm Koleksiyonu Gör
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );
 }
 
-// SCENE 04 — STATEMENT MARQUEE STRIP
+// ─────────────────────────────────────────────
+// SCENE 04 — MARQUEE STRIP
+// ─────────────────────────────────────────────
 
-function StatementMarqueeScene() {
-  const items = [
-    'YENİ SEZON',
-    '◆',
-    'KADIN · ERKEK · ÇOCUK',
-    '✦',
-    'TÜRKİYE GENELİ KARGO',
-    '◆',
-    'KAPIDAN TESLİMAT',
-    '✦',
-    'GÜVENLİ ÖDEME',
-    '◆',
-    'ÜST GİYİM · ALT GİYİM · DIŞ GİYİM · AKSESUAR',
-    '✦',
+function MarqueeScene() {
+  const tags = [
+    'YENİ SEZON', '✦', 'KADIN', '·', 'ERKEK', '·', 'ÇOCUK',
+    '✦', 'HIZLI KARGO', '·', 'KOLAY İADE', '✦', 'GÜVENLİ ÖDEME',
+    '·', 'ÜCRETSİZ KARGO 500₺+', '✦',
   ];
-  const doubled = [...items, ...items, ...items];
+  const doubled = [...tags, ...tags, ...tags];
 
   return (
     <section
-      className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden border-y border-white/10"
-      data-testid="scene-statement-marquee"
-      aria-label="Marka bilgi şeridi"
+      className="bg-[hsl(var(--polen-stone))] text-white overflow-hidden border-y border-white/[0.06]"
+      data-testid="scene-marquee"
+      aria-label="Bilgi şeridi"
     >
-      <div className="py-6 lg:py-9 overflow-hidden">
-        <div
-          className="flex items-center gap-7 lg:gap-12 animate-marquee whitespace-nowrap"
-          style={{ animationDuration: '14s' }}
-        >
+      <div className="py-5 lg:py-7">
+        <div className="flex items-center gap-7 lg:gap-10 animate-marquee whitespace-nowrap" style={{ animationDuration: '22s' }}>
           {doubled.map((t, i) => (
             <span
               key={i}
               className={`font-display uppercase ${
-                t.length === 1
-                  ? 'text-polen-orange text-base lg:text-xl'
-                  : 'text-base lg:text-2xl tracking-[0.04em]'
+                t === '✦'
+                  ? 'text-[hsl(var(--polen-orange))] text-sm'
+                  : t === '·'
+                  ? 'text-white/25 text-lg'
+                  : 'text-[13px] lg:text-[15px] tracking-[0.06em] text-white/80'
               }`}
             >
               {t}
@@ -413,131 +404,161 @@ function StatementMarqueeScene() {
   );
 }
 
-// SCENE 05 — FINAL CTA (footer-preceding)
+// ─────────────────────────────────────────────
+// SCENE 05 — EDITORIAL SPLIT CTA
+// ─────────────────────────────────────────────
 
-function FinalCtaScene() {
+function CtaScene() {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.3 });
+  const inView = useInView(ref, { once: true, amount: 0.25 });
+
   return (
     <section
       ref={ref}
-      className="relative bg-[hsl(var(--polen-cream))] text-black py-24 lg:py-36 px-5 lg:px-10 overflow-hidden"
-      data-testid="scene-final-cta"
+      className="bg-white py-20 lg:py-32 px-5 lg:px-10"
+      data-testid="scene-cta"
     >
-      <div className="max-w-[1320px] mx-auto">
-        <div className="text-[10px] font-mono tracking-[0.28em] uppercase text-black/45 mb-8">
-          — 04 / Davet
-        </div>
-        <h2
-          className="font-display uppercase text-black leading-[0.92]"
-          style={{
-            fontSize: 'clamp(40px, 6vw, 110px)',
-            letterSpacing: '-0.03em',
-          }}
-        >
-          <motion.span
-            initial={{ opacity: 0, y: 40 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="block"
-          >
-            Stilinizi
-          </motion.span>
-          <motion.span
-            initial={{ opacity: 0, y: 40 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-            className="block"
-          >
-            yansıtan
-          </motion.span>
-          <motion.span
-            initial={{ opacity: 0, y: 40 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-            className="block text-polen-orange"
-          >
-            koleksiyon.
-          </motion.span>
-        </h2>
+      <div className="max-w-[1400px] mx-auto">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.4, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-12 lg:mt-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8"
-        >
-          <p className="max-w-[560px] text-base lg:text-lg text-black/65 leading-relaxed">
-            Trendyol ile senkronize güncel koleksiyonumuzdan seçim yapın.
-            Kadın, erkek ve çocuk giyiminde yüzlerce model sizi bekliyor.
-          </p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8">
-            <Link
-              href="/magaza"
-              data-testid="link-final-cta-shop"
-              data-cursor="cta"
-              data-cursor-label="Keşfet"
-              aria-label="Tüm koleksiyonu keşfet"
-              className="group inline-flex items-center gap-4"
+          {/* Left: text */}
+          <div>
+            <motion.span
+              initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="block text-[10px] font-mono tracking-[0.32em] uppercase text-black/35 mb-6"
             >
-              <span className="inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-black text-white group-hover:bg-polen-orange transition-colors">
-                <ArrowUpRight className="w-6 h-6 lg:w-7 lg:h-7" />
-              </span>
-              <span className="text-sm lg:text-base font-medium tracking-[0.18em] uppercase text-black group-hover:text-polen-orange transition-colors">
-                Koleksiyonu Keşfet
-              </span>
-            </Link>
-            <a
-              href="https://wa.me/905000000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-testid="link-final-cta-whatsapp"
-              data-cursor="cta"
-              data-cursor-label="WhatsApp"
-              aria-label="WhatsApp üzerinden iletişime geç"
-              className="group inline-flex items-center gap-4"
+              — Giyim & Aksesuar
+            </motion.span>
+
+            <h2
+              className="font-display uppercase text-black leading-[0.92]"
+              style={{ fontSize: 'clamp(36px, 5.5vw, 88px)', letterSpacing: '-0.025em' }}
             >
-              <span className="inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-full border border-black/25 text-black group-hover:bg-black group-hover:text-white transition-colors">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-6 h-6 lg:w-7 lg:h-7 fill-current"
-                  aria-hidden="true"
-                  focusable="false"
+              {['Stilinizi', 'yansıtan'].map((word, i) => (
+                <motion.span
+                  key={word}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  className="block"
                 >
+                  {word}
+                </motion.span>
+              ))}
+              <motion.span
+                initial={{ opacity: 0, y: 40 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.55, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                className="block text-[hsl(var(--polen-orange))]"
+              >
+                koleksiyon.
+              </motion.span>
+            </h2>
+
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-8 max-w-[440px] text-[15px] leading-[1.7] text-black/55"
+            >
+              Trendyol ile senkronize güncel koleksiyonumuzdan seçim yapın.
+              Yüzlerce marka ve binlerce model, kapınıza hızlı teslimat.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-10 flex flex-col sm:flex-row items-start gap-4"
+            >
+              <Link
+                href="/magaza"
+                data-testid="link-cta-shop"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-[hsl(var(--polen-stone))] text-white text-[12px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange))] transition-colors"
+              >
+                Alışverişe Başla
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a
+                href="https://wa.me/905326956183"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="link-cta-whatsapp"
+                className="inline-flex items-center gap-2 px-6 py-4 border border-black/20 text-[12px] tracking-[0.18em] uppercase font-medium text-black hover:bg-black hover:text-white hover:border-black transition-all"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden>
                   <path d="M19.05 4.91A10 10 0 0 0 12 2a10 10 0 0 0-8.66 14.95L2 22l5.21-1.34A10 10 0 0 0 22 12a9.93 9.93 0 0 0-2.95-7.09Zm-7.05 15A8.07 8.07 0 0 1 7.9 18.7l-.28-.17-3.09.79.83-3-.18-.3a8 8 0 1 1 6.82 3.86Zm4.41-5.96c-.24-.12-1.42-.7-1.64-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.6 6.6 0 0 1-1.95-1.2 7.32 7.32 0 0 1-1.35-1.68c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.65 1.65 0 0 0 .24-.4.44.44 0 0 0 0-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.89.89 0 0 0-.64.3 2.7 2.7 0 0 0-.84 2c0 1.18.86 2.32.98 2.48s1.69 2.59 4.1 3.63a13.8 13.8 0 0 0 1.37.51 3.31 3.31 0 0 0 1.51.1 2.48 2.48 0 0 0 1.62-1.14 2 2 0 0 0 .14-1.14c-.06-.12-.22-.18-.46-.3Z" />
                 </svg>
-              </span>
-              <span className="text-sm lg:text-base font-medium tracking-[0.18em] uppercase text-black group-hover:text-polen-orange transition-colors">
                 WhatsApp
-              </span>
-            </a>
+              </a>
+            </motion.div>
           </div>
-        </motion.div>
+
+          {/* Right: stats */}
+          <div className="grid grid-cols-2 gap-4 lg:gap-6">
+            {[
+              { n: '10K+', label: 'Ürün Çeşidi', desc: 'Güncel koleksiyon' },
+              { n: '500+', label: 'Marka', desc: 'Türkiye ve dünyadan' },
+              { n: '25', label: 'Yıl', desc: 'Sektör deneyimi' },
+              { n: '48h', label: 'Teslimat', desc: 'Türkiye geneli' },
+            ].map(({ n, label, desc }, i) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 24 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                className="p-6 lg:p-8 border border-black/8 hover:border-[hsl(var(--polen-orange))]/40 transition-colors"
+                data-testid={`stat-${label.toLowerCase()}`}
+              >
+                <div
+                  className="font-display text-black leading-none mb-1"
+                  style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', letterSpacing: '-0.02em' }}
+                >
+                  {n}
+                </div>
+                <div className="text-[12px] font-semibold tracking-[0.12em] uppercase text-black mb-1">{label}</div>
+                <div className="text-[11px] text-black/40">{desc}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-// MAIN — Home page
+// ─────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────
 
 export default function Home() {
   const { data: products = [] } = useProducts({});
+  const { data: categories = [] } = useQuery<CategoryData[]>({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/categories');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 60000,
+  });
 
   return (
     <>
       <SEO
         title="Giyim & Moda Koleksiyonu"
-        description="Marka, Türkiye'nin önde gelen online giyim mağazasıdır. Kadın, erkek ve çocuk giyiminde güncel koleksiyon sizi bekliyor."
+        description="Marka — Türkiye'nin güncel giyim koleksiyonu. Kadın, erkek ve çocuk giyiminde yüzlerce marka ve binlerce model."
         url="/"
       />
       <Header />
       <MotionConfig reducedMotion="user">
-        <main className="bg-black">
+        <main>
           <HeroScene />
-          <PinnedShowcaseScene products={products} />
-          <ProductGridScene products={products} />
-          <StatementMarqueeScene />
-          <FinalCtaScene />
+          <CategoryScene categories={categories} products={products} />
+          <ProductScene products={products} />
+          <MarqueeScene />
+          <CtaScene />
         </main>
       </MotionConfig>
       <Footer />
