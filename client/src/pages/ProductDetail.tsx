@@ -126,7 +126,8 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -252,13 +253,25 @@ export default function ProductDetail() {
     return () => observer.disconnect();
   }, [product?.id]);
 
+  // Derive the single matched variant from the two independent selections
+  const selectedVariant = product?.variants?.find(
+    (v) =>
+      v.isActive &&
+      (selectedSize === null || v.size === selectedSize) &&
+      (selectedColor === null || v.color === selectedColor)
+  ) ?? null;
+  const selectedVariantId = selectedVariant?.id ?? null;
+
   // Reset image index on product change; auto-select first variant
   useEffect(() => {
     setSelectedImage(0);
     setQuantity(1);
     setShowFullDesc(false);
-    const firstVariant = product?.variants?.find((v) => v.isActive && v.stock > 0) ?? product?.variants?.find((v) => v.isActive);
-    setSelectedVariantId(firstVariant?.id ?? null);
+    const firstVariant =
+      product?.variants?.find((v) => v.isActive && v.stock > 0) ??
+      product?.variants?.find((v) => v.isActive);
+    setSelectedSize(firstVariant?.size ?? null);
+    setSelectedColor(firstVariant?.color ?? null);
   }, [product?.id]);
 
   const handleHeroMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -876,7 +889,6 @@ export default function ProductDetail() {
               {product.variants && product.variants.length > 0 && (() => {
                 const sizes = [...new Set(product.variants!.filter(v => v.size).map(v => v.size!))];
                 const colors = [...new Set(product.variants!.filter(v => v.color).map(v => v.color!))];
-                const selectedVariant = product.variants!.find(v => v.id === selectedVariantId);
 
                 return (
                   <div className="mb-6 space-y-4">
@@ -886,28 +898,34 @@ export default function ProductDetail() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black">
                             Beden
-                            {selectedVariant?.size && (
+                            {selectedSize && (
                               <span className="ml-2 text-black/50 normal-case font-normal tracking-normal">
-                                {selectedVariant.size}
+                                {selectedSize}
                               </span>
                             )}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {sizes.map((size) => {
-                            const sizeVariants = product.variants!.filter(v => v.size === size);
-                            const hasColorSelection = colors.length > 0;
-                            const isSelected = hasColorSelection
-                              ? selectedVariant?.size === size
-                              : sizeVariants.some(v => v.id === selectedVariantId);
-                            const isAvailable = sizeVariants.some(v => v.stock > 0 && v.isActive);
+                            const isSelected = selectedSize === size;
+                            // If a color is already chosen, availability is restricted to that color+size combo
+                            const isAvailable = selectedColor
+                              ? product.variants!.some(v => v.size === size && v.color === selectedColor && v.stock > 0 && v.isActive)
+                              : product.variants!.some(v => v.size === size && v.stock > 0 && v.isActive);
                             return (
                               <button
                                 key={size}
                                 type="button"
                                 onClick={() => {
-                                  const candidate = sizeVariants.find(v => v.isActive && v.stock > 0) ?? sizeVariants.find(v => v.isActive);
-                                  if (candidate) setSelectedVariantId(candidate.id);
+                                  setSelectedSize(size);
+                                  // Keep current color only if a matching variant exists; otherwise pick best available color
+                                  if (selectedColor) {
+                                    const keepColor = product.variants!.some(v => v.size === size && v.color === selectedColor && v.isActive);
+                                    if (!keepColor) {
+                                      const bestColor = product.variants!.find(v => v.size === size && v.isActive && v.stock > 0)?.color ?? null;
+                                      setSelectedColor(bestColor);
+                                    }
+                                  }
                                 }}
                                 className={`min-w-[44px] h-10 px-3 text-[12px] font-medium border transition-all ${
                                   isSelected
@@ -933,26 +951,35 @@ export default function ProductDetail() {
                         <div className="flex items-center mb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black">
                             Renk
-                            {selectedVariant?.color && (
+                            {selectedColor && (
                               <span className="ml-2 text-black/50 normal-case font-normal tracking-normal">
-                                {selectedVariant.color}
+                                {selectedColor}
                               </span>
                             )}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {colors.map((color) => {
-                            const colorVariants = product.variants!.filter(v => v.color === color);
-                            const isSelected = colorVariants.some(v => v.id === selectedVariantId);
-                            const isAvailable = colorVariants.some(v => v.stock > 0 && v.isActive);
+                            const isSelected = selectedColor === color;
+                            // If a size is already chosen, availability is restricted to that size+color combo
+                            const isAvailable = selectedSize
+                              ? product.variants!.some(v => v.color === color && v.size === selectedSize && v.stock > 0 && v.isActive)
+                              : product.variants!.some(v => v.color === color && v.stock > 0 && v.isActive);
                             const hex = product.variants!.find(v => v.color === color)?.colorHex;
                             return (
                               <button
                                 key={color}
                                 type="button"
                                 onClick={() => {
-                                  const candidate = colorVariants.find(v => v.isActive && v.stock > 0) ?? colorVariants.find(v => v.isActive);
-                                  if (candidate) setSelectedVariantId(candidate.id);
+                                  setSelectedColor(color);
+                                  // Keep current size only if a matching variant exists; otherwise pick best available size
+                                  if (selectedSize) {
+                                    const keepSize = product.variants!.some(v => v.color === color && v.size === selectedSize && v.isActive);
+                                    if (!keepSize) {
+                                      const bestSize = product.variants!.find(v => v.color === color && v.isActive && v.stock > 0)?.size ?? null;
+                                      setSelectedSize(bestSize);
+                                    }
+                                  }
                                 }}
                                 title={color}
                                 className={`relative h-8 px-3 text-[11px] font-medium border transition-all flex items-center gap-2 ${

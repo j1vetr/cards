@@ -4,7 +4,12 @@ import { db } from './db';
 import { refreshTokens, users, adminUsers } from '@shared/schema';
 import { eq, and, isNull, gt } from 'drizzle-orm';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'marka-jwt-secret-2026';
+const _jwtSecretRaw = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+if (!_jwtSecretRaw) {
+  console.error('[jwt] FATAL: JWT_SECRET env variable is not set. Set it as a Replit Secret.');
+  process.exit(1);
+}
+const JWT_SECRET = _jwtSecretRaw;
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
