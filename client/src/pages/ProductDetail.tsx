@@ -895,17 +895,19 @@ export default function ProductDetail() {
                   </div>
                   <table className="w-full text-[12px]" data-testid="table-product-attributes">
                     <tbody>
-                      {Object.entries(product.attributes).map(([key, val], i) => (
-                        <tr
-                          key={key}
-                          className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}
-                        >
-                          <td className="px-4 py-2.5 font-medium text-black/55 w-2/5 border-r border-black/5">
-                            {key}
-                          </td>
-                          <td className="px-4 py-2.5 text-black">{val}</td>
-                        </tr>
-                      ))}
+                      {Object.entries(product.attributes)
+                        .filter(([, val]) => val && val.toString().trim() !== '')
+                        .map(([key, val], i) => (
+                          <tr
+                            key={key}
+                            className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}
+                          >
+                            <td className="px-4 py-2.5 font-medium text-black/55 w-2/5 border-r border-black/5">
+                              {key}
+                            </td>
+                            <td className="px-4 py-2.5 text-black">{val}</td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
