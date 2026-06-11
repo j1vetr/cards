@@ -155,10 +155,12 @@ export function Header() {
             </button>
 
             <Link href="/" data-testid="link-logo-mobile" className="block absolute left-1/2 -translate-x-1/2">
-              <div className="flex flex-col leading-none text-center" data-testid="img-logo-mobile">
-                <span className="font-display text-[9px] tracking-[0.36em] uppercase text-black/40 font-light">Ecarte</span>
-                <span className="font-display text-[15px] tracking-[0.18em] uppercase text-black font-bold">JEANS</span>
-              </div>
+              <img
+                src="/ecarte-logo.webp"
+                alt="Ecarte Jeans"
+                className="h-11 w-11 object-contain rounded-sm"
+                data-testid="img-logo-mobile"
+              />
             </Link>
 
             <div className="flex items-center gap-0.5">
@@ -197,10 +199,12 @@ export function Header() {
 
             {/* Logo */}
             <Link href="/" data-testid="link-logo" className="block">
-              <div className="flex flex-col leading-none" data-testid="img-logo">
-                <span className="font-display text-[10px] tracking-[0.36em] uppercase text-black/40 font-light">Ecarte</span>
-                <span className="font-display text-[19px] tracking-[0.16em] uppercase text-black font-bold">JEANS</span>
-              </div>
+              <img
+                src="/ecarte-logo.webp"
+                alt="Ecarte Jeans"
+                className="h-12 w-12 object-contain rounded-sm"
+                data-testid="img-logo"
+              />
             </Link>
 
             {/* Nav */}
@@ -388,10 +392,12 @@ export function Header() {
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
                 <Link href="/" onClick={() => setMobileOpen(false)} data-testid="link-mobile-logo">
-                  <div className="flex flex-col leading-none" data-testid="img-logo-mobile-drawer">
-                    <span className="font-display text-[9px] tracking-[0.36em] uppercase text-white/40 font-light">Ecarte</span>
-                    <span className="font-display text-[16px] tracking-[0.18em] uppercase text-white font-bold">JEANS</span>
-                  </div>
+                  <img
+                    src="/ecarte-logo.webp"
+                    alt="Ecarte Jeans"
+                    className="h-11 w-11 object-contain rounded-sm"
+                    data-testid="img-logo-mobile-drawer"
+                  />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}

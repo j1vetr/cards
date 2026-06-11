@@ -30,10 +30,11 @@ export function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-5">
             <Link href="/" className="inline-block mb-6" data-testid="link-footer-logo">
-              <div className="flex flex-col leading-none">
-                <span className="font-display text-[11px] tracking-[0.36em] uppercase text-white/30 font-light">Ecarte</span>
-                <span className="font-display text-[26px] tracking-[0.14em] uppercase text-white font-bold">JEANS</span>
-              </div>
+              <img
+                src="/ecarte-logo.webp"
+                alt="Ecarte Jeans"
+                className="h-20 w-20 object-contain rounded"
+              />
             </Link>
             <p className="text-white/50 text-[13.5px] leading-[1.75] max-w-sm mb-6">
               Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânıyla Türkiye'nin kaliteli jean markası.

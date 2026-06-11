@@ -62,10 +62,10 @@
   --ring: 220 65% 36%;
   --radius: 0.25rem;
 
-  /* Brand tokens — Ecarte Jeans denim palette */
+  /* Brand tokens — Ecarte Jeans denim palette (matched to logo navy) */
   --polen-orange: 220 65% 36%;
   --polen-orange-deep: 220 72% 27%;
-  --polen-stone: 220 18% 12%;
+  --polen-stone: 222 58% 14%;
   --polen-cream: 218 30% 96%;
   --polen-vein: 220 15% 82%;
 }
