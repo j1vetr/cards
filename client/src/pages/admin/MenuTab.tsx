@@ -183,8 +183,8 @@ export default function MenuManagementPanel({ categories }: MenuManagementPanelP
         '⚠️ DİKKAT: TÜM menü öğeleri silinecek!\n\n' +
         'Bu işlem manuel eklediğin öğeler dahil hepsini siler ve sıfırdan ' +
         '8 ana grup + alt kategoriler oluşturur.\n\n' +
-        'Eski "Mermer / Granit / Traverten / Oniks" sabit öğelerini ' +
-        'temizlemek istiyorsan bu seçeneği kullan.\n\n' +
+        'Eski sabit menü öğelerini temizleyip giyim kategorilerine ' +
+        'göre yeniden oluşturmak istiyorsan bu seçeneği kullan.\n\n' +
         'Devam edilsin mi?'
       )
     ) return;

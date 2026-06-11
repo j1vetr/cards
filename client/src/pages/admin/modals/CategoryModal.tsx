@@ -217,7 +217,7 @@ export default function CategoryModal({
                 id="category-name"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Örn. Mermer"
+                placeholder="Örn. Üst Giyim"
                 required
                 data-testid="input-category-name"
               />

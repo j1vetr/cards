@@ -195,14 +195,14 @@ export default function Login() {
                   — Üyelere Özel
                 </span>
                 <h2 className="font-display text-[40px] xl:text-5xl tracking-[0.005em] text-white leading-[1.02]">
-                  Doğanın imzasını<br />
-                  <span className="text-polen-orange">mekânlara taşıyın.</span>
+                  Stilini özgürce<br />
+                  <span className="text-polen-orange">ifade et.</span>
                 </h2>
 
                 <div className="mt-7 grid grid-cols-3 gap-5 border-t border-white/15 pt-5">
-                  <Stat n="120+" label="Mermer Türü" />
+                  <Stat n="10K+" label="Ürün Çeşidi" />
                   <Stat n="25" label="Yıl Tecrübe" />
-                  <Stat n="∞" label="Olasılık" />
+                  <Stat n="∞" label="Kombin" />
                 </div>
               </div>
             </div>

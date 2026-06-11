@@ -14,10 +14,9 @@ import {
 } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { useProducts, type Product } from '@/hooks/useProducts';
-import heroPosterImage from '@assets/generated_images/polen-hero-dark-1.png';
+import heroBgImage from '@assets/generated_images/polen-hero-dark-1.png';
 
-const HERO_VIDEO_DESKTOP = '/videos/polen-hero.mp4';
-const HERO_VIDEO_MOBILE = '/videos/polen-hero-mobile.mp4';
+// Replace heroBgImage with a full-bleed fashion model photo once available.
 
 // UTILITIES
 
@@ -82,7 +81,7 @@ function HeroSceneStatic() {
       aria-label="Marka giyim tanıtım"
     >
       <img
-        src={heroPosterImage}
+        src={heroBgImage}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover"
@@ -94,38 +93,6 @@ function HeroSceneStatic() {
   );
 }
 
-function HeroVideoLazy() {
-  const [show, setShow] = useState(false);
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 767px)');
-    setIsMobile(mql.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener('change', onChange);
-    const id = window.setTimeout(() => setShow(true), mql.matches ? 450 : 900);
-    return () => {
-      window.clearTimeout(id);
-      mql.removeEventListener('change', onChange);
-    };
-  }, []);
-  if (!show || isMobile === null) return null;
-  const src = isMobile ? HERO_VIDEO_MOBILE : HERO_VIDEO_DESKTOP;
-  return (
-    <video
-      key={src}
-      autoPlay
-      loop
-      muted
-      playsInline
-      preload="auto"
-      poster={heroPosterImage}
-      className="absolute inset-0 w-full h-full object-cover"
-      aria-hidden="true"
-    >
-      <source src={src} type="video/mp4" />
-    </video>
-  );
-}
 
 function HeroSceneInner() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -155,12 +122,11 @@ function HeroSceneInner() {
     >
       <motion.div className="absolute inset-0 z-0" style={{ y: videoY }}>
         <img
-          src={heroPosterImage}
+          src={heroBgImage}
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <HeroVideoLazy />
         {/* %50 sabit siyah örtü — başlığın okunabilirliği için */}
         <div className="absolute inset-0 bg-black/50" />
         {/* CTA bölgesinde ekstra kontrast */}
