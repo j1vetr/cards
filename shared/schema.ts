@@ -98,6 +98,7 @@ export const products = pgTable("products", {
   images: jsonb("images").$type<string[]>().default([]).notNull(),
   availableSizes: jsonb("available_sizes").$type<string[]>().default([]).notNull(),
   availableColors: jsonb("available_colors").$type<{name: string, hex: string | null}[]>().default([]).notNull(),
+  videoUrl: text("video_url"),
   attributes: jsonb("attributes").$type<Record<string, string>>().default({}).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   isFeatured: boolean("is_featured").default(false).notNull(),

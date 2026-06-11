@@ -62,6 +62,10 @@ interface TrendyolImage {
   url: string;
 }
 
+interface TrendyolVideo {
+  url: string;
+}
+
 interface TrendyolAttribute {
   attributeName?: string;
   attributeValue?: string;
@@ -89,6 +93,7 @@ interface TrendyolProduct {
   onSale?: boolean;
   rejected?: boolean;
   images: TrendyolImage[];
+  videos?: TrendyolVideo[];
   attributes?: TrendyolAttribute[];
   size?: string;
   color?: string;
@@ -352,6 +357,7 @@ function normalize(p: TrendyolProduct): NormalizedProduct {
     images: (p.images ?? [])
       .filter((i) => i && i.url)
       .map((i, idx) => ({ url: i.url, order: idx })),
+    videoUrl: p.videos?.[0]?.url ?? null,
     variants: [variant],
     isActive,
     attributes: Object.keys(attributes).length > 0 ? attributes : undefined,

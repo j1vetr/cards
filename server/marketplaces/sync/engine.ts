@@ -626,6 +626,7 @@ async function upsertProduct(
       .map((v) => v.color)
       .filter((c): c is { name: string; hex?: string | null } => !!c)
       .map((c) => ({ name: c.name, hex: c.hex ?? "#cccccc" })),
+    videoUrl: np.videoUrl ?? siteProduct?.videoUrl ?? null,
     attributes: np.attributes ?? {},
     isActive: np.isActive,
     isFeatured: siteProduct?.isFeatured ?? false,

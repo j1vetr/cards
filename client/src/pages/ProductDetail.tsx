@@ -122,6 +122,9 @@ export default function ProductDetail() {
   const { toggleFavorite, isLoading: isFavoriteLoading } = useToggleFavorite();
   const isLiked = product ? favoriteIds.includes(product.id) : false;
 
+  // Video slot: images.length → video (sanal index)
+  const videoUrl = product?.videoUrl ?? null;
+
   // --- UI state ---
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -679,7 +682,7 @@ export default function ProductDetail() {
             {/* LEFT — Gallery */}
             <motion.div {...fadeUp} className="flex flex-col lg:flex-row gap-4 lg:gap-5">
               {/* Desktop thumbnail rail */}
-              {images.length > 1 && (
+              {(images.length > 1 || videoUrl) && (
                 <div className="hidden lg:flex flex-col gap-3 w-20 shrink-0">
                   {images.map((img, i) => (
                     <button
@@ -702,6 +705,21 @@ export default function ProductDetail() {
                       />
                     </button>
                   ))}
+                  {videoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedImage(images.length)}
+                      className={`relative aspect-[4/5] overflow-hidden bg-stone-900 transition-all flex items-center justify-center ${
+                        selectedImage === images.length
+                          ? 'ring-1 ring-black opacity-100'
+                          : 'opacity-50 hover:opacity-100'
+                      }`}
+                      data-testid="button-thumbnail-video"
+                      aria-label="Video"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-7 h-7 opacity-90"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -709,6 +727,22 @@ export default function ProductDetail() {
               <div className="flex-1 min-w-0">
                 {/* Desktop hero with hover-zoom */}
                 <div className="hidden sm:block">
+                  {videoUrl && selectedImage === images.length ? (
+                    /* ── Video player (desktop) ── */
+                    <div
+                      className="relative aspect-[4/5] bg-black overflow-hidden"
+                      data-testid="video-product-main"
+                    >
+                      <video
+                        key={videoUrl}
+                        src={videoUrl}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="absolute inset-0 w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
                   <div
                     ref={heroImageRef}
                     className="relative aspect-[4/5] bg-stone-100 overflow-hidden cursor-zoom-in group"
@@ -749,6 +783,7 @@ export default function ProductDetail() {
                       </span>
                     )}
                   </div>
+                  )}
                 </div>
 
                 {/* Mobile carousel */}
@@ -774,6 +809,16 @@ export default function ProductDetail() {
                           />
                         </button>
                       ))}
+                      {videoUrl && (
+                        <div className="flex-[0_0_100%] min-w-0 h-full bg-black flex items-center justify-center">
+                          <video
+                            src={videoUrl}
+                            controls
+                            playsInline
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {product.discountBadge && (
@@ -789,7 +834,7 @@ export default function ProductDetail() {
                   </div>
 
                   {/* Mobile dot indicator */}
-                  {images.length > 1 && (
+                  {(images.length > 1 || videoUrl) && (
                     <div className="flex justify-center gap-1.5 mt-4">
                       {images.map((_, i) => (
                         <button
@@ -802,6 +847,16 @@ export default function ProductDetail() {
                           aria-label={`Görsel ${i + 1}`}
                         />
                       ))}
+                      {videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedImage(images.length)}
+                          className={`h-1.5 rounded-full transition-all ${
+                            selectedImage === images.length ? 'bg-black w-6' : 'bg-black/20 w-1.5'
+                          }`}
+                          aria-label="Video"
+                        />
+                      )}
                     </div>
                   )}
                 </div>

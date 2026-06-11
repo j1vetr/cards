@@ -61,6 +61,8 @@ export interface NormalizedProduct {
   /** Toplam stok (varyantların toplamı veya tek stok). */
   totalStock: number;
   images: NormalizedImage[];
+  /** Trendyol'dan gelen ürün videosu (varsa ilk video URL'si). */
+  videoUrl?: string | null;
   variants: NormalizedVariant[];
   /** Pazaryerinden gelen ürün durumu — `false` ise site'da gizlenir. */
   isActive: boolean;
