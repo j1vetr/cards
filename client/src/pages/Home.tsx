@@ -134,19 +134,23 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
   return (
     <div className="relative h-full flex flex-col justify-center items-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
       <W {...animProps} className="relative z-10 max-w-3xl w-full text-center">
-        {/* Eyebrow */}
-        <p className="text-[10px] tracking-[0.35em] uppercase text-white/40 font-medium mb-5 font-mono">
-          Premium Denim — Türkiye'nin Seçkini
-        </p>
-
         {/* Headline */}
         <h1
           data-testid="text-hero-title"
-          className="font-display text-white leading-[0.9] mb-7"
-          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em' }}
+          className="font-display text-white mb-7"
+          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em', lineHeight: 1.08 }}
         >
           <span className="block">Jeanin İçinde</span>
-          <span className="block text-[hsl(var(--polen-orange))]">Özgürlük Var.</span>
+          <span
+            className="block"
+            style={{
+              color: 'white',
+              WebkitTextStroke: '4px hsl(220 65% 36%)',
+              paintOrder: 'stroke fill',
+            }}
+          >
+            Özgürlük Var.
+          </span>
         </h1>
 
         {/* Sub copy */}
