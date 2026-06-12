@@ -125,6 +125,13 @@ export const bulkBadgeSchema = z.object({
   badge: z.string().max(50).optional().nullable(),
 });
 
+export const bulkWholesaleSchema = z.object({
+  productIds: z.array(z.string()).min(1, "Ürün seçimi zorunludur"),
+  wholesaleEnabled: z.boolean(),
+  wholesalePrice: z.union([z.string(), z.number()]).transform(String).optional().nullable(),
+  wholesaleSeriesId: z.string().optional().nullable(),
+});
+
 export const variantUpdateSchema = z.object({
   size: z.string().max(50).optional().nullable(),
   color: z.string().max(100).optional().nullable(),

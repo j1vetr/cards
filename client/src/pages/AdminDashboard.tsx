@@ -24,6 +24,7 @@ import CategoryModal from './admin/modals/CategoryModal';
 import UserDetailModal from './admin/modals/UserDetailModal';
 import BulkPriceModal from './admin/modals/BulkPriceModal';
 import BulkBadgeModal from './admin/modals/BulkBadgeModal';
+import BulkWholesaleModal from './admin/modals/BulkWholesaleModal';
 
 import type { Category, User, TabType } from './admin/_shared/types';
 import {
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
   const [showBulkBadgeModal, setShowBulkBadgeModal] = useState(false);
+  const [showBulkWholesaleModal, setShowBulkWholesaleModal] = useState(false);
   const [bulkPreselectedIds, setBulkPreselectedIds] = useState<string[] | undefined>(undefined);
 
   const data = useAdminDashboardData({
@@ -157,6 +159,7 @@ export default function AdminDashboard() {
             setSearchQuery={setSearchQuery}
             setShowBulkBadgeModal={setShowBulkBadgeModal}
             setShowBulkPriceModal={setShowBulkPriceModal}
+            setShowBulkWholesaleModal={setShowBulkWholesaleModal}
             setBulkPreselectedIds={setBulkPreselectedIds}
             deleteProductMutation={deleteProductMutation}
             productsLoading={productsLoading}
@@ -246,6 +249,22 @@ export default function AdminDashboard() {
           }}
           onSuccess={() => {
             setShowBulkBadgeModal(false);
+            setBulkPreselectedIds(undefined);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+          }}
+        />
+      )}
+      {showBulkWholesaleModal && (
+        <BulkWholesaleModal
+          products={products}
+          categories={categories}
+          preselectedProductIds={bulkPreselectedIds}
+          onClose={() => {
+            setShowBulkWholesaleModal(false);
+            setBulkPreselectedIds(undefined);
+          }}
+          onSuccess={() => {
+            setShowBulkWholesaleModal(false);
             setBulkPreselectedIds(undefined);
             queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
           }}

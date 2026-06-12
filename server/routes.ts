@@ -16,7 +16,7 @@ import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, co
 import {
   validateBody, firstZodMessage,
   profileUpdateSchema, addressCreateSchema, addressUpdateSchema,
-  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema, variantUpdateSchema,
+  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema, bulkWholesaleSchema, variantUpdateSchema,
   cartUpdateSchema, orderStatusUpdateSchema, orderTrackingSchema, orderUpdateSchema,
   orderNoteSchema, orderCancelSchema, couponWriteSchema, couponUpdateSchema,
   inventoryBulkUpdateSchema, campaignWriteSchema, campaignUpdateSchema,
@@ -1844,6 +1844,28 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Bulk badge update error:', error);
       res.status(500).json({ error: "Toplu etiket güncellemesi başarısız" });
+    }
+  });
+
+  app.post("/api/admin/products/bulk-wholesale", requireAdmin, async (req, res) => {
+    try {
+      const parsed = bulkWholesaleSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { productIds, wholesaleEnabled, wholesalePrice, wholesaleSeriesId } = parsed.data;
+
+      let updated = 0;
+      for (const id of productIds) {
+        await storage.updateProduct(id, {
+          wholesaleEnabled,
+          wholesalePrice: wholesaleEnabled && wholesalePrice ? wholesalePrice : null,
+          wholesaleSeriesId: wholesaleEnabled && wholesaleSeriesId ? wholesaleSeriesId : null,
+        } as any);
+        updated++;
+      }
+      res.json({ updated });
+    } catch (error) {
+      console.error('[bulk-wholesale]', error);
+      res.status(500).json({ error: "Toplu toptan güncelleme başarısız" });
     }
   });
 
