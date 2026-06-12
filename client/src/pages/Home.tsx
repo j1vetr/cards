@@ -321,8 +321,8 @@ function ProductScene({ products }: { products: Product[] }) {
 
   const items = useMemo(() => {
     if (!products?.length) return [];
-    const featured = products.filter(p => p.isFeatured && p.images?.length);
-    const rest = products.filter(p => !p.isFeatured && p.images?.length);
+    const featured = products.filter(p => p.isFeatured);
+    const rest = products.filter(p => !p.isFeatured);
     return [...featured, ...rest].slice(0, 8);
   }, [products]);
 
