@@ -1000,7 +1000,7 @@ export default function ProductDetail() {
                       </span>
                       {wholesaleSeries && (
                         <span className="text-[11px] font-medium text-black/55">
-                          {wholesaleSeries.name} · {wholesalePiecesPerSeries} adet/seri
+                          {wholesaleSeries.name} · {wholesalePiecesPerSeries} Adet/Seri
                         </span>
                       )}
                     </div>
@@ -1012,16 +1012,20 @@ export default function ProductDetail() {
                         >
                           {parseFloat(product.wholesalePrice || '0').toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                         </span>
-                        <span className="text-[12px] text-black/50">/ adet</span>
+                        <span className="text-[12px] text-black/50">/ Adet</span>
                       </div>
 
                       {wholesaleSeries ? (
                         <>
-                          <div className="flex flex-wrap gap-1.5 my-3" data-testid="list-wholesale-distribution">
+                          <div
+                            className="grid gap-1.5 my-3"
+                            style={{ gridTemplateColumns: `repeat(${Math.ceil(wholesaleSeries.sizeDistribution.length / 2)}, minmax(0, 1fr))` }}
+                            data-testid="list-wholesale-distribution"
+                          >
                             {wholesaleSeries.sizeDistribution.map((d) => (
                               <span
                                 key={d.size}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-black/10 bg-white text-[11px] text-black/70"
+                                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-black/10 bg-white text-[11px] text-black/70"
                               >
                                 <span className="font-semibold text-black">{d.size}</span>
                                 <span className="text-black/40">×</span>
@@ -1030,7 +1034,7 @@ export default function ProductDetail() {
                             ))}
                           </div>
                           <div className="flex items-center justify-between text-[13px] mb-3 pt-2 border-t border-black/5">
-                            <span className="text-black/55">Seri toplamı ({wholesalePiecesPerSeries} adet)</span>
+                            <span className="text-black/55">Seri Toplamı ({wholesalePiecesPerSeries} Adet)</span>
                             <span className="font-display text-base text-black tabular-nums" data-testid="text-wholesale-series-total">
                               {(parseFloat(product.wholesalePrice || '0') * wholesalePiecesPerSeries).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </span>
