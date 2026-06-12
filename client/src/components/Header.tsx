@@ -112,7 +112,7 @@ export function Header() {
         ? 'text-[hsl(var(--polen-orange))]'
         : isTransparent
           ? 'text-white/80 hover:text-white'
-          : 'text-black/60 hover:text-black'
+          : 'text-black hover:text-black'
     }`;
 
   return (
@@ -203,14 +203,14 @@ export function Header() {
             <div className="flex items-center gap-0.5">
               <button
                 onClick={() => setSearchOpen(true)}
-                className={`p-2 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/55 hover:text-black'}`}
+                className={`p-2 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black hover:text-black'}`}
                 data-testid="button-search-mobile"
                 aria-label="Ara"
               >
                 <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
               </button>
               <Link href="/sepet" data-testid="link-cart-mobile">
-                <button className={`p-2 transition-colors relative ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/55 hover:text-black'}`} aria-label="Sepet">
+                <button className={`p-2 transition-colors relative ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black hover:text-black'}`} aria-label="Sepet">
                   <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
                   <AnimatePresence>
                     {totalItems > 0 && (
@@ -335,7 +335,7 @@ export function Header() {
               {/* Search */}
               <button
                 onClick={() => setSearchOpen(true)}
-                className={`p-2.5 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/50 hover:text-black'}`}
+                className={`p-2.5 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black hover:text-black'}`}
                 data-testid="button-search"
                 aria-label="Ara"
               >
@@ -346,7 +346,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className={`p-2.5 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/50 hover:text-black'}`}
+                    className={`p-2.5 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black hover:text-black'}`}
                     data-testid="button-account"
                     aria-label="Hesabım"
                   >
@@ -406,7 +406,7 @@ export function Header() {
               {/* Cart */}
               <Link href="/sepet" data-testid="link-cart">
                 <button
-                  className={`p-2.5 transition-colors relative ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/50 hover:text-black'}`}
+                  className={`p-2.5 transition-colors relative ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black hover:text-black'}`}
                   aria-label="Sepet"
                   data-testid="button-cart"
                 >

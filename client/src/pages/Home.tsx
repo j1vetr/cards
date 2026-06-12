@@ -409,7 +409,7 @@ function LookbookScene() {
   return (
     <section
       ref={ref}
-      className="py-16 lg:py-24 bg-[hsl(var(--polen-stone))]"
+      className="py-6 lg:py-8 bg-white"
       data-testid="scene-lookbook"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
