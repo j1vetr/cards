@@ -33,6 +33,7 @@ import {
   reviewRejectSchema, iyzicoCallbackSchema,
 } from "./validation";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
+import { downloadVideo } from "./marketplaces/sync/engine";
 import { 
   sendWelcomeEmail, 
   sendOrderConfirmationEmail, 
@@ -1450,8 +1451,25 @@ export async function registerRoutes(
       const { categoryIds, ...productData } = req.body;
       const parsed = productUpdateSchema.safeParse(productData);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      console.log('Updating product:', req.params.id, 'with data:', JSON.stringify(parsed.data, null, 2));
-      const product = await storage.updateProduct(req.params.id, parsed.data as any);
+
+      // Video URL harici bir link ise otomatik indir, yerel yola dönüştür
+      const dataToSave = { ...parsed.data } as Record<string, unknown>;
+      const rawVideoUrl = dataToSave.videoUrl as string | undefined | null;
+      if (rawVideoUrl && (rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://"))) {
+        try {
+          const localPath = await downloadVideo(rawVideoUrl);
+          if (localPath) {
+            dataToSave.videoUrl = localPath;
+            console.log(`[admin] Video indirildi: ${rawVideoUrl} → ${localPath}`);
+          }
+        } catch (err) {
+          console.warn(`[admin] Video indirilemedi, CDN URL kaydediliyor: ${err}`);
+          // İndirme başarısız olursa CDN URL'si ile devam et
+        }
+      }
+
+      console.log('Updating product:', req.params.id, 'with data:', JSON.stringify(dataToSave, null, 2));
+      const product = await storage.updateProduct(req.params.id, dataToSave as any);
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }

@@ -479,7 +479,7 @@ async function syncImages(
  * Görsel indirmeden farklı olarak optimize edilmez; ham byte olarak saklanır.
  * Dosya zaten varsa (hash eşleşiyorsa) tekrar indirmez.
  */
-async function downloadVideo(url: string): Promise<string | null> {
+export async function downloadVideo(url: string): Promise<string | null> {
   // URL güvenlik kontrolü (SSRF)
   await assertSafeImageUrl(url);
   const controller = new AbortController();
