@@ -41,7 +41,6 @@ function useMounted() {
 // ─────────────────────────────────────────────
 
 const heroCategories = [
-  { label: 'Kadın Jean', href: '/magaza?kategori=kadin-jean' },
   { label: 'Erkek Jean', href: '/magaza?kategori=erkek-jean' },
   { label: 'Çocuk Jean', href: '/magaza?kategori=cocuk-jean' },
   { label: 'Toptan Satış', href: '/hakkimizda' },
@@ -54,6 +53,21 @@ function HeroScene() {
   return <HeroSceneInner />;
 }
 
+function HeroVideo() {
+  return (
+    <video
+      src="/hero-video.mp4"
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="auto"
+      className="absolute inset-0 w-full h-full object-cover"
+      aria-hidden
+    />
+  );
+}
+
 function HeroSceneStatic() {
   return (
     <section
@@ -62,6 +76,9 @@ function HeroSceneStatic() {
       aria-label="Ecarte Jeans denim koleksiyonu"
       data-testid="scene-hero"
     >
+      <HeroVideo />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/55" />
       <HeroContent />
     </section>
   );
@@ -80,7 +97,13 @@ function HeroSceneInner() {
       style={{ minHeight: 'calc(100svh - 96px)' }}
       data-testid="scene-hero"
     >
-      <motion.div style={{ y, opacity }} className="h-full w-full">
+      {/* Parallax video wrapper */}
+      <motion.div style={{ y }} className="absolute inset-0 w-full h-full">
+        <HeroVideo />
+      </motion.div>
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/55" />
+      <motion.div style={{ opacity }} className="relative h-full w-full">
         <HeroContent animated />
       </motion.div>
     </section>
@@ -122,7 +145,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
 
         {/* Sub copy */}
         <p className="mt-6 lg:mt-8 max-w-[480px] text-[13px] lg:text-[15px] leading-relaxed text-white/60 font-light">
-          Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı.
+          Erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı.
         </p>
 
         {/* Category pills */}
