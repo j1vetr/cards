@@ -134,11 +134,6 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
   return (
     <div className="relative h-full flex flex-col justify-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
       <W {...animProps} className="relative z-10 max-w-xl">
-        {/* Eyebrow */}
-        <span className="block text-[10px] font-mono tracking-[0.36em] uppercase text-white/55 mb-6">
-          Yeni Sezon&nbsp;·&nbsp;Premium Denim
-        </span>
-
         {/* Headline */}
         <h1
           data-testid="text-hero-title"
@@ -189,13 +184,6 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
           </Link>
         </div>
       </W>
-
-      {/* Bottom info bar */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center px-8 lg:px-16 py-4 border-t border-white/10">
-        <div className="text-[9px] font-mono tracking-[0.22em] uppercase text-white/40">
-          2026 Collection&nbsp;·&nbsp;Loop Video
-        </div>
-      </div>
     </div>
   );
 }

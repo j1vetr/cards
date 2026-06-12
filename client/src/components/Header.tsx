@@ -63,6 +63,7 @@ export function Header() {
 
   const isHomepage = location === '/';
   const isTransparent = isHomepage && !scrolled;
+  const showAnnounce = !announceClosed && !(isHomepage && scrolled);
 
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden';
@@ -118,7 +119,7 @@ export function Header() {
     <>
       {/* ── Announcement bar — marquee ── */}
       <AnimatePresence initial={false}>
-        {!announceClosed && (
+        {showAnnounce && (
           <motion.div
             initial={{ height: 36, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -171,7 +172,7 @@ export function Header() {
       {/* ── Main header ── */}
       <header
         className={`left-0 right-0 z-40 transition-all duration-300
-          ${isHomepage ? `fixed ${!announceClosed ? 'top-9' : 'top-0'}` : 'sticky top-0'}
+          ${isHomepage ? `fixed ${showAnnounce ? 'top-9' : 'top-0'}` : 'sticky top-0'}
           ${isTransparent ? 'bg-transparent border-b border-white/10' : `bg-white border-b border-black/[0.08] ${scrolled ? 'shadow-[0_4px_24px_-6px_rgba(0,0,0,0.10)]' : ''}`}
         `}
         data-testid="header"
