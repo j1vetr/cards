@@ -692,7 +692,7 @@ export default function ProductDetail() {
             <motion.div {...fadeUp} className="flex flex-col lg:flex-row gap-4 lg:gap-5">
               {/* Desktop thumbnail rail */}
               {(images.length > 1 || videoUrl) && (
-                <div className="hidden lg:flex flex-col gap-3 w-20 shrink-0">
+                <div className="hidden lg:flex flex-col gap-3 w-20 shrink-0 overflow-y-auto max-h-[calc(5*5rem+4*0.75rem)]" style={{scrollbarWidth:'none'}}>
                   {images.map((img, i) => (
                     <button
                       key={i}
