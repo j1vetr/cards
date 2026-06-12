@@ -30,6 +30,7 @@ import {
   bankTransferOrderSchema, couponValidateSchema, maintenanceSchema,
   adminAccountUpdateSchema, productReviewSchema, dbClearTableSchema,
   menuRegenerateSchema, wholesalePdfSchema, cartAddSchema,
+  reviewRejectSchema, iyzicoCallbackSchema,
 } from "./validation";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
 import { 
@@ -2061,11 +2062,10 @@ export async function registerRoutes(
 
   app.post("/api/admin/reviews/:id/reject", requireAdmin, async (req, res) => {
     try {
+      const parsedReject = reviewRejectSchema.safeParse(req.body);
+      if (!parsedReject.success) return res.status(400).json({ error: firstZodMessage(parsedReject.error) });
       const adminId = getAdminId(req);
-      const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim().slice(0, 500) : '';
-      if (!reason) {
-        return res.status(400).json({ error: "Lütfen reddetme nedenini belirtin." });
-      }
+      const reason = parsedReject.data.reason.trim();
       const review = await storage.getReviewById(req.params.id);
       if (!review) return res.status(404).json({ error: "Yorum bulunamadı" });
 
@@ -2583,7 +2583,8 @@ export async function registerRoutes(
     let terminalized = false;
 
     try {
-      const token = (req.body?.token as string) || '';
+      const parsedCallback = iyzicoCallbackSchema.safeParse(req.body ?? {});
+      const token = (parsedCallback.success ? parsedCallback.data.token : undefined) ?? '';
       console.log('[iyzico Callback] Received token:', token ? token.substring(0, 12) + '…' : '(none)');
 
       if (!token) {
@@ -4972,7 +4973,7 @@ window.addEventListener('load', function() {
         cancelledAt: order.cancelledAt || new Date(),
       });
 
-      const reason = (req.body?.reason as string) || 'Havale ödemesi alınamadı';
+      const reason = (parsed.data.reason as string | undefined) || 'Havale ödemesi alınamadı';
       await storage.createOrderNote({
         orderId: req.params.id,
         authorType: 'admin',

@@ -437,6 +437,18 @@ export const menuRegenerateSchema = z.object({
   wipeAll: z.boolean().optional(),
 }).passthrough();
 
+// ─── Admin: review reject ─────────────────────────────────────────────────────
+
+export const reviewRejectSchema = z.object({
+  reason: z.string().min(1, "Reddetme nedeni gerekli").max(500),
+});
+
+// ─── iyzico callback ──────────────────────────────────────────────────────────
+// External webhook — token may be absent (handled as redirect, not 400)
+export const iyzicoCallbackSchema = z.object({
+  token: z.string().optional(),
+}).passthrough();
+
 // ─── Cart add ────────────────────────────────────────────────────────────────
 
 export const cartAddSchema = z.object({
