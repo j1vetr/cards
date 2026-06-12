@@ -13,7 +13,7 @@ import {
   MotionConfig,
   AnimatePresence,
 } from 'framer-motion';
-import { ArrowUpRight, ArrowRight } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, Play, Star, User } from 'lucide-react';
 import { useProducts, type Product } from '@/hooks/useProducts';
 import { useQuery } from '@tanstack/react-query';
 
@@ -54,10 +54,10 @@ function useHeaderOffset() {
 // SCENE 01 — HERO (typographic editorial)
 // ─────────────────────────────────────────────
 
-const heroCategories = [
-  { label: 'Erkek Jean', href: '/magaza?kategori=erkek-jean' },
-  { label: 'Çocuk Jean', href: '/magaza?kategori=cocuk-jean' },
-  { label: 'Toptan Satış', href: '/hakkimizda' },
+const heroPills = [
+  { label: 'Erkek Jean', href: '/magaza?kategori=erkek-jean', Icon: User },
+  { label: 'Çocuk Jean', href: '/magaza?kategori=cocuk-jean', Icon: User },
+  { label: 'Yeni Sezon', href: '/magaza', Icon: Star },
 ];
 
 function HeroScene() {
@@ -83,17 +83,15 @@ function HeroVideo() {
 }
 
 function HeroSceneStatic() {
-  const offset = useHeaderOffset();
   return (
     <section
       className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
-      style={{ height: `calc(100dvh - ${offset}px)` }}
+      style={{ height: '100dvh' }}
       aria-label="Ecarte Jeans denim koleksiyonu"
       data-testid="scene-hero"
     >
       <HeroVideo />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/10" />
       <HeroContent />
     </section>
   );
@@ -101,7 +99,6 @@ function HeroSceneStatic() {
 
 function HeroSceneInner() {
   const heroRef = useRef<HTMLDivElement>(null);
-  const offset = useHeaderOffset();
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '12%']);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
@@ -110,15 +107,13 @@ function HeroSceneInner() {
     <section
       ref={heroRef}
       className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
-      style={{ height: `calc(100dvh - ${offset}px)` }}
+      style={{ height: '100dvh' }}
       data-testid="scene-hero"
     >
-      {/* Parallax video wrapper */}
       <motion.div style={{ y }} className="absolute inset-0 w-full h-full">
         <HeroVideo />
       </motion.div>
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/10" />
       <motion.div style={{ opacity }} className="relative h-full w-full">
         <HeroContent animated />
       </motion.div>
@@ -128,85 +123,107 @@ function HeroSceneInner() {
 
 function HeroContent({ animated = false }: { animated?: boolean }) {
   const W: any = animated ? motion.div : 'div';
-  const props = animated
-    ? { initial: { opacity: 0, y: 32 }, animate: { opacity: 1, y: 0 }, transition: { duration: 1.1, ease: [0.16, 1, 0.3, 1] } }
+  const animProps = animated
+    ? { initial: { opacity: 0, y: 28 }, animate: { opacity: 1, y: 0 }, transition: { duration: 1.1, ease: [0.16, 1, 0.3, 1] } }
     : {};
 
   return (
-    <div className="relative flex flex-col items-center justify-center text-center px-6 py-24 lg:py-32" style={{ minHeight: 'inherit' }}>
-      {/* Decorative background text */}
-      <span
-        aria-hidden
-        className="pointer-events-none select-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display uppercase leading-none text-white/[0.03] overflow-hidden"
-        style={{ fontSize: 'clamp(120px, 20vw, 300px)' }}
-      >
-        FASHION
-      </span>
-
-      <W {...props} className="relative z-10 flex flex-col items-center">
+    <div className="relative h-full flex flex-col justify-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
+      <W {...animProps} className="relative z-10 max-w-xl">
         {/* Eyebrow */}
-        <span className="block text-[10px] font-mono tracking-[0.36em] uppercase text-white/50 mb-8 lg:mb-10">
-          Ecarte Jeans · 2026 · Yeni Sezon
+        <span className="block text-[10px] font-mono tracking-[0.36em] uppercase text-white/55 mb-6">
+          Yeni Sezon&nbsp;·&nbsp;Premium Denim
         </span>
 
-        {/* Main headline */}
+        {/* Headline */}
         <h1
-          className="font-display uppercase text-white leading-[0.92] text-center"
-          style={{ fontSize: 'clamp(52px, 9.5vw, 148px)', letterSpacing: '-0.025em' }}
           data-testid="text-hero-title"
+          className="font-display text-white leading-[0.88] mb-6"
+          style={{ fontSize: 'clamp(42px, 5.5vw, 88px)', letterSpacing: '-0.02em' }}
         >
-          <span className="block">Tarzını</span>
-          <span className="block text-[hsl(var(--polen-orange))]">Keşfet</span>
+          <span className="block">Tarzını Yeniden</span>
+          <span className="block text-[hsl(var(--polen-orange))]">Tanımla.</span>
         </h1>
 
         {/* Sub copy */}
-        <p className="mt-6 lg:mt-8 max-w-[480px] text-[13px] lg:text-[15px] leading-relaxed text-white/60 font-light">
-          Erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı.
+        <p className="text-[13px] lg:text-[14px] leading-relaxed text-white/55 font-light mb-8 max-w-[420px]">
+          Premium kumaş kalitesi, modern fit kalıplar ve zamansız tasarımlar.
+          Perakende ve toptan satış avantajlarıyla şimdi keşfedin.
         </p>
 
         {/* Category pills */}
-        <div className="mt-8 lg:mt-10 flex flex-wrap items-center justify-center gap-2">
-          {heroCategories.map((cat) => (
+        <div className="flex flex-wrap gap-2 mb-8">
+          {heroPills.map(({ label, href, Icon }) => (
             <Link
-              key={cat.label}
-              href={cat.href}
-              className="px-4 py-2 text-[11px] tracking-[0.18em] uppercase font-medium text-white/70 border border-white/20 hover:border-white/60 hover:text-white transition-all duration-200"
-              data-testid={`link-hero-pill-${cat.label.toLowerCase()}`}
+              key={label}
+              href={href}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-white/25 text-white/75 text-[11px] tracking-[0.16em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
+              data-testid={`link-hero-pill-${label.toLowerCase()}`}
             >
-              {cat.label}
+              <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+              {label}
             </Link>
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="mt-10 lg:mt-12 flex flex-col sm:flex-row items-center gap-4">
+        {/* CTAs */}
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/magaza"
             data-testid="link-hero-cta"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-[hsl(var(--polen-orange))] text-white text-[12px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
+            className="inline-flex items-center gap-3 px-7 py-3.5 bg-[hsl(var(--polen-orange))] text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
           >
             Koleksiyonu Keşfet
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/hakkimizda"
+            data-testid="link-hero-toptan"
+            className="inline-flex items-center gap-2 px-7 py-3.5 border border-white/25 text-white/75 text-[11px] tracking-[0.22em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
+          >
+            Toptan Satış
+          </Link>
+          <Link
+            href="/hakkimizda"
             data-testid="link-hero-about"
-            className="inline-flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-white/55 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-white/50 hover:text-white transition-colors"
           >
             Hakkımızda <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-
-        {/* Scroll indicator */}
-        <div className="mt-16 lg:mt-20 flex flex-col items-center gap-2 text-white/30" aria-hidden>
-          <span className="text-[9px] font-mono tracking-[0.28em] uppercase">Keşfet</span>
-          <motion.span
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            className="block w-px h-8 bg-white/20 rounded-full"
-          />
-        </div>
       </W>
+
+      {/* Bottom info bar */}
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-8 lg:px-16 py-4 border-t border-white/10">
+        {/* Play */}
+        <div className="flex items-center gap-3 text-white/50">
+          <div className="w-9 h-9 rounded-full border border-white/25 flex items-center justify-center">
+            <Play className="w-3.5 h-3.5 fill-white/50 ml-0.5" />
+          </div>
+          <div className="hidden sm:block">
+            <div className="text-[9px] font-mono tracking-[0.22em] uppercase text-white/60">2026 Collection</div>
+            <div className="text-[9px] font-mono tracking-[0.22em] uppercase text-white/35">Loop Video</div>
+          </div>
+        </div>
+
+        {/* Slide dots */}
+        <div className="flex items-center gap-1.5" aria-hidden>
+          {[0, 1, 2, 3, 4, 5].map(i => (
+            <span
+              key={i}
+              className={`block rounded-full transition-all ${i === 2 ? 'w-6 h-[3px] bg-[hsl(var(--polen-orange))]' : 'w-3 h-[3px] bg-white/25'}`}
+            />
+          ))}
+        </div>
+
+        {/* Motto + logo */}
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:block text-[9px] font-mono tracking-[0.22em] uppercase text-white/40">
+            Kalite&nbsp;·&nbsp;Konfor&nbsp;·&nbsp;Tarz
+          </span>
+          <img src="/ecarte-logo-white.png" alt="" aria-hidden className="h-6 w-auto opacity-40" style={{ mixBlendMode: 'screen' }} />
+        </div>
+      </div>
     </div>
   );
 }

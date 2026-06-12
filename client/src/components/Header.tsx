@@ -58,6 +58,12 @@ export function Header() {
 
   useMotionValueEvent(scrollY, 'change', (v) => setScrolled(v > 10));
 
+  // Sync initial scroll position (needed after HMR / scroll-restore)
+  useEffect(() => { setScrolled(scrollY.get() > 10); }, []);
+
+  const isHomepage = location === '/';
+  const isTransparent = isHomepage && !scrolled;
+
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
@@ -101,7 +107,11 @@ export function Header() {
 
   const navLinkCls = (active: boolean) =>
     `inline-flex items-center gap-1 text-[11.5px] font-semibold tracking-[0.14em] uppercase transition-colors whitespace-nowrap ${
-      active ? 'text-[hsl(var(--polen-orange))]' : 'text-black/60 hover:text-black'
+      active
+        ? 'text-[hsl(var(--polen-orange))]'
+        : isTransparent
+          ? 'text-white/80 hover:text-white'
+          : 'text-black/60 hover:text-black'
     }`;
 
   return (
@@ -113,7 +123,7 @@ export function Header() {
             initial={{ height: 36, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 1, 1] }}
-            className="relative overflow-hidden bg-[hsl(var(--polen-stone))] text-white h-9"
+            className={`relative overflow-hidden bg-[hsl(var(--polen-stone))] text-white h-9${isHomepage ? ' fixed top-0 left-0 right-0 z-50' : ''}`}
             data-testid="bar-announcement"
           >
             <style>{`
@@ -160,7 +170,10 @@ export function Header() {
 
       {/* ── Main header ── */}
       <header
-        className={`sticky top-0 left-0 right-0 z-40 bg-white border-b border-black/[0.08] transition-all duration-300 ${scrolled ? 'shadow-[0_4px_24px_-6px_rgba(0,0,0,0.10)]' : ''}`}
+        className={`left-0 right-0 z-40 transition-all duration-300
+          ${isHomepage ? `fixed ${!announceClosed ? 'top-9' : 'top-0'}` : 'sticky top-0'}
+          ${isTransparent ? 'bg-transparent border-b border-white/10' : `bg-white border-b border-black/[0.08] ${scrolled ? 'shadow-[0_4px_24px_-6px_rgba(0,0,0,0.10)]' : ''}`}
+        `}
         data-testid="header"
       >
         <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
@@ -173,32 +186,30 @@ export function Header() {
               className="flex flex-col gap-[5px] p-2 -ml-2"
               aria-label="Menü"
             >
-              <span className="block h-[1.5px] w-[22px] bg-black rounded-full" />
-              <span className="block h-[1.5px] w-[15px] bg-black rounded-full" />
-              <span className="block h-[1.5px] w-[22px] bg-black rounded-full" />
+              <span className={`block h-[1.5px] w-[22px] rounded-full ${isTransparent ? 'bg-white' : 'bg-black'}`} />
+              <span className={`block h-[1.5px] w-[15px] rounded-full ${isTransparent ? 'bg-white' : 'bg-black'}`} />
+              <span className={`block h-[1.5px] w-[22px] rounded-full ${isTransparent ? 'bg-white' : 'bg-black'}`} />
             </button>
 
             <Link href="/" data-testid="link-logo-mobile" className="absolute left-1/2 -translate-x-1/2">
-              <img
-                src="/ecarte-logo-dark.png"
-                alt="Ecarte Jeans"
-                className="h-9 w-auto object-contain"
-                style={{ mixBlendMode: 'multiply' }}
-                data-testid="img-logo-mobile"
-              />
+              {isTransparent ? (
+                <img src="/ecarte-logo-white.png" alt="Ecarte Jeans" className="h-9 w-auto object-contain" style={{ mixBlendMode: 'screen' }} data-testid="img-logo-mobile" />
+              ) : (
+                <img src="/ecarte-logo-dark.png" alt="Ecarte Jeans" className="h-9 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} data-testid="img-logo-mobile" />
+              )}
             </Link>
 
             <div className="flex items-center gap-0.5">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2 text-black/55 hover:text-black transition-colors"
+                className={`p-2 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/55 hover:text-black'}`}
                 data-testid="button-search-mobile"
                 aria-label="Ara"
               >
                 <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
               </button>
               <Link href="/sepet" data-testid="link-cart-mobile">
-                <button className="p-2 text-black/55 hover:text-black transition-colors relative" aria-label="Sepet">
+                <button className={`p-2 transition-colors relative ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/55 hover:text-black'}`} aria-label="Sepet">
                   <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
                   <AnimatePresence>
                     {totalItems > 0 && (
@@ -221,13 +232,11 @@ export function Header() {
 
             {/* Logo */}
             <Link href="/" data-testid="link-logo" className="shrink-0">
-              <img
-                src="/ecarte-logo-dark.png"
-                alt="Ecarte Jeans"
-                className="h-[68px] w-auto object-contain"
-                style={{ mixBlendMode: 'multiply' }}
-                data-testid="img-logo"
-              />
+              {isTransparent ? (
+                <img src="/ecarte-logo-white.png" alt="Ecarte Jeans" className="h-[68px] w-auto object-contain" style={{ mixBlendMode: 'screen' }} data-testid="img-logo" />
+              ) : (
+                <img src="/ecarte-logo-dark.png" alt="Ecarte Jeans" className="h-[68px] w-auto object-contain" style={{ mixBlendMode: 'multiply' }} data-testid="img-logo" />
+              )}
             </Link>
 
             {/* Nav — grows to fill space, items centered */}
@@ -325,7 +334,7 @@ export function Header() {
               {/* Search */}
               <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2.5 text-black/50 hover:text-black transition-colors"
+                className={`p-2.5 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/50 hover:text-black'}`}
                 data-testid="button-search"
                 aria-label="Ara"
               >
@@ -336,7 +345,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="p-2.5 text-black/50 hover:text-black transition-colors"
+                    className={`p-2.5 transition-colors ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/50 hover:text-black'}`}
                     data-testid="button-account"
                     aria-label="Hesabım"
                   >
@@ -396,7 +405,7 @@ export function Header() {
               {/* Cart */}
               <Link href="/sepet" data-testid="link-cart">
                 <button
-                  className="p-2.5 text-black/50 hover:text-black transition-colors relative"
+                  className={`p-2.5 transition-colors relative ${isTransparent ? 'text-white/70 hover:text-white' : 'text-black/50 hover:text-black'}`}
                   aria-label="Sepet"
                   data-testid="button-cart"
                 >
