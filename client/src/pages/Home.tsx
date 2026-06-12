@@ -138,15 +138,14 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
         <h1
           data-testid="text-hero-title"
           className="font-display text-white mb-7"
-          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em', lineHeight: 1.08 }}
+          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em', lineHeight: 1.12 }}
         >
-          <span className="block">Jeanin İçinde</span>
+          <span className="block mb-2">Jeanin İçinde</span>
           <span
             className="block"
             style={{
-              color: 'white',
-              WebkitTextStroke: '4px hsl(220 65% 36%)',
-              paintOrder: 'stroke fill',
+              color: 'transparent',
+              WebkitTextStroke: '2.5px white',
             }}
           >
             Özgürlük Var.
