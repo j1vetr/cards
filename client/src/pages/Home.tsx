@@ -133,30 +133,35 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
 
   return (
     <div className="relative h-full flex flex-col justify-center items-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
-      <W {...animProps} className="relative z-10 max-w-2xl w-full text-center">
+      <W {...animProps} className="relative z-10 max-w-3xl w-full text-center">
+        {/* Eyebrow */}
+        <p className="text-[10px] tracking-[0.35em] uppercase text-white/40 font-medium mb-5 font-mono">
+          Premium Denim — Türkiye'nin Seçkini
+        </p>
+
         {/* Headline */}
         <h1
           data-testid="text-hero-title"
-          className="font-display text-white leading-[0.88] mb-6"
-          style={{ fontSize: 'clamp(42px, 5.5vw, 88px)', letterSpacing: '-0.02em' }}
+          className="font-display text-white leading-[0.9] mb-7"
+          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em' }}
         >
-          <span className="block">Tarzını Yeniden</span>
-          <span className="block text-[hsl(var(--polen-orange))]">Tanımla.</span>
+          <span className="block">Jeanin İçinde</span>
+          <span className="block text-[hsl(var(--polen-orange))]">Özgürlük Var.</span>
         </h1>
 
         {/* Sub copy */}
-        <p className="text-[13px] lg:text-[14px] leading-relaxed text-white/55 font-light mb-8 max-w-[420px] mx-auto">
-          Premium kumaş kalitesi, modern fit kalıplar ve zamansız tasarımlar.
-          Perakende ve toptan satış avantajlarıyla şimdi keşfedin.
+        <p className="text-[13px] lg:text-[15px] leading-relaxed text-white/50 font-light mb-10 max-w-[480px] mx-auto">
+          Her dikişte mükemmellik, her kesimde özgüven. Slim fit'ten wide-leg'e,
+          kadın ve erkek koleksiyonlarıyla deniminizi bulun.
         </p>
 
         {/* Category pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+        <div className="flex flex-wrap justify-center gap-2 mb-10">
           {heroPills.map(({ label, href, Icon }) => (
             <Link
               key={label}
               href={href}
-              className="inline-flex items-center gap-2 px-4 py-2.5 border border-white/25 text-white/75 text-[11px] tracking-[0.16em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-white/20 text-white/65 text-[11px] tracking-[0.16em] uppercase font-medium hover:border-white/60 hover:text-white transition-all duration-200"
               data-testid={`link-hero-pill-${label.toLowerCase()}`}
             >
               <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -170,7 +175,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
           <Link
             href="/magaza"
             data-testid="link-hero-cta"
-            className="inline-flex items-center gap-3 px-7 py-3.5 bg-[hsl(var(--polen-orange))] text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-[hsl(var(--polen-orange))] text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
           >
             Koleksiyonu Keşfet
             <ArrowRight className="w-4 h-4" />
@@ -178,7 +183,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
           <Link
             href="/hakkimizda"
             data-testid="link-hero-toptan"
-            className="inline-flex items-center gap-2 px-7 py-3.5 border border-white/25 text-white/75 text-[11px] tracking-[0.22em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
+            className="inline-flex items-center gap-2 px-8 py-4 border border-white/25 text-white/70 text-[11px] tracking-[0.22em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
           >
             Toptan Satış
           </Link>
