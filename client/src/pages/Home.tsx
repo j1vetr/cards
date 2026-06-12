@@ -70,15 +70,16 @@ function HeroScene() {
 function HeroVideo() {
   return (
     <video
-      src="/hero-video.mp4"
       autoPlay
       loop
       muted
       playsInline
-      preload="auto"
+      preload="metadata"
       className="absolute inset-0 w-full h-full object-cover"
       aria-hidden
-    />
+    >
+      <source src="/hero-video.mp4" type="video/mp4" />
+    </video>
   );
 }
 
@@ -394,17 +395,17 @@ function ProductScene({ products }: { products: Product[] }) {
 
 const LOOKBOOK = [
   {
-    src: '/ecarte-denim.png',
+    src: '/ecarte-denim.webp',
     label: 'Modern Kesim',
     sub: 'Ergonomik kalıp, özgür hareket',
   },
   {
-    src: '/ecarte-light-denim.png',
+    src: '/ecarte-light-denim.webp',
     label: 'Kaliteli Kumaş',
     sub: 'Premium denim, uzun ömürlü kullanım',
   },
   {
-    src: '/ecarte-dark-denim.png',
+    src: '/ecarte-dark-denim.webp',
     label: 'Şık Duruş',
     sub: 'Her kombinle öne çıkan tasarım',
   },
