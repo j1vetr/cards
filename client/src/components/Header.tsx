@@ -194,9 +194,9 @@ export function Header() {
 
             <Link href="/" data-testid="link-logo-mobile" className="absolute left-1/2 -translate-x-1/2">
               {isTransparent ? (
-                <img src="/ecarte-logo-white.png" alt="Ecarte Jeans" className="h-9 w-auto object-contain" style={{ mixBlendMode: 'screen' }} data-testid="img-logo-mobile" />
+                <img src="/ecarte-logo-white.png" alt="Ecarte Jeans" className="h-14 w-auto object-contain" style={{ mixBlendMode: 'screen' }} data-testid="img-logo-mobile" />
               ) : (
-                <img src="/ecarte-logo-dark.png" alt="Ecarte Jeans" className="h-9 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} data-testid="img-logo-mobile" />
+                <img src="/ecarte-logo-dark.png" alt="Ecarte Jeans" className="h-14 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} data-testid="img-logo-mobile" />
               )}
             </Link>
 
@@ -458,7 +458,7 @@ export function Header() {
                   <img
                     src="/ecarte-logo-white.png"
                     alt="Ecarte Jeans"
-                    className="h-9 w-auto object-contain"
+                    className="h-14 w-auto object-contain"
                     style={{ mixBlendMode: 'screen' }}
                     data-testid="img-logo-mobile-drawer"
                   />

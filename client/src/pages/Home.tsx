@@ -142,11 +142,10 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
         >
           <span className="block" style={{ lineHeight: 1.25 }}>Jeanin İçinde</span>
           <span
-            className="block"
+            className="block hero-outline-text"
             style={{
               lineHeight: 1.25,
               color: 'transparent',
-              WebkitTextStroke: '2.5px white',
             }}
           >
             Özgürlük Var
@@ -175,11 +174,11 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
         </div>
 
         {/* CTAs */}
-        <div className="flex flex-wrap justify-center items-center gap-3">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center items-center gap-3 w-full sm:w-auto">
           <Link
             href="/magaza"
             data-testid="link-hero-cta"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-[hsl(var(--polen-orange))] text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
+            className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[hsl(var(--polen-orange))] text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
           >
             Koleksiyonu Keşfet
             <ArrowRight className="w-4 h-4" />
@@ -187,7 +186,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
           <Link
             href="/hakkimizda"
             data-testid="link-hero-toptan"
-            className="inline-flex items-center gap-2 px-8 py-4 border border-white/25 text-white/70 text-[11px] tracking-[0.22em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/25 text-white/70 text-[11px] tracking-[0.22em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
           >
             Toptan Satış
           </Link>
