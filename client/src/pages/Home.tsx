@@ -368,7 +368,67 @@ function ProductScene({ products }: { products: Product[] }) {
 // SCENE 04 — MARQUEE STRIP
 // ─────────────────────────────────────────────
 
-function MarqueeScene() {
+const LOOKBOOK = [
+  {
+    src: '/ecarte-denim.png',
+    label: 'Modern Kesim',
+    sub: 'Ergonomik kalıp, özgür hareket',
+  },
+  {
+    src: '/ecarte-light-denim.png',
+    label: 'Kaliteli Kumaş',
+    sub: 'Premium denim, uzun ömürlü kullanım',
+  },
+  {
+    src: '/ecarte-dark-denim.png',
+    label: 'Şık Duruş',
+    sub: 'Her kombinle öne çıkan tasarım',
+  },
+];
+
+function LookbookScene() {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+
+  return (
+    <section
+      ref={ref}
+      className="py-16 lg:py-24 bg-white"
+      data-testid="scene-lookbook"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
+          {LOOKBOOK.map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 32 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: i * 0.14, ease: [0.22, 1, 0.36, 1] }}
+              className="group flex flex-col"
+            >
+              <div className="overflow-hidden rounded-sm bg-[#f4f4f2]">
+                <img
+                  src={item.src}
+                  alt={item.label}
+                  className="w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                  loading="lazy"
+                />
+              </div>
+              <div className="mt-4 px-1">
+                <p className="text-[11px] tracking-[0.18em] uppercase text-[hsl(var(--polen-orange))] font-display mb-1">
+                  {item.label}
+                </p>
+                <p className="text-[14px] text-neutral-500 leading-snug">{item.sub}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MarqueeScene_UNUSED() {
   const tags = [
     'YENİ SEZON', '✦', 'KADIN', '·', 'ERKEK', '·', 'ÇOCUK',
     '✦', 'HIZLI KARGO', '·', 'KOLAY İADE', '✦', 'GÜVENLİ ÖDEME',
@@ -555,9 +615,9 @@ export default function Home() {
       <MotionConfig reducedMotion="user">
         <main>
           <HeroScene />
+          <LookbookScene />
           <CategoryScene categories={categories} products={products} />
           <ProductScene products={products} />
-          <MarqueeScene />
           <CtaScene />
         </main>
       </MotionConfig>
