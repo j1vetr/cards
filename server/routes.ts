@@ -562,6 +562,9 @@ export async function registerRoutes(
       .replace(/'/g, '&#039;');
   };
 
+  const stripHtml = (str: string): string =>
+    str.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
   const normalizeImageUrl = (baseUrl: string, imageUrl: string): string => {
     if (!imageUrl) return `${baseUrl}/logo.png`;
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
@@ -589,15 +592,15 @@ export async function registerRoutes(
         : `${baseUrl}/logo.png`;
       const price = parseFloat(product.basePrice || '0');
       const description = product.description 
-        ? escapeHtml(product.description.substring(0, 200))
-        : `${escapeHtml(product.name)} - Marka güncel giyim koleksiyonu`;
+        ? escapeHtml(stripHtml(product.description).substring(0, 200))
+        : `${escapeHtml(product.name)} - Ecarte Jeans premium denim koleksiyonu`;
 
       const html = `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(product.name)} | Marka</title>
+  <title>${escapeHtml(product.name)} | Ecarte Jeans</title>
   <meta name="description" content="${description}">
   
   <!-- Open Graph -->
@@ -608,7 +611,7 @@ export async function registerRoutes(
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="${pageUrl}">
-  <meta property="og:site_name" content="Marka">
+  <meta property="og:site_name" content="Ecarte Jeans">
   <meta property="og:locale" content="tr_TR">
   <meta property="product:price:amount" content="${price}">
   <meta property="product:price:currency" content="TRY">
@@ -657,30 +660,30 @@ export async function registerRoutes(
       const mainImage = category.image 
         ? normalizeImageUrl(baseUrl, category.image)
         : `${baseUrl}/logo.png`;
-      const description = `${escapeHtml(category.name)} koleksiyonu - Marka güncel giyim`;
+      const description = `${escapeHtml(category.name)} koleksiyonu - Ecarte Jeans premium denim`;
 
       const html = `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(category.name)} | Marka</title>
+  <title>${escapeHtml(category.name)} | Ecarte Jeans</title>
   <meta name="description" content="${description}">
   
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="${escapeHtml(category.name)} | Marka">
+  <meta property="og:title" content="${escapeHtml(category.name)} | Ecarte Jeans">
   <meta property="og:description" content="${description}">
   <meta property="og:image" content="${mainImage}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="${pageUrl}">
-  <meta property="og:site_name" content="Marka">
+  <meta property="og:site_name" content="Ecarte Jeans">
   <meta property="og:locale" content="tr_TR">
   
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${escapeHtml(category.name)} | Marka">
+  <meta name="twitter:title" content="${escapeHtml(category.name)} | Ecarte Jeans">
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="${mainImage}">
   

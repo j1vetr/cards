@@ -227,13 +227,11 @@ export function turkishSlugify(input: string): string {
     .slice(0, 80) || "kategori";
 }
 
-/** Trendyol contentId/productCode'dan deterministik ürün slug. */
+/** Ürün adından deterministik ürün slug — Türkçe normalize + Trendyol ID soneki. */
 function deterministicProductSlug(p: NormalizedProduct): string {
-  const baseFromCode = p.externalProductCode
-    ? turkishSlugify(p.externalProductCode)
-    : turkishSlugify(p.name);
+  const base = turkishSlugify(p.name);
   const suffix = p.externalId.toString().slice(-6);
-  return `${baseFromCode}-${suffix}`.replace(/-+/g, "-").slice(0, 100);
+  return `${base}-${suffix}`.replace(/-+/g, "-").slice(0, 100);
 }
 
 function contentHash(p: NormalizedProduct): string {
@@ -699,7 +697,9 @@ async function upsertProduct(
   }
 
   if (siteProduct) {
-    await storage.updateProduct(siteProduct.id, productPayload);
+    // Mevcut ürünlerin slug'ını koru — URL değişmesi SEO ve paylaşım linklerini bozar.
+    const { slug: _preservedSlug, ...updatePayload } = productPayload;
+    await storage.updateProduct(siteProduct.id, updatePayload);
     if (np.isActive && wasInactive) stats.productsReactivated += 1;
     stats.productsUpdated += 1;
   } else {
