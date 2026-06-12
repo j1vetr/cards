@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
-import { Link, useParams } from 'wouter';
-import { ChevronRight, X, SlidersHorizontal } from 'lucide-react';
+import { Link, useParams, useLocation, useSearch } from 'wouter';
+import { ChevronRight, ChevronLeft, X, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useProducts, useCategories, type ProductFilters } from '@/hooks/useProducts';
+import { useProducts, useCategories, useFacets, type ProductFilters } from '@/hooks/useProducts';
 import { Slider } from '@/components/ui/slider';
 import {
   Select,
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+const LIMIT = 24;
 
 const sortOptions = [
   { value: 'newest', label: 'En Yeni' },
@@ -26,44 +28,119 @@ const sortOptions = [
 export default function Category() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug || '';
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
 
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const category = categories.find(c => c.slug === slug);
 
-  const [sortBy, setSortBy] = useState<ProductFilters['sort']>('newest');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
-  const [showOnlyDiscounted, setShowOnlyDiscounted] = useState(false);
+  const urlParams = new URLSearchParams(searchStr);
+  const sort = (urlParams.get('sort') as ProductFilters['sort']) || 'newest';
+  const page = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
+  const urlMinPrice = parseInt(urlParams.get('minPrice') || '0', 10);
+  const urlMaxPrice = parseInt(urlParams.get('maxPrice') || '10000', 10);
+  const selectedSizes = urlParams.get('sizes')?.split(',').filter(Boolean) || [];
+  const selectedColors = urlParams.get('colors')?.split(',').filter(Boolean) || [];
+  const showOnlyNew = urlParams.get('new') === '1';
+  const showOnlyDiscounted = urlParams.get('discounted') === '1';
+
+  const [localPriceRange, setLocalPriceRange] = useState<[number, number]>([urlMinPrice, urlMaxPrice]);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  const basePath = `/kategori/${slug}`;
+
+  // Sync slider with URL changes (back/forward)
+  useEffect(() => {
+    setLocalPriceRange([urlMinPrice, urlMaxPrice]);
+  }, [urlMinPrice, urlMaxPrice]);
+
+  // Debounce price slider → URL
+  useEffect(() => {
+    if (localPriceRange[0] === urlMinPrice && localPriceRange[1] === urlMaxPrice) return;
+    const t = setTimeout(() => {
+      const p = new URLSearchParams(searchStr);
+      if (localPriceRange[0] > 0) p.set('minPrice', String(localPriceRange[0]));
+      else p.delete('minPrice');
+      if (localPriceRange[1] < 10000) p.set('maxPrice', String(localPriceRange[1]));
+      else p.delete('maxPrice');
+      p.delete('page');
+      const qs = p.toString();
+      navigate(basePath + (qs ? '?' + qs : ''), { replace: true });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [localPriceRange]);
+
+  const setFilter = useCallback((updates: Record<string, string | null>, resetPage = true) => {
+    const p = new URLSearchParams(searchStr);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === null || value === '') p.delete(key);
+      else p.set(key, value);
+    }
+    if (resetPage) p.delete('page');
+    const qs = p.toString();
+    navigate(basePath + (qs ? '?' + qs : ''), { replace: true });
+  }, [searchStr, navigate, basePath]);
+
+  const toggleSize = (size: string) => {
+    const next = selectedSizes.includes(size)
+      ? selectedSizes.filter(s => s !== size)
+      : [...selectedSizes, size];
+    setFilter({ sizes: next.length ? next.join(',') : null });
+  };
+
+  const toggleColor = (colorName: string) => {
+    const next = selectedColors.includes(colorName)
+      ? selectedColors.filter(c => c !== colorName)
+      : [...selectedColors, colorName];
+    setFilter({ colors: next.length ? next.join(',') : null });
+  };
+
+  const clearFilters = () => {
+    setLocalPriceRange([0, 10000]);
+    navigate(basePath, { replace: true });
+  };
 
   const filters: ProductFilters = {
     categoryId: category?.id,
-    sort: sortBy,
-    minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-    maxPrice: priceRange[1] < 10000 ? priceRange[1] : undefined,
+    sort,
+    minPrice: urlMinPrice > 0 ? urlMinPrice : undefined,
+    maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
+    sizes: selectedSizes.length ? selectedSizes : undefined,
+    colors: selectedColors.length ? selectedColors : undefined,
+    isNew: showOnlyNew || undefined,
+    page,
+    limit: LIMIT,
   };
 
-  const { data: products = [], isLoading: productsLoading } = useProducts(filters);
-  const isLoading = categoriesLoading || (category && productsLoading);
+  const { data: result, isLoading: productsLoading } = useProducts(filters);
+  const products = result?.products ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 1;
 
-  const filteredProducts = useMemo(() => {
-    let result = products;
-    if (showOnlyNew) result = result.filter((p) => (p as any).isNew);
-    if (showOnlyDiscounted) result = result.filter((p) => (p as any).discountBadge);
-    return result;
-  }, [products, showOnlyNew, showOnlyDiscounted]);
+  const { data: facets } = useFacets({
+    categoryId: category?.id,
+    minPrice: urlMinPrice > 0 ? urlMinPrice : undefined,
+    maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
+  });
 
-  const clearFilters = () => {
-    setShowOnlyNew(false);
-    setShowOnlyDiscounted(false);
-    setSortBy('newest');
-    setPriceRange([0, 10000]);
-  };
+  // Client-side: "indirimli" filter (discount badge)
+  const displayedProducts = showOnlyDiscounted
+    ? products.filter(p => p.discountBadge)
+    : products;
 
-  const priceActive = priceRange[0] > 0 || priceRange[1] < 10000;
-  const hasActiveFilters = showOnlyNew || showOnlyDiscounted || priceActive;
+  const isLoading = categoriesLoading || (!!category && productsLoading);
+
+  const priceActive = urlMinPrice > 0 || urlMaxPrice < 10000;
+  const hasActiveFilters =
+    priceActive || showOnlyNew || showOnlyDiscounted ||
+    selectedSizes.length > 0 || selectedColors.length > 0;
+
   const activeFilterCount =
-    (showOnlyNew ? 1 : 0) + (showOnlyDiscounted ? 1 : 0) + (priceActive ? 1 : 0);
+    (showOnlyNew ? 1 : 0) +
+    (showOnlyDiscounted ? 1 : 0) +
+    (priceActive ? 1 : 0) +
+    selectedSizes.length +
+    selectedColors.length;
 
   if (!category && !isLoading) {
     return (
@@ -87,7 +164,7 @@ export default function Category() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       <SEO
         title={category?.name || 'Kategori'}
-        description={`${category?.name || 'Ürünler'} — Marka güncel giyim koleksiyonu`}
+        description={`${category?.name || 'Ürünler'} — Ecarte Jeans güncel giyim koleksiyonu`}
         url={`/kategori/${slug}`}
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },
@@ -96,7 +173,7 @@ export default function Category() {
       />
       <Header />
 
-      {/* ─── CATEGORY HERO (compact) ─── */}
+      {/* Category hero */}
       <section className="relative overflow-hidden bg-black" style={{ height: '18vh', minHeight: 140, maxHeight: 200 }}>
         <motion.div
           initial={{ scale: 1.06 }}
@@ -114,7 +191,6 @@ export default function Category() {
           )}
         </motion.div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
-
         <div className="absolute inset-0 flex flex-col justify-end">
           <div className="max-w-[1400px] mx-auto px-5 lg:px-8 pb-4 lg:pb-5 w-full">
             <motion.nav
@@ -128,7 +204,6 @@ export default function Category() {
               <ChevronRight className="w-3 h-3" />
               <span className="text-white/75">{category?.name}</span>
             </motion.nav>
-
             <div className="flex items-baseline justify-between gap-4 flex-wrap">
               <motion.h1
                 initial={{ opacity: 0, y: 12 }}
@@ -139,26 +214,23 @@ export default function Category() {
               >
                 {category?.name?.toUpperCase()}
               </motion.h1>
-
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
                 className="text-white/45 text-[10px] tracking-[0.2em] uppercase"
               >
-                {filteredProducts.length} ürün
+                {isLoading ? '—' : total} ürün
               </motion.p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── FILTER BAR ─── */}
+      {/* Filter bar */}
       <div className="border-b border-black/8 sticky top-16 lg:top-0 bg-white z-30">
         <div className="max-w-[1400px] mx-auto px-5 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-4">
-
-            {/* Left: filter trigger + active tags */}
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setFilterOpen(!filterOpen)}
@@ -174,28 +246,43 @@ export default function Category() {
                 )}
               </button>
 
-              {/* Active toggles */}
+              {/* Active filter chips */}
               {showOnlyNew && (
                 <button
-                  onClick={() => setShowOnlyNew(false)}
+                  onClick={() => setFilter({ new: null })}
                   className="flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase border border-black text-black px-2.5 py-1 shrink-0 hover:bg-black hover:text-white transition-colors"
                   data-testid="button-remove-filter-new"
                 >
-                  Yeni
-                  <X className="w-2.5 h-2.5" />
+                  Yeni<X className="w-2.5 h-2.5" />
                 </button>
               )}
               {showOnlyDiscounted && (
                 <button
-                  onClick={() => setShowOnlyDiscounted(false)}
+                  onClick={() => setFilter({ discounted: null })}
                   className="flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase border border-polen-orange text-polen-orange px-2.5 py-1 shrink-0 hover:bg-polen-orange hover:text-white transition-colors"
                   data-testid="button-remove-filter-discount"
                 >
-                  İndirimli
-                  <X className="w-2.5 h-2.5" />
+                  İndirimli<X className="w-2.5 h-2.5" />
                 </button>
               )}
-
+              {selectedSizes.map(s => (
+                <button
+                  key={s}
+                  onClick={() => toggleSize(s)}
+                  className="flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase border border-black text-black px-2.5 py-1 shrink-0 hover:bg-black hover:text-white transition-colors"
+                >
+                  {s}<X className="w-2.5 h-2.5" />
+                </button>
+              ))}
+              {selectedColors.map(c => (
+                <button
+                  key={c}
+                  onClick={() => toggleColor(c)}
+                  className="flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase border border-polen-orange text-polen-orange px-2.5 py-1 shrink-0 hover:bg-polen-orange hover:text-white transition-colors"
+                >
+                  {c}<X className="w-2.5 h-2.5" />
+                </button>
+              ))}
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
@@ -207,9 +294,8 @@ export default function Category() {
               )}
             </div>
 
-            {/* Right: sort */}
             <div className="shrink-0">
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as ProductFilters['sort'])}>
+              <Select value={sort} onValueChange={(v) => setFilter({ sort: v })}>
                 <SelectTrigger
                   className="h-8 border-0 bg-transparent text-[11px] tracking-[0.12em] uppercase font-medium text-black/50 hover:text-black focus:ring-0 focus:ring-offset-0 gap-1 pr-0 shadow-none"
                   data-testid="select-sort"
@@ -233,7 +319,7 @@ export default function Category() {
         </div>
       </div>
 
-      {/* ─── FILTER PANEL (slide down) ─── */}
+      {/* Filter panel (slide down) */}
       <AnimatePresence>
         {filterOpen && (
           <motion.div
@@ -244,14 +330,13 @@ export default function Category() {
             className="overflow-hidden border-b border-black/8 bg-white"
           >
             <div className="max-w-[1400px] mx-auto px-5 lg:px-8 py-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 max-w-xl">
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {/* Price */}
                 <div>
                   <h4 className="text-[10px] font-semibold tracking-[0.25em] uppercase text-black/40 mb-5">Fiyat Aralığı</h4>
                   <Slider
-                    value={priceRange}
-                    onValueChange={(v) => setPriceRange(v as [number, number])}
+                    value={localPriceRange}
+                    onValueChange={(v) => setLocalPriceRange(v as [number, number])}
                     min={0}
                     max={10000}
                     step={100}
@@ -259,17 +344,69 @@ export default function Category() {
                     data-testid="slider-price-range"
                   />
                   <div className="flex justify-between text-xs text-black/50">
-                    <span>{priceRange[0].toLocaleString('tr-TR')} ₺</span>
-                    <span>{priceRange[1].toLocaleString('tr-TR')} ₺</span>
+                    <span>{localPriceRange[0].toLocaleString('tr-TR')} ₺</span>
+                    <span>{localPriceRange[1].toLocaleString('tr-TR')} ₺</span>
                   </div>
                 </div>
+
+                {/* Sizes */}
+                {facets?.sizes && facets.sizes.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-semibold tracking-[0.25em] uppercase text-black/40 mb-5">Beden</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {facets.sizes.map(size => (
+                        <button
+                          key={size}
+                          onClick={() => toggleSize(size)}
+                          className={`px-3 py-1.5 text-[11px] font-medium border transition-all ${
+                            selectedSizes.includes(size)
+                              ? 'bg-black text-white border-black'
+                              : 'border-black/15 text-black/65 hover:border-black hover:text-black'
+                          }`}
+                          data-testid={`filter-size-${size}`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Colors */}
+                {facets?.colors && facets.colors.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-semibold tracking-[0.25em] uppercase text-black/40 mb-5">Renk</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {facets.colors.map(color => (
+                        <button
+                          key={color.name}
+                          onClick={() => toggleColor(color.name)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] border transition-all ${
+                            selectedColors.includes(color.name)
+                              ? 'border-black bg-stone-50 font-medium text-black'
+                              : 'border-black/15 text-black/65 hover:border-black/40'
+                          }`}
+                          data-testid={`filter-color-${color.name}`}
+                        >
+                          {color.hex && (
+                            <span
+                              className="w-3 h-3 rounded-full border border-black/15 shrink-0"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                          )}
+                          <span className="leading-none">{color.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Quick filters */}
                 <div>
                   <h4 className="text-[10px] font-semibold tracking-[0.25em] uppercase text-black/40 mb-5">Hızlı Filtre</h4>
                   <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => setShowOnlyNew((v) => !v)}
+                      onClick={() => setFilter({ new: showOnlyNew ? null : '1' })}
                       className={`px-4 h-11 border text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${
                         showOnlyNew
                           ? 'bg-black text-white border-black'
@@ -280,7 +417,7 @@ export default function Category() {
                       Yeni Gelenler
                     </button>
                     <button
-                      onClick={() => setShowOnlyDiscounted((v) => !v)}
+                      onClick={() => setFilter({ discounted: showOnlyDiscounted ? null : '1' })}
                       className={`px-4 h-11 border text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${
                         showOnlyDiscounted
                           ? 'bg-polen-orange text-white border-polen-orange'
@@ -298,7 +435,7 @@ export default function Category() {
         )}
       </AnimatePresence>
 
-      {/* ─── PRODUCT GRID ─── */}
+      {/* Product grid */}
       <main className="py-10 lg:py-14 px-5 lg:px-8">
         <div className="max-w-[1400px] mx-auto">
           {isLoading ? (
@@ -307,7 +444,7 @@ export default function Category() {
                 <div key={i} className="aspect-[3/4] bg-stone-100 animate-pulse" />
               ))}
             </div>
-          ) : filteredProducts.length === 0 ? (
+          ) : displayedProducts.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -323,31 +460,87 @@ export default function Category() {
                 </button>
               ) : (
                 <Link href="/">
-                  <span className="text-[11px] tracking-[0.15em] uppercase border border-black px-6 py-3 hover:bg-black hover:text-white transition-colors">
+                  <span className="text-[11px] tracking-[0.15em] uppercase border border-black px-6 py-3 hover:bg-black hover:text-white transition-colors cursor-pointer">
                     Alışverişe Devam Et
                   </span>
                 </Link>
               )}
             </motion.div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-              {filteredProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.45, delay: (index % 4) * 0.06 }}
-                >
-                  <ProductCard product={product} />
-                </motion.div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                {displayedProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ duration: 0.45, delay: (index % 4) * 0.06 }}
+                  >
+                    <ProductCard product={product} />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && !showOnlyDiscounted && (
+                <div className="mt-16 flex items-center justify-center gap-2" data-testid="pagination">
+                  <button
+                    onClick={() => setFilter({ page: String(page - 1) }, false)}
+                    disabled={page <= 1}
+                    className="flex items-center gap-1.5 px-4 py-2.5 border border-black/12 text-[11px] tracking-[0.15em] uppercase font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black hover:text-white hover:border-black transition-colors"
+                    data-testid="button-prev-page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Önceki
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                      .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((item, idx) =>
+                        item === 'ellipsis' ? (
+                          <span key={`e-${idx}`} className="px-2 text-black/30 text-sm">…</span>
+                        ) : (
+                          <button
+                            key={item}
+                            onClick={() => setFilter({ page: String(item) }, false)}
+                            className={`w-9 h-9 text-[12px] font-semibold transition-colors border ${
+                              page === item
+                                ? 'bg-black text-white border-black'
+                                : 'border-black/12 text-black hover:border-black'
+                            }`}
+                            data-testid={`button-page-${item}`}
+                          >
+                            {item}
+                          </button>
+                        )
+                      )
+                    }
+                  </div>
+
+                  <button
+                    onClick={() => setFilter({ page: String(page + 1) }, false)}
+                    disabled={page >= totalPages}
+                    className="flex items-center gap-1.5 px-4 py-2.5 border border-black/12 text-[11px] tracking-[0.15em] uppercase font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black hover:text-white hover:border-black transition-colors"
+                    data-testid="button-next-page"
+                  >
+                    Sonraki
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
 
-      {/* ─── OTHER CATEGORIES ─── */}
+      {/* Other categories */}
       {categories.length > 1 && (
         <section className="py-12 px-5 lg:px-8 border-t border-black/8">
           <div className="max-w-[1400px] mx-auto">

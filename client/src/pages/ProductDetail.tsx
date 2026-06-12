@@ -105,7 +105,8 @@ export default function ProductDetail() {
   const reduceMotion = useReducedMotion();
 
   const { data: product, isLoading } = useProduct(params.slug || '');
-  const { data: allProducts = [] } = useProducts({});
+  const { data: allProductsData } = useProducts({});
+  const allProducts = allProductsData?.products ?? [];
   const { data: categories = [] } = useCategories();
 
   const { addToCart } = useCart();

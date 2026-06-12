@@ -618,7 +618,8 @@ function CtaScene() {
 // ─────────────────────────────────────────────
 
 export default function Home() {
-  const { data: products = [] } = useProducts({});
+  const { data: productsData } = useProducts({});
+  const products = productsData?.products ?? [];
   const { data: categories = [] } = useQuery<CategoryData[]>({
     queryKey: ['categories'],
     queryFn: async () => {

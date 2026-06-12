@@ -48,26 +48,73 @@ export interface ProductFilters {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
+  sizes?: string[];
+  colors?: string[];
   sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedProductsResponse {
+  products: Product[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface FacetsResponse {
+  sizes: string[];
+  colors: { name: string; hex: string | null }[];
+}
+
+function buildProductParams(filters?: ProductFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+  if (filters?.isFeatured !== undefined) params.append('isFeatured', String(filters.isFeatured));
+  if (filters?.isNew !== undefined) params.append('isNew', String(filters.isNew));
+  if (filters?.search) params.append('search', filters.search);
+  if (filters?.minPrice !== undefined) params.append('minPrice', String(filters.minPrice));
+  if (filters?.maxPrice !== undefined) params.append('maxPrice', String(filters.maxPrice));
+  if (filters?.sort) params.append('sort', filters.sort);
+  if (filters?.sizes && filters.sizes.length > 0) params.append('sizes', filters.sizes.join(','));
+  if (filters?.colors && filters.colors.length > 0) params.append('colors', filters.colors.join(','));
+  if (filters?.page !== undefined) params.append('page', String(filters.page));
+  if (filters?.limit !== undefined) params.append('limit', String(filters.limit));
+  return params;
 }
 
 export function useProducts(filters?: ProductFilters) {
-  return useQuery({
+  return useQuery<PaginatedProductsResponse>({
     queryKey: ['products', filters],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.categoryId) params.append('categoryId', filters.categoryId);
-      if (filters?.isFeatured !== undefined) params.append('isFeatured', String(filters.isFeatured));
-      if (filters?.isNew !== undefined) params.append('isNew', String(filters.isNew));
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.minPrice !== undefined) params.append('minPrice', String(filters.minPrice));
-      if (filters?.maxPrice !== undefined) params.append('maxPrice', String(filters.maxPrice));
-      if (filters?.sort) params.append('sort', filters.sort);
-
+      const params = buildProductParams(filters);
       const response = await fetch(`/api/products?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch products');
-      return response.json() as Promise<Product[]>;
+      return response.json() as Promise<PaginatedProductsResponse>;
     },
+  });
+}
+
+export function useFacets(filters?: {
+  categoryId?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) {
+  return useQuery<FacetsResponse>({
+    queryKey: ['facets', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.categoryId) params.set('categoryId', filters.categoryId);
+      if (filters?.search) params.set('search', filters.search);
+      if (filters?.minPrice !== undefined) params.set('minPrice', String(filters.minPrice));
+      if (filters?.maxPrice !== undefined) params.set('maxPrice', String(filters.maxPrice));
+      const res = await fetch(`/api/products/facets?${params.toString()}`);
+      if (!res.ok) return { sizes: [], colors: [] };
+      return res.json() as Promise<FacetsResponse>;
+    },
+    staleTime: 60_000,
   });
 }
 
@@ -105,5 +152,71 @@ export function useCategory(slug: string) {
       return response.json() as Promise<Category>;
     },
     enabled: !!slug,
+  });
+}
+
+export function useAdminProducts(search?: string) {
+  return useQuery({
+    queryKey: ['admin-products', search],
+    queryFn: async () => {
+      const params = search ? `?search=${encodeURIComponent(search)}` : '';
+      const response = await fetch(`/api/admin/products${params}`);
+      if (!response.ok) throw new Error('Failed to fetch admin products');
+      return response.json() as Promise<Product[]>;
+    },
+  });
+}
+
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (productData: any) => {
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productData),
+      });
+      if (!response.ok) throw new Error('Failed to create product');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/admin/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update product');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/products/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete product');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    },
   });
 }

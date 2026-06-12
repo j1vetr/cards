@@ -184,7 +184,15 @@ export interface IStorage {
     sizes?: string[];
     colors?: string[];
     sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
-  }): Promise<Product[]>;
+    page?: number;
+    limit?: number;
+  }): Promise<{ products: Product[]; total: number }>;
+  getProductFacets(filters?: {
+    categoryId?: string;
+    search?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[] }>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductBySlug(slug: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -510,19 +518,23 @@ export class DbStorage implements IStorage {
     sizes?: string[];
     colors?: string[];
     sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
-  }): Promise<Product[]> {
-    const conditions = [eq(products.isActive, true)];
-    
-    // Handle category filter with multi-category support
-    let categoryProductIds: string[] | null = null;
+    page?: number;
+    limit?: number;
+  }): Promise<{ products: Product[]; total: number }> {
+    const conditions: SQL[] = [eq(products.isActive, true)];
+
+    // Stoksuz ürünleri gizle: en az 1 aktif variant stok > 0
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true AND stock > 0)`
+    );
+
+    // Kategori filtresi: primary field VEYA junction table
     if (filters?.categoryId) {
-      // Get products that have this category in their categoryIds (via product_categories table)
-      const productIdsResult = await db.selectDistinct({ productId: productCategories.productId })
-        .from(productCategories)
-        .where(eq(productCategories.categoryId, filters.categoryId));
-      categoryProductIds = productIdsResult.map(r => r.productId);
+      conditions.push(
+        sql`(${products.categoryId} = ${filters.categoryId} OR ${products.id} IN (SELECT product_id FROM product_categories WHERE category_id = ${filters.categoryId}))`
+      );
     }
-    
+
     if (filters?.isFeatured !== undefined) {
       conditions.push(eq(products.isFeatured, filters.isFeatured));
     }
@@ -533,53 +545,124 @@ export class DbStorage implements IStorage {
       conditions.push(ilike(products.name, `%${filters.search}%`));
     }
     if (filters?.minPrice !== undefined) {
-      conditions.push(gte(products.basePrice, String(filters.minPrice)));
+      conditions.push(gte(sql`cast(${products.basePrice} as decimal)`, filters.minPrice));
     }
     if (filters?.maxPrice !== undefined) {
-      conditions.push(lte(products.basePrice, String(filters.maxPrice)));
+      conditions.push(lte(sql`cast(${products.basePrice} as decimal)`, filters.maxPrice));
     }
 
-    let query = db.select().from(products).where(and(...conditions));
+    // Beden filtresi (JSONB string dizisi — herhangi biri eşleşsin)
+    if (filters?.sizes && filters.sizes.length > 0) {
+      const sizeParts = filters.sizes.map(size =>
+        sql`${products.availableSizes} @> ${JSON.stringify([size])}::jsonb`
+      );
+      conditions.push(sql`(${sql.join(sizeParts, sql` OR `)})`);
+    }
 
-    // Apply sorting
+    // Renk filtresi (JSONB nesne dizisi — name alanı eşleşsin)
+    if (filters?.colors && filters.colors.length > 0) {
+      const colorParts = filters.colors.map(colorName =>
+        sql`EXISTS (SELECT 1 FROM jsonb_array_elements(${products.availableColors}) c WHERE (c->>'name') = ${colorName})`
+      );
+      conditions.push(sql`(${sql.join(colorParts, sql` OR `)})`);
+    }
+
+    const whereClause = and(...conditions);
+
+    // Toplam sayı
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(whereClause);
+    const total = Number(countRow.count);
+
+    // Sıralama
+    let dataQuery = db.select().from(products).where(whereClause);
     switch (filters?.sort) {
       case 'price_asc':
-        query = query.orderBy(asc(products.basePrice));
+        dataQuery = dataQuery.orderBy(asc(sql`cast(${products.basePrice} as decimal)`));
         break;
       case 'price_desc':
-        query = query.orderBy(desc(products.basePrice));
-        break;
-      case 'newest':
-        query = query.orderBy(desc(products.createdAt));
+        dataQuery = dataQuery.orderBy(desc(sql`cast(${products.basePrice} as decimal)`));
         break;
       case 'popular':
-        query = query.orderBy(desc(products.isFeatured), desc(products.createdAt));
+        dataQuery = dataQuery.orderBy(desc(products.isFeatured), desc(products.createdAt));
         break;
       default:
-        query = query.orderBy(desc(products.createdAt));
+        dataQuery = dataQuery.orderBy(desc(products.createdAt));
     }
 
-    let result = await query;
-    
-    // Filter by category (includes products from both primary categoryId and product_categories table)
-    if (filters?.categoryId && categoryProductIds !== null) {
-      result = result.filter(p => 
-        p.categoryId === filters.categoryId || 
-        categoryProductIds!.includes(p.id)
+    // Sayfalama (yalnızca page veya limit belirtilmişse uygulanır)
+    if (filters?.page !== undefined || filters?.limit !== undefined) {
+      const pageLimit = filters.limit ?? 24;
+      const pageOffset = ((filters.page ?? 1) - 1) * pageLimit;
+      dataQuery = dataQuery.limit(pageLimit).offset(pageOffset);
+    }
+
+    const result = await dataQuery;
+    return { products: result, total };
+  }
+
+  async getProductFacets(filters?: {
+    categoryId?: string;
+    search?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[] }> {
+    const conditions: SQL[] = [eq(products.isActive, true)];
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true AND stock > 0)`
+    );
+    if (filters?.categoryId) {
+      conditions.push(
+        sql`(${products.categoryId} = ${filters.categoryId} OR ${products.id} IN (SELECT product_id FROM product_categories WHERE category_id = ${filters.categoryId}))`
       );
     }
+    if (filters?.search) {
+      conditions.push(ilike(products.name, `%${filters.search}%`));
+    }
+    if (filters?.minPrice !== undefined) {
+      conditions.push(gte(sql`cast(${products.basePrice} as decimal)`, filters.minPrice));
+    }
+    if (filters?.maxPrice !== undefined) {
+      conditions.push(lte(sql`cast(${products.basePrice} as decimal)`, filters.maxPrice));
+    }
 
-    // Stoksuz ürünleri public listelerden gizle (en az 1 aktif variant'ta stok > 0).
-    // Trendyol senkronu sonrası stok dolarsa otomatik geri görünür.
-    const inStockRows = await db
-      .select({ productId: productVariants.productId })
-      .from(productVariants)
-      .where(and(eq(productVariants.isActive, true), gt(productVariants.stock, 0)))
-      .groupBy(productVariants.productId);
-    const inStockSet = new Set(inStockRows.map(r => r.productId));
-    result = result.filter(p => inStockSet.has(p.id));
-    
-    return result;
+    const rows = await db
+      .select({ availableSizes: products.availableSizes, availableColors: products.availableColors })
+      .from(products)
+      .where(and(...conditions));
+
+    const sizeSet = new Set<string>();
+    const colorMap = new Map<string, string | null>();
+
+    for (const row of rows) {
+      if (Array.isArray(row.availableSizes)) {
+        for (const s of row.availableSizes as string[]) {
+          if (s) sizeSet.add(s);
+        }
+      }
+      if (Array.isArray(row.availableColors)) {
+        for (const c of row.availableColors as { name: string; hex: string | null }[]) {
+          if (c?.name) colorMap.set(c.name, c.hex ?? null);
+        }
+      }
+    }
+
+    const jeanSizeOrder = ['XS','S','M','L','XL','XXL','2XL','3XL','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','42','44','46','48','50'];
+    const sizes = Array.from(sizeSet).sort((a, b) => {
+      const ia = jeanSizeOrder.indexOf(a);
+      const ib = jeanSizeOrder.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, 'tr');
+    });
+
+    return {
+      sizes,
+      colors: Array.from(colorMap.entries()).map(([name, hex]) => ({ name, hex })),
+    };
   }
 
   async getProduct(id: string): Promise<Product | undefined> {

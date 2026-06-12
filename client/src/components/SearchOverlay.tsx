@@ -76,28 +76,30 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const hasQuery = debouncedQuery.length >= 2;
 
   // Aktif arama (en az 2 karakter)
-  const { data: searchResults = [], isLoading: searching } = useQuery<SearchProduct[]>({
+  const { data: searchResultsData, isLoading: searching } = useQuery<{ products: SearchProduct[] }>({
     queryKey: ['search-products', debouncedQuery],
     queryFn: async () => {
-      const res = await fetch(`/api/products?search=${encodeURIComponent(debouncedQuery)}`);
+      const res = await fetch(`/api/products?search=${encodeURIComponent(debouncedQuery)}&limit=12`);
       if (!res.ok) throw new Error('Search failed');
       return res.json();
     },
     enabled: isOpen && hasQuery,
     staleTime: 30_000,
   });
+  const searchResults = searchResultsData?.products ?? [];
 
   // Boş ekran için "Öne Çıkanlar" — overlay açıldığı an gözüksün
-  const { data: featured = [] } = useQuery<SearchProduct[]>({
+  const { data: featuredData } = useQuery<{ products: SearchProduct[] }>({
     queryKey: ['search-featured'],
     queryFn: async () => {
-      const res = await fetch('/api/products?isFeatured=true');
-      if (!res.ok) return [];
+      const res = await fetch('/api/products?isFeatured=true&limit=8');
+      if (!res.ok) return { products: [] };
       return res.json();
     },
     enabled: isOpen,
     staleTime: 60_000,
   });
+  const featured = featuredData?.products ?? [];
 
   const { data: categories = [] } = useQuery<SearchCategory[]>({
     queryKey: ['categories'],

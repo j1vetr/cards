@@ -1300,19 +1300,50 @@ export async function registerRoutes(
   // Products API
   app.get("/api/products", async (req, res) => {
     try {
-      const { categoryId, isFeatured, isNew, search, minPrice, maxPrice, sort } = req.query;
-      const products = await storage.getProducts({
-        categoryId: categoryId as string,
+      const { categoryId, isFeatured, isNew, search, minPrice, maxPrice, sort, page, limit, sizes, colors } = req.query;
+      const sizesArr = sizes ? String(sizes).split(',').map(s => s.trim()).filter(Boolean) : undefined;
+      const colorsArr = colors ? String(colors).split(',').map(s => s.trim()).filter(Boolean) : undefined;
+      const pageNum = page ? parseInt(page as string, 10) : undefined;
+      const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+      const result = await storage.getProducts({
+        categoryId: categoryId as string || undefined,
         isFeatured: isFeatured !== undefined ? isFeatured === 'true' : undefined,
         isNew: isNew !== undefined ? isNew === 'true' : undefined,
-        search: search as string,
+        search: search as string || undefined,
         minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
         sort: sort as 'price_asc' | 'price_desc' | 'newest' | 'popular' | undefined,
+        sizes: sizesArr,
+        colors: colorsArr,
+        page: pageNum,
+        limit: limitNum,
       });
-      res.json(products);
+      const pageLimit = limitNum ?? 24;
+      const currentPage = pageNum ?? 1;
+      res.json({
+        products: result.products,
+        total: result.total,
+        page: currentPage,
+        limit: pageLimit,
+        totalPages: pageNum !== undefined ? Math.ceil(result.total / pageLimit) : 1,
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.get("/api/products/facets", async (req, res) => {
+    try {
+      const { categoryId, search, minPrice, maxPrice } = req.query;
+      const facets = await storage.getProductFacets({
+        categoryId: categoryId as string || undefined,
+        search: search as string || undefined,
+        minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
+      });
+      res.json(facets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch facets" });
     }
   });
 
@@ -1519,7 +1550,7 @@ export async function registerRoutes(
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const { categoryId, productIds, action, value: numericValue, autoBadge, badgeText } = parsed.data;
 
-      const allProducts = await storage.getProducts();
+      const { products: allProducts } = await storage.getProducts();
 
       let targetProducts;
       if (productIds && Array.isArray(productIds) && productIds.length > 0) {
@@ -4007,7 +4038,7 @@ export async function registerRoutes(
   // Data consistency check
   app.get("/api/admin/inventory/data-check", requireAdmin, async (req, res) => {
     try {
-      const products = await storage.getProducts();
+      const { products } = await storage.getProducts();
       const allVariants = await storage.getAllVariantsWithProducts();
       const orders = await storage.getOrders();
       
@@ -4164,7 +4195,7 @@ export async function registerRoutes(
   // Fix missing variants - syncs variants with product's defined sizes
   app.post("/api/admin/inventory/fix-variants", requireAdmin, async (req, res) => {
     try {
-      const products = await storage.getProducts();
+      const { products } = await storage.getProducts();
       const allVariants = await storage.getAllVariantsWithProducts();
       
       let createdCount = 0;
@@ -5665,7 +5696,7 @@ window.addEventListener('load', function() {
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const baseUrl = req.protocol + '://' + req.get('host');
-      const products = await storage.getProducts();
+      const { products } = await storage.getProducts();
       const categories = await storage.getCategories();
       
       const escapeXml = (str: string) => {
