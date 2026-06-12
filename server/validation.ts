@@ -21,6 +21,37 @@ export function validateBody<T extends z.ZodTypeAny>(schema: T) {
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
+export const adminLoginSchema = z.object({
+  username: z.string().min(1, "Kullanıcı adı zorunludur").max(100),
+  password: z.string().min(1, "Şifre zorunludur").max(200),
+});
+
+export const userLoginSchema = z.object({
+  email: z.string().email("Geçerli bir e-posta girin"),
+  password: z.string().min(1, "Şifre zorunludur").max(200),
+});
+
+export const registerWriteSchema = z.object({
+  email: z.string().email("Geçerli bir e-posta girin"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalı").max(200),
+  firstName: z.string().max(100).optional(),
+  lastName: z.string().max(100).optional(),
+  phone: z.string().max(30).optional(),
+  address: z.string().max(500).optional(),
+  city: z.string().max(100).optional(),
+  district: z.string().max(100).optional(),
+  postalCode: z.string().max(20).optional(),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Geçerli bir e-posta girin"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token zorunludur").max(200),
+  newPassword: z.string().min(6, "Şifre en az 6 karakter olmalı").max(200),
+});
+
 export const profileUpdateSchema = z.object({
   firstName: z.string().max(100).optional(),
   lastName: z.string().max(100).optional(),

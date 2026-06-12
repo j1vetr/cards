@@ -26,6 +26,7 @@ import {
   woocommerceSettingsSchema, woocommerceTestSchema, iyzicoCredentialsSchema, adminInitSchema,
   influencerBulkSchema, paymentCreateSchema, whatsappTestSchema,
   confirmBankTransferSchema, rejectBankTransferSchema,
+  adminLoginSchema, userLoginSchema, registerWriteSchema, forgotPasswordSchema, resetPasswordSchema,
 } from "./validation";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
 import { 
@@ -596,10 +597,9 @@ export async function registerRoutes(
   // Admin Authentication with JWT
   app.post("/api/admin/login", authLimiter, async (req: Request, res) => {
     try {
-      const { username, password } = req.body;
-      if (!username || !password) {
-        return res.status(400).json({ error: "Kullanıcı adı ve şifre gerekli" });
-      }
+      const parsedLogin = adminLoginSchema.safeParse(req.body);
+      if (!parsedLogin.success) return res.status(400).json({ error: firstZodMessage(parsedLogin.error) });
+      const { username, password } = parsedLogin.data;
       const user = await storage.getAdminUserByUsername(username);
       
       if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -878,24 +878,10 @@ export async function registerRoutes(
   });
 
   // User Authentication
-  const registerSchema = z.object({
-    email: z.string().email("Geçerli bir e-posta girin"),
-    password: z.string().min(6, "Şifre en az 6 karakter olmalı"),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    city: z.string().optional(),
-    district: z.string().optional(),
-    postalCode: z.string().optional(),
-  });
-
   app.post("/api/auth/register", registerLimiter, async (req: Request, res) => {
     try {
-      const parsed = registerSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Geçersiz istek" });
-      }
+      const parsed = registerWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const { email, password, firstName, lastName, phone, address, city, district, postalCode } = parsed.data;
       
       const existingUser = await storage.getUserByEmail(email);
@@ -958,10 +944,9 @@ export async function registerRoutes(
 
   app.post("/api/auth/login", authLimiter, async (req: Request, res) => {
     try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ error: "E-posta ve şifre gerekli" });
-      }
+      const parsedLogin = userLoginSchema.safeParse(req.body);
+      if (!parsedLogin.success) return res.status(400).json({ error: firstZodMessage(parsedLogin.error) });
+      const { email, password } = parsedLogin.data;
       const user = await storage.getUserByEmail(email);
       
       if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -3244,8 +3229,11 @@ export async function registerRoutes(
 
       res.status(201).json(order);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: firstZodMessage(error) });
+      }
       console.error('Order creation error:', error);
-      res.status(400).json({ error: "Sipariş oluşturulamadı" });
+      res.status(500).json({ error: "Sipariş oluşturulamadı" });
     }
   });
 
@@ -5553,10 +5541,9 @@ window.addEventListener('load', function() {
   // Password Reset Routes
   app.post("/api/auth/forgot-password", passwordResetLimiter, async (req, res) => {
     try {
-      const { email } = req.body;
-      if (!email || typeof email !== 'string' || !email.includes('@')) {
-        return res.status(400).json({ error: "Geçerli bir e-posta girin" });
-      }
+      const parsedForgot = forgotPasswordSchema.safeParse(req.body);
+      if (!parsedForgot.success) return res.status(400).json({ error: firstZodMessage(parsedForgot.error) });
+      const { email } = parsedForgot.data;
       const user = await storage.getUserByEmail(email);
       
       if (!user) {
@@ -5580,15 +5567,9 @@ window.addEventListener('load', function() {
 
   app.post("/api/auth/reset-password", passwordResetLimiter, async (req, res) => {
     try {
-      const { token, newPassword } = req.body;
-      
-      if (!token || !newPassword) {
-        return res.status(400).json({ error: "Token ve yeni şifre gerekli" });
-      }
-      
-      if (newPassword.length < 6) {
-        return res.status(400).json({ error: "Şifre en az 6 karakter olmalı" });
-      }
+      const parsedReset = resetPasswordSchema.safeParse(req.body);
+      if (!parsedReset.success) return res.status(400).json({ error: firstZodMessage(parsedReset.error) });
+      const { token, newPassword } = parsedReset.data;
       
       const resetToken = await storage.getPasswordResetToken(token);
       
