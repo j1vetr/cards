@@ -140,21 +140,17 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
           className="font-display text-white mb-7"
           style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em' }}
         >
-          <div style={{ overflow: 'hidden', lineHeight: 1.2 }}>
-            <span className="block">Jeanin İçinde</span>
-          </div>
-          <div style={{ height: '0.2em' }} />
-          <div style={{ overflow: 'hidden', lineHeight: 1.2 }}>
-            <span
-              className="block"
-              style={{
-                color: 'transparent',
-                WebkitTextStroke: '2.5px white',
-              }}
-            >
-              Özgürlük Var
-            </span>
-          </div>
+          <span className="block" style={{ lineHeight: 1.25 }}>Jeanin İçinde</span>
+          <span
+            className="block"
+            style={{
+              lineHeight: 1.25,
+              color: 'transparent',
+              WebkitTextStroke: '2.5px white',
+            }}
+          >
+            Özgürlük Var
+          </span>
         </h1>
 
         {/* Sub copy */}
