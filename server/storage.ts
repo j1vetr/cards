@@ -527,9 +527,9 @@ export class DbStorage implements IStorage {
   }): Promise<{ products: Product[]; total: number }> {
     const conditions: SQL[] = [eq(products.isActive, true)];
 
-    // Stoksuz ürünleri gizle: en az 1 aktif variant stok > 0
+    // En az 1 aktif varyant olsun (stok 0 olanlar da gösterilir — frontend "stokta yok" badge'i ile gösterir)
     conditions.push(
-      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true AND stock > 0)`
+      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true)`
     );
 
     // Kategori filtresi: primary field VEYA junction table
@@ -628,7 +628,7 @@ export class DbStorage implements IStorage {
   }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[]; fits: string[] }> {
     const conditions: SQL[] = [eq(products.isActive, true)];
     conditions.push(
-      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true AND stock > 0)`
+      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true)`
     );
     if (filters?.categoryId) {
       conditions.push(
