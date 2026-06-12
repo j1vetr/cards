@@ -294,8 +294,14 @@ export default function AdminProductFormPage() {
       if (!r.ok) throw new Error('Kaydetme başarısız');
       return r.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+    onSuccess: (savedProduct: Product) => {
+      // Cache'i doğrudan güncelle — staleTime:Infinity ortamında
+      // invalidateQueries tek başına yeterli değil (aktif subscriber yok).
+      queryClient.setQueryData<Product[]>(['admin', 'products'], (old = []) => {
+        const exists = old.some((p) => p.id === savedProduct.id);
+        if (exists) return old.map((p) => (p.id === savedProduct.id ? savedProduct : p));
+        return [savedProduct, ...old];
+      });
       navigate('/toov-admin?tab=products');
     },
   });
