@@ -132,8 +132,8 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
     : {};
 
   return (
-    <div className="relative h-full flex flex-col justify-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
-      <W {...animProps} className="relative z-10 max-w-xl">
+    <div className="relative h-full flex flex-col justify-center items-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
+      <W {...animProps} className="relative z-10 max-w-2xl w-full text-center">
         {/* Headline */}
         <h1
           data-testid="text-hero-title"
@@ -145,13 +145,13 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
         </h1>
 
         {/* Sub copy */}
-        <p className="text-[13px] lg:text-[14px] leading-relaxed text-white/55 font-light mb-8 max-w-[420px]">
+        <p className="text-[13px] lg:text-[14px] leading-relaxed text-white/55 font-light mb-8 max-w-[420px] mx-auto">
           Premium kumaş kalitesi, modern fit kalıplar ve zamansız tasarımlar.
           Perakende ve toptan satış avantajlarıyla şimdi keşfedin.
         </p>
 
         {/* Category pills */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
           {heroPills.map(({ label, href, Icon }) => (
             <Link
               key={label}
@@ -166,7 +166,7 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
         </div>
 
         {/* CTAs */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap justify-center items-center gap-3">
           <Link
             href="/magaza"
             data-testid="link-hero-cta"
