@@ -213,7 +213,7 @@ export default function AdminProductFormPage() {
     sku: p?.sku || '',
     basePrice: p?.basePrice || '',
     categoryId: p?.categoryId || '',
-    categoryIds: p?.categoryIds || (p?.categoryId ? [p.categoryId] : [] as string[]),
+    categoryIds: (p?.categoryIds && p.categoryIds.length > 0) ? p.categoryIds : (p?.categoryId ? [p.categoryId] : [] as string[]),
     images: p?.images || [] as string[],
     videoUrl: p?.videoUrl || '',
     availableSizes: p?.availableSizes || [] as string[],

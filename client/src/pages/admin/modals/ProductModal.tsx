@@ -85,7 +85,7 @@ export default function ProductModal({
     basePrice: product?.basePrice || '',
     categoryId: product?.categoryId || '',
     categoryIds:
-      product?.categoryIds || (product?.categoryId ? [product.categoryId] : ([] as string[])),
+      (product?.categoryIds && product.categoryIds.length > 0) ? product.categoryIds : (product?.categoryId ? [product.categoryId] : ([] as string[])),
     images: product?.images || ([] as string[]),
     availableSizes: product?.availableSizes || ([] as string[]),
     availableColors: product?.availableColors || [],
@@ -125,7 +125,7 @@ export default function ProductModal({
       basePrice: product?.basePrice || '',
       categoryId: product?.categoryId || '',
       categoryIds:
-        product?.categoryIds || (product?.categoryId ? [product.categoryId] : ([] as string[])),
+        (product?.categoryIds && product.categoryIds.length > 0) ? product.categoryIds : (product?.categoryId ? [product.categoryId] : ([] as string[])),
       images: product?.images || ([] as string[]),
       availableSizes: product?.availableSizes || ([] as string[]),
       availableColors: product?.availableColors || [],
