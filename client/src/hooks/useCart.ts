@@ -8,12 +8,16 @@ interface CartItem {
   variantId: string | null;
   quantity: number;
   createdAt: string;
+  itemType?: 'retail' | 'wholesale';
+  seriesId?: string | null;
   product?: {
     id: string;
     name: string;
     slug: string;
     basePrice: string;
     images: string[];
+    wholesaleEnabled?: boolean;
+    wholesalePrice?: string | null;
   };
   variant?: {
     id: string;
@@ -21,12 +25,22 @@ interface CartItem {
     color: string | null;
     price: string;
   };
+  // Wholesale-only enrichment (computed server-side in getCartItems)
+  series?: {
+    id: string;
+    name: string;
+    sizeDistribution: { size: string; quantity: number }[];
+  } | null;
+  totalPieces?: number;
+  unitPrice?: number;
+  seriesPrice?: number;
+  lineTotal?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
   isLoading: boolean;
-  addToCart: (productId: string, variantId?: string, quantity?: number) => Promise<void>;
+  addToCart: (productId: string, variantId?: string, quantity?: number, opts?: { itemType?: 'retail' | 'wholesale'; seriesId?: string }) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -59,14 +73,17 @@ export function useCartProvider() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async ({ productId, variantId, quantity = 1 }: { productId: string; variantId?: string; quantity?: number }) => {
+    mutationFn: async ({ productId, variantId, quantity = 1, itemType, seriesId }: { productId: string; variantId?: string; quantity?: number; itemType?: 'retail' | 'wholesale'; seriesId?: string }) => {
       const res = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, variantId, quantity }),
+        body: JSON.stringify({ productId, variantId, quantity, itemType, seriesId }),
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Sepete eklenemedi');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'Sepete eklenemedi');
+      }
       return res.json();
     },
   });
@@ -118,6 +135,9 @@ export function useCartProvider() {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   
   const subtotal = items.reduce((sum, item) => {
+    if (item.itemType === 'wholesale') {
+      return sum + (item.lineTotal ?? 0);
+    }
     const price = item.product?.basePrice || '0';
     return sum + parseFloat(price) * item.quantity;
   }, 0);
@@ -125,8 +145,8 @@ export function useCartProvider() {
   return {
     items,
     isLoading,
-    addToCart: async (productId: string, variantId?: string, quantity = 1) => {
-      await addMutation.mutateAsync({ productId, variantId, quantity });
+    addToCart: async (productId: string, variantId?: string, quantity = 1, opts?: { itemType?: 'retail' | 'wholesale'; seriesId?: string }) => {
+      await addMutation.mutateAsync({ productId, variantId, quantity, itemType: opts?.itemType, seriesId: opts?.seriesId });
       await queryClient.refetchQueries({ queryKey: ['cart'] });
     },
     updateQuantity: async (itemId: string, quantity: number) => {

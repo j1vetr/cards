@@ -11,7 +11,7 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, insertWholesaleSeriesSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
 import {
   validateBody, firstZodMessage,
@@ -119,6 +119,107 @@ async function getAuthPayload(req: Request, res: Response): Promise<JwtPayload |
   }
   
   return null;
+}
+
+// ─── Wholesale cart explosion ────────────────────────────────────────────────
+// A wholesale cart row is ONE "seri": a fixed size distribution sold as a single
+// unit, priced per piece (wholesalePrice). At payment time we explode that row
+// into one order line per size so the existing stock-deduct / restore /
+// idempotency loops downstream stay completely untouched. Retail rows pass
+// through 1:1. Returns flat order lines + a server-trusted subtotal. On any
+// integrity problem (missing variant, stock shortfall, deactivated series) it
+// returns an `error` string the caller surfaces as a 400 — it never throws.
+type ExpandedLine = {
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  productName: string;
+  variantDetails: string | null;
+  price: string;
+  itemType: 'retail' | 'wholesale';
+  seriesName: string | null;
+  seriesGroup: string | null;
+};
+
+async function expandCartLinesToOrderItems(
+  cartItems: any[]
+): Promise<{ lines: ExpandedLine[]; subtotal: number; hasWholesale: boolean; error?: string }> {
+  const lines: ExpandedLine[] = [];
+  let subtotal = 0;
+  let hasWholesale = false;
+
+  for (const cartItem of cartItems) {
+    if (cartItem.itemType === 'wholesale') {
+      hasWholesale = true;
+      // A wholesale row without a seriesId means its series was deleted out from
+      // under the cart (cart_items.seriesId is ON DELETE SET NULL). Never let it
+      // silently fall through to the retail branch (basePrice×1, coupons/bank %10
+      // re-enabled) — surface an explicit error so the buyer re-adds a valid series.
+      if (!cartItem.seriesId) {
+        return { lines, subtotal, hasWholesale, error: 'Toptan serisi artık mevcut değil. Lütfen ürünü sepetten çıkarıp yeniden ekleyin.' };
+      }
+      const product = await storage.getProduct(cartItem.productId);
+      if (!product) return { lines, subtotal, hasWholesale, error: 'Toptan ürün bulunamadı' };
+      if (!product.wholesaleEnabled || !product.wholesalePrice || !product.wholesaleSeriesId) {
+        return { lines, subtotal, hasWholesale, error: `${product.name} artık toptan satışa uygun değil` };
+      }
+      const series = await storage.getWholesaleSeries(cartItem.seriesId);
+      if (!series || !series.isActive) {
+        return { lines, subtotal, hasWholesale, error: 'Seri bulunamadı veya pasif' };
+      }
+      const distribution = series.sizeDistribution || [];
+      if (distribution.length === 0) {
+        return { lines, subtotal, hasWholesale, error: 'Seri beden dağılımı tanımlı değil' };
+      }
+      const unitPrice = parseFloat(product.wholesalePrice || '0');
+      const setCount = cartItem.quantity || 1;
+      const variants = await storage.getProductVariants(product.id);
+      const seriesGroup = cartItem.id;
+      for (const dist of distribution) {
+        const sizeQty = Number(dist.quantity) || 0;
+        if (sizeQty <= 0) continue;
+        const lineQty = sizeQty * setCount;
+        const variant = variants.find(v => v.isActive && (v.size || '').toLowerCase() === String(dist.size).toLowerCase());
+        if (!variant) {
+          return { lines, subtotal, hasWholesale, error: `${product.name}: ${dist.size} bedeni için varyant bulunamadı` };
+        }
+        if ((variant.stock ?? 0) < lineQty) {
+          return { lines, subtotal, hasWholesale, error: `${product.name} (${dist.size}) için yeterli stok yok (gerekli: ${lineQty}, mevcut: ${variant.stock ?? 0})` };
+        }
+        subtotal += unitPrice * lineQty;
+        lines.push({
+          productId: product.id,
+          variantId: variant.id,
+          quantity: lineQty,
+          productName: product.name,
+          variantDetails: `${dist.size}${variant.color ? ' ' + variant.color : ''}`.trim(),
+          price: unitPrice.toFixed(2),
+          itemType: 'wholesale',
+          seriesName: series.name,
+          seriesGroup,
+        });
+      }
+    } else {
+      const variant = cartItem.variantId ? await storage.getProductVariant(cartItem.variantId) : null;
+      const actualProductId = variant?.productId || cartItem.productId;
+      const product = await storage.getProduct(actualProductId);
+      if (!product) continue;
+      const itemPrice = parseFloat(product.basePrice);
+      subtotal += itemPrice * cartItem.quantity;
+      lines.push({
+        productId: product.id,
+        variantId: variant?.id || null,
+        quantity: cartItem.quantity,
+        productName: product.name,
+        variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() : null,
+        price: product.basePrice,
+        itemType: 'retail',
+        seriesName: null,
+        seriesGroup: null,
+      });
+    }
+  }
+  return { lines, subtotal, hasWholesale };
 }
 
 // Configure multer for file uploads
@@ -885,13 +986,14 @@ export async function registerRoutes(
     try {
       const parsed = registerWriteSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { email, password, firstName, lastName, phone, address, city, district, postalCode } = parsed.data;
+      const { email, password, firstName, lastName, phone, address, city, district, postalCode, customerType, companyName, taxNumber, taxOffice } = parsed.data;
       
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ error: "Bu e-posta adresi zaten kayıtlı" });
       }
 
+      const isWholesale = customerType === "wholesale";
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await storage.createUser({
         email,
@@ -903,6 +1005,10 @@ export async function registerRoutes(
         city,
         district,
         postalCode,
+        customerType: isWholesale ? "wholesale" : "retail",
+        companyName: isWholesale ? (companyName || null) : null,
+        taxNumber: isWholesale ? (taxNumber || null) : null,
+        taxOffice: isWholesale ? (taxOffice || null) : null,
       });
 
       // Set JWT cookies for the new user
@@ -937,7 +1043,7 @@ export async function registerRoutes(
       
       res.status(201).json({ 
         success: true, 
-        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } 
+        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, customerType: user.customerType } 
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -1002,7 +1108,7 @@ export async function registerRoutes(
       return res.status(404).json({ error: "Kullanıcı bulunamadı" });
     }
 
-    res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, address: user.address, city: user.city, district: user.district, postalCode: user.postalCode, country: user.country, whatsappOptIn: user.whatsappOptIn, createdAt: user.createdAt });
+    res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, address: user.address, city: user.city, district: user.district, postalCode: user.postalCode, country: user.country, whatsappOptIn: user.whatsappOptIn, customerType: user.customerType, companyName: user.companyName, taxNumber: user.taxNumber, taxOffice: user.taxOffice, createdAt: user.createdAt });
   });
 
   app.patch("/api/auth/profile", async (req: Request, res) => {
@@ -1164,6 +1270,38 @@ export async function registerRoutes(
       res.json(orders);
     } catch (error) {
       res.status(500).json({ error: "Siparişler yüklenemedi" });
+    }
+  });
+
+  // Logged-in customer's own payment requests (linked by userId or email), newest first.
+  app.get("/api/payment-requests/mine", async (req: Request, res) => {
+    const payload = await getAuthPayload(req, res);
+    if (!payload || payload.type !== 'user' || !payload.userId) {
+      return res.status(401).json({ error: "Giriş yapılmamış" });
+    }
+    try {
+      const user = await storage.getUser(payload.userId);
+      if (!user) {
+        return res.status(404).json({ error: "Kullanıcı bulunamadı" });
+      }
+      const byUser = await storage.getPaymentRequestsByUserId(user.id);
+      const byEmail = await storage.getPaymentRequestsByEmail(user.email);
+      const seen = new Set<string>();
+      const merged = [...byUser, ...byEmail]
+        .filter(r => (seen.has(r.id) ? false : (seen.add(r.id), true)))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map(r => ({
+          token: r.token,
+          amount: r.amount,
+          description: r.description,
+          status: r.status,
+          createdAt: r.createdAt,
+          paidAt: r.paidAt,
+          expiresAt: r.expiresAt,
+        }));
+      res.json(merged);
+    } catch (error) {
+      res.status(500).json({ error: "Ödeme talepleri yüklenemedi" });
     }
   });
 
@@ -1748,11 +1886,81 @@ export async function registerRoutes(
       const cartToken = getOrCreateCartToken(req, res);
       const parsedCart = cartAddSchema.safeParse(req.body);
       if (!parsedCart.success) return res.status(400).json({ error: firstZodMessage(parsedCart.error) });
-      const { productId, variantId: rawVariantId, quantity } = parsedCart.data;
+      const { productId, variantId: rawVariantId, quantity, itemType: rawItemType, seriesId: rawSeriesId } = parsedCart.data;
+      const itemType = rawItemType === "wholesale" ? "wholesale" : "retail";
 
       const product = await storage.getProduct(productId);
       if (!product) {
         return res.status(400).json({ error: "Geçersiz ürün" });
+      }
+
+      // Existing cart — used to enforce "no mixed retail+wholesale cart" (v1).
+      const existingCart = await storage.getCartItems(cartToken);
+
+      // ===== WHOLESALE: add ONE series row (explodes into variants at payment) =====
+      if (itemType === "wholesale") {
+        // Only authenticated wholesale customers may add series.
+        const payload = await getAuthPayload(req, res);
+        if (!payload || payload.type !== "user" || !payload.userId) {
+          return res.status(401).json({ error: "Toptan alım için giriş yapmalısınız" });
+        }
+        const user = await storage.getUser(payload.userId);
+        if (!user || user.customerType !== "wholesale") {
+          return res.status(403).json({ error: "Bu işlem yalnızca toptan hesaplar içindir" });
+        }
+
+        if (existingCart.some((it: any) => it.itemType !== "wholesale")) {
+          return res.status(400).json({ error: "Sepetinizde bireysel ürünler var. Toptan ve bireysel ürünler aynı sepette birleştirilemez." });
+        }
+
+        if (!product.wholesaleEnabled || !product.wholesalePrice || !product.wholesaleSeriesId) {
+          return res.status(400).json({ error: "Bu ürün toptan satışa uygun değil" });
+        }
+        if (rawSeriesId && rawSeriesId !== product.wholesaleSeriesId) {
+          return res.status(400).json({ error: "Geçersiz seri seçimi" });
+        }
+
+        const series = await storage.getWholesaleSeries(product.wholesaleSeriesId);
+        if (!series || !series.isActive) {
+          return res.status(400).json({ error: "Seri bulunamadı veya pasif" });
+        }
+        const distribution = series.sizeDistribution || [];
+        if (distribution.length === 0) {
+          return res.status(400).json({ error: "Seri beden dağılımı tanımlı değil" });
+        }
+
+        const setCount = quantity || 1;
+
+        // Resolve each size in the series to a variant and verify stock >= sizeQty * setCount.
+        const variants = await storage.getProductVariants(productId);
+        for (const dist of distribution) {
+          const sizeQty = Number(dist.quantity) || 0;
+          if (sizeQty <= 0) continue;
+          const needed = sizeQty * setCount;
+          const variant = variants.find(v => v.isActive && (v.size || "").toLowerCase() === String(dist.size).toLowerCase());
+          if (!variant) {
+            return res.status(400).json({ error: `Seride yer alan ${dist.size} bedeni için ürün varyantı bulunamadı` });
+          }
+          if ((variant.stock ?? 0) < needed) {
+            return res.status(400).json({ error: `${dist.size} bedeni için yeterli stok yok (gerekli: ${needed}, mevcut: ${variant.stock ?? 0})` });
+          }
+        }
+
+        const validatedWholesale = insertCartItemSchema.parse({
+          productId,
+          variantId: null,
+          quantity: setCount,
+          sessionId: cartToken,
+          itemType: "wholesale",
+          seriesId: series.id,
+        });
+        const wholesaleItem = await storage.addToCart(validatedWholesale);
+        return res.status(201).json(wholesaleItem);
+      }
+
+      // ===== RETAIL (default) =====
+      if (existingCart.some((it: any) => it.itemType === "wholesale")) {
+        return res.status(400).json({ error: "Sepetinizde toptan ürünler var. Toptan ve bireysel ürünler aynı sepette birleştirilemez." });
       }
 
       // Giyim: eğer client variant göndermediyse ürünün ilk aktif & stoklu
@@ -1791,6 +1999,7 @@ export async function registerRoutes(
         variantId,
         quantity: quantity || 1,
         sessionId: cartToken,
+        itemType: "retail",
       });
       const item = await storage.addToCart(validated);
       res.status(201).json(item);
@@ -2197,52 +2406,45 @@ export async function registerRoutes(
         accountPasswordHash = await bcrypt.hash(accountPassword, 10);
       }
 
-      // Calculate actual subtotal from cart items (server-side verification)
-      let serverSubtotal = 0;
-      const cartItemsForStorage: Array<{
-        productId: string;
-        variantId: string | null;
-        quantity: number;
-        productName: string;
-        variantDetails: string | null;
-        price: string;
-      }> = [];
+      // Calculate actual subtotal from cart items (server-side verification).
+      // Wholesale "seri" rows explode into per-size lines here; retail rows pass through 1:1.
+      const expanded = await expandCartLinesToOrderItems(cartItems);
+      if (expanded.error) {
+        return res.status(400).json({ error: expanded.error });
+      }
 
+      // Carts are session-bound, so a wholesale cart must be re-verified against a
+      // live wholesale account at payment time (not just at add-to-cart). Coupons
+      // are not honoured on wholesale orders.
+      if (expanded.hasWholesale) {
+        if (!userId) {
+          return res.status(401).json({ error: "Toptan ödeme için giriş yapmalısınız" });
+        }
+        const buyer = await storage.getUser(userId);
+        if (!buyer || buyer.customerType !== 'wholesale') {
+          return res.status(403).json({ error: "Toptan sipariş yalnızca toptan hesaplarla tamamlanabilir" });
+        }
+        if (couponCode) {
+          return res.status(400).json({ error: "Toptan siparişlerde kupon kullanılamaz" });
+        }
+      }
+
+      const serverSubtotal = expanded.subtotal;
+      const cartItemsForStorage = expanded.lines;
+
+      // iyzico basket: one row per unit so sum(basketItems.price) === price
       const iyzicoBasketItems: IyzicoBasketItem[] = [];
-
-      for (const cartItem of cartItems) {
-        const variant = cartItem.variantId 
-          ? await storage.getProductVariant(cartItem.variantId)
-          : null;
-        
-        // If variant exists, get the product from variant's productId to ensure consistency
-        const actualProductId = variant?.productId || cartItem.productId;
-        const product = await storage.getProduct(actualProductId);
-        
-        if (product) {
-          const itemPrice = parseFloat(product.basePrice);
-          serverSubtotal += itemPrice * cartItem.quantity;
-          
-          cartItemsForStorage.push({
-            productId: product.id,
-            variantId: variant?.id || null,
-            quantity: cartItem.quantity,
-            productName: product.name,
-            variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() : null,
-            price: product.basePrice,
+      for (const line of cartItemsForStorage) {
+        const linePrice = parseFloat(line.price);
+        for (let qi = 0; qi < line.quantity; qi++) {
+          iyzicoBasketItems.push({
+            id: `${line.productId}-${line.variantId || 'base'}-${qi}`,
+            name: line.productName.substring(0, 250),
+            category1: 'Giyim',
+            category2: 'Moda',
+            itemType: 'PHYSICAL',
+            price: linePrice.toFixed(2),
           });
-
-          // iyzico basket: one row per unit so sum(basketItems.price) === price
-          for (let qi = 0; qi < cartItem.quantity; qi++) {
-            iyzicoBasketItems.push({
-              id: `${product.id}-${variant?.id || 'base'}-${qi}`,
-              name: product.name.substring(0, 250),
-              category1: 'Giyim',
-              category2: 'Moda',
-              itemType: 'PHYSICAL',
-              price: itemPrice.toFixed(2),
-            });
-          }
         }
       }
 
@@ -2475,36 +2677,25 @@ export async function registerRoutes(
         accountPasswordHash = await bcrypt.hash(accountPassword, 10);
       }
 
-      // Server-side cart validation
-      let serverSubtotal = 0;
-      const cartItemsForOrder: Array<{
-        productId: string;
-        variantId: string | null;
-        quantity: number;
-        productName: string;
-        variantDetails: string | null;
-        price: string;
-      }> = [];
-
-      for (const cartItem of cartItems) {
-        const variant = cartItem.variantId
-          ? await storage.getProductVariant(cartItem.variantId)
-          : null;
-        const actualProductId = variant?.productId || cartItem.productId;
-        const product = await storage.getProduct(actualProductId);
-        if (product) {
-          const itemPrice = parseFloat(product.basePrice);
-          serverSubtotal += itemPrice * cartItem.quantity;
-          cartItemsForOrder.push({
-            productId: product.id,
-            variantId: variant?.id || null,
-            quantity: cartItem.quantity,
-            productName: product.name,
-            variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() : null,
-            price: product.basePrice,
-          });
+      // Server-side cart validation — wholesale "seri" rows explode into per-size lines.
+      const expandedBT = await expandCartLinesToOrderItems(cartItems);
+      if (expandedBT.error) {
+        return res.status(400).json({ error: expandedBT.error });
+      }
+      if (expandedBT.hasWholesale) {
+        if (!userId) {
+          return res.status(401).json({ error: "Toptan ödeme için giriş yapmalısınız" });
+        }
+        const btBuyer = await storage.getUser(userId);
+        if (!btBuyer || btBuyer.customerType !== 'wholesale') {
+          return res.status(403).json({ error: "Toptan sipariş yalnızca toptan hesaplarla tamamlanabilir" });
+        }
+        if (couponCode) {
+          return res.status(400).json({ error: "Toptan siparişlerde kupon kullanılamaz" });
         }
       }
+      const serverSubtotal = expandedBT.subtotal;
+      const cartItemsForOrder = expandedBT.lines;
 
       // Coupon validation
       let validatedCoupon = null;
@@ -2540,8 +2731,11 @@ export async function registerRoutes(
       if (couponFreeShipping) shippingCost = 0;
 
       // Bank transfer 10% discount applies to (subtotal - couponDiscount + shippingCost)
+      // Bank-transfer 10% perk does not apply to wholesale orders.
       const baseAfterCoupon = Math.max(0, serverSubtotal - couponDiscount) + shippingCost;
-      const bankTransferDiscount = Math.round(baseAfterCoupon * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100;
+      const bankTransferDiscount = expandedBT.hasWholesale
+        ? 0
+        : Math.round(baseAfterCoupon * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100;
       const totalDiscount = couponDiscount + bankTransferDiscount;
       const serverTotal = Math.max(0, serverSubtotal - totalDiscount + shippingCost);
 
@@ -2591,6 +2785,9 @@ export async function registerRoutes(
             price: item.price,
             quantity: item.quantity,
             subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
+            itemType: item.itemType ?? 'retail',
+            seriesName: item.seriesName ?? null,
+            seriesGroup: item.seriesGroup ?? null,
           });
         }
 
@@ -2619,6 +2816,325 @@ export async function registerRoutes(
       res.status(500).json({ error: "Sipariş oluşturulamadı" });
     }
   });
+
+  // ─── Wholesale Series (admin CRUD) ───────────────────────────────────────────
+  // A "seri" is a fixed size distribution sold as one unit (priced per piece on the product).
+  app.get("/api/admin/wholesale-series", requireAdmin, async (_req, res) => {
+    try {
+      const rows = await storage.getWholesaleSeriesList();
+      res.json(rows);
+    } catch (error) {
+      console.error('[wholesale-series] list error:', error);
+      res.status(500).json({ error: "Seriler yüklenemedi" });
+    }
+  });
+
+  app.post("/api/admin/wholesale-series", requireAdmin, async (req, res) => {
+    try {
+      const parsed = insertWholesaleSeriesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: firstZodMessage(parsed.error) || "Geçersiz seri verisi" });
+      }
+      const dist = parsed.data.sizeDistribution || [];
+      if (!Array.isArray(dist) || dist.length === 0 || dist.some((d) => !d.size || !Number.isFinite(d.quantity) || d.quantity <= 0)) {
+        return res.status(400).json({ error: "Seri en az bir geçerli beden/adet içermeli" });
+      }
+      const created = await storage.createWholesaleSeries(parsed.data);
+      res.json(created);
+    } catch (error) {
+      console.error('[wholesale-series] create error:', error);
+      res.status(500).json({ error: "Seri oluşturulamadı" });
+    }
+  });
+
+  app.put("/api/admin/wholesale-series/:id", requireAdmin, async (req, res) => {
+    try {
+      const parsed = insertWholesaleSeriesSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: firstZodMessage(parsed.error) || "Geçersiz seri verisi" });
+      }
+      if (parsed.data.sizeDistribution !== undefined) {
+        const dist = parsed.data.sizeDistribution || [];
+        if (!Array.isArray(dist) || dist.length === 0 || dist.some((d) => !d.size || !Number.isFinite(d.quantity) || d.quantity <= 0)) {
+          return res.status(400).json({ error: "Seri en az bir geçerli beden/adet içermeli" });
+        }
+      }
+      const updated = await storage.updateWholesaleSeries(req.params.id, { ...parsed.data, updatedAt: new Date() } as any);
+      if (!updated) {
+        return res.status(404).json({ error: "Seri bulunamadı" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error('[wholesale-series] update error:', error);
+      res.status(500).json({ error: "Seri güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/admin/wholesale-series/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteWholesaleSeries(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[wholesale-series] delete error:', error);
+      res.status(500).json({ error: "Seri silinemedi" });
+    }
+  });
+
+  // Public: active wholesale series (used by ProductDetail wholesale panel).
+  app.get("/api/wholesale-series", async (_req, res) => {
+    try {
+      const rows = await storage.getWholesaleSeriesList();
+      res.json(rows.filter((s) => s.isActive));
+    } catch (error) {
+      console.error('[wholesale-series] public list error:', error);
+      res.status(500).json({ error: "Seriler yüklenemedi" });
+    }
+  });
+
+  // ─── Payment Requests (standalone payment links) ─────────────────────────────
+  // Admin generates a tokenized link (/odeme-talebi/:token) for ad-hoc collection.
+  // Payment runs through a SEPARATE iyzico callback so there is zero coupling to the
+  // cart/order flow: a paid request creates NO order and touches NO stock.
+
+  // Admin: create a payment request → returns the public payment path.
+  app.post("/api/admin/payment-requests", requireAdmin, async (req, res) => {
+    try {
+      const amountNum = parseFloat(String(req.body?.amount));
+      if (!Number.isFinite(amountNum) || amountNum <= 0) {
+        return res.status(400).json({ error: "Geçerli bir tutar girin" });
+      }
+      const { customerName, customerEmail, customerPhone, description, userId, expiresInDays } = req.body || {};
+      const token = crypto.randomBytes(32).toString('hex');
+      let expiresAt: Date | null = null;
+      const days = Number(expiresInDays);
+      if (Number.isFinite(days) && days > 0) {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + days);
+      }
+      const created = await storage.createPaymentRequest({
+        token,
+        userId: userId || null,
+        customerName: customerName || null,
+        customerEmail: customerEmail || null,
+        customerPhone: customerPhone || null,
+        amount: amountNum.toFixed(2),
+        description: description || null,
+        status: 'pending',
+        merchantOid: null,
+        paymentToken: null,
+        iyzicoPaymentId: null,
+        createdBy: 'admin',
+        paidAt: null,
+        expiresAt,
+      });
+      res.json({ ...created, paymentUrl: `/odeme-talebi/${created.token}` });
+    } catch (error) {
+      console.error('[payment-requests] create error:', error);
+      res.status(500).json({ error: "Ödeme talebi oluşturulamadı" });
+    }
+  });
+
+  // Admin: list all payment requests (most recent first).
+  app.get("/api/admin/payment-requests", requireAdmin, async (_req, res) => {
+    try {
+      const rows = await storage.getPaymentRequests();
+      res.json(rows);
+    } catch (error) {
+      console.error('[payment-requests] list error:', error);
+      res.status(500).json({ error: "Ödeme talepleri yüklenemedi" });
+    }
+  });
+
+  // Admin: cancel a pending payment request.
+  app.post("/api/admin/payment-requests/:id/cancel", requireAdmin, async (req, res) => {
+    try {
+      const cancelled = await storage.cancelPaymentRequest(req.params.id);
+      if (!cancelled) {
+        return res.status(400).json({ error: "Yalnızca bekleyen talepler iptal edilebilir" });
+      }
+      res.json(cancelled);
+    } catch (error) {
+      console.error('[payment-requests] cancel error:', error);
+      res.status(500).json({ error: "Ödeme talebi iptal edilemedi" });
+    }
+  });
+
+  // Public: fetch a payment request by token (sanitized; lazily expires).
+  app.get("/api/payment-requests/:token", trackingLimiter, async (req, res) => {
+    try {
+      const reqRow = await storage.getPaymentRequestByToken(req.params.token);
+      if (!reqRow) {
+        return res.status(404).json({ error: "Ödeme talebi bulunamadı" });
+      }
+      let status = reqRow.status;
+      if (status === 'pending' && reqRow.expiresAt && new Date(reqRow.expiresAt) < new Date()) {
+        await storage.updatePaymentRequest(reqRow.id, { status: 'expired' });
+        status = 'expired';
+      }
+      res.json({
+        token: reqRow.token,
+        amount: reqRow.amount,
+        description: reqRow.description,
+        customerName: reqRow.customerName,
+        status,
+        expiresAt: reqRow.expiresAt,
+        paidAt: reqRow.paidAt,
+      });
+    } catch (error) {
+      console.error('[payment-requests] get error:', error);
+      res.status(500).json({ error: "Ödeme talebi yüklenemedi" });
+    }
+  });
+
+  // Public: initialize iyzico checkout for a payment request (double-pay guarded).
+  app.post("/api/payment-requests/:token/pay", trackingLimiter, async (req, res) => {
+    try {
+      const reqRow = await storage.getPaymentRequestByToken(req.params.token);
+      if (!reqRow) {
+        return res.status(404).json({ error: "Ödeme talebi bulunamadı" });
+      }
+      if (reqRow.status !== 'pending') {
+        return res.status(400).json({ error: "Bu ödeme talebi artık ödenemez" });
+      }
+      if (reqRow.expiresAt && new Date(reqRow.expiresAt) < new Date()) {
+        await storage.updatePaymentRequest(reqRow.id, { status: 'expired' });
+        return res.status(400).json({ error: "Bu ödeme talebinin süresi dolmuş" });
+      }
+      if (!(await isIyzicoConfigured())) {
+        console.error('[payment-requests] iyzico not configured');
+        return res.status(500).json({ error: "Ödeme sistemi henüz yapılandırılmadı. Lütfen daha sonra tekrar deneyin." });
+      }
+
+      const baseUrl = process.env.NODE_ENV === 'production'
+        ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
+        : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
+
+      const merchantOid = `PR${Date.now()}${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      const amountTry = parseFloat(reqRow.amount).toFixed(2);
+      const userIp = (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.ip || '127.0.0.1').trim();
+
+      const displayName = (reqRow.customerName || 'Müşteri').trim();
+      const nameParts = displayName.split(/\s+/);
+      const firstName = nameParts[0] || displayName;
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
+      let gsmNumber = (reqRow.customerPhone || '').trim();
+      if (gsmNumber && !gsmNumber.startsWith('+')) {
+        gsmNumber = `+90${gsmNumber.replace(/^0/, '')}`;
+      }
+      if (!gsmNumber) gsmNumber = '+905555555555';
+
+      const iyzicoResp = await createCheckoutFormInitialize({
+        conversationId: merchantOid,
+        price: amountTry,
+        paidPrice: amountTry,
+        currency: 'TRY',
+        basketId: merchantOid,
+        callbackUrl: `${baseUrl}/api/payment/payment-request/callback`,
+        enabledInstallments: [1],
+        buyer: {
+          id: reqRow.id.substring(0, 64),
+          name: firstName,
+          surname: lastName,
+          gsmNumber,
+          email: reqRow.customerEmail || 'info@ecartejeans.com',
+          identityNumber: '11111111111',
+          registrationAddress: 'Ecarte Jeans',
+          city: 'İstanbul',
+          country: 'Türkiye',
+          ip: userIp,
+        },
+        shippingAddress: {
+          contactName: displayName,
+          city: 'İstanbul',
+          country: 'Türkiye',
+          address: 'Ecarte Jeans',
+        },
+        billingAddress: {
+          contactName: displayName,
+          city: 'İstanbul',
+          country: 'Türkiye',
+          address: 'Ecarte Jeans',
+        },
+        basketItems: [{
+          id: reqRow.id.substring(0, 64),
+          name: (reqRow.description || 'Ödeme').substring(0, 250),
+          category1: 'Ödeme',
+          itemType: 'VIRTUAL',
+          price: amountTry,
+        }],
+      });
+
+      if (iyzicoResp.status === 'success' && iyzicoResp.token) {
+        // Append (never overwrite) the issued token so a callback fired against an
+        // earlier form/tab can still resolve this request and settle it atomically.
+        await storage.addPaymentRequestToken(reqRow.id, iyzicoResp.token, merchantOid);
+        return res.json({
+          success: true,
+          token: iyzicoResp.token,
+          checkoutFormContent: iyzicoResp.checkoutFormContent,
+          paymentPageUrl: iyzicoResp.paymentPageUrl,
+        });
+      }
+      console.error('[payment-requests] iyzico init failed:', iyzicoResp.errorCode, iyzicoResp.errorMessage);
+      return res.status(400).json({ error: iyzicoResp.errorMessage || 'Ödeme sistemi bağlantısı kurulamadı.' });
+    } catch (error) {
+      console.error('[payment-requests] pay error:', error);
+      res.status(500).json({ error: "Ödeme başlatılamadı" });
+    }
+  });
+
+  // Separate iyzico callback for payment requests — settles the request only.
+  // No order is created and no stock is moved (a payment request is a pure money move).
+  const paymentRequestCallbackHandler = async (req: Request, res: Response) => {
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
+      : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
+    const sendRedirect = (path: string) => res.redirect(303, `${baseUrl}${path}`);
+    const token = (req.body?.token || req.query?.token) as string | undefined;
+
+    try {
+      if (!token) {
+        return sendRedirect('/odeme-basarisiz');
+      }
+      const reqRow = await storage.getPaymentRequestByPaymentToken(String(token));
+      if (!reqRow) {
+        return sendRedirect('/odeme-basarisiz');
+      }
+      // Idempotency: a concurrent/duplicate callback already settled this request.
+      // We still log it: a second callback token on an already-paid request can
+      // mean a buyer completed a second iyzico form (e.g. two tabs) and was charged
+      // twice — surface it so an admin can reconcile/refund manually.
+      if (reqRow.status === 'paid') {
+        console.warn('[payment-request callback] duplicate callback on already-paid request', {
+          id: reqRow.id,
+          token: String(token),
+        });
+        return sendRedirect(`/odeme-talebi/${reqRow.token}?durum=basarili`);
+      }
+
+      const result = await retrieveCheckoutForm(String(token));
+      const isPaid = result.status === 'success' && result.paymentStatus === 'SUCCESS';
+      if (!isPaid) {
+        return sendRedirect(`/odeme-talebi/${reqRow.token}?durum=basarisiz`);
+      }
+
+      // Verify the captured amount matches the request (within 1 kuruş).
+      const expected = parseFloat(reqRow.amount);
+      const paid = result.paidPrice ?? 0;
+      if (Math.abs(expected - paid) > 0.01) {
+        console.error('[payment-request callback] amount mismatch', { expected, paid, id: reqRow.id });
+        return sendRedirect(`/odeme-talebi/${reqRow.token}?durum=basarisiz`);
+      }
+
+      await storage.markPaymentRequestPaid(reqRow.id, result.paymentId || null);
+      return sendRedirect(`/odeme-talebi/${reqRow.token}?durum=basarili`);
+    } catch (error) {
+      console.error('[payment-request callback] error:', error);
+      return sendRedirect('/odeme-basarisiz');
+    }
+  };
+  app.post("/api/payment/payment-request/callback", paymentRequestCallbackHandler);
+  app.get("/api/payment/payment-request/callback", paymentRequestCallbackHandler);
 
   // iyzico Callback - browser POSTs here after Checkout Form completes.
   // The legacy /api/payment/callback path is kept as an alias for older webhooks.
@@ -2754,6 +3270,9 @@ export async function registerRoutes(
               price: item.price,
               quantity: item.quantity,
               subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
+              itemType: item.itemType ?? 'retail',
+              seriesName: item.seriesName ?? null,
+              seriesGroup: item.seriesGroup ?? null,
             });
 
             if (item.variantId && variantStock !== null) {
@@ -3129,6 +3648,13 @@ export async function registerRoutes(
       
       if (cartItems.length === 0) {
         return res.status(400).json({ error: "Cart is empty" });
+      }
+
+      // Wholesale rows must go through /api/payment/* (the explosion path that prices
+      // per-piece and deducts stock per size). This legacy endpoint prices at retail
+      // and never explodes, so reject any wholesale line outright.
+      if (cartItems.some((ci) => ci.itemType === 'wholesale')) {
+        return res.status(400).json({ error: "Toptan ürünler bu ödeme yöntemiyle tamamlanamaz. Lütfen ödeme adımından devam edin." });
       }
 
       // Generate order number

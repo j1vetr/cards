@@ -93,8 +93,14 @@ import {
   type InsertMarketplaceProduct,
   type MarketplaceSyncRun,
   type InsertMarketplaceSyncRun,
+  wholesaleSeries,
+  type WholesaleSeries,
+  type InsertWholesaleSeries,
+  paymentRequests,
+  type PaymentRequest,
+  type InsertPaymentRequest,
 } from "@shared/schema";
-import { eq, and, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum, type SQL } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum, type SQL } from "drizzle-orm";
 
 export interface PublicProductReview {
   id: string;
@@ -362,6 +368,31 @@ export interface IStorage {
   updateSyncRunStats(id: string, stats: Record<string, unknown>): Promise<void>;
   getRunningSyncRun(marketplaceId: string): Promise<MarketplaceSyncRun | undefined>;
   getRecentSyncRuns(marketplaceId: string, limit?: number): Promise<MarketplaceSyncRun[]>;
+
+  // Wholesale Series (Toptan Seriler)
+  getWholesaleSeriesList(): Promise<WholesaleSeries[]>;
+  getWholesaleSeries(id: string): Promise<WholesaleSeries | undefined>;
+  createWholesaleSeries(series: InsertWholesaleSeries): Promise<WholesaleSeries>;
+  updateWholesaleSeries(id: string, series: Partial<InsertWholesaleSeries>): Promise<WholesaleSeries | undefined>;
+  deleteWholesaleSeries(id: string): Promise<void>;
+
+  // Payment Requests (Ödeme Talepleri — flexible payment links)
+  createPaymentRequest(request: InsertPaymentRequest): Promise<PaymentRequest>;
+  getPaymentRequest(id: string): Promise<PaymentRequest | undefined>;
+  getPaymentRequestByToken(token: string): Promise<PaymentRequest | undefined>;
+  getPaymentRequestByPaymentToken(paymentToken: string): Promise<PaymentRequest | undefined>;
+  addPaymentRequestToken(id: string, paymentToken: string, merchantOid: string): Promise<PaymentRequest | undefined>;
+  getPaymentRequestByMerchantOid(merchantOid: string): Promise<PaymentRequest | undefined>;
+  getPaymentRequests(): Promise<PaymentRequest[]>;
+  getPaymentRequestsByUserId(userId: string): Promise<PaymentRequest[]>;
+  getPaymentRequestsByEmail(email: string): Promise<PaymentRequest[]>;
+  updatePaymentRequest(id: string, patch: Partial<PaymentRequest>): Promise<PaymentRequest | undefined>;
+  /**
+   * Atomically transition a payment request from 'pending' → 'paid'.
+   * Returns the row only if THIS call won the race (idempotency for callbacks).
+   */
+  markPaymentRequestPaid(id: string, iyzicoPaymentId: string | null): Promise<PaymentRequest | undefined>;
+  cancelPaymentRequest(id: string): Promise<PaymentRequest | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -829,6 +860,8 @@ export class DbStorage implements IStorage {
         slug: products.slug,
         basePrice: products.basePrice,
         images: products.images,
+        wholesaleEnabled: products.wholesaleEnabled,
+        wholesalePrice: products.wholesalePrice,
       }).from(products).where(eq(products.id, item.productId));
       
       let variant = null;
@@ -840,6 +873,17 @@ export class DbStorage implements IStorage {
           price: productVariants.price,
         }).from(productVariants).where(eq(productVariants.id, item.variantId));
         variant = v || null;
+      }
+
+      // Wholesale row: enrich with the series + per-series price + line total.
+      // wholesalePrice is per piece; one series = unitPrice × totalPieces.
+      if (item.itemType === "wholesale" && item.seriesId) {
+        const [series] = await db.select().from(wholesaleSeries).where(eq(wholesaleSeries.id, item.seriesId));
+        const totalPieces = (series?.sizeDistribution || []).reduce((s, d) => s + (Number(d.quantity) || 0), 0);
+        const unitPrice = parseFloat(product?.wholesalePrice || "0");
+        const seriesPrice = unitPrice * totalPieces;
+        const lineTotal = seriesPrice * (item.quantity || 1);
+        return { ...item, product, variant, series: series || null, totalPieces, unitPrice, seriesPrice, lineTotal };
       }
       
       return { ...item, product, variant };
@@ -1327,11 +1371,15 @@ export class DbStorage implements IStorage {
         images: r.images || [],
         availableSizes: r.available_sizes || [],
         availableColors: r.available_colors || [],
+        videoUrl: r.video_url ?? null,
         attributes: r.attributes || {},
         isActive: r.is_active,
         isFeatured: r.is_featured,
         isNew: r.is_new,
         discountBadge: r.discount_badge ?? null,
+        wholesaleEnabled: r.wholesale_enabled ?? false,
+        wholesalePrice: r.wholesale_price ?? null,
+        wholesaleSeriesId: r.wholesale_series_id ?? null,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       },
@@ -2382,6 +2430,121 @@ export class DbStorage implements IStorage {
       .where(eq(marketplaceSyncRuns.marketplaceId, marketplaceId))
       .orderBy(desc(marketplaceSyncRuns.startedAt))
       .limit(limit);
+  }
+
+  // ===== Wholesale Series (Toptan Seriler) =====
+  async getWholesaleSeriesList(): Promise<WholesaleSeries[]> {
+    return db.select().from(wholesaleSeries).orderBy(desc(wholesaleSeries.createdAt));
+  }
+
+  async getWholesaleSeries(id: string): Promise<WholesaleSeries | undefined> {
+    const [row] = await db.select().from(wholesaleSeries).where(eq(wholesaleSeries.id, id));
+    return row;
+  }
+
+  async createWholesaleSeries(series: InsertWholesaleSeries): Promise<WholesaleSeries> {
+    const [row] = await db.insert(wholesaleSeries).values(series as any).returning();
+    return row;
+  }
+
+  async updateWholesaleSeries(id: string, series: Partial<InsertWholesaleSeries>): Promise<WholesaleSeries | undefined> {
+    const [row] = await db.update(wholesaleSeries)
+      .set({ ...series, updatedAt: new Date() } as any)
+      .where(eq(wholesaleSeries.id, id))
+      .returning();
+    return row;
+  }
+
+  async deleteWholesaleSeries(id: string): Promise<void> {
+    await db.delete(wholesaleSeries).where(eq(wholesaleSeries.id, id));
+  }
+
+  // ===== Payment Requests (Ödeme Talepleri) =====
+  async createPaymentRequest(request: InsertPaymentRequest): Promise<PaymentRequest> {
+    const [row] = await db.insert(paymentRequests).values(request).returning();
+    return row;
+  }
+
+  async getPaymentRequest(id: string): Promise<PaymentRequest | undefined> {
+    const [row] = await db.select().from(paymentRequests).where(eq(paymentRequests.id, id));
+    return row;
+  }
+
+  async getPaymentRequestByToken(token: string): Promise<PaymentRequest | undefined> {
+    const [row] = await db.select().from(paymentRequests).where(eq(paymentRequests.token, token));
+    return row;
+  }
+
+  async getPaymentRequestByPaymentToken(paymentToken: string): Promise<PaymentRequest | undefined> {
+    // Match the latest token or any historically-issued token (multi-tab / retry safety).
+    const [row] = await db.select().from(paymentRequests).where(
+      or(
+        eq(paymentRequests.paymentToken, paymentToken),
+        sql`${paymentToken} = ANY(${paymentRequests.paymentTokens})`,
+      ),
+    );
+    return row;
+  }
+
+  async addPaymentRequestToken(id: string, paymentToken: string, merchantOid: string): Promise<PaymentRequest | undefined> {
+    // Append every issued iyzico token to the history so a callback can resolve the
+    // request by any token, even after a later re-init overwrote the "latest" one.
+    const [row] = await db.update(paymentRequests)
+      .set({
+        paymentToken,
+        merchantOid,
+        paymentTokens: sql`array_append(${paymentRequests.paymentTokens}, ${paymentToken})`,
+        updatedAt: new Date(),
+      })
+      .where(eq(paymentRequests.id, id))
+      .returning();
+    return row;
+  }
+
+  async getPaymentRequestByMerchantOid(merchantOid: string): Promise<PaymentRequest | undefined> {
+    const [row] = await db.select().from(paymentRequests).where(eq(paymentRequests.merchantOid, merchantOid));
+    return row;
+  }
+
+  async getPaymentRequests(): Promise<PaymentRequest[]> {
+    return db.select().from(paymentRequests).orderBy(desc(paymentRequests.createdAt));
+  }
+
+  async getPaymentRequestsByUserId(userId: string): Promise<PaymentRequest[]> {
+    return db.select().from(paymentRequests)
+      .where(eq(paymentRequests.userId, userId))
+      .orderBy(desc(paymentRequests.createdAt));
+  }
+
+  async getPaymentRequestsByEmail(email: string): Promise<PaymentRequest[]> {
+    return db.select().from(paymentRequests)
+      .where(eq(paymentRequests.customerEmail, email))
+      .orderBy(desc(paymentRequests.createdAt));
+  }
+
+  async updatePaymentRequest(id: string, patch: Partial<PaymentRequest>): Promise<PaymentRequest | undefined> {
+    const [row] = await db.update(paymentRequests)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(paymentRequests.id, id))
+      .returning();
+    return row;
+  }
+
+  async markPaymentRequestPaid(id: string, iyzicoPaymentId: string | null): Promise<PaymentRequest | undefined> {
+    // Atomic pending → paid. Returns row only if this call won the race.
+    const [row] = await db.update(paymentRequests)
+      .set({ status: "paid", iyzicoPaymentId, paidAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(paymentRequests.id, id), eq(paymentRequests.status, "pending")))
+      .returning();
+    return row;
+  }
+
+  async cancelPaymentRequest(id: string): Promise<PaymentRequest | undefined> {
+    const [row] = await db.update(paymentRequests)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(and(eq(paymentRequests.id, id), eq(paymentRequests.status, "pending")))
+      .returning();
+    return row;
   }
 }
 

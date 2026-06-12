@@ -129,9 +129,11 @@ export default function Checkout() {
   const [hasAutoSelectedAddress, setHasAutoSelectedAddress] = useState(false);
 
   const cartItemsWithProducts = items.map(item => {
-    const product = products.find(p => p.id === item.productId);
+    const product = products.find(p => p.id === item.productId) ?? item.product;
     return { ...item, product };
   });
+
+  const hasWholesale = items.some(item => item.itemType === 'wholesale');
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -204,6 +206,8 @@ export default function Checkout() {
   
   // Calculate discount based on coupon
   const calculateDiscount = () => {
+    // No coupons on wholesale carts (server enforces this too).
+    if (hasWholesale) return 0;
     if (!appliedCoupon) return 0;
     const discountBase = appliedCoupon.appliesToShipping ? subtotal + shippingCost : subtotal;
     let disc = 0;
@@ -221,7 +225,8 @@ export default function Checkout() {
   const discount = calculateDiscount();
   const total = subtotal - discount + shippingCost;
   const BANK_TRANSFER_DISCOUNT_RATE = 0.10;
-  const bankTransferDiscount = paymentMethod === 'bank_transfer'
+  // No bank-transfer 10% perk on wholesale (server omits it for wholesale orders).
+  const bankTransferDiscount = (paymentMethod === 'bank_transfer' && !hasWholesale)
     ? Math.round(total * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100
     : 0;
   const finalTotal = total - bankTransferDiscount;
@@ -1166,13 +1171,15 @@ export default function Checkout() {
                         >
                           <span className="text-base">🏦</span>
                           HAVALE
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 ${
-                            paymentMethod === 'bank_transfer'
-                              ? 'bg-polen-orange text-black'
-                              : 'bg-polen-orange/15 text-polen-orange'
-                          }`}>
-                            -%10
-                          </span>
+                          {!hasWholesale && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 ${
+                              paymentMethod === 'bank_transfer'
+                                ? 'bg-polen-orange text-black'
+                                : 'bg-polen-orange/15 text-polen-orange'
+                            }`}>
+                              -%10
+                            </span>
+                          )}
                         </button>
                       </div>
 
@@ -1193,7 +1200,9 @@ export default function Checkout() {
                                 <span className="text-lg">🏦</span>
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-black">Havale ile %10 indirim kazandınız!</p>
+                                <p className="text-sm font-bold text-black">
+                                  {hasWholesale ? 'Havale ile ödeme' : 'Havale ile %10 indirim kazandınız!'}
+                                </p>
                                 <p className="text-xs text-black/65 mt-1 leading-snug">
                                   Aşağıdaki banka bilgilerine ödemenizi yaptıktan sonra siparişiniz onaylanıp hazırlığa alınır.
                                 </p>
@@ -1243,17 +1252,21 @@ export default function Checkout() {
                           </div>
 
                           <div className="bg-stone-50 border border-black/8 p-4 space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-black/55">Sipariş Toplamı</span>
-                              <span className="text-black/70 line-through">{total.toLocaleString('tr-TR')} ₺</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-polen-orange font-medium">Havale İndirimi (%10)</span>
-                              <span className="text-polen-orange font-medium" data-testid="text-bank-discount">
-                                -{bankTransferDiscount.toLocaleString('tr-TR')} ₺
-                              </span>
-                            </div>
-                            <div className="h-px bg-black/8" />
+                            {!hasWholesale && (
+                              <>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-black/55">Sipariş Toplamı</span>
+                                  <span className="text-black/70 line-through">{total.toLocaleString('tr-TR')} ₺</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-polen-orange font-medium">Havale İndirimi (%10)</span>
+                                  <span className="text-polen-orange font-medium" data-testid="text-bank-discount">
+                                    -{bankTransferDiscount.toLocaleString('tr-TR')} ₺
+                                  </span>
+                                </div>
+                                <div className="h-px bg-black/8" />
+                              </>
+                            )}
                             <div className="flex justify-between items-end">
                               <span className="font-bold text-black">Ödenecek Tutar</span>
                               <span className="font-bold text-2xl text-black" data-testid="text-bank-final-total">
@@ -1411,16 +1424,27 @@ export default function Checkout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{item.product?.name || 'Ürün'}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Adet: {item.quantity}</p>
+                        {item.itemType === 'wholesale' ? (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Toptan seri{item.series?.name ? `: ${item.series.name}` : ''} · {item.quantity} seri
+                            {typeof item.totalPieces === 'number' ? ` (${item.totalPieces * item.quantity} adet)` : ''}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-0.5">Adet: {item.quantity}</p>
+                        )}
                         <p className="text-sm font-bold mt-1">
-                          {(parseFloat(item.product?.basePrice || '0') * item.quantity).toLocaleString('tr-TR')} ₺
+                          {(item.itemType === 'wholesale'
+                            ? (item.lineTotal ?? 0)
+                            : parseFloat(item.product?.basePrice || '0') * item.quantity
+                          ).toLocaleString('tr-TR')} ₺
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Coupon Input Section */}
+                {/* Coupon Input Section — hidden for wholesale (no coupons) */}
+                {!hasWholesale && (
                 <div className="py-4 border-b border-black/8 relative">
                   {appliedCoupon ? (
                     <div className="space-y-3">
@@ -1498,6 +1522,7 @@ export default function Checkout() {
                     </div>
                   )}
                 </div>
+                )}
 
                 <div className="space-y-3 text-sm py-4 relative">
                   <div className="flex justify-between">

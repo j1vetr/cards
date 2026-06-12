@@ -101,6 +101,13 @@ function StarRating({
   );
 }
 
+interface WholesaleSeries {
+  id: string;
+  name: string;
+  sizeDistribution: { size: string; quantity: number }[];
+  isActive: boolean;
+}
+
 export default function ProductDetail() {
   const params = useParams<{ slug: string }>();
   const reduceMotion = useReducedMotion();
@@ -123,6 +130,27 @@ export default function ProductDetail() {
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { toggleFavorite, isLoading: isFavoriteLoading } = useToggleFavorite();
   const isLiked = product ? favoriteIds.includes(product.id) : false;
+
+  // --- Wholesale (toptan) ---
+  const isWholesaleUser = user?.customerType === 'wholesale';
+  const wholesaleActive = !!product?.wholesaleEnabled && !!product?.wholesalePrice;
+  const { data: wholesaleSeriesList = [] } = useQuery<WholesaleSeries[]>({
+    queryKey: ['/api/wholesale-series'],
+    queryFn: async () => {
+      const res = await fetch('/api/wholesale-series');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: wholesaleActive,
+    staleTime: 5 * 60 * 1000,
+  });
+  const wholesaleSeries = product?.wholesaleSeriesId
+    ? wholesaleSeriesList.find((s) => s.id === product.wholesaleSeriesId) ?? null
+    : null;
+  const wholesalePiecesPerSeries = wholesaleSeries
+    ? wholesaleSeries.sizeDistribution.reduce((sum, d) => sum + (d.quantity || 0), 0)
+    : 0;
+  const [isAddingWholesale, setIsAddingWholesale] = useState(false);
 
   // Video slot: images.length → video (sanal index)
   const videoUrl = product?.videoUrl ?? null;
@@ -307,6 +335,43 @@ export default function ProductDetail() {
       toast({ title: 'Hata', description: 'Sepete eklenemedi.', variant: 'destructive' });
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleAddWholesale = async () => {
+    if (!product || !wholesaleSeries) return;
+    if (!isWholesaleUser) {
+      toast({
+        title: 'Toptan hesabı gerekli',
+        description: 'Seri olarak sipariş vermek için toptan (kurumsal) hesabıyla giriş yapın.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsAddingWholesale(true);
+    try {
+      await addToCart(product.id, undefined, 1, {
+        itemType: 'wholesale',
+        seriesId: wholesaleSeries.id,
+      });
+      const mainImage =
+        product.images && product.images.length > 0
+          ? product.images[0]
+          : 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop';
+      showModal({
+        name: `${product.name} — ${wholesaleSeries.name} (${wholesalePiecesPerSeries} adet)`,
+        image: mainImage,
+        price: parseFloat(product.wholesalePrice || '0') * wholesalePiecesPerSeries,
+        quantity: 1,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hata',
+        description: err?.message || 'Seri sepete eklenemedi. Sepetinizde perakende ürün olmadığından emin olun.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAddingWholesale(false);
     }
   };
 
@@ -921,6 +986,91 @@ export default function ProductDetail() {
                   {price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                 </span>
               </div>
+
+              {/* Toptan (wholesale) panel */}
+              {wholesaleActive && (
+                <div
+                  className="mb-6 pb-6 border-b border-black/8"
+                  data-testid="panel-wholesale"
+                >
+                  <div className="border border-polen-orange/30 bg-polen-orange/[0.04] rounded-lg overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-polen-orange/10 border-b border-polen-orange/20">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-polen-orange-deep">
+                        Toptan Satış
+                      </span>
+                      {wholesaleSeries && (
+                        <span className="text-[11px] font-medium text-black/55">
+                          {wholesaleSeries.name} · {wholesalePiecesPerSeries} adet/seri
+                        </span>
+                      )}
+                    </div>
+                    <div className="px-4 py-4">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span
+                          className="font-display text-2xl text-polen-orange-deep tabular-nums"
+                          data-testid="text-wholesale-price"
+                        >
+                          {parseFloat(product.wholesalePrice || '0').toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                        </span>
+                        <span className="text-[12px] text-black/50">/ adet</span>
+                      </div>
+
+                      {wholesaleSeries ? (
+                        <>
+                          <div className="flex flex-wrap gap-1.5 my-3" data-testid="list-wholesale-distribution">
+                            {wholesaleSeries.sizeDistribution.map((d) => (
+                              <span
+                                key={d.size}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-black/10 bg-white text-[11px] text-black/70"
+                              >
+                                <span className="font-semibold text-black">{d.size}</span>
+                                <span className="text-black/40">×</span>
+                                <span>{d.quantity}</span>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between text-[13px] mb-3 pt-2 border-t border-black/5">
+                            <span className="text-black/55">Seri toplamı ({wholesalePiecesPerSeries} adet)</span>
+                            <span className="font-display text-base text-black tabular-nums" data-testid="text-wholesale-series-total">
+                              {(parseFloat(product.wholesalePrice || '0') * wholesalePiecesPerSeries).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                            </span>
+                          </div>
+
+                          {isWholesaleUser ? (
+                            <button
+                              type="button"
+                              onClick={handleAddWholesale}
+                              disabled={isAddingWholesale}
+                              className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-md bg-polen-orange text-white text-[13px] font-semibold uppercase tracking-[0.12em] hover:bg-polen-orange-deep transition-colors disabled:opacity-60"
+                              data-testid="button-add-wholesale"
+                            >
+                              {isAddingWholesale ? 'Ekleniyor…' : 'Toptan Sepete Ekle'}
+                            </button>
+                          ) : user ? (
+                            <p className="text-[12px] text-black/55 leading-relaxed" data-testid="text-wholesale-account-needed">
+                              Seri olarak sipariş vermek için toptan (kurumsal) hesabı gereklidir.{' '}
+                              <Link href="/iletisim" className="text-polen-orange-deep font-semibold underline">
+                                Bizimle iletişime geçin
+                              </Link>
+                              .
+                            </p>
+                          ) : (
+                            <p className="text-[12px] text-black/55 leading-relaxed" data-testid="text-wholesale-login-needed">
+                              Toptan fiyatlarla seri sipariş için{' '}
+                              <Link href="/giris" className="text-polen-orange-deep font-semibold underline">
+                                toptan hesabıyla giriş yapın
+                              </Link>
+                              .
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-[12px] text-black/55">Toptan seri bilgisi yükleniyor…</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Short description / accordion */}
               {product.description && (

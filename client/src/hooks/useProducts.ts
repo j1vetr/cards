@@ -16,6 +16,9 @@ export interface Product {
   isFeatured: boolean;
   isNew: boolean;
   discountBadge?: string | null;
+  wholesaleEnabled?: boolean;
+  wholesalePrice?: string | null;
+  wholesaleSeriesId?: string | null;
   createdAt: string;
   updatedAt: string;
   variants?: ProductVariant[];

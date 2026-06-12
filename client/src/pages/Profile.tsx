@@ -37,7 +37,17 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { ProductCard } from '@/components/ProductCard';
 import { COUNTRIES } from '@/lib/countries';
 
-type TabType = 'orders' | 'profile' | 'addresses' | 'favorites';
+type TabType = 'orders' | 'payments' | 'profile' | 'addresses' | 'favorites';
+
+interface MyPaymentRequest {
+  token: string;
+  amount: string;
+  description: string | null;
+  status: 'pending' | 'paid' | 'cancelled' | 'expired';
+  createdAt: string;
+  paidAt: string | null;
+  expiresAt: string | null;
+}
 
 interface Order {
   id: string;
@@ -126,6 +136,17 @@ export default function Profile() {
     },
     enabled: !!user,
   });
+
+  const { data: paymentRequests = [], isLoading: paymentRequestsLoading } = useQuery<MyPaymentRequest[]>({
+    queryKey: ['my-payment-requests'],
+    queryFn: async () => {
+      const res = await fetch('/api/payment-requests/mine', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch payment requests');
+      return res.json();
+    },
+    enabled: !!user,
+  });
+  const pendingPaymentCount = paymentRequests.filter((p) => p.status === 'pending').length;
 
   const { data: favorites = [], isLoading: favoritesLoading } = useFavorites();
 
@@ -351,6 +372,7 @@ export default function Profile() {
 
   const tabs = [
     { id: 'orders' as TabType, label: 'Siparişlerim', icon: Package, count: orders.length },
+    { id: 'payments' as TabType, label: 'Bekleyen Ödemeler', icon: CreditCard, count: pendingPaymentCount },
     { id: 'favorites' as TabType, label: 'Favorilerim', icon: Heart, count: favorites.length },
     { id: 'profile' as TabType, label: 'Profil Bilgileri', icon: User },
     { id: 'addresses' as TabType, label: 'Adreslerim', icon: MapPin, count: addresses.length },
@@ -525,6 +547,84 @@ export default function Profile() {
                                 </button>
                               </div>
                             </motion.div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'payments' && (
+                  <motion.div
+                    key="payments"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-semibold text-black">Ödeme Talepleri</h2>
+                      <p className="text-sm text-black/45">{pendingPaymentCount} bekliyor</p>
+                    </div>
+
+                    {paymentRequestsLoading ? (
+                      <div className="flex items-center justify-center py-20">
+                        <Loader2 className="w-8 h-8 animate-spin text-black/30" />
+                      </div>
+                    ) : paymentRequests.length === 0 ? (
+                      <div className="bg-white border border-black/8 rounded-2xl p-12 text-center">
+                        <CreditCard className="w-16 h-16 mx-auto mb-4 text-black/20" />
+                        <h3 className="text-xl font-semibold text-black mb-2">Ödeme talebiniz yok</h3>
+                        <p className="text-black/45">Size gönderilen ödeme bağlantıları burada görünür.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {paymentRequests.map((pr) => {
+                          const cfg = {
+                            pending: { label: 'Bekliyor', bg: 'bg-amber-50', color: 'text-amber-700', icon: Clock },
+                            paid: { label: 'Ödendi', bg: 'bg-emerald-50', color: 'text-emerald-700', icon: CheckCircle2 },
+                            cancelled: { label: 'İptal Edildi', bg: 'bg-stone-100', color: 'text-black/50', icon: XCircle },
+                            expired: { label: 'Süresi Doldu', bg: 'bg-stone-100', color: 'text-black/50', icon: XCircle },
+                          }[pr.status];
+                          const StatusIcon = cfg.icon;
+                          return (
+                            <div
+                              key={pr.token}
+                              className="bg-white border border-black/8 rounded-2xl p-5 hover:border-black/12 transition-colors"
+                              data-testid={`payment-request-card-${pr.token}`}
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <span className="font-semibold text-black text-lg" data-testid={`text-pr-amount-${pr.token}`}>
+                                      {Number(pr.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}₺
+                                    </span>
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+                                      <StatusIcon className="w-3.5 h-3.5" />
+                                      {cfg.label}
+                                    </span>
+                                  </div>
+                                  {pr.description && (
+                                    <p className="text-sm text-black/55 mb-1">{pr.description}</p>
+                                  )}
+                                  <span className="flex items-center gap-1.5 text-sm text-black/45">
+                                    <Calendar className="w-4 h-4" />
+                                    {formatTRDate(pr.createdAt)}
+                                  </span>
+                                </div>
+                                {pr.status === 'pending' && (
+                                  <Link href={`/odeme-talebi/${pr.token}`}>
+                                    <button
+                                      className="flex items-center gap-2 px-5 py-2.5 bg-polen-orange text-black hover:bg-[hsl(var(--polen-orange-deep))] hover:text-white rounded-none text-sm font-semibold tracking-[0.04em] uppercase transition-colors"
+                                      data-testid={`button-pay-${pr.token}`}
+                                    >
+                                      <CreditCard className="w-4 h-4" />
+                                      Öde
+                                    </button>
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
                           );
                         })}
                       </div>

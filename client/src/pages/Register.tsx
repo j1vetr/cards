@@ -29,6 +29,10 @@ export default function Register() {
     city: '',
     district: '',
     country: 'Türkiye',
+    customerType: 'retail' as 'retail' | 'wholesale',
+    companyName: '',
+    taxNumber: '',
+    taxOffice: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -46,6 +50,10 @@ export default function Register() {
       toast({ title: 'Hata', description: 'Şifre en az 6 karakter olmalıdır', variant: 'destructive' });
       return;
     }
+    if (formData.customerType === 'wholesale' && !formData.companyName.trim()) {
+      toast({ title: 'Hata', description: 'Toptan hesap için firma adı zorunludur', variant: 'destructive' });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -59,6 +67,10 @@ export default function Register() {
         city: formData.city || undefined,
         district: formData.district || undefined,
         country: formData.country || 'Türkiye',
+        customerType: formData.customerType,
+        companyName: formData.customerType === 'wholesale' ? (formData.companyName || undefined) : undefined,
+        taxNumber: formData.customerType === 'wholesale' ? (formData.taxNumber || undefined) : undefined,
+        taxOffice: formData.customerType === 'wholesale' ? (formData.taxOffice || undefined) : undefined,
       });
       toast({ title: 'Başarılı', description: 'Kayıt tamamlandı' });
       navigate('/');
@@ -157,6 +169,55 @@ export default function Register() {
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-3.5">
+                {/* Account type toggle — Bireysel / Toptan */}
+                <div className="space-y-1.5">
+                  <Label className={labelCls}>Hesap Türü</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: 'retail', label: 'Bireysel' },
+                      { value: 'wholesale', label: 'Toptan' },
+                    ] as const).map((opt) => (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => setFormData({ ...formData, customerType: opt.value })}
+                        data-testid={`button-customertype-${opt.value}`}
+                        className={`h-11 border text-[11px] font-medium tracking-[0.18em] uppercase transition-colors ${
+                          formData.customerType === opt.value
+                            ? 'border-polen-orange bg-polen-orange text-white'
+                            : 'border-black/12 bg-stone-50 text-black/55 hover:border-polen-orange/50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  {formData.customerType === 'wholesale' && (
+                    <p className="text-[11px] text-black/45 leading-relaxed pt-0.5">
+                      Toptan hesaplar anında aktiftir; toptan fiyatlar ve seri alımları hesabınıza tanımlanır.
+                    </p>
+                  )}
+                </div>
+
+                {formData.customerType === 'wholesale' && (
+                  <div className="space-y-3.5 border-l-2 border-polen-orange/40 pl-3.5">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="companyName" className={labelCls}>Firma Adı / Ünvan *</Label>
+                      <Input id="companyName" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="Firma adınız" data-testid="input-companyName" className={inputCls} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="taxNumber" className={labelCls}>Vergi No</Label>
+                        <Input id="taxNumber" name="taxNumber" value={formData.taxNumber} onChange={handleChange} placeholder="Vergi numarası" data-testid="input-taxNumber" className={inputCls} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="taxOffice" className={labelCls}>Vergi Dairesi</Label>
+                        <Input id="taxOffice" name="taxOffice" value={formData.taxOffice} onChange={handleChange} placeholder="Vergi dairesi" data-testid="input-taxOffice" className={inputCls} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="firstName" className={labelCls}>Ad</Label>

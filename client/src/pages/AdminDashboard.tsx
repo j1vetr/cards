@@ -17,6 +17,8 @@ import MenuTab from './admin/MenuTab';
 import CouponsTab from './admin/CouponsTab';
 import ReviewsTab from './admin/ReviewsTab';
 import WholesaleTab from './admin/WholesaleTab';
+import WholesaleSeriesTab from './admin/WholesaleSeriesTab';
+import PaymentRequestsTab from './admin/PaymentRequestsTab';
 
 import CategoryModal from './admin/modals/CategoryModal';
 import UserDetailModal from './admin/modals/UserDetailModal';
@@ -201,6 +203,8 @@ export default function AdminDashboard() {
             productsLoading={productsLoading}
           />
         )}
+        {activeTab === 'wholesale-series' && <WholesaleSeriesTab />}
+        {activeTab === 'payment-requests' && <PaymentRequestsTab />}
       </AdminLayout>
 
       {showCategoryModal && (

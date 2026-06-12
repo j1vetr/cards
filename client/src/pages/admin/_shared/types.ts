@@ -15,7 +15,37 @@ export interface Product {
   isFeatured: boolean;
   isNew: boolean;
   discountBadge?: string | null;
+  wholesaleEnabled?: boolean;
+  wholesalePrice?: string | null;
+  wholesaleSeriesId?: string | null;
   createdAt: string;
+}
+
+export interface WholesaleSeries {
+  id: string;
+  name: string;
+  sizeDistribution: { size: string; quantity: number }[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentRequest {
+  id: string;
+  token: string;
+  userId?: string | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  amount: string;
+  description?: string | null;
+  status: 'pending' | 'paid' | 'cancelled' | 'expired';
+  merchantOid?: string | null;
+  createdBy?: string | null;
+  paidAt?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+  paymentUrl?: string;
 }
 
 export interface Category {
@@ -147,4 +177,6 @@ export type TabType =
   | 'marketplaces'
   | 'coupons'
   | 'reviews'
-  | 'wholesale';
+  | 'wholesale'
+  | 'wholesale-series'
+  | 'payment-requests';

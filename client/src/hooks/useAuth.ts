@@ -13,6 +13,10 @@ interface User {
   postalCode: string | null;
   country: string | null;
   whatsappOptIn?: boolean;
+  customerType?: 'retail' | 'wholesale';
+  companyName?: string | null;
+  taxNumber?: string | null;
+  taxOffice?: string | null;
 }
 
 interface AuthContextType {
@@ -33,6 +37,10 @@ interface RegisterData {
   city?: string;
   district?: string;
   country?: string;
+  customerType?: 'retail' | 'wholesale';
+  companyName?: string;
+  taxNumber?: string;
+  taxOffice?: string;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

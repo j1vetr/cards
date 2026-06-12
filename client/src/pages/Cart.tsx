@@ -30,9 +30,11 @@ export default function Cart() {
   const products = productsData?.products ?? [];
 
   const cartItemsWithProducts = items.map(item => {
-    const product = products.find(p => p.id === item.productId);
+    const product = products.find(p => p.id === item.productId) ?? item.product;
     return { ...item, product };
   });
+
+  const hasWholesale = items.some(item => item.itemType === 'wholesale');
 
   const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 200;
   const total = subtotal + shippingCost;
@@ -197,15 +199,35 @@ export default function Cart() {
                               </h3>
                             </Link>
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {item.variant?.size && (
-                                <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                  Beden: {item.variant.size}
-                                </span>
-                              )}
-                              {item.variant?.color && (
-                                <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                  {item.variant.color}
-                                </span>
+                              {item.itemType === 'wholesale' ? (
+                                <>
+                                  <span className="text-xs px-2 py-0.5 bg-polen-orange/10 text-polen-orange rounded font-medium" data-testid={`badge-wholesale-${item.id}`}>
+                                    Toptan Seri{item.series?.name ? `: ${item.series.name}` : ''}
+                                  </span>
+                                  {item.series?.sizeDistribution?.map((d) => (
+                                    <span key={d.size} className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
+                                      {d.size}×{d.quantity}
+                                    </span>
+                                  ))}
+                                  {typeof item.totalPieces === 'number' && (
+                                    <span className="text-xs text-black/40">
+                                      {item.totalPieces} adet/seri
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  {item.variant?.size && (
+                                    <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
+                                      Beden: {item.variant.size}
+                                    </span>
+                                  )}
+                                  {item.variant?.color && (
+                                    <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
+                                      {item.variant.color}
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>
@@ -234,7 +256,10 @@ export default function Cart() {
                             </div>
 
                             <p className="font-bold text-base sm:text-lg shrink-0 text-black" data-testid={`text-price-${item.id}`}>
-                              {(parseFloat(item.product?.basePrice || '0') * item.quantity).toLocaleString('tr-TR')} ₺
+                              {(item.itemType === 'wholesale'
+                                ? (item.lineTotal ?? 0)
+                                : parseFloat(item.product?.basePrice || '0') * item.quantity
+                              ).toLocaleString('tr-TR')} ₺
                             </p>
                           </div>
                         </div>
@@ -294,15 +319,17 @@ export default function Cart() {
                     </motion.div>
                   </Link>
 
-                  <div
-                    className="mt-3 px-3 py-2.5 bg-polen-orange/10 border border-polen-orange/30 flex items-start gap-2"
-                    data-testid="info-bank-transfer-discount"
-                  >
-                    <span className="text-[15px] leading-none mt-0.5">🏦</span>
-                    <p className="text-[12px] text-black/75 leading-snug">
-                      <span className="font-semibold text-black">Havale ile %10 indirim</span> — ödeme adımında seçin.
-                    </p>
-                  </div>
+                  {!hasWholesale && (
+                    <div
+                      className="mt-3 px-3 py-2.5 bg-polen-orange/10 border border-polen-orange/30 flex items-start gap-2"
+                      data-testid="info-bank-transfer-discount"
+                    >
+                      <span className="text-[15px] leading-none mt-0.5">🏦</span>
+                      <p className="text-[12px] text-black/75 leading-snug">
+                        <span className="font-semibold text-black">Havale ile %10 indirim</span> — ödeme adımında seçin.
+                      </p>
+                    </div>
+                  )}
 
                   <Link href="/">
                     <Button variant="ghost" className="w-full mt-3 text-sm text-black/35 hover:text-black hover:bg-transparent" data-testid="button-continue">

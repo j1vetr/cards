@@ -31,6 +31,10 @@ export const users = pgTable("users", {
   postalCode: text("postal_code"),
   country: text("country").default("Türkiye"),
   whatsappOptIn: boolean("whatsapp_opt_in").default(true).notNull(),
+  customerType: text("customer_type").default("retail").notNull(), // 'retail' | 'wholesale'
+  companyName: text("company_name"),
+  taxNumber: text("tax_number"),
+  taxOffice: text("tax_office"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -87,6 +91,28 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
+// Wholesale "seri" — a fixed size distribution sold as one unit, priced per piece.
+// e.g. [{size:"31",quantity:1},{size:"34",quantity:2},...] = N pieces per series.
+export const wholesaleSeries = pgTable("wholesale_series", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  sizeDistribution: jsonb("size_distribution").$type<{ size: string; quantity: number }[]>().default([]).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWholesaleSeriesSchema = createInsertSchema(wholesaleSeries, {
+  sizeDistribution: z.array(z.object({ size: z.string(), quantity: z.number() })),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertWholesaleSeries = z.infer<typeof insertWholesaleSeriesSchema>;
+export type WholesaleSeries = typeof wholesaleSeries.$inferSelect;
+
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -104,6 +130,9 @@ export const products = pgTable("products", {
   isFeatured: boolean("is_featured").default(false).notNull(),
   isNew: boolean("is_new").default(false).notNull(),
   discountBadge: text("discount_badge"),
+  wholesaleEnabled: boolean("wholesale_enabled").default(false).notNull(),
+  wholesalePrice: decimal("wholesale_price", { precision: 10, scale: 2 }),
+  wholesaleSeriesId: varchar("wholesale_series_id").references(() => wholesaleSeries.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -176,6 +205,8 @@ export const cartItems = pgTable("cart_items", {
   productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
   variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
   quantity: integer("quantity").default(1).notNull(),
+  itemType: text("item_type").default("retail").notNull(), // 'retail' | 'wholesale'
+  seriesId: varchar("series_id").references(() => wholesaleSeries.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -240,6 +271,9 @@ export const orderItems = pgTable("order_items", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  itemType: text("item_type").default("retail").notNull(), // 'retail' | 'wholesale'
+  seriesName: text("series_name"), // wholesale display: series label
+  seriesGroup: text("series_group"), // groups exploded rows belonging to one wholesale line
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
@@ -564,6 +598,9 @@ export const pendingPayments = pgTable("pending_payments", {
     productName: string;
     variantDetails: string | null;
     price: string;
+    itemType?: string;
+    seriesName?: string | null;
+    seriesGroup?: string | null;
   }>>().notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
   shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).notNull(),
@@ -585,6 +622,39 @@ export const pendingPayments = pgTable("pending_payments", {
 });
 
 export type PendingPayment = typeof pendingPayments.$inferSelect;
+
+// Payment requests — flexible/standalone payment links for a custom amount.
+// Admin creates a request, sends the /odeme-talebi/:token link to a customer,
+// who pays via iyzico. Decoupled from cart orders (no stock, no order_items).
+export const paymentRequests = pgTable("payment_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  token: text("token").notNull().unique(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  status: text("status").default("pending").notNull(), // 'pending' | 'paid' | 'cancelled' | 'expired'
+  merchantOid: text("merchant_oid"),
+  paymentToken: text("payment_token"),
+  paymentTokens: text("payment_tokens").array().default(sql`ARRAY[]::text[]`).notNull(),
+  iyzicoPaymentId: text("iyzico_payment_id"),
+  createdBy: text("created_by").default("admin").notNull(), // 'admin' | 'customer'
+  paidAt: timestamp("paid_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPaymentRequestSchema = createInsertSchema(paymentRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPaymentRequest = z.infer<typeof insertPaymentRequestSchema>;
+export type PaymentRequest = typeof paymentRequests.$inferSelect;
 
 // Dealers (Bayiler)
 export const dealers = pgTable("dealers", {
