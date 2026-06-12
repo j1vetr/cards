@@ -104,13 +104,14 @@ export default function Checkout() {
   } | null>(null);
   const [couponError, setCouponError] = useState('');
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: productsData } = useQuery<{ products: Product[] }>({
     queryKey: ['products'],
     queryFn: async () => {
       const res = await fetch('/api/products');
       return res.json();
     },
   });
+  const products = productsData?.products ?? [];
 
   // Fetch saved addresses for logged in users
   const { data: savedAddresses = [] } = useQuery<UserAddress[]>({

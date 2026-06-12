@@ -50,6 +50,8 @@ export interface ProductFilters {
   maxPrice?: number;
   sizes?: string[];
   colors?: string[];
+  fits?: string[];
+  discounted?: boolean;
   sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
   page?: number;
   limit?: number;
@@ -66,6 +68,7 @@ export interface PaginatedProductsResponse {
 export interface FacetsResponse {
   sizes: string[];
   colors: { name: string; hex: string | null }[];
+  fits: string[];
 }
 
 function buildProductParams(filters?: ProductFilters): URLSearchParams {
@@ -79,6 +82,8 @@ function buildProductParams(filters?: ProductFilters): URLSearchParams {
   if (filters?.sort) params.append('sort', filters.sort);
   if (filters?.sizes && filters.sizes.length > 0) params.append('sizes', filters.sizes.join(','));
   if (filters?.colors && filters.colors.length > 0) params.append('colors', filters.colors.join(','));
+  if (filters?.fits && filters.fits.length > 0) params.append('fits', filters.fits.join(','));
+  if (filters?.discounted) params.append('discounted', 'true');
   if (filters?.page !== undefined) params.append('page', String(filters.page));
   if (filters?.limit !== undefined) params.append('limit', String(filters.limit));
   return params;

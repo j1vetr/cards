@@ -44,6 +44,8 @@ export default function Store() {
   const urlMaxPrice = parseInt(urlParams.get('maxPrice') || '10000', 10);
   const selectedSizes = urlParams.get('sizes')?.split(',').filter(Boolean) || [];
   const selectedColors = urlParams.get('colors')?.split(',').filter(Boolean) || [];
+  const selectedFits = urlParams.get('fits')?.split(',').filter(Boolean) || [];
+  const showOnlyDiscounted = urlParams.get('discounted') === 'true';
   const searchQuery = urlParams.get('search') || '';
   const selectedCategory = urlParams.get('categoryId') || undefined;
 
@@ -97,6 +99,13 @@ export default function Store() {
     setFilter({ colors: next.length ? next.join(',') : null });
   };
 
+  const toggleFit = (fit: string) => {
+    const next = selectedFits.includes(fit)
+      ? selectedFits.filter(f => f !== fit)
+      : [...selectedFits, fit];
+    setFilter({ fits: next.length ? next.join(',') : null });
+  };
+
   const clearFilters = () => {
     setLocalPriceRange([0, 10000]);
     navigate('/magaza', { replace: true });
@@ -109,6 +118,8 @@ export default function Store() {
     maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
     sizes: selectedSizes.length ? selectedSizes : undefined,
     colors: selectedColors.length ? selectedColors : undefined,
+    fits: selectedFits.length ? selectedFits : undefined,
+    discounted: showOnlyDiscounted || undefined,
     search: searchQuery || undefined,
     page,
     limit: LIMIT,
@@ -128,7 +139,8 @@ export default function Store() {
 
   const hasActiveFilters =
     urlMinPrice > 0 || urlMaxPrice < 10000 || !!selectedCategory ||
-    selectedSizes.length > 0 || selectedColors.length > 0 || !!searchQuery;
+    selectedSizes.length > 0 || selectedColors.length > 0 || selectedFits.length > 0 ||
+    showOnlyDiscounted || !!searchQuery;
 
   const FilterContent = () => (
     <div className="space-y-8">
@@ -258,6 +270,49 @@ export default function Store() {
           </div>
         </div>
       )}
+
+      {facets?.fits && facets.fits.length > 0 && (
+        <div>
+          <div className="flex items-baseline gap-3 mb-4">
+            <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">05</span>
+            <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Kesim</h4>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {facets.fits.map(fit => (
+              <button
+                key={fit}
+                onClick={() => toggleFit(fit)}
+                className={`px-3 py-1.5 text-[11px] font-medium tracking-wide border transition-all ${
+                  selectedFits.includes(fit)
+                    ? 'bg-black text-white border-black'
+                    : 'border-black/15 text-black/65 hover:border-black hover:text-black'
+                }`}
+                data-testid={`filter-fit-${fit}`}
+              >
+                {fit}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-baseline gap-3 mb-4">
+          <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">06</span>
+          <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Hızlı Filtre</h4>
+        </div>
+        <button
+          onClick={() => setFilter({ discounted: showOnlyDiscounted ? null : 'true' })}
+          className={`px-4 py-2.5 border text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${
+            showOnlyDiscounted
+              ? 'bg-polen-orange text-white border-polen-orange'
+              : 'border-black/20 text-black hover:border-polen-orange hover:text-polen-orange'
+          }`}
+          data-testid="button-filter-discounted"
+        >
+          İndirimli Ürünler
+        </button>
+      </div>
 
       {hasActiveFilters && (
         <button
@@ -421,6 +476,23 @@ export default function Store() {
                   {c}<X className="w-2.5 h-2.5" />
                 </button>
               ))}
+              {selectedFits.map(f => (
+                <button
+                  key={f}
+                  onClick={() => toggleFit(f)}
+                  className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] tracking-[0.1em] uppercase border border-black text-black hover:bg-black hover:text-white transition-colors"
+                >
+                  {f}<X className="w-2.5 h-2.5" />
+                </button>
+              ))}
+              {showOnlyDiscounted && (
+                <button
+                  onClick={() => setFilter({ discounted: null })}
+                  className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] tracking-[0.1em] uppercase border border-polen-orange text-polen-orange hover:bg-polen-orange hover:text-white transition-colors"
+                >
+                  İndirimli<X className="w-2.5 h-2.5" />
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-4">

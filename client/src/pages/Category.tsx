@@ -41,6 +41,7 @@ export default function Category() {
   const urlMaxPrice = parseInt(urlParams.get('maxPrice') || '10000', 10);
   const selectedSizes = urlParams.get('sizes')?.split(',').filter(Boolean) || [];
   const selectedColors = urlParams.get('colors')?.split(',').filter(Boolean) || [];
+  const selectedFits = urlParams.get('fits')?.split(',').filter(Boolean) || [];
   const showOnlyNew = urlParams.get('new') === '1';
   const showOnlyDiscounted = urlParams.get('discounted') === '1';
 
@@ -95,6 +96,13 @@ export default function Category() {
     setFilter({ colors: next.length ? next.join(',') : null });
   };
 
+  const toggleFit = (fit: string) => {
+    const next = selectedFits.includes(fit)
+      ? selectedFits.filter(f => f !== fit)
+      : [...selectedFits, fit];
+    setFilter({ fits: next.length ? next.join(',') : null });
+  };
+
   const clearFilters = () => {
     setLocalPriceRange([0, 10000]);
     navigate(basePath, { replace: true });
@@ -107,6 +115,8 @@ export default function Category() {
     maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
     sizes: selectedSizes.length ? selectedSizes : undefined,
     colors: selectedColors.length ? selectedColors : undefined,
+    fits: selectedFits.length ? selectedFits : undefined,
+    discounted: showOnlyDiscounted || undefined,
     isNew: showOnlyNew || undefined,
     page,
     limit: LIMIT,
@@ -123,24 +133,22 @@ export default function Category() {
     maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
   });
 
-  // Client-side: "indirimli" filter (discount badge)
-  const displayedProducts = showOnlyDiscounted
-    ? products.filter(p => p.discountBadge)
-    : products;
+  const displayedProducts = products;
 
   const isLoading = categoriesLoading || (!!category && productsLoading);
 
   const priceActive = urlMinPrice > 0 || urlMaxPrice < 10000;
   const hasActiveFilters =
     priceActive || showOnlyNew || showOnlyDiscounted ||
-    selectedSizes.length > 0 || selectedColors.length > 0;
+    selectedSizes.length > 0 || selectedColors.length > 0 || selectedFits.length > 0;
 
   const activeFilterCount =
     (showOnlyNew ? 1 : 0) +
     (showOnlyDiscounted ? 1 : 0) +
     (priceActive ? 1 : 0) +
     selectedSizes.length +
-    selectedColors.length;
+    selectedColors.length +
+    selectedFits.length;
 
   if (!category && !isLoading) {
     return (
@@ -283,6 +291,15 @@ export default function Category() {
                   {c}<X className="w-2.5 h-2.5" />
                 </button>
               ))}
+              {selectedFits.map(f => (
+                <button
+                  key={f}
+                  onClick={() => toggleFit(f)}
+                  className="flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase border border-black text-black px-2.5 py-1 shrink-0 hover:bg-black hover:text-white transition-colors"
+                >
+                  {f}<X className="w-2.5 h-2.5" />
+                </button>
+              ))}
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
@@ -401,6 +418,29 @@ export default function Category() {
                   </div>
                 )}
 
+                {/* Fits */}
+                {facets?.fits && facets.fits.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-semibold tracking-[0.25em] uppercase text-black/40 mb-5">Kesim</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {facets.fits.map(fit => (
+                        <button
+                          key={fit}
+                          onClick={() => toggleFit(fit)}
+                          className={`px-3 py-1.5 text-[11px] font-medium border transition-all ${
+                            selectedFits.includes(fit)
+                              ? 'bg-black text-white border-black'
+                              : 'border-black/15 text-black/65 hover:border-black hover:text-black'
+                          }`}
+                          data-testid={`filter-fit-${fit}`}
+                        >
+                          {fit}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Quick filters */}
                 <div>
                   <h4 className="text-[10px] font-semibold tracking-[0.25em] uppercase text-black/40 mb-5">Hızlı Filtre</h4>
@@ -483,7 +523,7 @@ export default function Category() {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && !showOnlyDiscounted && (
+              {totalPages > 1 && (
                 <div className="mt-16 flex items-center justify-center gap-2" data-testid="pagination">
                   <button
                     onClick={() => setFilter({ page: String(page - 1) }, false)}

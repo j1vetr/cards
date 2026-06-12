@@ -183,6 +183,8 @@ export interface IStorage {
     maxPrice?: number;
     sizes?: string[];
     colors?: string[];
+    fits?: string[];
+    discounted?: boolean;
     sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
     page?: number;
     limit?: number;
@@ -192,7 +194,7 @@ export interface IStorage {
     search?: string;
     minPrice?: number;
     maxPrice?: number;
-  }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[] }>;
+  }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[]; fits: string[] }>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductBySlug(slug: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -517,6 +519,8 @@ export class DbStorage implements IStorage {
     maxPrice?: number;
     sizes?: string[];
     colors?: string[];
+    fits?: string[];
+    discounted?: boolean;
     sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
     page?: number;
     limit?: number;
@@ -567,6 +571,19 @@ export class DbStorage implements IStorage {
       conditions.push(sql`(${sql.join(colorParts, sql` OR `)})`);
     }
 
+    // Kesim/fit filtresi (attributes->>'fit' alanı)
+    if (filters?.fits && filters.fits.length > 0) {
+      const fitParts = filters.fits.map(fit =>
+        sql`(${products.attributes}->>'fit') = ${fit}`
+      );
+      conditions.push(sql`(${sql.join(fitParts, sql` OR `)})`);
+    }
+
+    // İndirimli filtre
+    if (filters?.discounted) {
+      conditions.push(sql`${products.discountBadge} IS NOT NULL AND ${products.discountBadge} <> ''`);
+    }
+
     const whereClause = and(...conditions);
 
     // Toplam sayı
@@ -608,7 +625,7 @@ export class DbStorage implements IStorage {
     search?: string;
     minPrice?: number;
     maxPrice?: number;
-  }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[] }> {
+  }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[]; fits: string[] }> {
     const conditions: SQL[] = [eq(products.isActive, true)];
     conditions.push(
       sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true AND stock > 0)`
@@ -629,12 +646,13 @@ export class DbStorage implements IStorage {
     }
 
     const rows = await db
-      .select({ availableSizes: products.availableSizes, availableColors: products.availableColors })
+      .select({ availableSizes: products.availableSizes, availableColors: products.availableColors, attributes: products.attributes })
       .from(products)
       .where(and(...conditions));
 
     const sizeSet = new Set<string>();
     const colorMap = new Map<string, string | null>();
+    const fitSet = new Set<string>();
 
     for (const row of rows) {
       if (Array.isArray(row.availableSizes)) {
@@ -647,6 +665,8 @@ export class DbStorage implements IStorage {
           if (c?.name) colorMap.set(c.name, c.hex ?? null);
         }
       }
+      const attrs = row.attributes as Record<string, string> | null;
+      if (attrs?.fit) fitSet.add(attrs.fit);
     }
 
     const jeanSizeOrder = ['XS','S','M','L','XL','XXL','2XL','3XL','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','42','44','46','48','50'];
@@ -662,6 +682,7 @@ export class DbStorage implements IStorage {
     return {
       sizes,
       colors: Array.from(colorMap.entries()).map(([name, hex]) => ({ name, hex })),
+      fits: Array.from(fitSet).sort((a, b) => a.localeCompare(b, 'tr')),
     };
   }
 

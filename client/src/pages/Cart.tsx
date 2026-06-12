@@ -20,13 +20,14 @@ const FREE_SHIPPING_THRESHOLD = 2500;
 export default function Cart() {
   const { items, isLoading, updateQuantity, removeItem, totalItems, subtotal } = useCart();
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: productsData } = useQuery<{ products: Product[] }>({
     queryKey: ['products'],
     queryFn: async () => {
       const res = await fetch('/api/products');
       return res.json();
     },
   });
+  const products = productsData?.products ?? [];
 
   const cartItemsWithProducts = items.map(item => {
     const product = products.find(p => p.id === item.productId);

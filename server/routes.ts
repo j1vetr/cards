@@ -1300,9 +1300,10 @@ export async function registerRoutes(
   // Products API
   app.get("/api/products", async (req, res) => {
     try {
-      const { categoryId, isFeatured, isNew, search, minPrice, maxPrice, sort, page, limit, sizes, colors } = req.query;
+      const { categoryId, isFeatured, isNew, search, minPrice, maxPrice, sort, page, limit, sizes, colors, fits, discounted } = req.query;
       const sizesArr = sizes ? String(sizes).split(',').map(s => s.trim()).filter(Boolean) : undefined;
       const colorsArr = colors ? String(colors).split(',').map(s => s.trim()).filter(Boolean) : undefined;
+      const fitsArr = fits ? String(fits).split(',').map(s => s.trim()).filter(Boolean) : undefined;
       const pageNum = page ? parseInt(page as string, 10) : undefined;
       const limitNum = limit ? parseInt(limit as string, 10) : undefined;
       const result = await storage.getProducts({
@@ -1315,6 +1316,8 @@ export async function registerRoutes(
         sort: sort as 'price_asc' | 'price_desc' | 'newest' | 'popular' | undefined,
         sizes: sizesArr,
         colors: colorsArr,
+        fits: fitsArr,
+        discounted: discounted === 'true' ? true : undefined,
         page: pageNum,
         limit: limitNum,
       });
