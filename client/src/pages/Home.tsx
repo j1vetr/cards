@@ -316,9 +316,6 @@ function CategoryScene({ categories, products }: { categories: CategoryData[]; p
 // ─────────────────────────────────────────────
 
 function ProductScene({ products }: { products: Product[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.1 });
-
   const items = useMemo(() => {
     if (!products?.length) return [];
     const featured = products.filter(p => p.isFeatured);
@@ -330,7 +327,6 @@ function ProductScene({ products }: { products: Product[] }) {
 
   return (
     <section
-      ref={ref}
       className="bg-[hsl(var(--polen-cream))] py-16 lg:py-24 px-5 lg:px-10"
       data-testid="scene-products"
       aria-label="Öne çıkan ürünler"
@@ -355,24 +351,19 @@ function ProductScene({ products }: { products: Product[] }) {
           </Link>
         </div>
 
-        <motion.div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5"
-          initial={false}
-          animate={inView ? 'visible' : 'hidden'}
-          variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
-        >
-          {items.map((p) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
+          {items.map((p, i) => (
             <motion.div
               key={p.id}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
             >
               <ProductCard product={p} />
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
         <div className="mt-10 lg:mt-14 flex justify-center">
           <Link
