@@ -284,7 +284,7 @@ export default function AdminProductFormPage() {
     mutationFn: async (data: Partial<Product>) => {
       const isEdit = !!(data as Product).id;
       const url = isEdit ? `/api/admin/products/${(data as Product).id}` : '/api/admin/products';
-      const method = isEdit ? 'PUT' : 'POST';
+      const method = isEdit ? 'PATCH' : 'POST';
       const r = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -498,7 +498,14 @@ export default function AdminProductFormPage() {
                     <FormField label="Ürün Adı" required>
                       <TextInput
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            name,
+                            slug: generateSlug(name),
+                          }));
+                        }}
                         required
                         placeholder="Örn: Slim Fit Erkek Jean"
                         data-testid="input-product-name"
