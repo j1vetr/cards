@@ -13,6 +13,20 @@ import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
 import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
+import {
+  validateBody, firstZodMessage,
+  profileUpdateSchema, addressCreateSchema, addressUpdateSchema,
+  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema, variantUpdateSchema,
+  cartUpdateSchema, orderStatusUpdateSchema, orderTrackingSchema, orderUpdateSchema,
+  orderNoteSchema, orderCancelSchema, couponWriteSchema, couponUpdateSchema,
+  inventoryBulkUpdateSchema, campaignWriteSchema, campaignUpdateSchema,
+  settingsWriteSchema, testEmailSchema, updateCredentialsSchema,
+  dealerWriteSchema, dealerUpdateSchema, quoteWriteSchema, quoteUpdateSchema, quoteStatusSchema,
+  sizeChartWriteSchema, sizeChartUpdateSchema, menuItemWriteSchema, menuItemUpdateSchema, menuReorderSchema,
+  woocommerceSettingsSchema, woocommerceTestSchema, iyzicoCredentialsSchema, adminInitSchema,
+  influencerBulkSchema, paymentCreateSchema, whatsappTestSchema,
+  confirmBankTransferSchema, rejectBankTransferSchema,
+} from "./validation";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
 import { 
   sendWelcomeEmail, 
@@ -1010,7 +1024,9 @@ export async function registerRoutes(
     }
 
     try {
-      const { firstName, lastName, phone, whatsappOptIn } = req.body;
+      const parsed = profileUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { firstName, lastName, phone, whatsappOptIn } = parsed.data;
       const updates: { firstName?: string; lastName?: string; phone?: string; whatsappOptIn?: boolean } = {};
       if (firstName !== undefined) updates.firstName = firstName;
       if (lastName !== undefined) updates.lastName = lastName;
@@ -1049,7 +1065,9 @@ export async function registerRoutes(
     }
 
     try {
-      const { title, firstName, lastName, phone, address, city, district, postalCode, isDefault } = req.body;
+      const parsed = addressCreateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { title, firstName, lastName, phone, address, city, district, postalCode, isDefault } = parsed.data;
       
       // Check if this is the first address - if so, make it default
       const existingAddresses = await storage.getUserAddresses(payload.userId);
@@ -1080,12 +1098,14 @@ export async function registerRoutes(
     }
 
     try {
+      const parsed = addressUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const existingAddress = await storage.getUserAddress(req.params.id);
       if (!existingAddress || existingAddress.userId !== payload.userId) {
         return res.status(404).json({ error: "Adres bulunamadı" });
       }
 
-      const { title, firstName, lastName, phone, address, city, district, postalCode, isDefault } = req.body;
+      const { title, firstName, lastName, phone, address, city, district, postalCode, isDefault } = parsed.data;
       const updated = await storage.updateUserAddress(req.params.id, {
         title,
         firstName,
@@ -1267,7 +1287,9 @@ export async function registerRoutes(
 
   app.patch("/api/admin/categories/:id", requireAdmin, async (req, res) => {
     try {
-      const category = await storage.updateCategory(req.params.id, req.body);
+      const parsed = categoryUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const category = await storage.updateCategory(req.params.id, parsed.data);
       if (!category) {
         return res.status(404).json({ error: "Category not found" });
       }
@@ -1402,8 +1424,10 @@ export async function registerRoutes(
   app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
     try {
       const { categoryIds, ...productData } = req.body;
-      console.log('Updating product:', req.params.id, 'with data:', JSON.stringify(productData, null, 2));
-      const product = await storage.updateProduct(req.params.id, productData);
+      const parsed = productUpdateSchema.safeParse(productData);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      console.log('Updating product:', req.params.id, 'with data:', JSON.stringify(parsed.data, null, 2));
+      const product = await storage.updateProduct(req.params.id, parsed.data as any);
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
@@ -1501,16 +1525,9 @@ export async function registerRoutes(
   // Bulk price update by category
   app.post("/api/admin/products/bulk-price", requireAdmin, async (req, res) => {
     try {
-      const { categoryId, productIds, action, value, autoBadge, badgeText } = req.body;
-      
-      if (!action || value === undefined || value === null) {
-        return res.status(400).json({ error: "action and value are required" });
-      }
-
-      const numericValue = parseFloat(String(value));
-      if (isNaN(numericValue) || numericValue < 0) {
-        return res.status(400).json({ error: "Geçersiz değer" });
-      }
+      const parsed = bulkPriceSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { categoryId, productIds, action, value: numericValue, autoBadge, badgeText } = parsed.data;
 
       const allProducts = await storage.getProducts();
 
@@ -1579,11 +1596,9 @@ export async function registerRoutes(
 
   app.post("/api/admin/products/bulk-badge", requireAdmin, async (req, res) => {
     try {
-      const { productIds, badge } = req.body;
-      
-      if (!productIds || !Array.isArray(productIds)) {
-        return res.status(400).json({ error: "productIds array is required" });
-      }
+      const parsed = bulkBadgeSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { productIds, badge } = parsed.data;
       
       let updated = 0;
       for (const id of productIds) {
@@ -1652,7 +1667,9 @@ export async function registerRoutes(
 
   app.patch("/api/admin/variants/:id", requireAdmin, async (req, res) => {
     try {
-      const variant = await storage.updateProductVariant(req.params.id, req.body);
+      const parsed = variantUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const variant = await storage.updateProductVariant(req.params.id, parsed.data);
       if (!variant) {
         return res.status(404).json({ error: "Variant not found" });
       }
@@ -1739,7 +1756,9 @@ export async function registerRoutes(
 
   app.patch("/api/cart/:id", async (req, res) => {
     try {
-      const { quantity } = req.body;
+      const parsed = cartUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { quantity } = parsed.data;
       const item = await storage.updateCartItem(req.params.id, quantity);
       if (!item) {
         return res.status(404).json({ error: "Cart item not found" });
@@ -2116,13 +2135,10 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Sepet boş" });
       }
 
+      const parsedPayment = paymentCreateSchema.safeParse(req.body);
+      if (!parsedPayment.success) return res.status(400).json({ error: firstZodMessage(parsedPayment.error) });
       const { customerName, customerEmail, customerPhone, address, city, district, postalCode, country, couponCode, createAccount, accountPassword } = req.body;
       const selectedCountry = country || 'Türkiye';
-
-      // Validate required fields
-      if (!customerName || !customerEmail || !customerPhone || !address || !city || !district) {
-        return res.status(400).json({ error: "Lütfen tüm alanları doldurun" });
-      }
 
       // Validate password if creating account
       let accountPasswordHash = null;
@@ -2936,11 +2952,10 @@ export async function registerRoutes(
 
   app.post("/api/admin/iyzico/credentials", requireAdmin, async (req, res) => {
     try {
-      const apiKey = typeof req.body?.apiKey === 'string' ? req.body.apiKey.trim() : '';
-      const secretKey = typeof req.body?.secretKey === 'string' ? req.body.secretKey.trim() : '';
-      if (!apiKey || !secretKey) {
-        return res.status(400).json({ error: 'API anahtarı ve gizli anahtar zorunludur.' });
-      }
+      const parsed = iyzicoCredentialsSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const apiKey = parsed.data.apiKey.trim();
+      const secretKey = parsed.data.secretKey.trim();
       await storage.setSiteSetting('iyzico_api_key', apiKey);
       await storage.setSiteSetting('iyzico_secret_key', secretKey);
       console.log('[iyzico] credentials updated via admin panel');
@@ -3236,7 +3251,9 @@ export async function registerRoutes(
 
   app.patch("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
     try {
-      const { status, trackingNumber } = req.body;
+      const parsed = orderStatusUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { status, trackingNumber } = parsed.data;
       
       // If shipped status, update tracking info as well
       let updateData: any = { status };
@@ -3313,7 +3330,9 @@ export async function registerRoutes(
   // Initialize first admin user if none exists
   app.post("/api/admin/init", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const parsed = adminInitSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { username, password } = parsed.data;
       
       // Check if any admin exists
       const existingAdmin = await storage.getAdminUserByUsername(username);
@@ -3353,7 +3372,9 @@ export async function registerRoutes(
 
   app.post("/api/admin/woocommerce/settings", requireAdmin, async (req, res) => {
     try {
-      const { siteUrl, consumerKey, consumerSecret, isActive } = req.body;
+      const parsed = woocommerceSettingsSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { siteUrl, consumerKey, consumerSecret, isActive } = parsed.data;
       const settings = await storage.saveWoocommerceSettings({
         siteUrl,
         consumerKey,
@@ -3380,7 +3401,9 @@ export async function registerRoutes(
 
   app.post("/api/admin/woocommerce/test", requireAdmin, async (req, res) => {
     try {
-      const { siteUrl, consumerKey, consumerSecret } = req.body;
+      const parsed = woocommerceTestSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { siteUrl, consumerKey, consumerSecret } = parsed.data;
       
       // Test connection to WooCommerce API
       const url = new URL('/wp-json/wc/v3/products', siteUrl);
@@ -3876,12 +3899,14 @@ export async function registerRoutes(
 
   app.post("/api/admin/coupons", requireAdmin, async (req, res) => {
     try {
-      const data = { ...req.body };
-      if (data.startsAt) data.startsAt = new Date(data.startsAt);
+      const parsed = couponWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const data = { ...parsed.data };
+      if (data.startsAt) data.startsAt = new Date(data.startsAt as string);
       else data.startsAt = null;
-      if (data.expiresAt) data.expiresAt = new Date(data.expiresAt);
+      if (data.expiresAt) data.expiresAt = new Date(data.expiresAt as string);
       else data.expiresAt = null;
-      const coupon = await storage.createCoupon(data);
+      const coupon = await storage.createCoupon(data as any);
       res.status(201).json(coupon);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to create coupon" });
@@ -3890,12 +3915,14 @@ export async function registerRoutes(
 
   app.put("/api/admin/coupons/:id", requireAdmin, async (req, res) => {
     try {
-      const data = { ...req.body };
-      if (data.startsAt) data.startsAt = new Date(data.startsAt);
+      const parsed = couponUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const data = { ...parsed.data };
+      if (data.startsAt) data.startsAt = new Date(data.startsAt as string);
       else if (data.startsAt === '' || data.startsAt === null) data.startsAt = null;
-      if (data.expiresAt) data.expiresAt = new Date(data.expiresAt);
+      if (data.expiresAt) data.expiresAt = new Date(data.expiresAt as string);
       else if (data.expiresAt === '' || data.expiresAt === null) data.expiresAt = null;
-      const coupon = await storage.updateCoupon(req.params.id, data);
+      const coupon = await storage.updateCoupon(req.params.id, data as any);
       if (!coupon) return res.status(404).json({ error: "Coupon not found" });
       res.json(coupon);
     } catch (error) {
@@ -3963,7 +3990,9 @@ export async function registerRoutes(
 
   app.post("/api/admin/inventory/bulk-update", requireAdmin, async (req, res) => {
     try {
-      const { updates } = req.body;
+      const parsed = inventoryBulkUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { updates } = parsed.data;
       await storage.bulkUpdateStock(updates.map((u: any) => ({
         ...u,
         authorId: (req as any).adminId,
@@ -4252,11 +4281,13 @@ export async function registerRoutes(
 
   app.post("/api/admin/orders/:id/notes", requireAdmin, async (req, res) => {
     try {
+      const parsed = orderNoteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const note = await storage.createOrderNote({
         orderId: req.params.id,
         authorId: (req as any).adminId,
-        content: req.body.content,
-        isPrivate: req.body.isInternal !== false,
+        content: parsed.data.content,
+        isPrivate: parsed.data.isInternal !== false,
       });
       res.status(201).json(note);
     } catch (error) {
@@ -4686,10 +4717,12 @@ window.addEventListener('load', function() {
 
   app.put("/api/admin/orders/:id/tracking", requireAdmin, async (req, res) => {
     try {
-      const { trackingNumber, trackingUrl, shippingCarrier } = req.body;
+      const parsed = orderTrackingSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { trackingNumber, trackingUrl, shippingCarrier } = parsed.data;
       const order = await storage.updateOrderTracking(req.params.id, {
         trackingNumber,
-        trackingUrl,
+        trackingUrl: trackingUrl || undefined,
         shippingCarrier,
       });
       if (!order) return res.status(404).json({ error: "Order not found" });
@@ -4711,7 +4744,9 @@ window.addEventListener('load', function() {
 
   app.put("/api/admin/orders/:id", requireAdmin, async (req, res) => {
     try {
-      const order = await storage.updateOrder(req.params.id, req.body);
+      const parsed = orderUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const order = await storage.updateOrder(req.params.id, parsed.data);
       if (!order) return res.status(404).json({ error: "Order not found" });
       res.json(order);
     } catch (error) {
@@ -4722,6 +4757,8 @@ window.addEventListener('load', function() {
   // Order cancellation with stock restoration
   app.post("/api/admin/orders/:id/cancel", requireAdmin, async (req, res) => {
     try {
+      const parsed = orderCancelSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const order = await storage.getOrder(req.params.id);
       if (!order) return res.status(404).json({ error: "Order not found" });
 
@@ -4830,6 +4867,8 @@ window.addEventListener('load', function() {
   // bildirimi gönderilir.
   app.post("/api/admin/orders/:id/confirm-bank-transfer", requireAdmin, async (req, res) => {
     try {
+      const parsed = confirmBankTransferSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const order = await storage.getOrder(req.params.id);
       if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
 
@@ -4925,6 +4964,8 @@ window.addEventListener('load', function() {
   // restore gerekmiyor), müşteriye iptal bildirimi gönderilir.
   app.post("/api/admin/orders/:id/reject-bank-transfer", requireAdmin, async (req, res) => {
     try {
+      const parsed = rejectBankTransferSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
       const order = await storage.getOrder(req.params.id);
       if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
 
@@ -4999,10 +5040,9 @@ window.addEventListener('load', function() {
   // Bulk add influencers
   app.post("/api/admin/influencer-coupons/bulk", requireAdmin, async (req, res) => {
     try {
-      const { influencers } = req.body;
-      if (!Array.isArray(influencers) || influencers.length === 0) {
-        return res.status(400).json({ error: "No influencers provided" });
-      }
+      const parsed = influencerBulkSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { influencers } = parsed.data;
 
       const results = [];
       for (const inf of influencers) {
@@ -5206,11 +5246,9 @@ window.addEventListener('load', function() {
   // Admin credentials update route
   app.post("/api/admin/update-credentials", requireAdmin, async (req, res) => {
     try {
-      const { newUsername, newPassword } = req.body;
-      
-      if (!newUsername || !newPassword) {
-        return res.status(400).json({ error: "Username and password required" });
-      }
+      const parsed = updateCredentialsSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { newUsername, newPassword } = parsed.data;
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       
@@ -5252,7 +5290,9 @@ window.addEventListener('load', function() {
 
   app.post("/api/admin/campaigns", requireAdmin, async (req, res) => {
     try {
-      const campaign = await storage.createCampaign(req.body);
+      const parsed = campaignWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const campaign = await storage.createCampaign(parsed.data as any);
       res.status(201).json(campaign);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to create campaign" });
@@ -5261,7 +5301,9 @@ window.addEventListener('load', function() {
 
   app.put("/api/admin/campaigns/:id", requireAdmin, async (req, res) => {
     try {
-      const campaign = await storage.updateCampaign(req.params.id, req.body);
+      const parsed = campaignUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const campaign = await storage.updateCampaign(req.params.id, parsed.data as any);
       if (!campaign) return res.status(404).json({ error: "Campaign not found" });
       res.json(campaign);
     } catch (error) {
@@ -5322,7 +5364,9 @@ window.addEventListener('load', function() {
 
   app.post("/api/admin/settings", requireAdmin, async (req, res) => {
     try {
-      const settings = req.body;
+      const parsed = settingsWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const settings = parsed.data;
       // Don't update masked credentials
       if (settings.smtp_pass === '••••••••') {
         delete settings.smtp_pass;
@@ -5336,7 +5380,7 @@ window.addEventListener('load', function() {
       if (settings.aras_kargo_password === '••••••••') {
         delete settings.aras_kargo_password;
       }
-      await storage.setSiteSettings(settings);
+      await storage.setSiteSettings(settings as any);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to save settings" });
@@ -5345,7 +5389,9 @@ window.addEventListener('load', function() {
 
   app.post("/api/admin/settings/test-email", requireAdmin, async (req, res) => {
     try {
-      const { email } = req.body;
+      const parsed = testEmailSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { email } = parsed.data;
       const result = await sendTestEmail(email);
       if (result.success) {
         res.json({ success: true, message: "Test e-postası gönderildi" });
@@ -5359,11 +5405,10 @@ window.addEventListener('load', function() {
 
   app.post("/api/admin/whatsapp/test", requireAdmin, async (req, res) => {
     try {
-      const { phone, message } = req.body || {};
-      if (!phone || typeof phone !== 'string') {
-        return res.status(400).json({ success: false, error: "Telefon numarası gerekli" });
-      }
-      const result = await sendTestWhatsApp(phone, typeof message === 'string' ? message : undefined);
+      const parsed = whatsappTestSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ success: false, error: firstZodMessage(parsed.error) });
+      const { phone, message } = parsed.data;
+      const result = await sendTestWhatsApp(phone, message);
       if (result.success) {
         res.json({ success: true, message: "Test WhatsApp mesajı gönderildi" });
       } else {
@@ -5913,20 +5958,17 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Create dealer
   app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
     try {
-      const { name, email, phone, contactPerson, address, notes, status } = req.body;
-      
-      if (!name || !email || !phone || !contactPerson) {
-        return res.status(400).json({ error: "İsim, e-posta, telefon ve yetkili kişi zorunludur" });
-      }
-      
+      const parsed = dealerWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { name, email, phone, contactPerson, address, notes, status } = parsed.data;
       const newDealer = await storage.createDealer({
         name,
         email,
         phone,
         contactPerson,
-        address: address || null,
-        notes: notes || null,
-        status: status || 'active'
+        address: address ?? null,
+        notes: notes ?? null,
+        status: status ?? 'active'
       });
       
       res.status(201).json(newDealer);
@@ -5939,7 +5981,9 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Update dealer
   app.put("/api/admin/dealers/:id", requireAdmin, async (req, res) => {
     try {
-      const updated = await storage.updateDealer(req.params.id, req.body);
+      const parsed = dealerUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const updated = await storage.updateDealer(req.params.id, parsed.data);
       if (!updated) {
         return res.status(404).json({ error: "Bayi bulunamadı" });
       }
@@ -6208,11 +6252,9 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Create quote
   app.post("/api/admin/quotes", requireAdmin, async (req, res) => {
     try {
-      const { dealerId, validUntil, paymentTerms, notes, includesVat, items } = req.body;
-      
-      if (!dealerId) {
-        return res.status(400).json({ error: "Bayi seçimi zorunludur" });
-      }
+      const parsed = quoteWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { dealerId, validUntil, paymentTerms, notes, includesVat, items } = parsed.data;
       
       // Generate quote number
       const quoteNumber = await storage.getNextQuoteNumber();
@@ -6224,7 +6266,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       if (items && items.length > 0) {
         for (const item of items) {
           const lineSubtotal = parseFloat(item.unitPrice) * item.quantity;
-          const discountAmount = lineSubtotal * (parseFloat(item.discountPercent || 0) / 100);
+          const discountAmount = lineSubtotal * (parseFloat(String(item.discountPercent ?? 0)) / 100);
           subtotal += lineSubtotal;
           discountTotal += discountAmount;
         }
@@ -6248,8 +6290,8 @@ Sitemap: ${baseUrl}/sitemap.xml
       // Create quote items
       if (items && items.length > 0) {
         for (const item of items) {
-          const lineSubtotal = parseFloat(item.unitPrice) * item.quantity;
-          const discountAmount = lineSubtotal * (parseFloat(item.discountPercent || 0) / 100);
+          const lineSubtotal = parseFloat(item.unitPrice as string) * item.quantity;
+          const discountAmount = lineSubtotal * (parseFloat(String(item.discountPercent ?? 0)) / 100);
           const lineTotal = lineSubtotal - discountAmount;
           
           await storage.createQuoteItem({
@@ -6278,7 +6320,10 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Update quote
   app.put("/api/admin/quotes/:id", requireAdmin, async (req, res) => {
     try {
-      const { items, ...quoteData } = req.body;
+      const parsed = quoteUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { items, ...quoteDataRaw } = parsed.data;
+      const quoteData: any = { ...quoteDataRaw };
       
       // If items provided, recalculate totals and update items
       if (items) {
@@ -6289,8 +6334,8 @@ Sitemap: ${baseUrl}/sitemap.xml
         let discountTotal = 0;
         
         for (const item of items) {
-          const lineSubtotal = parseFloat(item.unitPrice) * item.quantity;
-          const discountAmount = lineSubtotal * (parseFloat(item.discountPercent || 0) / 100);
+          const lineSubtotal = parseFloat(item.unitPrice as string) * item.quantity;
+          const discountAmount = lineSubtotal * (parseFloat(String(item.discountPercent ?? 0)) / 100);
           const lineTotal = lineSubtotal - discountAmount;
           
           subtotal += lineSubtotal;
@@ -6331,12 +6376,9 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Update quote status
   app.put("/api/admin/quotes/:id/status", requireAdmin, async (req, res) => {
     try {
-      const { status } = req.body;
-      const validStatuses = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
-      
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ error: "Geçersiz durum" });
-      }
+      const parsed = quoteStatusSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { status } = parsed.data;
       
       const updateData: any = { status };
       
@@ -6486,11 +6528,9 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Create size chart
   app.post("/api/admin/size-charts", requireAdmin, async (req, res) => {
     try {
-      const { categoryId, columns, rows } = req.body;
-      
-      if (!categoryId) {
-        return res.status(400).json({ error: "Kategori seçimi zorunludur" });
-      }
+      const parsed = sizeChartWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { categoryId, columns, rows } = parsed.data;
       
       // Check if category already has a size chart
       const existing = await storage.getSizeChartByCategory(categoryId);
@@ -6514,7 +6554,9 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Update size chart
   app.put("/api/admin/size-charts/:id", requireAdmin, async (req, res) => {
     try {
-      const { columns, rows } = req.body;
+      const parsed = sizeChartUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { columns, rows } = parsed.data;
       const updated = await storage.updateSizeChart(req.params.id, { columns, rows });
       if (!updated) {
         return res.status(404).json({ error: "Beden tablosu bulunamadı" });
@@ -6614,29 +6656,18 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Create menu item
   app.post("/api/admin/menu-items", requireAdmin, async (req, res) => {
     try {
-      const { title, type, categoryId, url, parentId, displayOrder, isActive, openInNewTab } = req.body;
-      
-      if (!title || !type) {
-        return res.status(400).json({ error: "Başlık ve tür zorunludur" });
-      }
-
-      if (type === 'category' && !categoryId) {
-        return res.status(400).json({ error: "Kategori seçmeniz gerekiyor" });
-      }
-
-      if (type === 'link' && !url) {
-        return res.status(400).json({ error: "URL girmeniz gerekiyor" });
-      }
-
+      const parsed = menuItemWriteSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { title, type, categoryId, url, parentId, displayOrder, isActive, openInNewTab } = parsed.data;
       const menuItem = await storage.createMenuItem({
         title,
         type,
-        categoryId: categoryId || null,
-        url: url || null,
-        parentId: parentId || null,
-        displayOrder: displayOrder || 0,
+        categoryId: categoryId ?? null,
+        url: url ?? null,
+        parentId: parentId ?? null,
+        displayOrder: displayOrder ?? 0,
         isActive: isActive !== false,
-        openInNewTab: openInNewTab || false,
+        openInNewTab: openInNewTab ?? false,
       });
 
       res.json(menuItem);
@@ -6649,14 +6680,15 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Update menu item
   app.put("/api/admin/menu-items/:id", requireAdmin, async (req, res) => {
     try {
-      const { title, type, categoryId, url, parentId, displayOrder, isActive, openInNewTab } = req.body;
-      
+      const parsed = menuItemUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const { title, type, categoryId, url, parentId, displayOrder, isActive, openInNewTab } = parsed.data;
       const menuItem = await storage.updateMenuItem(req.params.id, {
         title,
         type,
-        categoryId: categoryId || null,
-        url: url || null,
-        parentId: parentId || null,
+        categoryId: categoryId ?? null,
+        url: url ?? null,
+        parentId: parentId ?? null,
         displayOrder,
         isActive,
         openInNewTab,
@@ -6687,13 +6719,9 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Reorder menu items
   app.post("/api/admin/menu-items/reorder", requireAdmin, async (req, res) => {
     try {
-      const { items } = req.body;
-      
-      if (!Array.isArray(items)) {
-        return res.status(400).json({ error: "Geçersiz sıralama verisi" });
-      }
-
-      await storage.reorderMenuItems(items);
+      const parsed = menuReorderSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      await storage.reorderMenuItems(parsed.data.items);
       res.json({ success: true });
     } catch (error) {
       console.error('[Menu] Reorder menu items error:', error);
