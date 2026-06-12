@@ -33,18 +33,22 @@ interface ProductCardProps {
   product: Product;
 }
 
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop';
+
 export const ProductCard = memo(function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string>(() => {
+    const first = product.images?.[0];
+    return first && first.trim() !== '' ? first : FALLBACK_IMG;
+  });
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { toggleFavorite, isLoading: isFavoriteLoading } = useToggleFavorite();
 
   const isLiked = favoriteIds.includes(product.id);
   const price = parseFloat(product.basePrice || '0') || 0;
   const originalPrice = getOriginalPrice(price, product.discountBadge);
-  const mainImage = product.images && product.images.length > 0
-    ? product.images[0]
-    : 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=800&fit=crop';
+  const mainImage = imgSrc;
 
   const totalStock = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? 0;
   const isOutOfStock = product.variants && product.variants.length > 0 && totalStock === 0;
@@ -72,6 +76,7 @@ export const ProductCard = memo(function ProductCard({ product }: ProductCardPro
               className="w-full h-full object-cover"
               loading="lazy"
               decoding="async"
+              onError={() => setImgSrc(FALLBACK_IMG)}
               animate={{ scale: isHovered ? 1.06 : 1 }}
               transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
               data-testid={`img-product-${product.id}`}
