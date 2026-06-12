@@ -138,18 +138,23 @@ function HeroContent({ animated = false }: { animated?: boolean }) {
         <h1
           data-testid="text-hero-title"
           className="font-display text-white mb-7"
-          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em', lineHeight: 1.12 }}
+          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em' }}
         >
-          <span className="block mb-2">Jeanin İçinde</span>
-          <span
-            className="block"
-            style={{
-              color: 'transparent',
-              WebkitTextStroke: '2.5px white',
-            }}
-          >
-            Özgürlük Var.
-          </span>
+          <div style={{ overflow: 'hidden', lineHeight: 1.2 }}>
+            <span className="block">Jeanin İçinde</span>
+          </div>
+          <div style={{ height: '0.2em' }} />
+          <div style={{ overflow: 'hidden', lineHeight: 1.2 }}>
+            <span
+              className="block"
+              style={{
+                color: 'transparent',
+                WebkitTextStroke: '2.5px white',
+              }}
+            >
+              Özgürlük Var
+            </span>
+          </div>
         </h1>
 
         {/* Sub copy */}
