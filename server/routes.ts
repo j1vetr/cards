@@ -2547,7 +2547,8 @@ export async function registerRoutes(
       }
 
       // Calculate shipping and total
-      const FREE_SHIPPING_THRESHOLD = 2500;
+      const freeShipSetting1 = await storage.getSiteSetting('free_shipping_threshold');
+      const FREE_SHIPPING_THRESHOLD = freeShipSetting1 ? parseFloat(freeShipSetting1) : 500;
       const DOMESTIC_SHIPPING_COST = 200;
       const INTERNATIONAL_SHIPPING_COST = 2500;
       const IRAQ_SHIPPING_COST = 5700;
@@ -2795,7 +2796,8 @@ export async function registerRoutes(
       }
 
       // Shipping
-      const FREE_SHIPPING_THRESHOLD = 2500;
+      const freeShipSetting2 = await storage.getSiteSetting('free_shipping_threshold');
+      const FREE_SHIPPING_THRESHOLD = freeShipSetting2 ? parseFloat(freeShipSetting2) : 500;
       const DOMESTIC_SHIPPING_COST = 200;
       const INTERNATIONAL_SHIPPING_COST = 2500;
       const IRAQ_SHIPPING_COST = 5700;
@@ -3809,7 +3811,8 @@ export async function registerRoutes(
       }
       
       // Calculate shipping and total on server
-      const FREE_SHIPPING_THRESHOLD = 2500;
+      const freeShipSetting3 = await storage.getSiteSetting('free_shipping_threshold');
+      const FREE_SHIPPING_THRESHOLD = freeShipSetting3 ? parseFloat(freeShipSetting3) : 500;
       const DOMESTIC_SHIPPING_COST = 200;
       const INTERNATIONAL_SHIPPING_COST = 2500;
       const IRAQ_SHIPPING_COST = 5700;
@@ -6017,6 +6020,15 @@ window.addEventListener('load', function() {
   });
 
   // Site Settings Routes
+  app.get("/api/config", async (req, res) => {
+    try {
+      const freeShipSetting = await storage.getSiteSetting('free_shipping_threshold');
+      res.json({ freeShippingThreshold: freeShipSetting ? parseFloat(freeShipSetting) : 500 });
+    } catch {
+      res.json({ freeShippingThreshold: 500 });
+    }
+  });
+
   app.get("/api/admin/settings", requireAdmin, async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();

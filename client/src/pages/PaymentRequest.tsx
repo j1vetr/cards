@@ -384,9 +384,9 @@ export default function PaymentRequest() {
                     </>
                   )}
                 </Button>
-                <div className="mt-4 flex items-center justify-center gap-2 text-black/50 text-xs">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span className="uppercase tracking-[0.08em]">Ödemeniz iyzico güvencesiyle korunur</span>
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-black/40 text-[10px]">
+                  <Lock className="w-3 h-3 shrink-0" />
+                  <span className="uppercase tracking-[0.06em] whitespace-nowrap">Ödemeniz iyzico güvencesiyle korunur</span>
                 </div>
               </>
             )}

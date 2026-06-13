@@ -180,6 +180,7 @@ export default function SettingsPanel() {
     admin_email: '',
     site_url: '',
     site_name: '',
+    free_shipping_threshold: '500',
     wpileti_enabled: 'false',
     wpileti_api_key: '',
     wpileti_endpoint: 'http://127.0.0.1:3225/api/send-message',
@@ -620,6 +621,20 @@ export default function SettingsPanel() {
               data-testid="input-site-url"
             />
             <p className="text-xs text-neutral-500 mt-1">E-postalardaki bağlantılar için kullanılır</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-500 mb-2">Ücretsiz Kargo Eşiği (₺)</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={settings.free_shipping_threshold}
+              onChange={(e) => setSettings(s => ({ ...s, free_shipping_threshold: e.target.value }))}
+              placeholder="500"
+              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 focus:border-white transition-colors"
+              data-testid="input-free-shipping-threshold"
+            />
+            <p className="text-xs text-neutral-500 mt-1">Bu tutarın üzerindeki Türkiye siparişlerine kargo ücretsiz uygulanır</p>
           </div>
         </div>
       </div>

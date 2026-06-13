@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
 import { Link } from 'wouter';
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface CartSuccessModalProps {
   isOpen: boolean;
@@ -17,10 +18,15 @@ interface CartSuccessModalProps {
   cartItemCount: number;
 }
 
-const FREE_SHIPPING_THRESHOLD = 500;
 const AUTO_CLOSE_MS = 4500;
 
 export function CartSuccessModal({ isOpen, onClose, product, cartTotal, cartItemCount }: CartSuccessModalProps) {
+  const { data: config } = useQuery<{ freeShippingThreshold: number }>({
+    queryKey: ['/api/config'],
+    staleTime: Infinity,
+  });
+  const FREE_SHIPPING_THRESHOLD = config?.freeShippingThreshold ?? 500;
+
   const [progress, setProgress] = useState(100);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
@@ -130,7 +136,7 @@ export function CartSuccessModal({ isOpen, onClose, product, cartTotal, cartItem
             {/* Shipping bar */}
             <div className="px-4 pb-3.5">
               {freeShipReached ? (
-                <div className="flex items-center gap-2 text-[11px] text-[hsl(var(--polen-orange))]">
+                <div className="flex items-center gap-2 text-[11px] text-white">
                   <Truck className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
                   <span className="font-semibold">Ücretsiz Kargo Kazandınız!</span>
                 </div>
@@ -175,7 +181,7 @@ export function CartSuccessModal({ isOpen, onClose, product, cartTotal, cartItem
                 href="/sepet"
                 onClick={onClose}
                 data-testid="button-go-to-cart"
-                className="flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-semibold tracking-[0.10em] uppercase text-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange))]/10 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-semibold tracking-[0.10em] uppercase text-white hover:bg-white/10 transition-colors"
               >
                 Sepete Git
                 <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
