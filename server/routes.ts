@@ -1335,7 +1335,7 @@ export async function registerRoutes(
         : null;
       const customerName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim()
         || user.companyName || null;
-      const token = crypto.randomBytes(32).toString('hex');
+      const token = crypto.randomBytes(8).toString('base64url');
       const created = await storage.createPaymentRequest({
         token,
         userId: user.id,
@@ -2982,7 +2982,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Geçerli bir tutar girin" });
       }
       const { customerName, customerEmail, customerPhone, description, userId, expiresInDays } = req.body || {};
-      const token = crypto.randomBytes(32).toString('hex');
+      const token = crypto.randomBytes(8).toString('base64url');
       let expiresAt: Date | null = null;
       const days = Number(expiresInDays);
       if (Number.isFinite(days) && days > 0) {
