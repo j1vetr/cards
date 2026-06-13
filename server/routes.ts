@@ -3165,7 +3165,19 @@ export async function registerRoutes(
     const baseUrl = process.env.NODE_ENV === 'production'
       ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
       : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
-    const sendRedirect = (path: string) => res.redirect(303, `${baseUrl}${path}`);
+    const sendRedirect = (path: string) => {
+      const url = `${baseUrl}${path}`;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(
+        `<!DOCTYPE html><html><head><meta charset="utf-8">` +
+        `<script>` +
+        `try{if(window.top&&window.top!==window){window.top.location.href=${JSON.stringify(url)};}else{window.location.href=${JSON.stringify(url)};}}` +
+        `catch(e){window.location.href=${JSON.stringify(url)};}` +
+        `</script>` +
+        `<noscript><meta http-equiv="refresh" content="0;url=${url}"></noscript>` +
+        `</head><body></body></html>`
+      );
+    };
     const token = (req.body?.token || req.query?.token) as string | undefined;
 
     try {
@@ -3227,7 +3239,19 @@ export async function registerRoutes(
       ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
       : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
-    const sendRedirect = (path: string) => res.redirect(303, `${baseUrl}${path}`);
+    const sendRedirect = (path: string) => {
+      const url = `${baseUrl}${path}`;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(
+        `<!DOCTYPE html><html><head><meta charset="utf-8">` +
+        `<script>` +
+        `try{if(window.top&&window.top!==window){window.top.location.href=${JSON.stringify(url)};}else{window.location.href=${JSON.stringify(url)};}}` +
+        `catch(e){window.location.href=${JSON.stringify(url)};}` +
+        `</script>` +
+        `<noscript><meta http-equiv="refresh" content="0;url=${url}"></noscript>` +
+        `</head><body></body></html>`
+      );
+    };
 
     // Track whether we hold the 'processing' claim so the catch block can
     // release it back to 'failed' on any unexpected error (no permanent locks).
