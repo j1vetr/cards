@@ -267,16 +267,19 @@ const LOOKBOOK = [
     src: '/ecarte-denim.webp',
     label: 'Modern Kesim',
     sub: 'Ergonomik kalıp, özgür hareket',
+    href: '/magaza',
   },
   {
     src: '/ecarte-light-denim.webp',
     label: 'Kaliteli Kumaş',
     sub: 'Premium denim, uzun ömürlü kullanım',
+    href: '/magaza',
   },
   {
     src: '/ecarte-dark-denim.webp',
     label: 'Şık Duruş',
     sub: 'Her kombinle öne çıkan tasarım',
+    href: '/magaza',
   },
 ];
 
@@ -293,37 +296,43 @@ function LookbookScene() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
           {LOOKBOOK.map((item, i) => (
-            <motion.div
+            <Link
               key={item.label}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={inView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 0.7, delay: i * 0.13, ease: [0.22, 1, 0.36, 1] }}
-              className="group relative overflow-hidden cursor-pointer"
+              href={item.href}
+              data-testid={`link-lookbook-${i}`}
+              className="block"
             >
-              {/* Image */}
-              <img
-                src={item.src}
-                alt={item.label}
-                className="w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-                loading="lazy"
-              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={inView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.7, delay: i * 0.13, ease: [0.22, 1, 0.36, 1] }}
+                className="group relative overflow-hidden cursor-pointer"
+              >
+                {/* Image */}
+                <img
+                  src={item.src}
+                  alt={item.label}
+                  className="w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                  loading="lazy"
+                />
 
-              {/* Bottom gradient overlay — always visible, label slides up on hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                {/* Bottom gradient overlay — always visible, label slides up on hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
 
-              {/* Label */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between">
-                <h3
-                  className="font-display text-white uppercase leading-none tracking-wide"
-                  style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700 }}
-                >
-                  {item.label}
-                </h3>
-                <div className="shrink-0 w-10 h-10 border border-white/30 flex items-center justify-center text-white/60 group-hover:bg-white group-hover:text-black transition-all duration-300 rounded-sm ml-4">
-                  <ArrowUpRight className="w-5 h-5" />
+                {/* Label */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between">
+                  <h3
+                    className="font-display text-white uppercase leading-none tracking-wide"
+                    style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700 }}
+                  >
+                    {item.label}
+                  </h3>
+                  <div className="shrink-0 w-10 h-10 border border-white/30 flex items-center justify-center text-white/60 group-hover:bg-white group-hover:text-black transition-all duration-300 rounded-sm ml-4">
+                    <ArrowUpRight className="w-5 h-5" />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           ))}
         </div>
       </div>
