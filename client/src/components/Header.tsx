@@ -145,7 +145,7 @@ export function Header() {
                   <span key={i} className="flex items-center">
                     <span className="px-6">Toptan Satış Mevcut</span>
                     <span className="text-white/30">✦</span>
-                    <span className="px-6">Ücretsiz Kargo — 500₺ ve Üzeri</span>
+                    <span className="px-6">500 ₺ ve Üzeri Ücretsiz Kargo</span>
                     <span className="text-white/30">✦</span>
                     <span className="px-6">30 Gün İade Garantisi</span>
                     <span className="text-white/30">✦</span>
