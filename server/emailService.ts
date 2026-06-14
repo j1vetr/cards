@@ -52,19 +52,19 @@ async function createTransporter() {
 // ─────────────────────────────────────────────────────────────────────────────
 // EMAIL TEMPLATE SYSTEM
 // Outlook + Gmail + Apple Mail uyumlu, table-based, inline-style.
-// Marka: Marka — açık tema, sıcak krem zemin, marka vurgu rengi.
+// Marka: Ecarte Jeans — denim indigo aksanı, soğuk beyaz/mavi palet.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BRAND = {
-  primary: '#fdb51d',
-  primaryDeep: '#d97f2a',
-  ink: '#1a1612',
-  body: '#52483a',
-  muted: '#8a7e6c',
-  border: '#ece4d3',
-  borderSoft: '#f3ecde',
-  card: '#faf6ed',
-  bg: '#f4ebd9',
+  primary: '#1F4B96',      // denim indigo (hsl 220 65% 36%)
+  primaryDeep: '#173A75',  // darker indigo hover
+  ink: '#181D2A',          // near-black charcoal
+  body: '#36435E',         // dark blue-gray body text
+  muted: '#697A9B',        // medium blue-gray muted
+  border: '#C9D5EC',       // blue-tinted border
+  borderSoft: '#E0E9F7',   // soft blue border
+  card: '#F4F8FE',         // near-white card bg
+  bg: '#EBF0FB',           // light denim blue bg
 };
 
 const CONTACT = {
@@ -91,7 +91,7 @@ function escapeHtml(s: string | number | undefined | null): string {
 function emailButton(href: string, label: string, opts?: { variant?: 'primary' | 'ghost' }): string {
   const variant = opts?.variant ?? 'primary';
   const bg = variant === 'primary' ? BRAND.primary : '#ffffff';
-  const color = variant === 'primary' ? BRAND.ink : BRAND.ink;
+  const color = variant === 'primary' ? '#ffffff' : BRAND.ink;
   const stroke = variant === 'primary' ? 'f' : 't';
   const strokeColor = variant === 'primary' ? BRAND.primary : BRAND.border;
   const bgFallback = variant === 'primary' ? BRAND.primary : '#ffffff';
@@ -130,9 +130,8 @@ function sectionTitle(text: string): string {
 const LOGO_URL = `${CONTACT.siteUrl}/ecarte-logo-dark.png`;
 
 function brandHeader(): string {
-  // Görsel destekleyen istemcilerde logo, blok eden istemcilerde alt-text + kalın
-  // wordmark fallback gösterilir. Logo image yüklenmezse altındaki text wordmark
-  // her zaman görünür kalır (defansif: text wordmark logo ile birlikte yer alır).
+  // Görsel destekleyen istemcilerde logo, blok eden istemcilerde text wordmark.
+  // ecarte-logo-dark.png: koyu/siyah tasarım, şeffaf bg → beyaz zemin üzerinde doğru görünür.
   return `
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#ffffff;">
   <tr>
@@ -141,18 +140,18 @@ function brandHeader(): string {
         <tr>
           <td align="center" style="line-height:0;font-size:0;">
             <a href="${CONTACT.siteUrl}" style="text-decoration:none;color:${BRAND.ink};">
-              <img src="${LOGO_URL}" alt="MARKA" width="120" height="48" style="display:block;width:120px;height:auto;max-width:120px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;" />
+              <img src="${LOGO_URL}" alt="Ecarte Jeans" width="160" height="64" style="display:block;width:160px;height:auto;max-width:160px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;" />
             </a>
           </td>
         </tr>
         <tr>
-          <td align="center" style="padding-top:14px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:20px;font-weight:800;letter-spacing:5px;line-height:1;">
-            <a href="${CONTACT.siteUrl}" style="color:${BRAND.ink};text-decoration:none;">MARKA<span style="color:${BRAND.primary};">·</span>GİYİM</a>
+          <td align="center" style="padding-top:12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:18px;font-weight:800;letter-spacing:5px;line-height:1;">
+            <a href="${CONTACT.siteUrl}" style="color:${BRAND.ink};text-decoration:none;">ECARTE<span style="color:${BRAND.primary};">·</span>JEANS</a>
           </td>
         </tr>
         <tr>
           <td align="center" style="padding-top:6px;font-family:Helvetica,Arial,sans-serif;color:${BRAND.muted};font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;">
-            Giyim &amp; Moda
+            Premium Denim
           </td>
         </tr>
       </table>
@@ -180,7 +179,7 @@ function brandFooter(opts?: { unsubscribeEmail?: string }): string {
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
         <tr>
           <td align="center" style="font-size:14px;font-weight:700;letter-spacing:3px;color:#ffffff;padding-bottom:4px;">
-            MARKA<span style="color:${BRAND.primary};">·</span>GİYİM
+            ECARTE<span style="color:${BRAND.primary};">·</span>JEANS
           </td>
         </tr>
         <tr>
@@ -203,7 +202,7 @@ function brandFooter(opts?: { unsubscribeEmail?: string }): string {
         <tr>
           <td align="center" style="padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
             <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.4);line-height:1.6;">
-              © ${new Date().getFullYear()} Marka. Tüm hakları saklıdır.<br>
+              © ${new Date().getFullYear()} Ecarte Jeans. Tüm hakları saklıdır.<br>
               Bu e-postayı, hesabınızla ilgili bir işlem nedeniyle aldınız.
             </p>
           </td>
@@ -216,7 +215,7 @@ function brandFooter(opts?: { unsubscribeEmail?: string }): string {
 
 function wrapTemplate(content: string, opts?: { preheader?: string; title?: string; unsubscribeEmail?: string }): string {
   const preheader = opts?.preheader ?? '';
-  const title = opts?.title ?? 'Marka';
+  const title = opts?.title ?? 'Ecarte Jeans';
   const unsubscribeEmail = opts?.unsubscribeEmail;
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -288,7 +287,7 @@ function welcomeEmailTemplate(userName: string): string {
   const safeName = escapeHtml(userName);
   return wrapTemplate(`
     ${H1(`Hoş geldiniz, ${safeName}.`)}
-    ${Lede('Marka ailesine katıldığınız için çok mutluyuz. Güncel giyim koleksiyonumuz artık sizin için bir tık uzakta.')}
+    ${Lede('Ecarte Jeans ailesine katıldığınız için çok mutluyuz. Premium denim koleksiyonumuz artık sizin için bir tık uzakta.')}
 
     ${infoCard(`
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -298,13 +297,13 @@ function welcomeEmailTemplate(userName: string): string {
         <tr>
           <td style="padding-bottom:10px;">
             <span style="display:inline-block;width:6px;height:6px;background:${BRAND.primary};border-radius:50%;margin-right:10px;vertical-align:middle;"></span>
-            <strong style="color:${BRAND.ink};">El işçiliği</strong> <span style="color:${BRAND.body};">— her parça atölyemizde özenle şekillenir</span>
+            <strong style="color:${BRAND.ink};">Premium Denim</strong> <span style="color:${BRAND.body};">— özenle seçilmiş kumaş ve kesimler</span>
           </td>
         </tr>
         <tr>
           <td style="padding-bottom:10px;">
             <span style="display:inline-block;width:6px;height:6px;background:${BRAND.primary};border-radius:50%;margin-right:10px;vertical-align:middle;"></span>
-            <strong style="color:${BRAND.ink};">Güvenli kargo</strong> <span style="color:${BRAND.body};">— Aras Kargo ile hızlı, kırılmaz paketleme</span>
+            <strong style="color:${BRAND.ink};">Hızlı kargo</strong> <span style="color:${BRAND.body};">— siparişiniz özenle paketlenerek kapınıza ulaşır</span>
           </td>
         </tr>
         <tr>
@@ -319,7 +318,7 @@ function welcomeEmailTemplate(userName: string): string {
     ${emailButton(CONTACT.siteUrl, 'Koleksiyona Göz At')}
 
     ${Small(`Sorularınız için <a href="mailto:${CONTACT.email}" style="color:${BRAND.primaryDeep};text-decoration:none;">${CONTACT.email}</a> adresinden bize ulaşabilirsiniz.`)}
-  `, { preheader: `Hoş geldiniz ${safeName} — Marka ailesindesiniz.`, title: 'Hoş geldiniz' });
+  `, { preheader: `Hoş geldiniz ${safeName} — Ecarte Jeans ailesindesiniz.`, title: 'Hoş geldiniz' });
 }
 
 type OrderItemForEmail = OrderItem & { productImage?: string | null };
@@ -780,9 +779,9 @@ export async function sendWelcomeEmail(user: User): Promise<EmailResult> {
     const userName = user.firstName || 'Değerli Müşterimiz';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: user.email,
-      subject: 'Marka\'ya Hoş Geldiniz!',
+      subject: 'Ecarte Jeans\'e Hoş Geldiniz!',
       html: welcomeEmailTemplate(userName),
     });
     
@@ -819,7 +818,7 @@ export async function sendOrderConfirmationEmail(order: Order, items: OrderItem[
     );
 
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `Siparişiniz Alındı - #${order.orderNumber}`,
       html: orderConfirmationTemplate(order, enrichedItems),
@@ -844,7 +843,7 @@ export async function sendPreparingNotificationEmail(order: Order): Promise<Emai
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `Siparişiniz Hazırlanıyor - #${order.orderNumber}`,
       html: preparingNotificationTemplate(order),
@@ -869,7 +868,7 @@ export async function sendShippingNotificationEmail(order: Order): Promise<Email
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `Siparişiniz Kargoya Verildi - #${order.orderNumber}`,
       html: shippingNotificationTemplate(order),
@@ -922,7 +921,7 @@ export async function sendAdminOrderNotificationEmail(order: Order, items: Order
     }
 
     await transporter.sendMail({
-      from: `"Marka Sistem" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: adminEmail,
       subject: `${subjectPrefix}Yeni Sipariş - #${order.orderNumber} - ${order.total}₺`,
       html,
@@ -1015,7 +1014,7 @@ export async function sendAdminReviewNotificationEmail(
     });
 
     await transporter.sendMail({
-      from: `"Marka Sistem" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: adminEmail,
       subject: `Yeni yorum onay bekliyor — ${payload.productName}`,
       html,
@@ -1060,14 +1059,14 @@ export async function sendGuestReviewApprovedEmail(
 
       ${emailButton(productUrl, 'Ürün Sayfasını Gör')}
 
-      ${Small('Marka — güncel giyim koleksiyonu kapınıza geliyor.')}
+      ${Small('Ecarte Jeans — premium denim koleksiyonu kapınıza geliyor.')}
     `, {
       preheader: `Yorumunuz yayında — ${payload.productName}`,
       title: 'Yorumunuz yayında',
     });
 
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: payload.to,
       subject: `Yorumunuz yayında — ${payload.productName}`,
       html,
@@ -1107,14 +1106,14 @@ export async function sendGuestReviewRejectedEmail(
         <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.5;">${escapeHtml(payload.reason)}</p>
       `)}
 
-      ${Small('Marka — güncel giyim koleksiyonu kapınıza geliyor.')}
+      ${Small('Ecarte Jeans — premium denim koleksiyonu kapınıza geliyor.')}
     `, {
       preheader: `Yorumunuz onaylanmadı — ${payload.productName}`,
       title: 'Yorumunuz onaylanmadı',
     });
 
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: payload.to,
       subject: `Yorumunuz onaylanmadı — ${payload.productName}`,
       html,
@@ -1152,7 +1151,7 @@ export async function sendBankTransferPendingEmail(order: Order, items: OrderIte
     );
 
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `Havalenizi Bekliyoruz - #${order.orderNumber}`,
       html: bankTransferPendingTemplate(order, enrichedItems),
@@ -1200,7 +1199,7 @@ export async function sendPaymentRequestPaidEmail(reqRow: PaymentRequest): Promi
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
 
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: reqRow.customerEmail,
       subject: 'Ödemeniz Alındı',
       html: paymentRequestPaidTemplate(reqRow),
@@ -1229,7 +1228,7 @@ export async function sendPasswordResetEmail(user: User, resetToken: string): Pr
     const userName = user.firstName || 'Değerli Müşterimiz';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: user.email,
       subject: 'Şifre Sıfırlama Talebi',
       html: passwordResetTemplate(userName, resetLink),
@@ -1259,7 +1258,7 @@ export async function sendReviewRequestEmail(
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: userEmail,
       subject: 'Deneyiminizi Paylaşın',
       html: reviewRequestTemplate(userName, orderNumber, products, userEmail),
@@ -1284,9 +1283,9 @@ export async function sendTestEmail(toEmail: string): Promise<EmailResult> {
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: toEmail,
-      subject: 'Marka - Test E-postası',
+      subject: 'Ecarte Jeans - Test E-postası',
       html: wrapTemplate(`
         ${H1('Test e-postası.')}
         ${Lede('Bu bir test e-postasıdır. SMTP ayarlarınız başarıyla yapılandırıldı.')}
@@ -1324,7 +1323,7 @@ export async function sendAbandonedCartEmail(
     const siteUrl = settings.site_url || 'https://ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"Marka" <${fromEmail}>`,
+      from: `"Ecarte Jeans" <${fromEmail}>`,
       to: userEmail,
       subject: 'Sepetiniz Sizi Bekliyor! 🛒',
       html: abandonedCartTemplate(userName, cartItems, cartTotal, siteUrl, userEmail),
@@ -1393,7 +1392,7 @@ function quoteEmailTemplate(data: QuoteEmailData): string {
 
     ${emailButton(CONTACT.siteUrl, 'Web Sitemizi Ziyaret Edin')}
 
-    ${Small('Bizi tercih ettiğiniz için teşekkür ederiz — Marka Ekibi')}
+    ${Small('Bizi tercih ettiğiniz için teşekkür ederiz — Ecarte Jeans Ekibi')}
   `, { preheader: `Teklif ${data.quoteNumber} hazır — toplam ${grandTotalFormatted} TL`, title: `Teklif ${data.quoteNumber}` });
 }
 
@@ -1412,9 +1411,9 @@ export async function sendQuoteEmail(
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"Marka B2B" <${fromEmail}>`,
+      from: `"Ecarte Jeans B2B" <${fromEmail}>`,
       to: dealerEmail,
-      subject: `Marka Teklif - ${quoteData.quoteNumber}`,
+      subject: `Ecarte Jeans Teklif - ${quoteData.quoteNumber}`,
       html: quoteEmailTemplate(quoteData),
       attachments: [
         {
