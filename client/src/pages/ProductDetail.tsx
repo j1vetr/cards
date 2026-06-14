@@ -135,6 +135,12 @@ export default function ProductDetail() {
   // --- Wholesale (toptan) ---
   const isWholesaleUser = user?.customerType === 'wholesale';
   const wholesaleActive = !!product?.wholesaleEnabled && !!product?.wholesalePrice;
+  const { data: siteConfig } = useQuery<{ freeShippingThreshold: number }>({
+    queryKey: ['/api/config'],
+    staleTime: Infinity,
+  });
+  const freeShippingThreshold = siteConfig?.freeShippingThreshold ?? 500;
+
   const { data: wholesaleSeriesList = [] } = useQuery<WholesaleSeries[]>({
     queryKey: ['/api/wholesale-series'],
     queryFn: async () => {
@@ -1147,7 +1153,11 @@ export default function ProductDetail() {
 
               {/* Beden / Renk seçici */}
               {product.variants && product.variants.length > 0 && (() => {
-                const sizes = [...new Set(product.variants!.filter(v => v.size).map(v => v.size!))];
+                const sizes = [...new Set(product.variants!.filter(v => v.size).map(v => v.size!))].sort((a, b) => {
+                  const na = parseFloat(a), nb = parseFloat(b);
+                  if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                  return a.localeCompare(b, 'tr');
+                });
                 const colors = [...new Set(product.variants!.filter(v => v.color).map(v => v.color!))];
 
                 return (
@@ -1425,7 +1435,7 @@ export default function ProductDetail() {
               {/* Trust strip */}
               <div className="grid grid-cols-3 gap-3 py-5 border-t border-b border-black/8 mb-6">
                 {[
-                  { icon: Truck, title: 'Ücretsiz Kargo', sub: '2.500 ₺ üzeri' },
+                  { icon: Truck, title: 'Ücretsiz Kargo', sub: `${freeShippingThreshold.toLocaleString('tr-TR')} ₺ üzeri` },
                   { icon: RotateCcw, title: 'Kolay İade', sub: '14 gün içinde' },
                   { icon: Shield, title: 'Güvenli Ödeme', sub: 'SSL korumalı' },
                 ].map((it) => (
