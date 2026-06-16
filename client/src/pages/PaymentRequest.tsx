@@ -12,16 +12,26 @@ import {
   Lock,
   CreditCard,
   XCircle,
+  Package,
 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 
 type PaymentRequestStatus = 'pending' | 'paid' | 'cancelled' | 'expired';
+
+interface ShowcaseItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  imageUrl: string | null;
+  note: string | null;
+}
 
 interface PublicPaymentRequest {
   token: string;
   amount: string;
   description: string | null;
   customerName: string | null;
+  showcaseItems: ShowcaseItem[];
   status: PaymentRequestStatus;
   expiresAt: string | null;
   paidAt: string | null;
@@ -323,6 +333,39 @@ export default function PaymentRequest() {
               </p>
             )}
           </div>
+
+          {/* Showcase items */}
+          {request.showcaseItems && request.showcaseItems.length > 0 && (
+            <div className="border-b border-black/[0.06] px-6 py-5" data-testid="showcase-items">
+              <p className="text-[10px] tracking-[0.18em] uppercase text-black/40 font-medium mb-3">
+                Sipariş İçeriği
+              </p>
+              <div className="space-y-2.5">
+                {request.showcaseItems.map((item) => (
+                  <div key={item.productId} className="flex items-center gap-3">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.productName}
+                        className="w-12 h-12 object-cover border border-black/[0.07] shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-black/[0.04] border border-black/[0.07] flex items-center justify-center shrink-0">
+                        <Package className="w-5 h-5 text-black/25" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-black leading-snug">{item.productName}</p>
+                      {item.note && (
+                        <p className="text-[11px] text-black/50 mt-0.5">{item.note}</p>
+                      )}
+                    </div>
+                    <span className="text-[12px] text-black/50 shrink-0 font-medium">× {item.quantity}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="px-6 py-6">
             {callbackResult === 'basarisiz' && !showIyzico && (

@@ -2982,7 +2982,7 @@ export async function registerRoutes(
       if (!Number.isFinite(amountNum) || amountNum <= 0) {
         return res.status(400).json({ error: "Geçerli bir tutar girin" });
       }
-      const { customerName, customerEmail, customerPhone, description, userId, expiresInDays } = req.body || {};
+      const { customerName, customerEmail, customerPhone, description, userId, expiresInDays, showcaseItems } = req.body || {};
       const token = crypto.randomBytes(8).toString('base64url');
       let expiresAt: Date | null = null;
       const days = Number(expiresInDays);
@@ -2998,6 +2998,7 @@ export async function registerRoutes(
         customerPhone: customerPhone || null,
         amount: amountNum.toFixed(2),
         description: description || null,
+        showcaseItems: Array.isArray(showcaseItems) ? showcaseItems : [],
         status: 'pending',
         merchantOid: null,
         paymentToken: null,
@@ -3055,6 +3056,7 @@ export async function registerRoutes(
         amount: reqRow.amount,
         description: reqRow.description,
         customerName: reqRow.customerName,
+        showcaseItems: reqRow.showcaseItems ?? [],
         status,
         expiresAt: reqRow.expiresAt,
         paidAt: reqRow.paidAt,

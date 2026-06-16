@@ -636,6 +636,7 @@ export const paymentRequests = pgTable("payment_requests", {
   customerPhone: text("customer_phone"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description"),
+  showcaseItems: jsonb("showcase_items").$type<{ productId: number; productName: string; quantity: number; imageUrl: string | null; note: string | null; }[]>().default([]).notNull(),
   status: text("status").default("pending").notNull(), // 'pending' | 'paid' | 'cancelled' | 'expired'
   merchantOid: text("merchant_oid"),
   paymentToken: text("payment_token"),
