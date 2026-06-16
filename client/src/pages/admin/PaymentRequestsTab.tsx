@@ -488,10 +488,11 @@ export default function PaymentRequestsTab() {
               </FormField>
 
               {/* Product showcase picker */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[12px] font-medium text-neutral-700">Göstermelik Ürünler</span>
-                  <span className="text-[11px] text-neutral-400">(isteğe bağlı · stok etkilenmez)</span>
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Package className="w-3.5 h-3.5 text-neutral-500" />
+                  <span className="text-[12px] font-semibold text-neutral-700">Göstermelik Ürünler</span>
+                  <span className="text-[11px] text-neutral-400">— isteğe bağlı, stok etkilenmez</span>
                 </div>
                 <ProductPicker
                   items={form.showcaseItems}
