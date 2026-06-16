@@ -948,7 +948,7 @@ export default function ProductDetail() {
             {/* RIGHT — Sticky info column */}
             <motion.aside
               {...fadeUp}
-              className="lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1"
+              className="lg:sticky lg:top-28 lg:self-start"
             >
               {/* Category eyebrow */}
               {category && (
