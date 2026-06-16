@@ -61,12 +61,12 @@ export default function AdminLayout({
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
-        <div className="h-14 border-b border-neutral-200 flex items-center justify-between shrink-0 overflow-hidden" style={{ background: '#0a0c10' }}>
+        <div className="px-4 h-14 border-b border-neutral-200 flex items-center justify-between shrink-0">
           <img
             src={toovLogo}
             alt="TOOV"
-            className="h-full w-auto object-cover select-none flex-1 min-w-0"
-            style={{ maxWidth: 'calc(100% - 2.5rem)' }}
+            className="h-7 w-auto object-contain select-none"
+            style={{ filter: 'invert(1) hue-rotate(180deg)' }}
             draggable={false}
             data-testid="text-admin-brand"
           />
