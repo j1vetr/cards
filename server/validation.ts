@@ -41,14 +41,7 @@ export const registerWriteSchema = z.object({
   city: z.string().max(100).optional(),
   district: z.string().max(100).optional(),
   postalCode: z.string().max(20).optional(),
-  customerType: z.enum(["retail", "wholesale"]).optional(),
-  companyName: z.string().max(200).optional(),
-  taxNumber: z.string().max(50).optional(),
-  taxOffice: z.string().max(150).optional(),
-}).refine(
-  (d) => d.customerType !== "wholesale" || !!(d.companyName && d.companyName.trim().length > 0),
-  { message: "Toptan hesap için firma adı zorunludur", path: ["companyName"] },
-);
+});
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Geçerli bir e-posta girin"),
@@ -466,12 +459,14 @@ export const iyzicoCallbackSchema = z.object({
 // ─── Cart add ────────────────────────────────────────────────────────────────
 
 export const cartAddSchema = z.object({
-  productId: z.string().min(1, "Ürün ID zorunludur").max(100),
+  cardListingId: z.string().max(100).optional().nullable(),
+  productId: z.string().max(100).optional().nullable(),
   variantId: z.string().max(100).optional().nullable(),
   quantity: z.number({ invalid_type_error: "Miktar sayı olmalı" }).int().min(1, "Miktar en az 1 olmalı").max(999),
-  itemType: z.enum(["retail", "wholesale"]).optional(),
-  seriesId: z.string().max(100).optional().nullable(),
-});
+}).refine(
+  (d) => !!(d.cardListingId || d.productId),
+  { message: "cardListingId veya productId zorunludur" },
+);
 
 // ─── Admin: wholesale PDF ─────────────────────────────────────────────────────
 

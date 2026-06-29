@@ -138,6 +138,25 @@ async function expandCartLinesToOrderItems(
   let subtotal = 0;
 
   for (const cartItem of cartItems) {
+    // ── Card-listing path (TCG primary) ──────────────────────────────────────
+    if (cartItem.cardListingId) {
+      const listing = await storage.getCardListing(cartItem.cardListingId);
+      if (!listing || !listing.isActive) continue;
+      const card = await storage.getCard(listing.cardId);
+      const itemPrice = parseFloat(listing.price as string);
+      subtotal += itemPrice * cartItem.quantity;
+      lines.push({
+        productId: null,
+        variantId: null,
+        cardListingId: listing.id,
+        quantity: cartItem.quantity,
+        productName: card ? card.name : 'Kart',
+        variantDetails: listing.condition || null,
+        price: listing.price as string,
+      });
+      continue;
+    }
+    // ── Product/variant path (fallback) ─────────────────────────────────────
     const variant = cartItem.variantId ? await storage.getProductVariant(cartItem.variantId) : null;
     const actualProductId = variant?.productId || cartItem.productId;
     const product = actualProductId ? await storage.getProduct(actualProductId) : null;
@@ -147,7 +166,7 @@ async function expandCartLinesToOrderItems(
     lines.push({
       productId: product.id,
       variantId: variant?.id || null,
-      cardListingId: cartItem.cardListingId || null,
+      cardListingId: null,
       quantity: cartItem.quantity,
       productName: product.name,
       variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() || null : null,
@@ -209,21 +228,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-
-  // Meta (Facebook/Instagram) Commerce + Google Merchant ürün akışı
-  // Commerce Manager → Katalog → Veri Kaynakları → Programlanmış Akış URL'i olarak kullanılır
-  app.get("/feed/meta-catalog.xml", async (_req, res) => {
-    try {
-      const { buildMetaCatalogXml } = await import("./feeds");
-      const xml = await buildMetaCatalogXml();
-      res.setHeader("Content-Type", "application/xml; charset=utf-8");
-      res.setHeader("Cache-Control", "public, max-age=3600");
-      res.send(xml);
-    } catch (error) {
-      console.error("[meta-catalog] feed üretimi başarısız:", error);
-      res.status(500).send("Feed üretilemedi");
-    }
-  });
 
   // Dynamic sitemap.xml — categories + products + static pages
   app.get(["/sitemap.xml", "/sitemap_index.xml"], async (_req, res) => {
@@ -750,14 +754,13 @@ export async function registerRoutes(
     try {
       const parsed = registerWriteSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { email, password, firstName, lastName, phone, address, city, district, postalCode, customerType, companyName, taxNumber, taxOffice } = parsed.data;
+      const { email, password, firstName, lastName, phone, address, city, district, postalCode } = parsed.data;
       
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ error: "Bu e-posta adresi zaten kayıtlı" });
       }
 
-      const isWholesale = customerType === "wholesale";
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await storage.createUser({
         email,
@@ -1520,22 +1523,41 @@ export async function registerRoutes(
       const cartToken = getOrCreateCartToken(req, res);
       const parsedCart = cartAddSchema.safeParse(req.body);
       if (!parsedCart.success) return res.status(400).json({ error: firstZodMessage(parsedCart.error) });
-      const { productId, variantId: rawVariantId, quantity, itemType: rawItemType, seriesId: rawSeriesId } = parsedCart.data;
-      const itemType = rawItemType === "wholesale" ? "wholesale" : "retail";
+      const { cardListingId, productId, variantId: rawVariantId, quantity } = parsedCart.data;
+
+      // ── Card-listing path (TCG primary) ──────────────────────────────────
+      if (cardListingId) {
+        const listing = await storage.getCardListing(cardListingId);
+        if (!listing || !listing.isActive) {
+          return res.status(400).json({ error: "Geçersiz kart listesi" });
+        }
+        if ((listing.stock ?? 0) < quantity) {
+          return res.status(400).json({ error: "Yeterli stok yok" });
+        }
+        const existingItems = await storage.getCartItems(cartToken);
+        const existingLine = existingItems.find((i: any) => i.cardListingId === cardListingId);
+        if (existingLine) {
+          await storage.updateCartItem(existingLine.id, existingLine.quantity + quantity);
+        } else {
+          await storage.addToCart({ sessionId: cartToken, cardListingId, productId: null, variantId: null, quantity } as any);
+        }
+        const updatedCart = await storage.getCartItems(cartToken);
+        return res.json(updatedCart);
+      }
+
+      // ── Product/variant path (fallback) ──────────────────────────────────
+      if (!productId) {
+        return res.status(400).json({ error: "cardListingId veya productId zorunludur" });
+      }
 
       const product = await storage.getProduct(productId);
       if (!product) {
         return res.status(400).json({ error: "Geçersiz ürün" });
       }
 
-      // Existing cart — used to enforce "no mixed retail+wholesale cart" (v1).
+      // Existing cart
       const existingCart = await storage.getCartItems(cartToken);
 
-
-      // ===== RETAIL / TCG =====
-
-      // Giyim: eğer client variant göndermediyse ürünün ilk aktif & stoklu
-      // varyantını otomatik seçeriz — böylece stok yine varyant bazlı doğru düşer.
       let variantId: string | null = rawVariantId ?? null;
       let resolvedVariant = variantId ? await storage.getProductVariant(variantId) : null;
 
@@ -3973,426 +3995,10 @@ export async function registerRoutes(
     }
   });
 
-  // Aras Kargo: Create shipment via SetOrder API
-  app.post("/api/admin/orders/:id/aras-kargo/create", requireAdmin, async (req, res) => {
-    try {
-      const { createShipment } = await import('./arasKargoService.js');
-      const order = await storage.getOrder(req.params.id);
-      if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
-
-      // Çift gönderme koruması: notlarda zaten "Aras Kargo API'ye kayıt gönderildi" varsa tekrar gönderme
-      const existingNotes = await storage.getOrderNotes(req.params.id);
-      const alreadySent = existingNotes.some(n => n.content.includes("Aras Kargo API'ye kayıt gönderildi"));
-      if (alreadySent && !req.query.force) {
-        return res.json({
-          success: false,
-          alreadySent: true,
-          error: 'Bu sipariş daha önce Aras Kargo sistemine gönderildi. Tekrar göndermek için force=1 parametresi ekleyin.',
-        });
-      }
-
-      const addr = order.shippingAddress as any;
-      const addressLine = [addr?.address, addr?.district, addr?.city].filter(Boolean).join(', ');
-      const isWorldwide = addr?.country && addr.country.toLowerCase() !== 'türkiye' && addr.country.toLowerCase() !== 'turkey' && addr.country !== 'TR';
-
-      const result = await createShipment({
-        orderNumber: order.orderNumber,
-        customerName: order.customerName,
-        customerPhone: order.customerPhone || '',
-        address: addressLine || addr?.address || '',
-        city: addr?.city || '',
-        district: addr?.district || addr?.city || '',
-        isWorldwide: !!isWorldwide,
-      });
-
-      if (result.success) {
-        await storage.createOrderNote({
-          orderId: req.params.id,
-          content: `Aras Kargo API'ye kayıt gönderildi. Entegrasyon kodu: ${result.integrationCode}. Şube irsaliye oluşturduktan sonra takip numarası "Durumu Sorgula" ile çekilebilir.`,
-          authorId: 'system',
-        });
-      }
-
-      res.json(result);
-    } catch (error: any) {
-      console.error('[ArasKargo] Create shipment error:', error);
-      res.status(500).json({ success: false, error: error.message || 'Kargo oluşturulamadı' });
-    }
+  // Aras Kargo label endpoint removed (not needed for TCG platform)
+  app.get("/api/admin/orders/:id/aras-kargo/label", requireAdmin, (_req, res) => {
+    res.status(410).json({ error: 'Bu endpoint kaldırıldı' });
   });
-
-  // Aras Kargo: Print label (A4 HTML page)
-  app.get("/api/admin/orders/:id/aras-kargo/label", requireAdmin, async (req, res) => {
-    try {
-      const { getLabelData } = await import('./arasKargoService.js');
-      const order = await storage.getOrder(req.params.id);
-      if (!order) return res.status(404).send('<h1>Sipariş bulunamadı</h1>');
-
-      const label = await getLabelData(order.orderNumber);
-
-      const addr = order.shippingAddress as any;
-      const addressLine = [addr?.address, addr?.district, addr?.city].filter(Boolean).join(', ');
-
-      const model = label.barcodeModels?.[0];
-      const receiverName = model?.ReceiverAccountName || order.customerName;
-      const receiverAddr = [model?.ReceiverAddress, model?.ReceiverAddress2, model?.ReceiverAddress3].filter(Boolean).join(', ') || addressLine;
-      const receiverCity = [model?.ReceiverTown, model?.ReceiverCity].filter(Boolean).join(' / ') || (addr?.city || '');
-      const receiverPhone = model?.ReceiverPhone || order.customerPhone || '';
-      const senderName = model?.SenderAccountName || 'MARKA';
-      const senderAddr = [model?.SenderAddress, model?.SenderAddress2].filter(Boolean).join(', ') || 'Marka Giyim & Moda';
-      const barcodeNumber = model?.BarcodeNumber || order.orderNumber;
-      const trackingNumber = label.trackingNumber || order.trackingNumber || '-';
-      const deliveryUnit = model?.DeliveryUnitName || '';
-      const invoiceNo = model?.InvoiceNumber || order.orderNumber;
-
-      // Build barcode image HTML
-      let labelImageHtml = '';
-      if (label.images && label.images.length > 0) {
-        labelImageHtml = label.images.map(b64 =>
-          `<img src="data:image/png;base64,${b64}" class="label-img" alt="Kargo Etiketi" />`
-        ).join('\n');
-      }
-
-      // Inline SVG Code-128-like barcode fallback (visual representation using bars)
-      const barcodeDisplayNum = barcodeNumber.replace(/[^A-Z0-9]/gi, '');
-
-      const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aras Kargo Etiketi — ${order.orderNumber}</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Arial', sans-serif;
-    background: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    min-height: 100vh;
-  }
-  .no-print {
-    margin-bottom: 16px;
-    display: flex;
-    gap: 10px;
-  }
-  .btn {
-    padding: 10px 28px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: .5px;
-  }
-  .btn-print { background: #111; color: #fff; }
-  .btn-close  { background: #e5e7eb; color: #111; }
-  .page {
-    width: 210mm;
-    min-height: 297mm;
-    background: #fff;
-    padding: 12mm;
-    box-shadow: 0 2px 16px rgba(0,0,0,.12);
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  /* ── Header ─────────────────────────────────────── */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 3px solid #111;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-  }
-  .header-brand { font-size: 22px; font-weight: 900; letter-spacing: 2px; color: #111; }
-  .header-brand span { color: #e07b39; }
-  .header-sub { font-size: 11px; color: #666; text-align: right; }
-
-  /* ── Main label image from API ───────────────────── */
-  .label-img-wrapper {
-    border: 1.5px solid #ccc;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-bottom: 10px;
-    text-align: center;
-    background: #fafafa;
-    padding: 8px;
-  }
-  .label-img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-
-  /* ── Info grid ───────────────────────────────────── */
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .info-box {
-    border: 1.5px solid #ddd;
-    border-radius: 6px;
-    padding: 8px 10px;
-  }
-  .info-box.highlight { border-color: #111; border-width: 2px; }
-  .info-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 4px;
-  }
-  .info-value {
-    font-size: 13px;
-    font-weight: 700;
-    color: #111;
-    line-height: 1.4;
-  }
-  .info-value.small { font-size: 11px; font-weight: 400; }
-
-  /* ── Barcode section ─────────────────────────────── */
-  .barcode-section {
-    border: 2px solid #111;
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    text-align: center;
-    background: #fff;
-  }
-  .barcode-section .bc-label {
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: #666;
-    margin-bottom: 6px;
-  }
-  .barcode-bars {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    gap: 1px;
-    height: 52px;
-    margin: 0 auto 6px;
-    max-width: 340px;
-  }
-  .barcode-bars .bar {
-    background: #111;
-    width: 2px;
-    border-radius: 1px;
-  }
-  .barcode-number {
-    font-family: 'Courier New', monospace;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    color: #111;
-  }
-  .tracking-number {
-    font-size: 11px;
-    color: #555;
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
-
-  /* ── Divider ─────────────────────────────────────── */
-  .divider {
-    border: none;
-    border-top: 1px dashed #ccc;
-    margin: 8px 0;
-  }
-
-  /* ── Footer ──────────────────────────────────────── */
-  .footer {
-    margin-top: auto;
-    border-top: 1.5px solid #eee;
-    padding-top: 8px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 9px;
-    color: #999;
-  }
-
-  /* ── Print ───────────────────────────────────────── */
-  @media print {
-    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { background: white; padding: 0; }
-    .no-print { display: none !important; }
-    .page {
-      box-shadow: none;
-      margin: 0;
-      padding: 10mm;
-      width: 210mm;
-      min-height: 297mm;
-    }
-    @page {
-      size: A4 portrait;
-      margin: 0;
-    }
-  }
-</style>
-</head>
-<body>
-
-<div class="no-print">
-  <button class="btn btn-print" onclick="window.print()">🖨 Yazdır (A4)</button>
-  <button class="btn btn-close" onclick="window.close()">✕ Kapat</button>
-</div>
-
-<div class="page">
-
-  <!-- Header -->
-  <div class="header">
-    <div class="header-brand">MARKA <span>GİYİM</span></div>
-    <div class="header-sub">
-      Giyim &amp; Moda<br>
-      ecartejeans.com · info@ecartejeans.com
-    </div>
-  </div>
-
-  ${labelImageHtml ? `
-  <!-- Label image from Aras API -->
-  <div class="label-img-wrapper">
-    ${labelImageHtml}
-  </div>` : ''}
-
-  <!-- Barcode Section -->
-  <div class="barcode-section">
-    <div class="bc-label">Kargo Barkodu</div>
-    <div class="barcode-bars" id="barcodeCanvas">
-      <!-- generated by JS -->
-    </div>
-    <div class="barcode-number">${barcodeDisplayNum}</div>
-    ${trackingNumber !== '-' ? `<div class="tracking-number">Takip No: ${trackingNumber}</div>` : ''}
-  </div>
-
-  <!-- Info Grid -->
-  <div class="info-grid">
-    <div class="info-box highlight">
-      <div class="info-label">📦 Alıcı</div>
-      <div class="info-value">${receiverName}</div>
-      <div class="info-value small">${receiverAddr}</div>
-      <div class="info-value small">${receiverCity}</div>
-      ${receiverPhone ? `<div class="info-value small">📞 ${receiverPhone}</div>` : ''}
-    </div>
-    <div class="info-box">
-      <div class="info-label">🏭 Gönderici</div>
-      <div class="info-value">${senderName}</div>
-      <div class="info-value small">${senderAddr}</div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">📋 Sipariş No</div>
-      <div class="info-value">${order.orderNumber}</div>
-      <div class="info-value small">${new Date().toLocaleDateString('tr-TR')}</div>
-    </div>
-    <div class="info-box">
-      <div class="info-label">🏢 Dağıtım Şubesi</div>
-      <div class="info-value">${deliveryUnit || '—'}</div>
-      ${invoiceNo ? `<div class="info-value small">Fatura: ${invoiceNo}</div>` : ''}
-    </div>
-  </div>
-
-  <hr class="divider" />
-
-  <!-- Footer -->
-  <div class="footer">
-    <span>Aras Kargo — araskargoservisi.com.tr</span>
-    <span>Oluşturulma: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}</span>
-  </div>
-
-</div>
-
-<script>
-// Generate pseudo-barcode bars from barcode string
-(function() {
-  var code = ${JSON.stringify(barcodeDisplayNum)};
-  var container = document.getElementById('barcodeCanvas');
-  if (!container || !code) return;
-  // Simple visual bar pattern based on char codes
-  var bars = '';
-  for (var i = 0; i < code.length; i++) {
-    var c = code.charCodeAt(i);
-    // narrow/wide pattern
-    var heights = [
-      (c % 5 + 3) * 6,
-      (c % 3 + 2) * 6,
-      (c % 7 + 2) * 6,
-      ((c >> 2) % 4 + 3) * 6,
-    ];
-    heights.forEach(function(h, j) {
-      bars += '<div class="bar" style="height:' + h + 'px;width:' + (j % 2 === 0 ? '2' : '1') + 'px"></div>';
-      bars += '<div style="width:1px;height:1px"></div>'; // gap
-    });
-  }
-  // Add guard bars
-  var guard = '<div class="bar" style="height:52px;width:2px"></div><div style="width:2px"></div>';
-  container.innerHTML = guard + bars + guard;
-})();
-
-// Auto-print after short delay
-window.addEventListener('load', function() {
-  setTimeout(function() { window.print(); }, 600);
-});
-</script>
-</body>
-</html>`;
-
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-store');
-      res.send(html);
-    } catch (error: any) {
-      console.error('[ArasKargo] Label error:', error);
-      res.status(500).send(`<h2>Etiket oluşturulamadı</h2><p>${error.message}</p>`);
-    }
-  });
-
-  // Aras Kargo: Query shipment status
-  app.get("/api/admin/orders/:id/aras-kargo/status", requireAdmin, async (req, res) => {
-    try {
-      const { queryShipmentByIntegrationCode } = await import('./arasKargoService.js');
-      const order = await storage.getOrder(req.params.id);
-      if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
-
-      const result = await queryShipmentByIntegrationCode(order.orderNumber);
-
-      // If tracking number found and order doesn't have one yet, save it + trigger notifications
-      let savedToOrder = false;
-      if (result.success && result.found && result.trackingNumber && !order.trackingNumber) {
-        savedToOrder = true;
-        const trackingUrl = `https://kargotakip.araskargo.com.tr/mainpage.aspx?code=${result.trackingNumber}`;
-        await storage.updateOrderTracking(req.params.id, {
-          trackingNumber: result.trackingNumber,
-          trackingUrl,
-          shippingCarrier: 'Aras Kargo',
-        });
-        let updatedOrder = order;
-        if (order.status !== 'shipped' && order.status !== 'delivered') {
-          updatedOrder = (await storage.updateOrder(req.params.id, { status: 'shipped', shippedAt: new Date() })) || order;
-        }
-        await storage.createOrderNote({
-          orderId: req.params.id,
-          content: `Aras Kargo takip numarası otomatik alındı: ${result.trackingNumber}`,
-          authorId: 'system',
-        });
-        // Send WhatsApp + email shipping notification (same as manual tracking update)
-        const orderForNotif = { ...updatedOrder, trackingNumber: result.trackingNumber, trackingUrl, shippingCarrier: 'Aras Kargo' };
-        sendOrderShippedToCustomer(orderForNotif as any).catch(err =>
-          console.error('[ArasKargo] WhatsApp shipping notification failed:', err)
-        );
-        sendShippingNotificationEmail(orderForNotif as any).catch(err =>
-          console.error('[ArasKargo] Email shipping notification failed:', err)
-        );
-      }
-
-      res.json({ ...result, savedToOrder });
-    } catch (error: any) {
-      console.error('[ArasKargo] Query status error:', error);
-      res.status(500).json({ success: false, error: error.message || 'Durum sorgulanamadı' });
-    }
-  });
-
   app.put("/api/admin/orders/:id/tracking", requireAdmin, async (req, res) => {
     try {
       const parsed = orderTrackingSchema.safeParse(req.body);
@@ -4499,43 +4105,6 @@ window.addEventListener('load', function() {
     } catch (error) {
       console.error('Order cancellation error:', error);
       res.status(500).json({ error: "Failed to cancel order" });
-    }
-  });
-
-  // Aras Kargo: Get registered sender addresses (for settings)
-  app.get("/api/admin/aras-kargo/addresses", requireAdmin, async (req, res) => {
-    try {
-      const { getAddressList } = await import('./arasKargoService.js');
-      const result = await getAddressList();
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Aras Kargo: GetCargoInfo — real delivery status via DataSet
-  app.get("/api/admin/orders/:id/aras-kargo/cargo-info", requireAdmin, async (req, res) => {
-    try {
-      const { getCargoStatus } = await import('./arasKargoService.js');
-      const order = await storage.getOrder(req.params.id);
-      if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
-      const result = await getCargoStatus(order.orderNumber);
-      // Auto-mark delivered if Aras says so and order is still in 'shipped'
-      if (result.success && result.found && result.status) {
-        const teslimKelimesi = ['teslim', 'delivered', 'deliver'].some(k => result.status!.toLowerCase().includes(k));
-        if (teslimKelimesi && order.status === 'shipped') {
-          await storage.updateOrder(req.params.id, { status: 'delivered', deliveredAt: new Date() });
-          await storage.createOrderNote({
-            orderId: req.params.id,
-            content: `Aras Kargo durumu: "${result.status}" — sipariş teslim edildi olarak işaretlendi.`,
-            authorId: 'system',
-          });
-        }
-      }
-      res.json(result);
-    } catch (error: any) {
-      console.error('[ArasKargo] GetCargoInfo error:', error);
-      res.status(500).json({ success: false, error: error.message });
     }
   });
 
@@ -5861,120 +5430,6 @@ Sitemap: ${baseUrl}/sitemap.xml
   app.post("/api/track/initiate-checkout", noopTrackHandler);
   app.post("/api/track/purchase", noopTrackHandler);
   app.post("/api/track/add-payment-info", noopTrackHandler);
-  app.get("/feeds/google-merchant.xml", async (_req: Request, res: Response) => {
-    try {
-      const allProducts = await storage.getAllProducts();
-      const allCategories = await storage.getCategories();
-      const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
-
-      const baseUrl = "https://ecartejeans.com";
-      const items: string[] = [];
-
-      for (const product of allProducts) {
-        if (!product.isActive) continue;
-
-        const variants = await storage.getProductVariants(product.id);
-        const categoryName = product.categoryId ? categoryMap.get(product.categoryId) || "" : "";
-        const productUrl = `${baseUrl}/urun/${product.slug}`;
-        const imageUrl = product.images && product.images.length > 0
-          ? (product.images[0].startsWith("http") ? product.images[0] : `${baseUrl}${product.images[0]}`)
-          : "";
-
-        const additionalImages = (product.images || []).slice(1, 10).map(img => {
-          const url = img.startsWith("http") ? img : `${baseUrl}${img}`;
-          return `      <g:additional_image_link>${escapeXml(url)}</g:additional_image_link>`;
-        }).join("\n");
-
-        const description = product.description
-          ? product.description.replace(/<[^>]*>/g, '').substring(0, 5000)
-          : product.name;
-
-        if (variants.length > 0) {
-          for (const variant of variants) {
-            if (!variant.isActive) continue;
-
-            const variantPrice = variant.price || product.basePrice;
-            const availability = variant.stock > 0 ? "in_stock" : "out_of_stock";
-            const sizeLabel = variant.size || "";
-            const colorLabel = variant.color || "";
-            const variantTitle = [product.name, colorLabel, sizeLabel].filter(Boolean).join(" - ");
-            const variantSku = variant.sku || `${product.id}-${variant.id}`;
-
-            let sizeAttr = "";
-            if (sizeLabel) {
-              sizeAttr = `      <g:size>${escapeXml(sizeLabel)}</g:size>`;
-            }
-            let colorAttr = "";
-            if (colorLabel) {
-              colorAttr = `      <g:color>${escapeXml(colorLabel)}</g:color>`;
-            }
-
-            items.push(`    <item>
-      <g:id>${escapeXml(variantSku)}</g:id>
-      <g:item_group_id>${escapeXml(product.id)}</g:item_group_id>
-      <g:title>${escapeXml(variantTitle)}</g:title>
-      <g:description>${escapeXml(description)}</g:description>
-      <g:link>${escapeXml(productUrl)}</g:link>
-      <g:image_link>${escapeXml(imageUrl)}</g:image_link>
-${additionalImages}
-      <g:price>${Number(variantPrice).toFixed(2)} TRY</g:price>
-      <g:availability>${availability}</g:availability>
-      <g:brand>MARKA</g:brand>
-      <g:condition>new</g:condition>
-      <g:google_product_category>Giyim ve Aksesuar > Giyim</g:google_product_category>
-      <g:product_type>${escapeXml(categoryName)}</g:product_type>
-${sizeAttr}
-${colorAttr}
-      <g:gender>unisex</g:gender>
-      <g:age_group>adult</g:age_group>
-      <g:shipping>
-        <g:country>TR</g:country>
-        <g:price>200.00 TRY</g:price>
-      </g:shipping>
-    </item>`);
-          }
-        } else {
-          const availability = "in_stock";
-          items.push(`    <item>
-      <g:id>${escapeXml(product.id)}</g:id>
-      <g:title>${escapeXml(product.name)}</g:title>
-      <g:description>${escapeXml(description)}</g:description>
-      <g:link>${escapeXml(productUrl)}</g:link>
-      <g:image_link>${escapeXml(imageUrl)}</g:image_link>
-${additionalImages}
-      <g:price>${Number(product.basePrice).toFixed(2)} TRY</g:price>
-      <g:availability>${availability}</g:availability>
-      <g:brand>MARKA</g:brand>
-      <g:condition>new</g:condition>
-      <g:google_product_category>Giyim ve Aksesuar > Giyim</g:google_product_category>
-      <g:product_type>${escapeXml(categoryName)}</g:product_type>
-      <g:gender>unisex</g:gender>
-      <g:age_group>adult</g:age_group>
-      <g:shipping>
-        <g:country>TR</g:country>
-        <g:price>200.00 TRY</g:price>
-      </g:shipping>
-    </item>`);
-        }
-      }
-
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
-  <channel>
-    <title>Marka — Giyim &amp; Moda</title>
-    <link>${baseUrl}</link>
-    <description>Marka — Kadın, Erkek ve Çocuk Giyim</description>
-${items.join("\n")}
-  </channel>
-</rss>`;
-
-      res.set("Content-Type", "application/xml; charset=utf-8");
-      res.send(xml);
-    } catch (error) {
-      console.error("[Google Merchant Feed] Error:", error);
-      res.status(500).send("Feed generation error");
-    }
-  });
 
   // ==========================================================================
   // Marketplaces (Trendyol / N11 / Hepsiburada ...) — admin-only

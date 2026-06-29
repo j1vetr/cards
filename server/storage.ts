@@ -6,6 +6,8 @@ import {
   productVariants, 
   productCategories,
   cartItems,
+  cards,
+  cardListings,
   orders,
   orderItems,
   users,
@@ -2202,6 +2204,18 @@ export class DbStorage implements IStorage {
       .where(eq(marketplaceSyncRuns.marketplaceId, marketplaceId))
       .orderBy(desc(marketplaceSyncRuns.startedAt))
       .limit(limit);
+  }
+
+  // ── TCG: card listings & cards ────────────────────────────────────────────
+
+  async getCardListing(id: string) {
+    const [row] = await db.select().from(cardListings).where(eq(cardListings.id, id));
+    return row ?? null;
+  }
+
+  async getCard(id: string) {
+    const [row] = await db.select().from(cards).where(eq(cards.id, id));
+    return row ?? null;
   }
 
 }

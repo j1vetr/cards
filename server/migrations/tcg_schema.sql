@@ -116,7 +116,18 @@ ALTER TABLE low_stock_alerts ADD COLUMN IF NOT EXISTS card_listing_id VARCHAR RE
 ALTER TABLE low_stock_alerts ALTER COLUMN variant_id DROP NOT NULL;
 
 -- ============================================================
--- 7. Seed default games
+-- 7. Drop legacy wholesale/clothing columns (idempotent)
+-- ============================================================
+
+DROP TABLE IF EXISTS wholesale_series CASCADE;
+
+ALTER TABLE users DROP COLUMN IF EXISTS customer_type;
+ALTER TABLE users DROP COLUMN IF EXISTS company_name;
+ALTER TABLE users DROP COLUMN IF EXISTS tax_number;
+ALTER TABLE users DROP COLUMN IF EXISTS tax_office;
+
+-- ============================================================
+-- 8. Seed default games
 -- ============================================================
 
 INSERT INTO card_games (name, slug, is_active) VALUES
