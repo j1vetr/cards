@@ -183,6 +183,13 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
                       </p>
                     )}
                   </div>
+                ) : card.market_price ? (
+                  <div>
+                    <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wide">Referans fiyat</p>
+                    <p className="text-sm font-semibold text-zinc-500">
+                      ${parseFloat(card.market_price).toFixed(2)}
+                    </p>
+                  </div>
                 ) : (
                   <p className="text-sm text-zinc-400">Stok yok</p>
                 )}
