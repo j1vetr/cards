@@ -7,6 +7,14 @@ import {
   cartItems,
   cards,
   cardListings,
+  cardGames,
+  cardSets,
+  cardPrices,
+  tcgSyncRuns,
+  type CardGame,
+  type CardSet,
+  type CardPrice,
+  type TcgSyncRun,
   orders,
   orderItems,
   users,
@@ -2176,6 +2184,153 @@ export class DbStorage implements IStorage {
   async getCard(id: string) {
     const [row] = await db.select().from(cards).where(eq(cards.id, id));
     return row ?? null;
+  }
+
+  // ── TCG: card games ───────────────────────────────────────────────────────
+  async listCardGames() {
+    return db.select().from(cardGames).where(eq(cardGames.isActive, true)).orderBy(cardGames.name);
+  }
+
+  // ── TCG: card sets ────────────────────────────────────────────────────────
+  async listCardSetsByGame(gameId: string) {
+    return db.select().from(cardSets).where(eq(cardSets.gameId, gameId)).orderBy(desc(cardSets.releaseDate));
+  }
+
+  async getCardSetByApiId(apiId: string, apiSource: string) {
+    const [row] = await db.select().from(cardSets)
+      .where(and(eq(cardSets.apiId, apiId), eq(cardSets.apiSource, apiSource)));
+    return row ?? null;
+  }
+
+  async upsertCardSet(data: {
+    gameId: string;
+    name: string;
+    slug: string;
+    series?: string | null;
+    releaseDate?: string | null;
+    totalCards?: number | null;
+    logoUrl?: string | null;
+    symbolUrl?: string | null;
+    apiId: string;
+    apiSource: string;
+    isActive: boolean;
+  }) {
+    const existing = await this.getCardSetByApiId(data.apiId, data.apiSource);
+    if (existing) {
+      const [updated] = await db.update(cardSets)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(cardSets.id, existing.id))
+        .returning();
+      return updated;
+    }
+    // Ensure unique slug if collision
+    let slug = data.slug;
+    const [collision] = await db.select({ id: cardSets.id }).from(cardSets).where(eq(cardSets.slug, slug));
+    if (collision) slug = `${slug}-${data.apiId}`;
+    const [inserted] = await db.insert(cardSets).values({ ...data, slug }).returning();
+    return inserted;
+  }
+
+  // ── TCG: cards ────────────────────────────────────────────────────────────
+  async listAllActiveCards() {
+    return db.select().from(cards).where(eq(cards.isActive, true)).orderBy(cards.name);
+  }
+
+  async upsertCard(data: {
+    setId: string;
+    name: string;
+    slug: string;
+    cardNumber?: string | null;
+    rarity?: string | null;
+    cardTypes?: string[];
+    hp?: number | null;
+    artist?: string | null;
+    imageUrl?: string | null;
+    imageUrlHiRes?: string | null;
+    description?: string | null;
+    apiId: string;
+    apiSource: string;
+    isActive: boolean;
+  }): Promise<{ card: typeof cards.$inferSelect; inserted: boolean }> {
+    const [existing] = await db.select().from(cards)
+      .where(and(eq(cards.apiSource, data.apiSource), eq(cards.apiId, data.apiId)));
+
+    if (existing) {
+      const [updated] = await db.update(cards)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(cards.id, existing.id))
+        .returning();
+      return { card: updated, inserted: false };
+    }
+
+    // Ensure unique slug
+    let slug = data.slug;
+    const [collision] = await db.select({ id: cards.id }).from(cards).where(eq(cards.slug, slug));
+    if (collision) slug = `${slug}-${data.apiId}`;
+
+    const [inserted] = await db.insert(cards).values({ ...data, slug }).returning();
+    return { card: inserted, inserted: true };
+  }
+
+  // ── TCG: card prices ──────────────────────────────────────────────────────
+  async upsertCardPrice(data: {
+    cardId: string;
+    source: string;
+    priceMarket?: string | null;
+    priceLow?: string | null;
+    priceHigh?: string | null;
+    currency: string;
+  }) {
+    const [existing] = await db.select({ id: cardPrices.id }).from(cardPrices)
+      .where(and(eq(cardPrices.cardId, data.cardId), eq(cardPrices.source, data.source)));
+
+    if (existing) {
+      const [updated] = await db.update(cardPrices)
+        .set({ ...data, fetchedAt: new Date() })
+        .where(eq(cardPrices.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [inserted] = await db.insert(cardPrices).values(data).returning();
+    return inserted;
+  }
+
+  async getCardPrice(cardId: string, source = "pricecharting") {
+    const [row] = await db.select().from(cardPrices)
+      .where(and(eq(cardPrices.cardId, cardId), eq(cardPrices.source, source)));
+    return row ?? null;
+  }
+
+  // ── TCG: sync runs ────────────────────────────────────────────────────────
+  async createTcgSyncRun(data: {
+    game: string;
+    mode: string;
+    status: string;
+    setApiId?: string | null;
+    stats: object;
+    errors: object;
+  }) {
+    const [row] = await db.insert(tcgSyncRuns).values({
+      game: data.game,
+      mode: data.mode,
+      status: data.status,
+      setApiId: data.setApiId ?? null,
+      stats: data.stats as any,
+      errors: data.errors as any,
+    }).returning();
+    return row;
+  }
+
+  async completeTcgSyncRun(id: string, status: string, stats: object, errors: object[]) {
+    const [row] = await db.update(tcgSyncRuns)
+      .set({ status, stats: stats as any, errors: errors as any, completedAt: new Date() })
+      .where(eq(tcgSyncRuns.id, id))
+      .returning();
+    return row;
+  }
+
+  async listTcgSyncRuns(limit = 20) {
+    return db.select().from(tcgSyncRuns).orderBy(desc(tcgSyncRuns.startedAt)).limit(limit);
   }
 
 }

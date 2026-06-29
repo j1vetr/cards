@@ -11,6 +11,7 @@ import {
   Database,
   Ticket,
   MessageSquare,
+  RefreshCw,
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
@@ -28,6 +29,7 @@ export const VALID_TABS: TabType[] = [
   'menu',
   'coupons',
   'reviews',
+  'card-api-sync',
 ];
 
 export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
@@ -61,6 +63,12 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
     items: [
       { id: 'users', icon: Users, label: 'Kullanıcılar' },
       { id: 'reviews', icon: MessageSquare, label: 'Yorumlar' },
+    ],
+  },
+  {
+    title: 'TCG',
+    items: [
+      { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
     ],
   },
   {

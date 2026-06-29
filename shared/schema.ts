@@ -797,6 +797,36 @@ export const insertMarketplaceSyncRunSchema = createInsertSchema(marketplaceSync
 export type InsertMarketplaceSyncRun = z.infer<typeof insertMarketplaceSyncRunSchema>;
 export type MarketplaceSyncRun = typeof marketplaceSyncRuns.$inferSelect;
 
+// ============================================================================
+// TCG Sync Runs — kart API sync geçmişi (Pokemon TCG + Riftbound + PriceCharting)
+// ============================================================================
+export const tcgSyncRuns = pgTable("tcg_sync_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  game: text("game").notNull(),       // 'pokemon_tcg' | 'riftbound' | 'pricecharting'
+  mode: text("mode").notNull(),       // 'sets' | 'cards' | 'prices'
+  status: text("status").default("running").notNull(), // 'running' | 'completed' | 'failed'
+  setApiId: text("set_api_id"),       // null = tüm setler
+  stats: jsonb("stats").$type<{
+    setsProcessed?: number;
+    cardsProcessed?: number;
+    cardsInserted?: number;
+    cardsUpdated?: number;
+    pricesUpdated?: number;
+    errors?: number;
+  }>().default({}).notNull(),
+  errors: jsonb("errors").$type<Array<{ context: string; message: string }>>().default([]).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertTcgSyncRunSchema = createInsertSchema(tcgSyncRuns).omit({
+  id: true,
+  startedAt: true,
+  completedAt: true,
+});
+export type InsertTcgSyncRun = z.infer<typeof insertTcgSyncRunSchema>;
+export type TcgSyncRun = typeof tcgSyncRuns.$inferSelect;
+
 // WooCommerce Integration (legacy, kept for backward compat)
 export const woocommerceSettings = pgTable("woocommerce_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

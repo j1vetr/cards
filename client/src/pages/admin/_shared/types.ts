@@ -148,4 +148,5 @@ export type TabType =
   | 'database'
   | 'menu'
   | 'coupons'
-  | 'reviews';
+  | 'reviews'
+  | 'card-api-sync';

@@ -132,7 +132,25 @@ ALTER TABLE users DROP COLUMN IF EXISTS tax_office;
 DROP TABLE IF EXISTS product_variants CASCADE;
 
 -- ============================================================
--- 8. Seed default games
+-- 8. TCG Sync Runs table
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS tcg_sync_runs (
+  id          VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+  game        TEXT NOT NULL,
+  mode        TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'running',
+  set_api_id  TEXT,
+  stats       JSONB NOT NULL DEFAULT '{}',
+  errors      JSONB NOT NULL DEFAULT '[]',
+  started_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tcg_sync_runs_started ON tcg_sync_runs (started_at DESC);
+
+-- ============================================================
+-- 9. Seed default games
 -- ============================================================
 
 INSERT INTO card_games (name, slug, is_active) VALUES

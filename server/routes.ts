@@ -5364,6 +5364,121 @@ Sitemap: ${baseUrl}/sitemap.xml
   const { registerMarketplaceRoutes } = await import("./marketplaces/routes");
   registerMarketplaceRoutes(app, requireAdmin);
 
+  // ==========================================================================
+  // TCG Card API — admin-only
+  // ==========================================================================
+
+  // List card games
+  app.get("/api/admin/tcg/games", requireAdmin, async (_req, res) => {
+    try {
+      const games = await storage.listCardGames();
+      res.json(games);
+    } catch (err) {
+      console.error("[TCG] listCardGames:", err);
+      res.status(500).json({ error: "Oyunlar listelenemedi" });
+    }
+  });
+
+  // List card sets for a game
+  app.get("/api/admin/tcg/sets", requireAdmin, async (req, res) => {
+    try {
+      const { gameId } = req.query as { gameId?: string };
+      if (!gameId) return res.status(400).json({ error: "gameId gerekli" });
+      const sets = await storage.listCardSetsByGame(gameId);
+      res.json(sets);
+    } catch (err) {
+      console.error("[TCG] listCardSets:", err);
+      res.status(500).json({ error: "Setler listelenemedi" });
+    }
+  });
+
+  // List sync run history
+  app.get("/api/admin/tcg/sync-runs", requireAdmin, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt((req.query.limit as string) || "30", 10), 100);
+      const runs = await storage.listTcgSyncRuns(limit);
+      res.json(runs);
+    } catch (err) {
+      console.error("[TCG] listSyncRuns:", err);
+      res.status(500).json({ error: "Sync geçmişi listelenemedi" });
+    }
+  });
+
+  // Trigger a TCG sync (sets or cards or prices)
+  app.post("/api/admin/tcg/sync", requireAdmin, async (req, res) => {
+    try {
+      const { game, mode, setApiId } = req.body as {
+        game: "pokemon_tcg" | "riftbound";
+        mode: "sets" | "cards" | "prices";
+        setApiId?: string;
+      };
+
+      if (!game || !mode) {
+        return res.status(400).json({ error: "game ve mode gerekli" });
+      }
+
+      // Get API keys from site_settings
+      const pokemonApiKey = (await storage.getSiteSetting("pokemon_tcg_api_key")) || undefined;
+      const pricechartingApiKey = (await storage.getSiteSetting("pricecharting_api_key")) || undefined;
+
+      if (mode === "prices" && !pricechartingApiKey) {
+        return res.status(400).json({
+          error: "PriceCharting API key ayarlanmamış. Ayarlar → pricecharting_api_key.",
+        });
+      }
+
+      // Run sync in background (don't await — respond immediately with runId)
+      const { runTcgSync } = await import("./tcg/syncEngine");
+
+      // Create the run record first so client gets the ID
+      const run = await storage.createTcgSyncRun({
+        game,
+        mode,
+        status: "running",
+        setApiId: setApiId ?? null,
+        stats: {},
+        errors: [],
+      });
+
+      // Fire and forget
+      runTcgSync({
+        game,
+        mode,
+        setApiId,
+        pokemonApiKey,
+        pricechartingApiKey,
+        onProgress: (msg) => console.log(`[tcg-sync:${run.id}] ${msg}`),
+      }).then(async (result) => {
+        await storage.completeTcgSyncRun(run.id, result.status, result.stats, result.errors);
+      }).catch(async (err) => {
+        console.error("[tcg-sync] unexpected error:", err);
+        await storage.completeTcgSyncRun(
+          run.id,
+          "failed",
+          {},
+          [{ context: "engine", message: String(err) }],
+        );
+      });
+
+      res.json({ runId: run.id, message: "Sync başlatıldı" });
+    } catch (err) {
+      console.error("[TCG] sync error:", err);
+      res.status(500).json({ error: "Sync başlatılamadı" });
+    }
+  });
+
+  // Get a single sync run (for polling)
+  app.get("/api/admin/tcg/sync-runs/:id", requireAdmin, async (req, res) => {
+    try {
+      const runs = await storage.listTcgSyncRuns(100);
+      const run = runs.find((r) => r.id === req.params.id);
+      if (!run) return res.status(404).json({ error: "Run bulunamadı" });
+      res.json(run);
+    } catch (err) {
+      res.status(500).json({ error: "Run bilgisi alınamadı" });
+    }
+  });
+
   return httpServer;
 }
 
