@@ -38,8 +38,8 @@ interface AdminCard {
 }
 
 interface CardListing {
-  id: string; card_id: string; condition: string;
-  price: string; stock: number; is_active: boolean;
+  id: string; cardId: string; condition: string;
+  price: string; stock: number; isActive: boolean;
 }
 
 interface Game { id: string; name: string; slug: string; }
@@ -50,7 +50,7 @@ function ExistingListingRow({ listing, cardId }: { listing: CardListing; cardId:
   const qc = useQueryClient();
   const [price, setPrice] = useState(listing.price);
   const [stock, setStock] = useState(String(listing.stock));
-  const [isActive, setIsActive] = useState(listing.is_active);
+  const [isActive, setIsActive] = useState(listing.isActive);
 
   const saveMut = useMutation({
     mutationFn: () => adminFetch(`/api/admin/cards/${cardId}/listings/${listing.id}`, {
@@ -771,11 +771,10 @@ export default function CardsTab() {
     queryFn: () => adminFetch('/api/admin/card-games'),
   });
 
-  const { data: setsData = [] } = useQuery<AdminCard[]>({
+  const { data: sets = [] } = useQuery<CardSet[]>({
     queryKey: ['admin-card-sets-list', gameId],
     queryFn: () => adminFetch(`/api/admin/card-sets${gameId ? `?gameId=${gameId}` : ''}`),
   });
-  const sets = setsData as unknown as CardSet[];
 
   const { data, isLoading, isError } = useQuery<{ cards: AdminCard[]; total: number }>({
     queryKey: ['admin-cards', search, gameId, setId, rarity, page],
@@ -818,7 +817,7 @@ export default function CardsTab() {
           className="text-[13px] border border-neutral-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-neutral-400"
           data-testid="select-filter-set">
           <option value="">Tüm Setler</option>
-          {sets.map((s) => <option key={s.id} value={s.id}>{(s as any).name}</option>)}
+          {sets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         <input type="text" placeholder="Rarity" value={rarity}
           onChange={(e) => { setRarity(e.target.value); setPage(1); }}
