@@ -162,7 +162,18 @@ export default function Cart() {
                 </motion.div>
 
                 <AnimatePresence mode="popLayout">
-                  {cartItemsWithProducts.map((item, index) => (
+                  {cartItemsWithProducts.map((item, index) => {
+                    const isCard = !!item.cardListingId;
+                    const cardHref = isCard && item.card?.slug ? `/kart/${item.card.slug}` : null;
+                    const productHref = !isCard && item.product?.slug ? `/urun/${item.product.slug}` : null;
+                    const href = cardHref ?? productHref ?? '/magaza';
+                    const displayName = isCard ? (item.card?.name ?? 'Kart') : (item.product?.name ?? 'Ürün');
+                    const displayImage = isCard ? item.card?.imageUrl : item.product?.images?.[0];
+                    const itemPrice = isCard && item.listing
+                      ? parseFloat(item.listing.price) * item.quantity
+                      : parseFloat(item.variant?.price || item.product?.basePrice || '0') * item.quantity;
+
+                    return (
                     <motion.div
                       key={item.id}
                       layout
@@ -174,15 +185,15 @@ export default function Cart() {
                       data-testid={`cart-item-${item.id}`}
                     >
                       <div className="flex gap-4 p-4">
-                        <Link href={`/urun/${item.product?.slug}`}>
+                        <Link href={href}>
                           <motion.div
                             whileHover={{ scale: 1.02 }}
-                            className="w-28 h-32 bg-stone-100 overflow-hidden shrink-0 relative rounded-lg"
+                            className={`shrink-0 bg-stone-100 overflow-hidden relative rounded-lg ${isCard ? 'w-20 h-28' : 'w-28 h-32'}`}
                           >
-                            {item.product?.images?.[0] && (
+                            {displayImage && (
                               <img
-                                src={item.product.images[0]}
-                                alt={item.product.name}
+                                src={displayImage}
+                                alt={displayName}
                                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
                               />
                             )}
@@ -191,23 +202,28 @@ export default function Cart() {
 
                         <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                           <div>
-                            <Link href={`/urun/${item.product?.slug}`}>
+                            <Link href={href}>
                               <h3 className="font-medium text-sm leading-snug line-clamp-2 hover:text-black/70 transition-colors text-black" data-testid={`text-product-name-${item.id}`}>
-                                {item.product?.name || 'Ürün'}
+                                {displayName}
                               </h3>
                             </Link>
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {item.variant?.condition && (
+                              {isCard && item.listing?.condition && (
+                                <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-medium border border-indigo-100" data-testid={`badge-condition-${item.id}`}>
+                                  {item.listing.condition}
+                                </span>
+                              )}
+                              {!isCard && item.variant?.condition && (
                                 <span className="text-xs px-2 py-0.5 bg-polen-orange/10 text-polen-orange rounded font-medium" data-testid={`badge-condition-${item.id}`}>
                                   {item.variant.condition}
                                 </span>
                               )}
-                              {item.variant?.size && (
+                              {!isCard && item.variant?.size && (
                                 <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
                                   Beden: {item.variant.size}
                                 </span>
                               )}
-                              {item.variant?.color && (
+                              {!isCard && item.variant?.color && (
                                 <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
                                   {item.variant.color}
                                 </span>
@@ -239,10 +255,7 @@ export default function Cart() {
                             </div>
 
                             <p className="font-bold text-base sm:text-lg shrink-0 text-black" data-testid={`text-price-${item.id}`}>
-                              {(item.cardListingId && item.listing
-                                ? parseFloat(item.listing.price) * item.quantity
-                                : parseFloat(item.variant?.price || item.product?.basePrice || '0') * item.quantity
-                              ).toLocaleString('tr-TR')} ₺
+                              {itemPrice.toLocaleString('tr-TR')} ₺
                             </p>
                           </div>
                         </div>
@@ -258,7 +271,8 @@ export default function Cart() {
                         </motion.button>
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </AnimatePresence>
               </div>
 

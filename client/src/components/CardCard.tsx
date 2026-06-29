@@ -145,10 +145,18 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
                 {card.name}
               </p>
 
-              <p className="text-[11px] text-zinc-400 truncate">
-                {card.set_name}
-                {card.card_number && ` · ${card.card_number}`}
-              </p>
+              <div className="flex items-center gap-1">
+                {card.set_symbol_url && (
+                  <img src={card.set_symbol_url} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                )}
+                {!card.set_symbol_url && card.set_logo_url && (
+                  <img src={card.set_logo_url} alt="" className="h-3 object-contain flex-shrink-0 max-w-[40px]" />
+                )}
+                <p className="text-[11px] text-zinc-400 truncate">
+                  {card.set_name}
+                  {card.card_number && ` · ${card.card_number}`}
+                </p>
+              </div>
 
               {sortedConditions.length > 0 && (
                 <div className="flex flex-wrap gap-1">
