@@ -10,6 +10,7 @@ import { lazy, Suspense, memo } from "react";
 import { Loader2 } from "lucide-react";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { MobileNav } from "@/components/MobileNav";
 
 const Home = lazy(() => import("@/pages/Home"));
 const Category = lazy(() => import("@/pages/Category"));
@@ -97,6 +98,7 @@ function App() {
                 <SmoothScroll />
                 <Toaster />
                 <Router />
+                <MobileNav />
               </div>
             </TooltipProvider>
           </CartModalProvider>
