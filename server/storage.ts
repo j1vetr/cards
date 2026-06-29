@@ -2356,6 +2356,7 @@ export class DbStorage implements IStorage {
     sort?: 'price_asc' | 'price_desc' | 'newest' | 'name_asc';
     page?: number;
     limit?: number;
+    featured?: boolean;
   }): Promise<{ cards: any[]; total: number }> {
     const page = Math.max(1, filters.page ?? 1);
     const limit = Math.min(48, Math.max(1, filters.limit ?? 24));
@@ -2365,6 +2366,7 @@ export class DbStorage implements IStorage {
     const setFilter = filters.setSlug ? sql`AND cs.slug = ${filters.setSlug}` : sql``;
     const rarityFilter = filters.rarity ? sql`AND LOWER(c.rarity) = LOWER(${filters.rarity})` : sql``;
     const cardTypeFilter = filters.cardType ? sql`AND c.card_types @> ${JSON.stringify([filters.cardType])}::jsonb` : sql``;
+    const featuredFilter = filters.featured === true ? sql`AND c.is_featured = true` : sql``;
     const searchQuery = filters.search ? '%' + filters.search + '%' : null;
     const searchFilter = searchQuery
       ? sql`AND (c.name ILIKE ${searchQuery} OR c.card_number ILIKE ${searchQuery} OR cs.name ILIKE ${searchQuery})`
@@ -2409,6 +2411,7 @@ export class DbStorage implements IStorage {
         ${setFilter}
         ${rarityFilter}
         ${cardTypeFilter}
+        ${featuredFilter}
         ${searchFilter}
       GROUP BY c.id, cs.id, cg.id
       HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0

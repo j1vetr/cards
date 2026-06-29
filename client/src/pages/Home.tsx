@@ -1,256 +1,287 @@
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'wouter';
+import { motion, MotionConfig } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
-import { ProductCard } from '@/components/ProductCard';
-import { Link } from 'wouter';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { CardCard, CardPublic } from '@/components/CardCard';
 import {
-  motion,
-  useScroll,
-  useTransform,
-  useInView,
-  useReducedMotion,
-  MotionConfig,
-  AnimatePresence,
-} from 'framer-motion';
-import { ArrowUpRight, ArrowRight, Star, User } from 'lucide-react';
-import { useProducts, type Product } from '@/hooks/useProducts';
+  ShieldCheck,
+  Truck,
+  Star,
+  Headphones,
+  ChevronRight,
+  Sparkles,
+  Layers,
+} from 'lucide-react';
 
+// ── Types ──────────────────────────────────────────────────────────────────
 
-function formatPrice(p: string | number) {
-  const n = typeof p === 'string' ? parseFloat(p || '0') : p;
-  return n.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+interface CardSetPublic {
+  id: string;
+  name: string;
+  slug: string;
+  series: string | null;
+  release_date: string | null;
+  total_cards: number | null;
+  logo_url: string | null;
+  symbol_url: string | null;
+  game_id: string;
+  game_name: string;
+  game_slug: string;
+  listed_cards: number;
 }
 
-function useMounted() {
-  const [m, setM] = useState(false);
-  useEffect(() => { setM(true); }, []);
-  return m;
+interface CardGame {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
 }
 
-function useHeaderOffset() {
-  const [offset, setOffset] = useState(96);
-  useEffect(() => {
-    const header = document.querySelector('[data-testid="header"]') as HTMLElement;
-    if (!header) return;
-    const update = () => setOffset(header.getBoundingClientRect().bottom);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(header);
-    return () => ro.disconnect();
-  }, []);
-  return offset;
-}
+// ── Animations ─────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────
-// SCENE 01 — HERO (typographic editorial)
-// ─────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0 },
+};
 
-const heroPills = [
-  { label: 'Erkek Jean', href: '/magaza?kategori=erkek-jean', Icon: User },
-  { label: 'Slim Fit', href: '/magaza?kategori=slim-fit', Icon: User },
-  { label: 'Yeni Sezon', href: '/magaza', Icon: Star },
+const stagger = {
+  show: { transition: { staggerChildren: 0.09 } },
+};
+
+// ── Card fan decoration ─────────────────────────────────────────────────────
+
+const FAN_CARDS = [
+  { rotate: -20, x: -110, y: 10, delay: 0.1 },
+  { rotate: -10, x: -55, y: -6, delay: 0.18 },
+  { rotate: 0,   x: 0,   y: -12, delay: 0.26 },
+  { rotate: 10,  x: 55,  y: -6, delay: 0.34 },
+  { rotate: 20,  x: 110, y: 10, delay: 0.42 },
 ];
 
-function HeroScene() {
-  const mounted = useMounted();
-  const prefersReduced = useReducedMotion();
-  if (!mounted || prefersReduced) return <HeroSceneStatic />;
-  return <HeroSceneInner />;
-}
+const CARD_GRADIENTS = [
+  'from-violet-600 to-indigo-700',
+  'from-indigo-600 to-blue-700',
+  'from-sky-500 to-indigo-600',
+  'from-blue-600 to-violet-700',
+  'from-indigo-500 to-purple-700',
+];
 
-function HeroVideo() {
+function CardFan() {
   return (
-    <video
-      autoPlay
-      loop
-      muted
-      playsInline
-      preload="metadata"
-      className="absolute inset-0 w-full h-full object-cover"
-      aria-hidden
-    >
-      <source src="/hero-video.mp4" type="video/mp4" />
-    </video>
-  );
-}
-
-function HeroSceneStatic() {
-  return (
-    <section
-      className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
-      style={{ height: '100dvh' }}
-      aria-label="Ecarte Jeans denim koleksiyonu"
-      data-testid="scene-hero"
-    >
-      <HeroVideo />
-      <div className="absolute inset-0 bg-black/45" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/30" />
-      <HeroContent />
-    </section>
-  );
-}
-
-function HeroSceneInner() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', '12%']);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  return (
-    <section
-      ref={heroRef}
-      className="relative bg-[hsl(var(--polen-stone))] text-white overflow-hidden"
-      style={{ height: '100dvh' }}
-      data-testid="scene-hero"
-    >
-      <motion.div style={{ y }} className="absolute inset-0 w-full h-full">
-        <HeroVideo />
-      </motion.div>
-      <div className="absolute inset-0 bg-black/45" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/30" />
-      <motion.div style={{ opacity }} className="relative h-full w-full">
-        <HeroContent animated />
-      </motion.div>
-    </section>
-  );
-}
-
-function HeroContent({ animated = false }: { animated?: boolean }) {
-  const W: any = animated ? motion.div : 'div';
-  const animProps = animated
-    ? { initial: { opacity: 0, y: 28 }, animate: { opacity: 1, y: 0 }, transition: { duration: 1.1, ease: [0.16, 1, 0.3, 1] } }
-    : {};
-
-  return (
-    <div className="relative h-full flex flex-col justify-center items-center px-8 lg:px-16 pb-20 pt-32 lg:pt-36">
-      <W {...animProps} className="relative z-10 max-w-3xl w-full text-center">
-        {/* Headline */}
-        <h1
-          data-testid="text-hero-title"
-          className="font-display text-white mb-7"
-          style={{ fontSize: 'clamp(48px, 6.5vw, 104px)', letterSpacing: '-0.025em' }}
+    <div className="relative w-[260px] h-[200px] flex items-end justify-center select-none pointer-events-none">
+      {FAN_CARDS.map((cfg, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 40, rotate: cfg.rotate }}
+          animate={{ opacity: 1, y: cfg.y, x: cfg.x, rotate: cfg.rotate }}
+          transition={{ duration: 0.6, delay: cfg.delay, ease: 'easeOut' }}
+          style={{ position: 'absolute', bottom: 0 }}
         >
-          <span className="block" style={{ lineHeight: 1.25 }}>Jeanin İçinde</span>
-          <span
-            className="block hero-outline-text"
-            style={{
-              lineHeight: 1.25,
-              color: 'transparent',
-            }}
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 3.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.2 }}
+            className={`w-[68px] h-[96px] rounded-xl bg-gradient-to-br ${CARD_GRADIENTS[i]} shadow-2xl border border-white/20 overflow-hidden`}
           >
-            Özgürlük Var
-          </span>
-        </h1>
-
-        {/* Sub copy */}
-        <p className="text-[13px] lg:text-[15px] leading-relaxed text-white/50 font-light mb-10 max-w-[480px] mx-auto">
-          Her dikişte mükemmellik, her kesimde özgüven. Slim fit'ten wide-leg'e,
-          erkek denim koleksiyonlarıyla tarzını belirle.
-        </p>
-
-        {/* Category pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {heroPills.map(({ label, href, Icon }) => (
-            <Link
-              key={label}
-              href={href}
-              className="inline-flex items-center gap-2 px-4 py-2.5 border border-white/20 text-white/65 text-[11px] tracking-[0.16em] uppercase font-medium hover:border-white/60 hover:text-white transition-all duration-200"
-              data-testid={`link-hero-pill-${label.toLowerCase()}`}
-            >
-              <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
-              {label}
-            </Link>
-          ))}
-        </div>
-
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-center items-center gap-3 w-full sm:w-auto">
-          <Link
-            href="/magaza"
-            data-testid="link-hero-cta"
-            className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[hsl(var(--polen-orange))] text-white text-[11px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"
-          >
-            Koleksiyonu Keşfet
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/hakkimizda"
-            data-testid="link-hero-toptan"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/25 text-white/70 text-[11px] tracking-[0.22em] uppercase font-medium hover:border-white hover:text-white transition-all duration-200"
-          >
-            Toptan Satış
-          </Link>
-        </div>
-      </W>
+            <div className="w-full h-full flex items-center justify-center opacity-30">
+              <div className="w-8 h-8 rounded-full border-2 border-white/60" />
+            </div>
+          </motion.div>
+        </motion.div>
+      ))}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-// SCENE 02 — FEATURED PRODUCTS (clean grid)
-// ─────────────────────────────────────────────
+// ── Hero ────────────────────────────────────────────────────────────────────
 
-function ProductScene({ products }: { products: Product[] }) {
-  const items = useMemo(() => {
-    if (!products?.length) return [];
-    const featured = products.filter(p => p.isFeatured);
-    const rest = products.filter(p => !p.isFeatured);
-    return [...featured, ...rest].slice(0, 8);
-  }, [products]);
-
-  if (items.length === 0) return null;
-
+function HeroSection() {
   return (
     <section
-      className="bg-[hsl(var(--polen-cream))] py-16 lg:py-24 px-5 lg:px-10"
-      data-testid="scene-products"
-      aria-label="Öne çıkan ürünler"
+      className="relative overflow-hidden bg-[#0d1427] min-h-[620px] flex items-center"
+      data-testid="section-hero"
     >
-      <div className="max-w-[1400px] mx-auto">
-        <div className="flex items-end justify-between mb-8 lg:mb-12 gap-4">
-          <div>
-            <span className="block text-[10px] font-mono tracking-[0.30em] uppercase text-black/35 mb-3">— Öne Çıkanlar</span>
-            <h2
-              className="font-display uppercase text-black leading-[0.94]"
-              style={{ fontSize: 'clamp(24px, 3.5vw, 48px)', letterSpacing: '-0.02em' }}
-            >
-              Yeni Gelenler
-            </h2>
-          </div>
-          <Link
-            href="/magaza"
-            data-testid="link-products-all"
-            className="shrink-0 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.22em] uppercase text-black/50 hover:text-black transition-colors"
-          >
-            Tümünü Gör <ArrowUpRight className="w-3 h-3" />
-          </Link>
-        </div>
+      {/* background gradient orbs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-indigo-700/20 blur-[120px]" />
+        <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-violet-700/15 blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.12),transparent_60%)]" />
+      </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-5">
-          {items.map((p, i) => (
-            <motion.div
-              key={p.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
-            >
-              <ProductCard product={p} />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* left: text */}
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+            className="text-center lg:text-left"
+          >
+            <motion.div variants={fadeUp}>
+              <span className="inline-flex items-center gap-1.5 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full mb-5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Türkiye'nin TCG Pazaryeri
+              </span>
             </motion.div>
-          ))}
-        </div>
 
-        <div className="mt-10 lg:mt-14 flex justify-center">
-          <Link
-            href="/magaza"
-            data-testid="link-products-cta"
-            className="inline-flex items-center gap-3 px-10 py-4 border border-black/20 text-[12px] tracking-[0.22em] uppercase font-medium text-black hover:bg-black hover:text-white hover:border-black transition-all duration-300"
+            <motion.h1
+              variants={fadeUp}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6"
+              style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600 }}
+            >
+              Pokemon TCG &amp;
+              <br />
+              <span className="text-indigo-400">Riftbound</span>
+              <br />
+              <span className="text-zinc-300 text-3xl sm:text-4xl lg:text-5xl">Kart Koleksiyonu</span>
+            </motion.h1>
+
+            <motion.p variants={fadeUp} className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+              Türkiye'nin en geniş TCG single kart seçkisi. NM, LP, PSA gradlenmiş kartlar — güvenli alışveriş, hızlı teslimat.
+            </motion.p>
+
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <Link href="/magaza">
+                <motion.button
+                  data-testid="btn-hero-magaza"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40"
+                >
+                  Mağazayı Keşfet
+                  <ChevronRight className="w-4 h-4" />
+                </motion.button>
+              </Link>
+              <Link href="/oyun/pokemon">
+                <motion.button
+                  data-testid="btn-hero-pokemon"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/20 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors"
+                >
+                  Pokemon TCG
+                </motion.button>
+              </Link>
+            </motion.div>
+
+            {/* stats bar */}
+            <motion.div
+              variants={fadeUp}
+              className="mt-10 grid grid-cols-3 gap-4 max-w-sm mx-auto lg:mx-0"
+            >
+              {[
+                { label: 'Kart', value: '10.000+' },
+                { label: 'Set', value: '50+' },
+                { label: 'Koşul', value: '9' },
+              ].map(stat => (
+                <div key={stat.label} className="text-center lg:text-left">
+                  <p className="text-2xl font-bold text-white" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-widest mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* right: card fan */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex justify-center lg:justify-end"
           >
-            Tüm Koleksiyonu Gör
-            <ArrowRight className="w-4 h-4" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-indigo-600/10 blur-[80px] rounded-full scale-150" />
+              <CardFan />
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Featured Cards ─────────────────────────────────────────────────────────
+
+function FeaturedCardsSection() {
+  const { data, isLoading } = useQuery<{ cards: CardPublic[]; total: number }>({
+    queryKey: ['/api/cards', 'featured'],
+    queryFn: async () => {
+      const r = await fetch('/api/cards?featured=true&limit=8&sort=newest');
+      if (!r.ok) throw new Error('Kartlar yüklenemedi');
+      return r.json();
+    },
+    staleTime: 60_000,
+  });
+
+  const cards = data?.cards ?? [];
+
+  if (!isLoading && cards.length === 0) return null;
+
+  return (
+    <section className="py-20 bg-white" data-testid="section-featured-cards">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mb-10"
+        >
+          <motion.div variants={fadeUp} className="flex items-center justify-between">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-indigo-600 text-xs font-semibold uppercase tracking-widest mb-2">
+                <Star className="w-3.5 h-3.5 fill-indigo-600" />
+                Öne Çıkan Kartlar
+              </span>
+              <h2 className="text-3xl font-bold text-zinc-900" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                Koleksiyoner Seçimi
+              </h2>
+            </div>
+            <Link href="/magaza?featured=true">
+              <button
+                data-testid="btn-featured-tumu"
+                className="hidden sm:inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+              >
+                Tümünü Gör <ChevronRight className="w-4 h-4" />
+              </button>
+            </Link>
+          </motion.div>
+        </motion.div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="rounded-xl bg-zinc-100 animate-pulse aspect-[63/110]" />
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+          >
+            {cards.map(card => (
+              <motion.div key={card.id} variants={fadeUp}>
+                <CardCard card={card} />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        <div className="mt-8 text-center sm:hidden">
+          <Link href="/magaza?featured=true">
+            <button
+              data-testid="btn-featured-tumu-mobile"
+              className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 px-5 py-2.5 rounded-full transition-colors"
+            >
+              Tümünü Gör <ChevronRight className="w-4 h-4" />
+            </button>
           </Link>
         </div>
       </div>
@@ -258,269 +289,344 @@ function ProductScene({ products }: { products: Product[] }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// SCENE 04 — MARQUEE STRIP
-// ─────────────────────────────────────────────
+// ── New Sets (Bento) ────────────────────────────────────────────────────────
 
-const LOOKBOOK = [
+function NewSetsSection() {
+  const { data: sets = [], isLoading } = useQuery<CardSetPublic[]>({
+    queryKey: ['/api/card-sets', 'home'],
+    queryFn: async () => {
+      const r = await fetch('/api/card-sets');
+      if (!r.ok) throw new Error('Setler yüklenemedi');
+      return r.json();
+    },
+    staleTime: 300_000,
+    select: (all) => all.slice(0, 6),
+  });
+
+  if (!isLoading && sets.length === 0) return null;
+
+  return (
+    <section className="py-20 bg-[#f4f6fb]" data-testid="section-new-sets">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mb-10"
+        >
+          <motion.div variants={fadeUp} className="flex items-center justify-between">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-indigo-600 text-xs font-semibold uppercase tracking-widest mb-2">
+                <Layers className="w-3.5 h-3.5" />
+                Setler
+              </span>
+              <h2 className="text-3xl font-bold text-zinc-900" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                Son Çıkan Setler
+              </h2>
+            </div>
+            <Link href="/magaza">
+              <button
+                data-testid="btn-sets-tumu"
+                className="hidden sm:inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+              >
+                Tüm Setler <ChevronRight className="w-4 h-4" />
+              </button>
+            </Link>
+          </motion.div>
+        </motion.div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl bg-zinc-200 animate-pulse h-32" />
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+          >
+            {sets.map((set, i) => (
+              <motion.div key={set.id} variants={fadeUp}>
+                <Link href={`/set/${set.slug}`}>
+                  <motion.div
+                    data-testid={`card-set-${set.id}`}
+                    whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(99,102,241,0.18)' }}
+                    transition={{ duration: 0.2 }}
+                    className={`relative rounded-2xl overflow-hidden cursor-pointer bg-white border border-zinc-200 hover:border-indigo-200 transition-colors ${i === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}
+                  >
+                    <div className={`${i === 0 ? 'h-56 md:h-full md:min-h-[280px]' : 'h-32'} flex flex-col items-center justify-center p-5 relative`}>
+                      {/* subtle gradient bg */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-white opacity-60" />
+
+                      {set.logo_url ? (
+                        <img
+                          src={set.logo_url}
+                          alt={set.name}
+                          className="relative z-10 max-h-14 object-contain mb-3"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="relative z-10 mb-3 flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100">
+                          <Layers className="w-6 h-6 text-indigo-600" />
+                        </div>
+                      )}
+
+                      <p className="relative z-10 text-sm font-semibold text-zinc-800 text-center leading-tight line-clamp-2">
+                        {set.name}
+                      </p>
+
+                      {set.listed_cards > 0 && (
+                        <p className="relative z-10 text-[11px] text-indigo-500 font-medium mt-1">
+                          {set.listed_cards} kart stokta
+                        </p>
+                      )}
+
+                      {set.game_slug && (
+                        <span className="relative z-10 mt-2 text-[10px] text-zinc-400 uppercase tracking-widest">
+                          {set.game_name}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Browse by Game ──────────────────────────────────────────────────────────
+
+const GAME_CARDS = [
   {
-    src: '/ecarte-denim.webp',
-    label: 'Modern Kesim',
-    sub: 'Ergonomik kalıp, özgür hareket',
-    href: '/magaza',
+    slug: 'pokemon',
+    name: 'Pokemon TCG',
+    label: "Klasik koleksiyon. Charizard'dan Pikachu'ya tüm nesiller.",
+    gradient: 'from-yellow-500/90 to-red-600/90',
+    bgColor: '#1a0a00',
+    accent: '#f59e0b',
+    emoji: '⚡',
   },
   {
-    src: '/ecarte-light-denim.webp',
-    label: 'Kaliteli Kumaş',
-    sub: 'Premium denim, uzun ömürlü kullanım',
-    href: '/magaza',
-  },
-  {
-    src: '/ecarte-dark-denim.webp',
-    label: 'Şık Duruş',
-    sub: 'Her kombinle öne çıkan tasarım',
-    href: '/magaza',
+    slug: 'riftbound',
+    name: 'Riftbound',
+    label: "Disney Lorcana'dan ilham alan sürükleyici yeni TCG dünyası.",
+    gradient: 'from-indigo-600/90 to-violet-700/90',
+    bgColor: '#080d1f',
+    accent: '#818cf8',
+    emoji: '🌀',
   },
 ];
 
-function LookbookScene() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
-
+function BrowseByGameSection() {
   return (
-    <section
-      ref={ref}
-      className="py-6 lg:py-8 bg-white"
-      data-testid="scene-lookbook"
-    >
+    <section className="py-20 bg-white" data-testid="section-browse-game">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
-          {LOOKBOOK.map((item, i) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              data-testid={`link-lookbook-${i}`}
-              className="block"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={inView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ duration: 0.7, delay: i * 0.13, ease: [0.22, 1, 0.36, 1] }}
-                className="group relative overflow-hidden cursor-pointer"
-              >
-                {/* Image */}
-                <img
-                  src={item.src}
-                  alt={item.label}
-                  className="w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-                  loading="lazy"
-                />
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mb-10 text-center"
+        >
+          <motion.span variants={fadeUp} className="inline-block text-indigo-600 text-xs font-semibold uppercase tracking-widest mb-2">
+            Oyuna Göre Keşfet
+          </motion.span>
+          <motion.h2 variants={fadeUp} className="text-3xl font-bold text-zinc-900" style={{ fontFamily: "'Oswald', sans-serif" }}>
+            Hangi Evrende Oynuyorsun?
+          </motion.h2>
+        </motion.div>
 
-                {/* Bottom gradient overlay — always visible, label slides up on hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-60px' }}
+          className="grid sm:grid-cols-2 gap-6"
+        >
+          {GAME_CARDS.map(game => (
+            <motion.div key={game.slug} variants={fadeUp}>
+              <Link href={`/oyun/${game.slug}`}>
+                <motion.div
+                  data-testid={`card-game-${game.slug}`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative rounded-3xl overflow-hidden cursor-pointer h-56 sm:h-72 flex items-end"
+                  style={{ background: game.bgColor }}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-80`} />
 
-                {/* Label */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between">
-                  <h3
-                    className="font-display text-white uppercase leading-none tracking-wide"
-                    style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700 }}
-                  >
-                    {item.label}
-                  </h3>
-                  <div className="shrink-0 w-10 h-10 border border-white/30 flex items-center justify-center text-white/60 group-hover:bg-white group-hover:text-black transition-all duration-300 rounded-sm ml-4">
-                    <ArrowUpRight className="w-5 h-5" />
+                  {/* decorative circles */}
+                  <div className="absolute top-6 right-6 w-24 h-24 rounded-full border-2 border-white/10" />
+                  <div className="absolute top-10 right-10 w-14 h-14 rounded-full border border-white/10" />
+
+                  <div className="absolute top-6 left-6 text-4xl select-none">{game.emoji}</div>
+
+                  <div className="relative z-10 p-7 w-full">
+                    <h3 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                      {game.name}
+                    </h3>
+                    <p className="text-white/75 text-sm leading-snug max-w-xs mb-4">{game.label}</p>
+                    <span className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors border border-white/20">
+                      Kartları Gör <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
                   </div>
-                </div>
-              </motion.div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function MarqueeScene_UNUSED() {
-  const tags = [
-    'YENİ SEZON', '✦', 'KADIN', '·', 'ERKEK', '·', 'ÇOCUK',
-    '✦', 'HIZLI KARGO', '·', 'KOLAY İADE', '✦', 'GÜVENLİ ÖDEME',
-    '·', 'ÜCRETSİZ KARGO 500₺+', '✦',
-  ];
-  const doubled = [...tags, ...tags, ...tags];
-
-  return (
-    <section
-      className="bg-[hsl(var(--polen-stone))] text-white overflow-hidden border-y border-white/[0.06]"
-      data-testid="scene-marquee"
-      aria-label="Bilgi şeridi"
-    >
-      <div className="py-5 lg:py-7">
-        <div className="flex items-center gap-7 lg:gap-10 animate-marquee whitespace-nowrap" style={{ animationDuration: '22s' }}>
-          {doubled.map((t, i) => (
-            <span
-              key={i}
-              className={`font-display uppercase ${
-                t === '✦'
-                  ? 'text-[hsl(var(--polen-orange))] text-sm'
-                  : t === '·'
-                  ? 'text-white/25 text-lg'
-                  : 'text-[13px] lg:text-[15px] tracking-[0.06em] text-white/80'
-              }`}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────
-// SCENE 05 — EDITORIAL SPLIT CTA
-// ─────────────────────────────────────────────
-
-function CtaScene() {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.25 });
-
-  return (
-    <section
-      ref={ref}
-      className="bg-white py-20 lg:py-32 px-5 lg:px-10"
-      data-testid="scene-cta"
-    >
-      <div className="max-w-[1400px] mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-
-          {/* Left: text */}
-          <div>
-            <motion.span
-              initial={{ opacity: 0, y: 16 }} animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="block text-[10px] font-mono tracking-[0.32em] uppercase text-black/35 mb-6"
-            >
-              — Giyim & Aksesuar
-            </motion.span>
-
-            <h2
-              className="font-display uppercase text-black leading-[0.92]"
-              style={{ fontSize: 'clamp(36px, 5.5vw, 88px)', letterSpacing: '-0.025em' }}
-            >
-              {['Stilinizi', 'yansıtan'].map((word, i) => (
-                <motion.span
-                  key={word}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="block"
-                >
-                  {word}
-                </motion.span>
-              ))}
-              <motion.span
-                initial={{ opacity: 0, y: 40 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.55, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
-                className="block text-[hsl(var(--polen-orange))]"
-              >
-                koleksiyon.
-              </motion.span>
-            </h2>
-
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.26, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-8 max-w-[440px] text-[15px] leading-[1.7] text-black/55"
-            >
-              Trendyol ile senkronize güncel koleksiyonumuzdan seçim yapın.
-              Yüzlerce marka ve binlerce model, kapınıza hızlı teslimat.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-10 flex flex-col sm:flex-row items-start gap-4"
-            >
-              <Link
-                href="/magaza"
-                data-testid="link-cta-shop"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-[hsl(var(--polen-stone))] text-white text-[12px] tracking-[0.22em] uppercase font-semibold hover:bg-[hsl(var(--polen-orange))] transition-colors"
-              >
-                Alışverişe Başla
-                <ArrowRight className="w-4 h-4" />
+                </motion.div>
               </Link>
-              <a
-                href="https://wa.me/905312171130"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid="link-cta-whatsapp"
-                className="inline-flex items-center gap-2 px-6 py-4 border border-black/20 text-[12px] tracking-[0.18em] uppercase font-medium text-black hover:bg-black hover:text-white hover:border-black transition-all"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden>
-                  <path d="M19.05 4.91A10 10 0 0 0 12 2a10 10 0 0 0-8.66 14.95L2 22l5.21-1.34A10 10 0 0 0 22 12a9.93 9.93 0 0 0-2.95-7.09Zm-7.05 15A8.07 8.07 0 0 1 7.9 18.7l-.28-.17-3.09.79.83-3-.18-.3a8 8 0 1 1 6.82 3.86Zm4.41-5.96c-.24-.12-1.42-.7-1.64-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.6 6.6 0 0 1-1.95-1.2 7.32 7.32 0 0 1-1.35-1.68c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.65 1.65 0 0 0 .24-.4.44.44 0 0 0 0-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.89.89 0 0 0-.64.3 2.7 2.7 0 0 0-.84 2c0 1.18.86 2.32.98 2.48s1.69 2.59 4.1 3.63a13.8 13.8 0 0 0 1.37.51 3.31 3.31 0 0 0 1.51.1 2.48 2.48 0 0 0 1.62-1.14 2 2 0 0 0 .14-1.14c-.06-.12-.22-.18-.46-.3Z" />
-                </svg>
-                WhatsApp
-              </a>
             </motion.div>
-          </div>
-
-          {/* Right: stats */}
-          <div className="grid grid-cols-2 gap-4 lg:gap-6">
-            {[
-              { n: '10K+', label: 'Ürün Çeşidi', desc: 'Güncel koleksiyon' },
-              { n: '500+', label: 'Marka', desc: 'Türkiye ve dünyadan' },
-              { n: '25', label: 'Yıl', desc: 'Sektör deneyimi' },
-              { n: '48h', label: 'Teslimat', desc: 'Türkiye geneli' },
-            ].map(({ n, label, desc }, i) => (
-              <motion.div
-                key={label}
-                initial={{ opacity: 0, y: 24 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className="p-6 lg:p-8 border border-black/8 hover:border-[hsl(var(--polen-orange))]/40 transition-colors"
-                data-testid={`stat-${label.toLowerCase()}`}
-              >
-                <div
-                  className="font-display text-black leading-none mb-1"
-                  style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', letterSpacing: '-0.02em' }}
-                >
-                  {n}
-                </div>
-                <div className="text-[12px] font-semibold tracking-[0.12em] uppercase text-black mb-1">{label}</div>
-                <div className="text-[11px] text-black/40">{desc}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
 }
 
-// ─────────────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────────────
+// ── Trust ───────────────────────────────────────────────────────────────────
+
+const TRUST_ITEMS = [
+  {
+    icon: ShieldCheck,
+    title: 'Garantili Özgünlük',
+    desc: 'Her kart uzman ekibimiz tarafından incelenip doğrulanır.',
+  },
+  {
+    icon: Truck,
+    title: 'Hızlı Kargo',
+    desc: 'Siparişler 1-2 iş günü içinde kargoya verilir.',
+  },
+  {
+    icon: Star,
+    title: 'Koşul Şeffaflığı',
+    desc: 'NM, LP, MP, PSA — koşul fotoğrafı ile tam şeffaflık.',
+  },
+  {
+    icon: Headphones,
+    title: '7/24 Destek',
+    desc: 'WhatsApp ve e-posta ile dilediğin zaman ulaş.',
+  },
+];
+
+function TrustSection() {
+  return (
+    <section className="py-16 bg-[#f4f6fb] border-t border-zinc-100" data-testid="section-trust">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-60px' }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+          {TRUST_ITEMS.map(item => (
+            <motion.div
+              key={item.title}
+              variants={fadeUp}
+              className="flex flex-col items-center text-center p-5"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center mb-4 flex-shrink-0">
+                <item.icon className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-zinc-900 mb-1">{item.title}</h3>
+              <p className="text-xs text-zinc-500 leading-relaxed">{item.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ── Final CTA ───────────────────────────────────────────────────────────────
+
+function FinalCTASection() {
+  return (
+    <section className="py-24 bg-[#0d1427] relative overflow-hidden" data-testid="section-final-cta">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-indigo-700/20 blur-[120px] rounded-full" />
+      </div>
+      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+        >
+          <motion.span variants={fadeUp} className="inline-flex items-center gap-1.5 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            Koleksiyonunu Büyüt
+          </motion.span>
+
+          <motion.h2
+            variants={fadeUp}
+            className="text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight"
+            style={{ fontFamily: "'Oswald', sans-serif" }}
+          >
+            Bir Sonraki Favori Kartın
+            <br />
+            <span className="text-indigo-400">Seni Bekliyor</span>
+          </motion.h2>
+
+          <motion.p variants={fadeUp} className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
+            10.000'den fazla single kart, PSA gradlenmiş özel koleksiyonlar ve sürekli güncellenen stok.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/magaza">
+              <motion.button
+                data-testid="btn-cta-magaza"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-4 rounded-xl transition-colors shadow-lg shadow-indigo-900/50"
+              >
+                Mağazaya Git
+                <ChevronRight className="w-4 h-4" />
+              </motion.button>
+            </Link>
+            <Link href="/hakkimizda">
+              <motion.button
+                data-testid="btn-cta-hakkimizda"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/20 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
+              >
+                Biz Kimiz?
+              </motion.button>
+            </Link>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ── Home ────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { data: productsData } = useProducts({});
-  const products = productsData?.products ?? [];
-
   return (
     <>
       <SEO
-        title="Premium Denim & Jean Koleksiyonu"
-        description="Ecarte Jeans — Premium denim ve jean koleksiyonu. Slim fit, regular fit ve wide leg modeller. Toptan ve bireysel sipariş imkânıyla Türkiye'nin kaliteli jean markası."
+        title="Pokemon TCG & Riftbound Kart Pazaryeri"
+        description="Ecarte Cards — Türkiye'nin en geniş TCG kart seçkisi. Pokemon TCG, Riftbound single kartlar, booster paketler ve PSA gradlenmiş koleksiyonlar."
         url="/"
       />
       <Header />
       <MotionConfig reducedMotion="user">
         <main>
-          <HeroScene />
-          <LookbookScene />
-          <ProductScene products={products} />
+          <HeroSection />
+          <FeaturedCardsSection />
+          <NewSetsSection />
+          <BrowseByGameSection />
+          <TrustSection />
+          <FinalCTASection />
         </main>
       </MotionConfig>
       <Footer />

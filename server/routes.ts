@@ -5719,7 +5719,7 @@ Sitemap: ${baseUrl}/sitemap.xml
     try {
       const {
         game, set, rarity, type, condition, search, sort, page, limit,
-        minPrice, maxPrice,
+        minPrice, maxPrice, featured,
       } = req.query as Record<string, string>;
       const result = await storage.getCardsPublic({
         gameSlug: game || undefined,
@@ -5733,6 +5733,7 @@ Sitemap: ${baseUrl}/sitemap.xml
         limit: limit ? parseInt(limit, 10) : 24,
         minPrice: minPrice ? parseFloat(minPrice) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        featured: featured === 'true' ? true : undefined,
       });
       res.json(result);
     } catch (err) {
