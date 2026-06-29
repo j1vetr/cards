@@ -20,8 +20,6 @@ import type { TabType } from './types';
 
 export const VALID_TABS: TabType[] = [
   'dashboard',
-  'products',
-  'categories',
   'orders',
   'users',
   'analytics',
@@ -73,13 +71,6 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
       { id: 'menu', icon: MenuIcon, label: 'Menü Yönetimi' },
       { id: 'settings', icon: Settings, label: 'Ayarlar' },
       { id: 'database', icon: Database, label: 'Veritabanı' },
-    ],
-  },
-  {
-    title: 'Miras (Legacy)',
-    items: [
-      { id: 'products', icon: Package, label: 'Ürünler (Eski)' },
-      { id: 'categories', icon: Grid3x3, label: 'Kategoriler (Eski)' },
     ],
   },
 ];

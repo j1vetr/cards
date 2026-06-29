@@ -5520,8 +5520,26 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   app.put("/api/admin/cards/:id", requireAdmin, async (req, res) => {
     try {
-      const { isActive, isFeatured, isNew } = req.body;
-      const updated = await storage.updateAdminCard(req.params.id, { isActive, isFeatured, isNew });
+      const {
+        isActive, isFeatured, isNew,
+        name, setId, cardNumber, rarity, cardTypes, hp, artist,
+        imageUrl, imageUrlHiRes, description,
+      } = req.body;
+      const patch: Record<string, unknown> = {};
+      if (isActive !== undefined) patch.isActive = isActive;
+      if (isFeatured !== undefined) patch.isFeatured = isFeatured;
+      if (isNew !== undefined) patch.isNew = isNew;
+      if (name !== undefined) patch.name = name;
+      if (setId !== undefined) patch.setId = setId;
+      if (cardNumber !== undefined) patch.cardNumber = cardNumber;
+      if (rarity !== undefined) patch.rarity = rarity;
+      if (cardTypes !== undefined) patch.cardTypes = cardTypes;
+      if (hp !== undefined) patch.hp = hp === null ? null : Number(hp);
+      if (artist !== undefined) patch.artist = artist;
+      if (imageUrl !== undefined) patch.imageUrl = imageUrl;
+      if (imageUrlHiRes !== undefined) patch.imageUrlHiRes = imageUrlHiRes;
+      if (description !== undefined) patch.description = description;
+      const updated = await storage.updateAdminCard(req.params.id, patch as any);
       if (!updated) return res.status(404).json({ error: "Kart bulunamadı" });
       res.json(updated);
     } catch (err) {

@@ -2622,6 +2622,16 @@ export class DbStorage implements IStorage {
     isActive?: boolean;
     isFeatured?: boolean;
     isNew?: boolean;
+    name?: string;
+    setId?: string;
+    cardNumber?: string | null;
+    rarity?: string | null;
+    cardTypes?: string[];
+    hp?: number | null;
+    artist?: string | null;
+    imageUrl?: string | null;
+    imageUrlHiRes?: string | null;
+    description?: string | null;
   }): Promise<any> {
     const [updated] = await db.update(cards)
       .set({ ...patch, updatedAt: new Date() })

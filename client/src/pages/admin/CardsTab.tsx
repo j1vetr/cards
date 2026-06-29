@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ChevronDown, ChevronUp, Plus, Trash2, Save,
-  EyeOff, Star, Sparkles, Package, X,
+  EyeOff, Star, Sparkles, Package, X, Pencil,
 } from 'lucide-react';
 
 const TCG_CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10', 'PSA9', 'PSA8', 'PSA7'];
@@ -374,9 +374,159 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
   );
 }
 
-function CardRow({ card }: { card: AdminCard }) {
+// ── Edit Card Modal ────────────────────────────────────────────────────────
+function EditCardModal({ card, games, allSets, onClose }: {
+  card: AdminCard;
+  games: Game[];
+  allSets: CardSet[];
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [gameId, setGameId] = useState(card.game_id);
+  const [setId, setSetId] = useState(card.set_id);
+  const [name, setName] = useState(card.name);
+  const [cardNumber, setCardNumber] = useState(card.card_number ?? '');
+  const [rarity, setRarity] = useState(card.rarity ?? '');
+  const [typesStr, setTypesStr] = useState((card as any).card_types?.join(', ') ?? '');
+  const [hp, setHp] = useState(String((card as any).hp ?? ''));
+  const [artist, setArtist] = useState((card as any).artist ?? '');
+  const [imageUrl, setImageUrl] = useState(card.image_url ?? '');
+  const [imageUrlHiRes, setImageUrlHiRes] = useState((card as any).image_url_hi_res ?? '');
+  const [description, setDescription] = useState((card as any).description ?? '');
+  const [error, setError] = useState('');
+
+  const filteredSets = gameId ? allSets.filter((s) => s.game_id === gameId) : allSets;
+
+  const saveMut = useMutation({
+    mutationFn: () => adminFetch(`/api/admin/cards/${card.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name || undefined,
+        setId: setId || undefined,
+        cardNumber: cardNumber || null,
+        rarity: rarity || null,
+        cardTypes: typesStr ? typesStr.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        hp: hp ? parseInt(hp) : null,
+        artist: artist || null,
+        imageUrl: imageUrl || null,
+        imageUrlHiRes: imageUrlHiRes || null,
+        description: description || null,
+      }),
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-cards'] });
+      onClose();
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="modal-edit-card">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-[15px] font-semibold text-neutral-900">Kartı Düzenle</h2>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Oyun</label>
+            <select value={gameId} onChange={(e) => { setGameId(e.target.value); setSetId(''); }}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              data-testid="select-edit-game">
+              <option value="">Oyun seçin</option>
+              {games.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Set</label>
+            <select value={setId} onChange={(e) => setSetId(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              data-testid="select-edit-set">
+              <option value="">Set seçin</option>
+              {filteredSets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Kart Adı</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              data-testid="input-edit-name" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">Kart No</label>
+              <input type="text" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                placeholder="006/165" data-testid="input-edit-number" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">Rarity</label>
+              <input type="text" value={rarity} onChange={(e) => setRarity(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                placeholder="Rare Holo" data-testid="input-edit-rarity" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">Tipler (virgülle)</label>
+              <input type="text" value={typesStr} onChange={(e) => setTypesStr(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                placeholder="Fire, Fighting" data-testid="input-edit-types" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">HP</label>
+              <input type="number" min="0" value={hp} onChange={(e) => setHp(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                placeholder="120" data-testid="input-edit-hp" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Sanatçı</label>
+            <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              placeholder="Ken Sugimori" data-testid="input-edit-artist" />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Görsel URL</label>
+            <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              placeholder="https://..." data-testid="input-edit-image" />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Görsel URL (HiRes)</label>
+            <input type="text" value={imageUrlHiRes} onChange={(e) => setImageUrlHiRes(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              placeholder="https://..." data-testid="input-edit-image-hires" />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Açıklama</label>
+            <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400 resize-none"
+              data-testid="textarea-edit-description" />
+          </div>
+          {error && <p className="text-[12px] text-red-600">{error}</p>}
+        </div>
+        <div className="flex items-center justify-end gap-2 mt-5">
+          <button type="button" onClick={onClose}
+            className="px-4 py-2 text-[13px] border border-neutral-200 rounded-lg hover:bg-neutral-50 text-neutral-700 transition-colors">
+            İptal
+          </button>
+          <button type="button" onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !name}
+            className="px-4 py-2 text-[13px] bg-neutral-900 text-white rounded-lg hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            data-testid="button-edit-card-submit">
+            {saveMut.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardRow({ card, games, allSets }: { card: AdminCard; games: Game[]; allSets: CardSet[] }) {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const updateMut = useMutation({
     mutationFn: (patch: { isActive?: boolean; isFeatured?: boolean; isNew?: boolean }) =>
@@ -446,6 +596,11 @@ function CardRow({ card }: { card: AdminCard }) {
               data-testid={`button-expand-${card.id}`}>
               Listingler {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
+            <button type="button" onClick={() => setShowEdit(true)}
+              className="p-1.5 rounded-md hover:bg-blue-50 text-neutral-400 hover:text-blue-500 transition-colors"
+              title="Kartı Düzenle" data-testid={`button-edit-card-${card.id}`}>
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
             <button type="button"
               onClick={() => { if (confirm(`"${card.name}" kartını ve tüm listinglerini silmek istediğinizden emin misiniz?`)) deleteMut.mutate(); }}
               disabled={deleteMut.isPending}
@@ -462,6 +617,14 @@ function CardRow({ card }: { card: AdminCard }) {
             <CardListingsPanel cardId={card.id} onClose={() => setExpanded(false)} />
           </td>
         </tr>
+      )}
+      {showEdit && (
+        <EditCardModal
+          card={card}
+          games={games}
+          allSets={allSets}
+          onClose={() => setShowEdit(false)}
+        />
       )}
     </>
   );
@@ -577,7 +740,7 @@ export default function CardsTab() {
                 </td>
               </tr>
             )}
-            {cards.map((card) => <CardRow key={card.id} card={card} />)}
+            {cards.map((card) => <CardRow key={card.id} card={card} games={games} allSets={sets} />)}
           </tbody>
         </table>
       </div>
