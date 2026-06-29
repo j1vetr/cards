@@ -268,6 +268,8 @@ function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () =>
 }
 
 // ── Create Card Modal ──────────────────────────────────────────────────────
+const CONDITION_OPTIONS = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10'];
+
 function CreateCardModal({ games, allSets, onClose, onCreated }: {
   games: Game[];
   allSets: CardSet[];
@@ -281,22 +283,40 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
   const [cardNumber, setCardNumber] = useState('');
   const [rarity, setRarity] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [condition, setCondition] = useState('NM');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('1');
   const [error, setError] = useState('');
 
   const filteredSets = gameId ? allSets.filter((s) => s.game_id === gameId) : allSets;
 
   const createMut = useMutation({
-    mutationFn: () => adminFetch('/api/admin/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        setId, name,
-        cardNumber: cardNumber || null,
-        rarity: rarity || null,
-        imageUrl: imageUrl || null,
-        isActive: true,
-      }),
-    }),
+    mutationFn: async () => {
+      const card = await adminFetch('/api/admin/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          setId, name,
+          cardNumber: cardNumber || null,
+          rarity: rarity || null,
+          imageUrl: imageUrl || null,
+          isActive: true,
+        }),
+      });
+      if (price && parseFloat(price) > 0) {
+        await adminFetch(`/api/admin/cards/${card.id}/listings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            condition,
+            price: parseFloat(price),
+            stock: parseInt(stock) || 1,
+            isActive: true,
+          }),
+        });
+      }
+      return card;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-cards'] });
       onCreated();
@@ -306,7 +326,7 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="modal-create-card">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[15px] font-semibold text-neutral-900">Yeni Kart Ekle</h2>
           <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-4 h-4" /></button>
@@ -356,6 +376,34 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
               className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
               placeholder="https://..." data-testid="input-create-image" />
           </div>
+
+          <div className="pt-2 border-t border-neutral-100">
+            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-2">İlk Listing (opsiyonel)</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Koşul</label>
+                <select value={condition} onChange={(e) => setCondition(e.target.value)}
+                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                  data-testid="select-create-condition">
+                  {CONDITION_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Fiyat (₺)</label>
+                <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
+                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                  placeholder="0.00" data-testid="input-create-price" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Stok</label>
+                <input type="number" min="0" step="1" value={stock} onChange={(e) => setStock(e.target.value)}
+                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                  placeholder="1" data-testid="input-create-stock" />
+              </div>
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-1.5">Fiyat girilirse listing otomatik oluşturulur.</p>
+          </div>
+
           {error && <p className="text-[12px] text-red-600">{error}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 mt-5">

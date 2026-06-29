@@ -5,8 +5,6 @@ import OrdersTab from './admin/OrdersTab';
 import AdminLayout from './admin/_layout/AdminLayout';
 
 import DashboardTab from './admin/DashboardTab';
-import ProductsTab from './admin/ProductsTab';
-import CategoriesTab from './admin/CategoriesTab';
 import UsersTab from './admin/UsersTab';
 import AnalyticsTab from './admin/AnalyticsTab';
 import InventoryTab from './admin/InventoryTab';
@@ -19,12 +17,9 @@ import CardApiSyncTab from './admin/CardApiSyncTab';
 import CardsTab from './admin/CardsTab';
 import CardSetsTab from './admin/CardSetsTab';
 
-import CategoryModal from './admin/modals/CategoryModal';
 import UserDetailModal from './admin/modals/UserDetailModal';
-import BulkPriceModal from './admin/modals/BulkPriceModal';
-import BulkBadgeModal from './admin/modals/BulkBadgeModal';
 
-import type { Category, User, TabType } from './admin/_shared/types';
+import type { User, TabType } from './admin/_shared/types';
 import {
   VALID_TABS,
   SIDEBAR_CATEGORIES,
@@ -43,26 +38,16 @@ export default function AdminDashboard() {
     return tab && VALID_TABS.includes(tab as TabType) ? (tab as TabType) : 'dashboard';
   });
   const [searchQuery, setSearchQuery] = useState('');
-
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
-  const [showBulkBadgeModal, setShowBulkBadgeModal] = useState(false);
-  const [bulkPreselectedIds, setBulkPreselectedIds] = useState<string[] | undefined>(undefined);
 
   const data = useAdminDashboardData({
     searchQuery,
     onLoggedOut: () => setLocation('/toov-admin/login'),
     onProductSaved: () => {},
-    onCategorySaved: () => {
-      setShowCategoryModal(false);
-      setEditingCategory(null);
-    },
+    onCategorySaved: () => {},
   });
 
   const {
-    queryClient,
     adminUser,
     userLoading,
     stats,
@@ -71,21 +56,14 @@ export default function AdminDashboard() {
     products,
     productsLoading,
     productsError,
-    allVariants,
     categories,
-    categoriesLoading,
-    categoriesError,
     orders,
     ordersLoading,
     ordersError,
     refetchOrders,
     users,
     logoutMutation,
-    deleteProductMutation,
-    deleteCategoryMutation,
     deleteUserMutation,
-    saveProductMutation,
-    saveCategoryMutation,
   } = data;
 
   useEffect(() => {
@@ -147,31 +125,6 @@ export default function AdminDashboard() {
             productsError={productsError}
           />
         )}
-        {activeTab === 'products' && (
-          <ProductsTab
-            products={products}
-            categories={categories}
-            allVariants={allVariants}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            setShowBulkBadgeModal={setShowBulkBadgeModal}
-            setShowBulkPriceModal={setShowBulkPriceModal}
-            setBulkPreselectedIds={setBulkPreselectedIds}
-            deleteProductMutation={deleteProductMutation}
-            productsLoading={productsLoading}
-            productsError={productsError}
-          />
-        )}
-        {activeTab === 'categories' && (
-          <CategoriesTab
-            categories={categories}
-            setEditingCategory={setEditingCategory}
-            setShowCategoryModal={setShowCategoryModal}
-            deleteCategoryMutation={deleteCategoryMutation}
-            categoriesLoading={categoriesLoading}
-            categoriesError={categoriesError}
-          />
-        )}
         {activeTab === 'orders' && <OrdersTab />}
         {activeTab === 'users' && (
           <UsersTab
@@ -194,50 +147,7 @@ export default function AdminDashboard() {
         {activeTab === 'card-sets' && <CardSetsTab />}
       </AdminLayout>
 
-      {showCategoryModal && (
-        <CategoryModal
-          category={editingCategory}
-          onClose={() => {
-            setShowCategoryModal(false);
-            setEditingCategory(null);
-          }}
-          onSave={(category) => saveCategoryMutation.mutate(category)}
-          isSaving={saveCategoryMutation.isPending}
-        />
-      )}
       {viewingUser && <UserDetailModal user={viewingUser} onClose={() => setViewingUser(null)} />}
-      {showBulkPriceModal && (
-        <BulkPriceModal
-          categories={categories}
-          products={products}
-          preselectedProductIds={bulkPreselectedIds}
-          onClose={() => {
-            setShowBulkPriceModal(false);
-            setBulkPreselectedIds(undefined);
-          }}
-          onSuccess={() => {
-            setShowBulkPriceModal(false);
-            setBulkPreselectedIds(undefined);
-            queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
-          }}
-        />
-      )}
-      {showBulkBadgeModal && (
-        <BulkBadgeModal
-          products={products}
-          categories={categories}
-          preselectedProductIds={bulkPreselectedIds}
-          onClose={() => {
-            setShowBulkBadgeModal(false);
-            setBulkPreselectedIds(undefined);
-          }}
-          onSuccess={() => {
-            setShowBulkBadgeModal(false);
-            setBulkPreselectedIds(undefined);
-            queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
-          }}
-        />
-      )}
     </>
   );
 }

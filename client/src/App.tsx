@@ -26,7 +26,6 @@ const Profile = lazy(() => import("@/pages/Profile"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminOrderDetail = lazy(() => import("@/pages/AdminOrderDetail"));
-const AdminProductFormPage = lazy(() => import("@/pages/admin/AdminProductFormPage"));
 const About = lazy(() => import("@/pages/About"));
 const DeliveryTerms = lazy(() => import("@/pages/DeliveryTerms"));
 const DistanceSalesAgreement = lazy(() => import("@/pages/DistanceSalesAgreement"));
@@ -79,8 +78,6 @@ function Router() {
         <Route path="/kvkk" component={KVKK} />
         <Route path="/toov-admin/login" component={AdminLogin} />
         <Route path="/toov-admin/orders/:id" component={AdminOrderDetail} />
-        <Route path="/toov-admin/products/new" component={AdminProductFormPage} />
-        <Route path="/toov-admin/products/:id/edit" component={AdminProductFormPage} />
         <Route path="/toov-admin" component={AdminDashboard} />
         <Route component={NotFound} />
         </Switch>
