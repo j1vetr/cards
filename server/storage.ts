@@ -136,6 +136,7 @@ export interface AdminStats {
   pendingOrders: number;
   totalCards: number;
   activeListings: number;
+  priceSyncedAt: Date | null;
 }
 
 export interface IStorage {
@@ -438,6 +439,8 @@ export class DbStorage implements IStorage {
     const [cardCount] = await db.select({ count: sql<number>`count(*)` }).from(cards).where(eq(cards.isActive, true));
     const [listingCount] = await db.select({ count: sql<number>`count(*)` }).from(cardListings).where(and(eq(cardListings.isActive, true), gt(cardListings.stock, 0)));
 
+    const priceSyncedAt = await this.getLatestCardPriceFetchedAt();
+
     return {
       totalProducts: Number(productCount.count),
       totalCategories: Number(categoryCount.count),
@@ -447,6 +450,7 @@ export class DbStorage implements IStorage {
       pendingOrders: Number(pendingCount.count),
       totalCards: Number(cardCount.count),
       activeListings: Number(listingCount.count),
+      priceSyncedAt,
     };
   }
 
@@ -2626,35 +2630,77 @@ export class DbStorage implements IStorage {
     return updated;
   }
 
+  async createAdminCard(data: {
+    setId: string;
+    name: string;
+    slug: string;
+    cardNumber?: string | null;
+    rarity?: string | null;
+    imageUrl?: string | null;
+    isActive: boolean;
+    isFeatured: boolean;
+    isNew: boolean;
+  }): Promise<any> {
+    let slug = data.slug;
+    const [collision] = await db.select({ id: cards.id }).from(cards).where(eq(cards.slug, slug));
+    if (collision) slug = `${slug}-${Date.now()}`;
+    const [inserted] = await db.insert(cards).values({
+      setId: data.setId,
+      name: data.name,
+      slug,
+      cardNumber: data.cardNumber ?? null,
+      rarity: data.rarity ?? null,
+      imageUrl: data.imageUrl ?? null,
+      isActive: data.isActive,
+      isFeatured: data.isFeatured,
+      isNew: data.isNew,
+    }).returning();
+    return inserted;
+  }
+
+  async deleteAdminCard(id: string): Promise<void> {
+    await db.delete(cards).where(eq(cards.id, id));
+  }
+
   async getAdminCardListings(cardId: string): Promise<any[]> {
     return db.select().from(cardListings)
       .where(eq(cardListings.cardId, cardId))
       .orderBy(cardListings.condition);
   }
 
-  async upsertAdminCardListing(data: {
+  async createAdminCardListing(data: {
     cardId: string;
     condition: string;
     price: string;
     stock: number;
     isActive: boolean;
   }): Promise<any> {
-    const [existing] = await db.select().from(cardListings)
-      .where(and(eq(cardListings.cardId, data.cardId), eq(cardListings.condition, data.condition)));
-
-    if (existing) {
-      const [updated] = await db.update(cardListings)
-        .set({ price: data.price, stock: data.stock, isActive: data.isActive, updatedAt: new Date() })
-        .where(eq(cardListings.id, existing.id))
-        .returning();
-      return updated;
-    }
     const [inserted] = await db.insert(cardListings).values(data).returning();
     return inserted;
   }
 
+  async updateAdminCardListingById(id: string, data: {
+    price: string;
+    stock: number;
+    isActive: boolean;
+  }): Promise<any> {
+    const [updated] = await db.update(cardListings)
+      .set({ price: data.price, stock: data.stock, isActive: data.isActive, updatedAt: new Date() })
+      .where(eq(cardListings.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteAdminCardListing(id: string): Promise<void> {
     await db.delete(cardListings).where(eq(cardListings.id, id));
+  }
+
+  async getLatestCardPriceFetchedAt(): Promise<Date | null> {
+    const result = await db.execute(sql`
+      SELECT MAX(fetched_at) AS latest FROM card_prices
+    `);
+    const val = (result.rows[0] as any)?.latest;
+    return val ? new Date(val) : null;
   }
 
   async getAdminCardSets(gameId?: string): Promise<any[]> {

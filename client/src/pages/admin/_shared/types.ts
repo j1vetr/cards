@@ -66,6 +66,7 @@ export interface Stats {
   pendingOrders: number;
   totalCards: number;
   activeListings: number;
+  priceSyncedAt: string | null;
 }
 
 export interface ProductVariant {

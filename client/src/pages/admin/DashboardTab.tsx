@@ -356,6 +356,20 @@ export default function DashboardTab({
               loading={showStatsLoading}
               errored={statsError && !stats}
             />
+            <StatRow
+              icon={CheckCircle2}
+              label="Fiyat güncellemesi"
+              value={
+                stats?.priceSyncedAt
+                  ? new Intl.DateTimeFormat('tr-TR', {
+                      timeZone: 'Europe/Istanbul',
+                      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                    }).format(new Date(stats.priceSyncedAt))
+                  : '—'
+              }
+              loading={showStatsLoading}
+              errored={statsError && !stats}
+            />
           </div>
         </PageSection>
       </div>

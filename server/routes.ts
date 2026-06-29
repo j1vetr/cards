@@ -5495,6 +5495,29 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  app.post("/api/admin/cards", requireAdmin, async (req, res) => {
+    try {
+      const { setId, name, cardNumber, rarity, imageUrl, isActive, isFeatured, isNew } = req.body;
+      if (!setId || !name) return res.status(400).json({ error: "setId ve name gerekli" });
+      const slug = name.toLowerCase()
+        .replace(/[^a-z0-9\u00e7\u011f\u0131\u00f6\u015f\u00fc\u00c7\u011e\u0130\u00d6\u015e\u00dc]+/gi, '-')
+        .replace(/^-|-$/g, '');
+      const card = await storage.createAdminCard({
+        setId, name, slug: slug || `card-${Date.now()}`,
+        cardNumber: cardNumber || null,
+        rarity: rarity || null,
+        imageUrl: imageUrl || null,
+        isActive: isActive !== false,
+        isFeatured: !!isFeatured,
+        isNew: !!isNew,
+      });
+      res.status(201).json(card);
+    } catch (err) {
+      console.error("[admin] createAdminCard:", err);
+      res.status(500).json({ error: "Kart oluşturulamadı" });
+    }
+  });
+
   app.put("/api/admin/cards/:id", requireAdmin, async (req, res) => {
     try {
       const { isActive, isFeatured, isNew } = req.body;
@@ -5503,6 +5526,15 @@ Sitemap: ${baseUrl}/sitemap.xml
       res.json(updated);
     } catch (err) {
       res.status(500).json({ error: "Kart güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/admin/cards/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteAdminCard(req.params.id);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Kart silinemedi" });
     }
   });
 
@@ -5521,14 +5553,14 @@ Sitemap: ${baseUrl}/sitemap.xml
       if (!condition || price == null || stock == null) {
         return res.status(400).json({ error: "condition, price ve stock gerekli" });
       }
-      const listing = await storage.upsertAdminCardListing({
+      const listing = await storage.createAdminCardListing({
         cardId: req.params.id,
         condition,
         price: String(price),
         stock: Number(stock),
         isActive: isActive !== false,
       });
-      res.json(listing);
+      res.status(201).json(listing);
     } catch (err) {
       res.status(500).json({ error: "Listing oluşturulamadı" });
     }
@@ -5536,14 +5568,16 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   app.put("/api/admin/cards/:id/listings/:listingId", requireAdmin, async (req, res) => {
     try {
-      const { condition, price, stock, isActive } = req.body;
-      const listing = await storage.upsertAdminCardListing({
-        cardId: req.params.id,
-        condition,
+      const { price, stock, isActive } = req.body;
+      if (price == null || stock == null) {
+        return res.status(400).json({ error: "price ve stock gerekli" });
+      }
+      const listing = await storage.updateAdminCardListingById(req.params.listingId, {
         price: String(price),
         stock: Number(stock),
         isActive: isActive !== false,
       });
+      if (!listing) return res.status(404).json({ error: "Listing bulunamadı" });
       res.json(listing);
     } catch (err) {
       res.status(500).json({ error: "Listing güncellenemedi" });
