@@ -30,6 +30,8 @@ async function adminFetch(url: string, opts?: RequestInit) {
 interface AdminCard {
   id: string; name: string; slug: string;
   card_number: string | null; rarity: string | null; image_url: string | null;
+  image_url_hi_res: string | null; card_types: string[] | null; hp: number | null;
+  artist: string | null; description: string | null;
   is_active: boolean; is_featured: boolean; is_new: boolean;
   set_id: string; set_name: string; game_id: string; game_name: string;
   active_listings: number; total_listings: number;
@@ -270,6 +272,8 @@ function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () =>
 // ── Create Card Modal ──────────────────────────────────────────────────────
 const CONDITION_OPTIONS = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10'];
 
+interface InitialListing { condition: string; price: string; stock: string; }
+
 function CreateCardModal({ games, allSets, onClose, onCreated }: {
   games: Game[];
   allSets: CardSet[];
@@ -282,13 +286,22 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
   const [name, setName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [rarity, setRarity] = useState('');
+  const [typesStr, setTypesStr] = useState('');
+  const [hp, setHp] = useState('');
+  const [artist, setArtist] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [condition, setCondition] = useState('NM');
-  const [price, setPrice] = useState('');
-  const [stock, setStock] = useState('1');
+  const [description, setDescription] = useState('');
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const [listings, setListings] = useState<InitialListing[]>([{ condition: 'NM', price: '', stock: '1' }]);
   const [error, setError] = useState('');
 
   const filteredSets = gameId ? allSets.filter((s) => s.game_id === gameId) : allSets;
+
+  const addRow = () => setListings((prev) => [...prev, { condition: 'NM', price: '', stock: '1' }]);
+  const removeRow = (i: number) => setListings((prev) => prev.filter((_, idx) => idx !== i));
+  const updateRow = (i: number, field: keyof InitialListing, val: string) =>
+    setListings((prev) => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
 
   const createMut = useMutation({
     mutationFn: async () => {
@@ -299,22 +312,29 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
           setId, name,
           cardNumber: cardNumber || null,
           rarity: rarity || null,
+          cardTypes: typesStr ? typesStr.split(',').map((t: string) => t.trim()).filter(Boolean) : undefined,
+          hp: hp ? parseInt(hp) : null,
+          artist: artist || null,
           imageUrl: imageUrl || null,
+          description: description || null,
+          isFeatured,
+          isNew,
           isActive: true,
         }),
       });
-      if (price && parseFloat(price) > 0) {
-        await adminFetch(`/api/admin/cards/${card.id}/listings`, {
+      const validListings = listings.filter((l) => l.price && parseFloat(l.price) > 0);
+      await Promise.all(validListings.map((l) =>
+        adminFetch(`/api/admin/cards/${card.id}/listings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            condition,
-            price: parseFloat(price),
-            stock: parseInt(stock) || 1,
+            condition: l.condition,
+            price: parseFloat(l.price),
+            stock: parseInt(l.stock) || 1,
             isActive: true,
           }),
-        });
-      }
+        })
+      ));
       return card;
     },
     onSuccess: () => {
@@ -324,6 +344,15 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
     onError: (err: Error) => setError(err.message),
   });
 
+  const Toggle2 = ({ label, value, onChange, testId }: { label: string; value: boolean; onChange: (v: boolean) => void; testId: string }) => (
+    <button type="button" onClick={() => onChange(!value)}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[12px] font-medium transition-colors ${value ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-neutral-200 bg-white text-neutral-500'}`}
+      data-testid={testId}>
+      <span className={`w-3 h-3 rounded-full border-2 ${value ? 'border-blue-500 bg-blue-500' : 'border-neutral-300'}`} />
+      {label}
+    </button>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="modal-create-card">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
@@ -332,30 +361,35 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
           <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-4 h-4" /></button>
         </div>
         <div className="space-y-3">
-          <div>
-            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Oyun</label>
-            <select value={gameId} onChange={(e) => { setGameId(e.target.value); setSetId(''); }}
-              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-              data-testid="select-create-game">
-              <option value="">Tüm oyunlar</option>
-              {games.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+          {/* Game / Set */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">Oyun</label>
+              <select value={gameId} onChange={(e) => { setGameId(e.target.value); setSetId(''); }}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                data-testid="select-create-game">
+                <option value="">Tüm oyunlar</option>
+                {games.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">Set *</label>
+              <select value={setId} onChange={(e) => setSetId(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                data-testid="select-create-set">
+                <option value="">Set seçin</option>
+                {filteredSets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Set *</label>
-            <select value={setId} onChange={(e) => setSetId(e.target.value)}
-              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-              data-testid="select-create-set">
-              <option value="">Set seçin</option>
-              {filteredSets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
+          {/* Name */}
           <div>
             <label className="block text-[11px] font-medium text-neutral-600 mb-1">Kart Adı *</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
               placeholder="Charizard" data-testid="input-create-name" />
           </div>
+          {/* Number / Rarity */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-medium text-neutral-600 mb-1">Kart No</label>
@@ -370,38 +404,83 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
                 placeholder="Rare Holo" data-testid="input-create-rarity" />
             </div>
           </div>
+          {/* Types / HP */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">Tipler (virgülle)</label>
+              <input type="text" value={typesStr} onChange={(e) => setTypesStr(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                placeholder="Fire, Fighting" data-testid="input-create-types" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-neutral-600 mb-1">HP</label>
+              <input type="number" min="0" value={hp} onChange={(e) => setHp(e.target.value)}
+                className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                placeholder="120" data-testid="input-create-hp" />
+            </div>
+          </div>
+          {/* Artist */}
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Sanatçı</label>
+            <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+              placeholder="Ken Sugimori" data-testid="input-create-artist" />
+          </div>
+          {/* Image URL */}
           <div>
             <label className="block text-[11px] font-medium text-neutral-600 mb-1">Görsel URL</label>
             <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
               className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
               placeholder="https://..." data-testid="input-create-image" />
           </div>
+          {/* Description */}
+          <div>
+            <label className="block text-[11px] font-medium text-neutral-600 mb-1">Açıklama</label>
+            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400 resize-none"
+              placeholder="Kart açıklaması..." data-testid="textarea-create-description" />
+          </div>
+          {/* Featured / New */}
+          <div className="flex items-center gap-2">
+            <Toggle2 label="Öne Çıkar" value={isFeatured} onChange={setIsFeatured} testId="toggle-create-featured" />
+            <Toggle2 label="Yeni" value={isNew} onChange={setIsNew} testId="toggle-create-new" />
+          </div>
 
+          {/* Initial Listings */}
           <div className="pt-2 border-t border-neutral-100">
-            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-2">İlk Listing (opsiyonel)</p>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Koşul</label>
-                <select value={condition} onChange={(e) => setCondition(e.target.value)}
-                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-                  data-testid="select-create-condition">
-                  {CONDITION_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Fiyat (₺)</label>
-                <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
-                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-                  placeholder="0.00" data-testid="input-create-price" />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Stok</label>
-                <input type="number" min="0" step="1" value={stock} onChange={(e) => setStock(e.target.value)}
-                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-                  placeholder="1" data-testid="input-create-stock" />
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Koşul & Fiyat (opsiyonel)</p>
+              <button type="button" onClick={addRow}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors"
+                data-testid="button-create-add-listing-row">
+                <Plus className="w-3 h-3" /> Satır Ekle
+              </button>
             </div>
-            <p className="text-[11px] text-neutral-400 mt-1.5">Fiyat girilirse listing otomatik oluşturulur.</p>
+            <div className="space-y-2">
+              {listings.map((row, i) => (
+                <div key={i} className="grid grid-cols-[120px_1fr_80px_24px] gap-2 items-center">
+                  <select value={row.condition} onChange={(e) => updateRow(i, 'condition', e.target.value)}
+                    className="text-[12px] border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none"
+                    data-testid={`select-listing-condition-${i}`}>
+                    {CONDITION_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <input type="number" min="0" step="0.01" placeholder="Fiyat (₺)" value={row.price}
+                    onChange={(e) => updateRow(i, 'price', e.target.value)}
+                    className="text-[12px] border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none"
+                    data-testid={`input-listing-price-${i}`} />
+                  <input type="number" min="0" step="1" placeholder="Stok" value={row.stock}
+                    onChange={(e) => updateRow(i, 'stock', e.target.value)}
+                    className="text-[12px] border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none"
+                    data-testid={`input-listing-stock-${i}`} />
+                  {listings.length > 1 ? (
+                    <button type="button" onClick={() => removeRow(i)} className="text-neutral-300 hover:text-red-400 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  ) : <span />}
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-1.5">Fiyat girilmemiş satırlar atlanır.</p>
           </div>
 
           {error && <p className="text-[12px] text-red-600">{error}</p>}
@@ -435,12 +514,12 @@ function EditCardModal({ card, games, allSets, onClose }: {
   const [name, setName] = useState(card.name);
   const [cardNumber, setCardNumber] = useState(card.card_number ?? '');
   const [rarity, setRarity] = useState(card.rarity ?? '');
-  const [typesStr, setTypesStr] = useState((card as any).card_types?.join(', ') ?? '');
-  const [hp, setHp] = useState(String((card as any).hp ?? ''));
-  const [artist, setArtist] = useState((card as any).artist ?? '');
+  const [typesStr, setTypesStr] = useState(card.card_types?.join(', ') ?? '');
+  const [hp, setHp] = useState(String(card.hp ?? ''));
+  const [artist, setArtist] = useState(card.artist ?? '');
   const [imageUrl, setImageUrl] = useState(card.image_url ?? '');
-  const [imageUrlHiRes, setImageUrlHiRes] = useState((card as any).image_url_hi_res ?? '');
-  const [description, setDescription] = useState((card as any).description ?? '');
+  const [imageUrlHiRes, setImageUrlHiRes] = useState(card.image_url_hi_res ?? '');
+  const [description, setDescription] = useState(card.description ?? '');
   const [error, setError] = useState('');
 
   const filteredSets = gameId ? allSets.filter((s) => s.game_id === gameId) : allSets;
@@ -454,7 +533,7 @@ function EditCardModal({ card, games, allSets, onClose }: {
         setId: setId || undefined,
         cardNumber: cardNumber || null,
         rarity: rarity || null,
-        cardTypes: typesStr ? typesStr.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        cardTypes: typesStr ? typesStr.split(',').map((t: string) => t.trim()).filter(Boolean) : undefined,
         hp: hp ? parseInt(hp) : null,
         artist: artist || null,
         imageUrl: imageUrl || null,

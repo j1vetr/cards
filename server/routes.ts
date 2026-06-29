@@ -5497,7 +5497,7 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   app.post("/api/admin/cards", requireAdmin, async (req, res) => {
     try {
-      const { setId, name, cardNumber, rarity, imageUrl, isActive, isFeatured, isNew } = req.body;
+      const { setId, name, cardNumber, rarity, cardTypes, hp, artist, imageUrl, description, isActive, isFeatured, isNew } = req.body;
       if (!setId || !name) return res.status(400).json({ error: "setId ve name gerekli" });
       const slug = name.toLowerCase()
         .replace(/[^a-z0-9\u00e7\u011f\u0131\u00f6\u015f\u00fc\u00c7\u011e\u0130\u00d6\u015e\u00dc]+/gi, '-')
@@ -5506,7 +5506,11 @@ Sitemap: ${baseUrl}/sitemap.xml
         setId, name, slug: slug || `card-${Date.now()}`,
         cardNumber: cardNumber || null,
         rarity: rarity || null,
+        cardTypes: Array.isArray(cardTypes) ? cardTypes : undefined,
+        hp: hp != null ? Number(hp) : null,
+        artist: artist || null,
         imageUrl: imageUrl || null,
+        description: description || null,
         isActive: isActive !== false,
         isFeatured: !!isFeatured,
         isNew: !!isNew,

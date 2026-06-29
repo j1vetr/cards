@@ -2589,6 +2589,7 @@ export class DbStorage implements IStorage {
     const rowsResult = await db.execute(sql`
       SELECT
         c.id, c.name, c.slug, c.card_number, c.rarity, c.image_url,
+        c.image_url_hi_res, c.card_types, c.hp, c.artist, c.description,
         c.is_active, c.is_featured, c.is_new, c.created_at,
         cs.id AS set_id, cs.name AS set_name,
         cg.id AS game_id, cg.name AS game_name,
@@ -2646,7 +2647,11 @@ export class DbStorage implements IStorage {
     slug: string;
     cardNumber?: string | null;
     rarity?: string | null;
+    cardTypes?: string[];
+    hp?: number | null;
+    artist?: string | null;
     imageUrl?: string | null;
+    description?: string | null;
     isActive: boolean;
     isFeatured: boolean;
     isNew: boolean;
@@ -2660,7 +2665,11 @@ export class DbStorage implements IStorage {
       slug,
       cardNumber: data.cardNumber ?? null,
       rarity: data.rarity ?? null,
+      cardTypes: data.cardTypes ?? [],
+      hp: data.hp ?? null,
+      artist: data.artist ?? null,
       imageUrl: data.imageUrl ?? null,
+      description: data.description ?? null,
       isActive: data.isActive,
       isFeatured: data.isFeatured,
       isNew: data.isNew,
