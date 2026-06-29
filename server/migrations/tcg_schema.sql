@@ -126,11 +126,10 @@ ALTER TABLE users DROP COLUMN IF EXISTS company_name;
 ALTER TABLE users DROP COLUMN IF EXISTS tax_number;
 ALTER TABLE users DROP COLUMN IF EXISTS tax_office;
 
--- NOTE: product_variants is intentionally NOT dropped here (phased migration).
--- Runtime routes/storage still reference productVariants for legacy product catalog.
--- Deprecation: product_variants will be dropped in a follow-up migration once
--- all product routes are migrated to the card_listings model and
--- the legacy clothing catalog is removed from shared/schema.ts + routes.
+-- Drop legacy product_variants table (clothing size/color model replaced by card_listings).
+-- CASCADE removes FK constraints on variantId columns in order_items, stock_adjustments,
+-- low_stock_alerts, and cart_items (those variantId columns become plain varchar after drop).
+DROP TABLE IF EXISTS product_variants CASCADE;
 
 -- ============================================================
 -- 8. Seed default games

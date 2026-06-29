@@ -1,5 +1,4 @@
 import { storage, db } from "./storage";
-import { productVariants } from "@shared/schema";
 
 const SITE_URL = "https://ecartejeans.com";
 const BRAND_NAME = "Marka";
@@ -38,20 +37,15 @@ function formatPriceTRY(value: string | number | null | undefined): string {
 }
 
 export async function buildMetaCatalogXml(): Promise<string> {
-  const [allProducts, allCategories, allVariants] = await Promise.all([
+  const [allProducts, allCategories] = await Promise.all([
     storage.getAllProducts(),
     storage.getCategories(),
-    db.select().from(productVariants),
   ]);
 
   const categoryById = new Map(allCategories.map((c) => [c.id, c]));
 
-  // Toplam stok = ürünün tüm varyantlarının stok toplamı (sitedeki kuralla aynı)
+  // product_variants dropped — stok kontrolü artık card_listings üzerinden
   const totalStockByProduct = new Map<string, number>();
-  for (const v of allVariants) {
-    const prev = totalStockByProduct.get(v.productId) ?? 0;
-    totalStockByProduct.set(v.productId, prev + (v.stock ?? 0));
-  }
 
   const items: string[] = [];
 

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { adminUsers, categories, products, productVariants } from "@shared/schema";
+import { adminUsers, categories, products } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 
@@ -128,27 +128,7 @@ async function seed() {
         .limit(1);
 
       if (existing.length === 0) {
-        const [created] = await db.insert(products).values(prod).returning();
-        await db.insert(productVariants).values([
-          {
-            productId: created.id,
-            size: "30x60",
-            color: "Doğal",
-            colorHex: "#E8DCC4",
-            price: prod.basePrice,
-            stock: 50,
-            sku: `${prod.slug.toUpperCase().slice(0, 8)}-3060`,
-          },
-          {
-            productId: created.id,
-            size: "60x60",
-            color: "Doğal",
-            colorHex: "#E8DCC4",
-            price: prod.basePrice,
-            stock: 30,
-            sku: `${prod.slug.toUpperCase().slice(0, 8)}-6060`,
-          },
-        ]);
+        await db.insert(products).values(prod).returning();
         createdProductCount++;
         console.log(`✓ Product created: ${prod.name}`);
       } else {

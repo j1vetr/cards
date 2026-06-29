@@ -122,7 +122,6 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     fields: [products.categoryId],
     references: [categories.id],
   }),
-  variants: many(productVariants),
   productCategories: many(productCategories),
 }));
 
@@ -151,25 +150,8 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
 
 export type ProductCategory = typeof productCategories.$inferSelect;
 
-// Product variants — kept for backward compat with existing orders/stock records.
-export const productVariants = pgTable("product_variants", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
-  sku: text("sku").unique(),
-  size: text("size"),
-  color: text("color"),
-  colorHex: text("color_hex"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  stock: integer("stock").default(0).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-});
-
-export const insertProductVariantSchema = createInsertSchema(productVariants).omit({
-  id: true,
-});
-
-export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
-export type ProductVariant = typeof productVariants.$inferSelect;
+// product_variants table removed — TCG uses card_listings as the purchaseable unit.
+// Legacy variantId columns are kept as plain varchar for historical order records.
 
 // ============================================================================
 // TCG — Trading Card Game (Pokemon TCG / Riftbound)
@@ -299,7 +281,7 @@ export const cartItems = pgTable("cart_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: text("session_id").notNull(),
   productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+  variantId: varchar("variant_id"),
   cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "cascade" }),
   quantity: integer("quantity").default(1).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -360,7 +342,7 @@ export const orderItems = pgTable("order_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
   productId: varchar("product_id").references(() => products.id, { onDelete: "set null" }),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
+  variantId: varchar("variant_id"),
   cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "set null" }),
   productName: text("product_name").notNull(),
   variantDetails: text("variant_details"), // Stores condition for TCG cards (e.g. "NM", "PSA10")
@@ -509,7 +491,7 @@ export type OrderNote = typeof orderNotes.$inferSelect;
 // Stock Adjustments Log
 export const stockAdjustments = pgTable("stock_adjustments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+  variantId: varchar("variant_id"),
   cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "cascade" }),
   previousStock: integer("previous_stock").notNull(),
   newStock: integer("new_stock").notNull(),
@@ -524,7 +506,7 @@ export type StockAdjustment = typeof stockAdjustments.$inferSelect;
 // Low Stock Alerts Configuration
 export const lowStockAlerts = pgTable("low_stock_alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+  variantId: varchar("variant_id"),
   cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "cascade" }),
   threshold: integer("threshold").default(5).notNull(),
   isEnabled: boolean("is_enabled").default(true).notNull(),

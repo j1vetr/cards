@@ -11,12 +11,12 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants, cardListings } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
 import {
   validateBody, firstZodMessage,
   profileUpdateSchema, addressCreateSchema, addressUpdateSchema,
-  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema, variantUpdateSchema,
+  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema,
   cartUpdateSchema, orderStatusUpdateSchema, orderTrackingSchema, orderUpdateSchema,
   orderNoteSchema, orderCancelSchema, couponWriteSchema, couponUpdateSchema,
   inventoryBulkUpdateSchema, campaignWriteSchema, campaignUpdateSchema,
@@ -1459,53 +1459,6 @@ export async function registerRoutes(
     }
   });
 
-  // Product Variants API
-  app.get("/api/products/:productId/variants", async (req, res) => {
-    try {
-      const variants = await storage.getProductVariants(req.params.productId);
-      res.json(variants);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch variants" });
-    }
-  });
-
-  app.post("/api/admin/products/:productId/variants", requireAdmin, async (req, res) => {
-    try {
-      const validated = insertProductVariantSchema.parse({
-        ...req.body,
-        productId: req.params.productId,
-      });
-      const variant = await storage.createProductVariant(validated);
-      res.status(201).json(variant);
-    } catch (error) {
-      if (error instanceof z.ZodError) return res.status(400).json({ error: firstZodMessage(error) });
-      console.error('Variant creation error:', error);
-      res.status(500).json({ error: "Varyant oluşturulamadı" });
-    }
-  });
-
-  app.patch("/api/admin/variants/:id", requireAdmin, async (req, res) => {
-    try {
-      const parsed = variantUpdateSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const variant = await storage.updateProductVariant(req.params.id, parsed.data);
-      if (!variant) {
-        return res.status(404).json({ error: "Variant not found" });
-      }
-      res.json(variant);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to update variant" });
-    }
-  });
-
-  app.delete("/api/admin/variants/:id", requireAdmin, async (req, res) => {
-    try {
-      await storage.deleteProductVariant(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to delete variant" });
-    }
-  });
 
   // Cart API
   app.get("/api/cart", async (req: Request, res) => {
@@ -2543,17 +2496,6 @@ export async function registerRoutes(
                 .where(eq(cardListings.id, item.cardListingId));
             }
 
-            if (item.variantId && variantStock !== null) {
-              const newStock = Math.max(0, variantStock - item.quantity);
-              await tx.update(productVariants).set({ stock: newStock }).where(eq(productVariants.id, item.variantId));
-              await tx.insert(stockAdjustments).values({
-                variantId: item.variantId,
-                previousStock: variantStock,
-                newStock,
-                adjustmentType: 'sale',
-                reason: `Sipariş: ${orderNumber}`,
-              });
-            }
           }
 
           if (iyzicoCoupon) {
@@ -3019,17 +2961,6 @@ export async function registerRoutes(
             subtotal: (parseFloat(product.basePrice) * cartItem.quantity).toFixed(2),
           });
 
-          if (variant?.id) {
-            const newStock = Math.max(0, variant.stock - cartItem.quantity);
-            await tx.update(productVariants).set({ stock: newStock }).where(eq(productVariants.id, variant.id));
-            await tx.insert(stockAdjustments).values({
-              variantId: variant.id,
-              previousStock: variant.stock,
-              newStock,
-              adjustmentType: 'sale',
-              reason: `Sipariş: ${orderNumber}`,
-            });
-          }
         }
 
         if (validatedCoupon) {

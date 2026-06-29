@@ -3,7 +3,6 @@ import {
   adminUsers, 
   categories, 
   products, 
-  productVariants, 
   productCategories,
   cartItems,
   cards,
@@ -33,8 +32,6 @@ import {
   type InsertCategory,
   type Product,
   type InsertProduct,
-  type ProductVariant,
-  type InsertProductVariant,
   type CartItem,
   type InsertCartItem,
   type Order,
@@ -213,10 +210,11 @@ export interface IStorage {
   rejectReview(id: string, reason: string, adminId: string): Promise<ProductReview | undefined>;
   getPendingReviewsCount(): Promise<number>;
 
-  getProductVariants(productId: string): Promise<ProductVariant[]>;
-  getProductVariant(id: string): Promise<ProductVariant | undefined>;
-  createProductVariant(variant: InsertProductVariant): Promise<ProductVariant>;
-  updateProductVariant(id: string, variant: Partial<InsertProductVariant>): Promise<ProductVariant | undefined>;
+  // Legacy variant stubs — product_variants table dropped; methods return empty/undefined
+  getProductVariants(productId: string): Promise<any[]>;
+  getProductVariant(id: string): Promise<any | undefined>;
+  createProductVariant(variant: any): Promise<any>;
+  updateProductVariant(id: string, variant: any): Promise<any | undefined>;
   deleteProductVariant(id: string): Promise<void>;
 
   // Product Categories (multi-category support)
@@ -627,14 +625,6 @@ export class DbStorage implements IStorage {
 
   async getProductBySlug(slug: string): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.slug, slug));
-    if (!product) return undefined;
-    // Stoksuz ürünün public detay sayfası da açılmasın (admin ayrı endpoint kullanır).
-    const [agg] = await db
-      .select({ total: sum(productVariants.stock) })
-      .from(productVariants)
-      .where(and(eq(productVariants.productId, product.id), eq(productVariants.isActive, true)));
-    const total = Number(agg?.total ?? 0);
-    if (!Number.isFinite(total) || total <= 0) return undefined;
     return product;
   }
 
@@ -676,43 +666,24 @@ export class DbStorage implements IStorage {
     // Delete cart items referencing products
     await db.delete(cartItems);
 
-    // Count and delete variants
-    const variantCount = await db.select({ count: sql<number>`count(*)` }).from(productVariants);
-    await db.delete(productVariants);
-
     // Count and delete products
     const productCount = await db.select({ count: sql<number>`count(*)` }).from(products);
     await db.delete(products);
 
     return {
       deletedProducts: Number(productCount[0]?.count || 0),
-      deletedVariants: Number(variantCount[0]?.count || 0),
+      deletedVariants: 0,
       imagePaths,
     };
   }
 
-  async getProductVariants(productId: string): Promise<ProductVariant[]> {
-    return db.select().from(productVariants).where(eq(productVariants.productId, productId));
-  }
 
-  async getProductVariant(id: string): Promise<ProductVariant | undefined> {
-    const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, id));
-    return variant;
-  }
-
-  async createProductVariant(variant: InsertProductVariant): Promise<ProductVariant> {
-    const [newVariant] = await db.insert(productVariants).values(variant).returning();
-    return newVariant;
-  }
-
-  async updateProductVariant(id: string, variant: Partial<InsertProductVariant>): Promise<ProductVariant | undefined> {
-    const [updated] = await db.update(productVariants).set(variant).where(eq(productVariants.id, id)).returning();
-    return updated;
-  }
-
-  async deleteProductVariant(id: string): Promise<void> {
-    await db.delete(productVariants).where(eq(productVariants.id, id));
-  }
+  // Legacy variant stubs — product_variants table dropped; no-ops
+  async getProductVariants(_productId: string): Promise<any[]> { return []; }
+  async getProductVariant(_id: string): Promise<any | undefined> { return undefined; }
+  async createProductVariant(_variant: any): Promise<any> { return {}; }
+  async updateProductVariant(_id: string, _variant: any): Promise<any | undefined> { return undefined; }
+  async deleteProductVariant(_id: string): Promise<void> {}
 
   // Product Categories (multi-category support)
   async getProductCategoryIds(productId: string): Promise<string[]> {
@@ -802,18 +773,8 @@ export class DbStorage implements IStorage {
           }).from(products).where(eq(products.id, item.productId))
         : [undefined];
       
-      let variant = null;
-      if (item.variantId) {
-        const [v] = await db.select({
-          id: productVariants.id,
-          size: productVariants.size,
-          color: productVariants.color,
-          price: productVariants.price,
-        }).from(productVariants).where(eq(productVariants.id, item.variantId));
-        variant = v || null;
-      }
-
-      return { ...item, product: product || null, variant };
+      // product_variants dropped — variantId kept for historical records only
+      return { ...item, product: product || null, variant: null };
     }));
     
     return itemsWithDetails;
@@ -1450,49 +1411,12 @@ export class DbStorage implements IStorage {
     return updated;
   }
 
-  // Stock management methods
-  async getAllVariantsWithProducts(): Promise<(ProductVariant & { product: Product })[]> {
-    const result = await db
-      .select()
-      .from(productVariants)
-      .leftJoin(products, eq(productVariants.productId, products.id))
-      .orderBy(products.name, productVariants.size);
+  // Stock management methods — product_variants dropped; stubs return empty
+  async getAllVariantsWithProducts(): Promise<any[]> { return []; }
+  async getLowStockVariants(_threshold: number = 5): Promise<any[]> { return []; }
 
-    return result.map(r => ({
-      ...r.product_variants,
-      product: r.products!,
-    }));
-  }
-
-  async getLowStockVariants(threshold: number = 5): Promise<(ProductVariant & { product: Product })[]> {
-    const result = await db
-      .select()
-      .from(productVariants)
-      .leftJoin(products, eq(productVariants.productId, products.id))
-      .where(lte(productVariants.stock, threshold))
-      .orderBy(asc(productVariants.stock));
-
-    return result.map(r => ({
-      ...r.product_variants,
-      product: r.products!,
-    }));
-  }
-
-  async bulkUpdateStock(updates: { variantId: string; stock: number; reason?: string; authorId?: string }[]): Promise<void> {
-    for (const update of updates) {
-      const variant = await this.getProductVariant(update.variantId);
-      if (variant) {
-        await db.insert(stockAdjustments).values({
-          variantId: update.variantId,
-          previousStock: variant.stock,
-          newStock: update.stock,
-          adjustmentType: 'manual',
-          reason: update.reason || 'Toplu stok güncellemesi',
-          authorId: update.authorId,
-        });
-        await db.update(productVariants).set({ stock: update.stock }).where(eq(productVariants.id, update.variantId));
-      }
-    }
+  async bulkUpdateStock(_updates: { variantId: string; stock: number; reason?: string; authorId?: string }[]): Promise<void> {
+    // product_variants dropped — no-op stub
   }
 
   async getStockAdjustments(variantId?: string): Promise<StockAdjustment[]> {
