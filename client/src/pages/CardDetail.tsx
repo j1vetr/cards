@@ -86,18 +86,24 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
 }
 
 /* ─── Set cards row ──────────────────────────────────────────────────── */
-function SetCardsRow({ cards, setSlug, setName }: { cards: any[]; setSlug?: string; setName?: string }) {
+function SetCardsRow({ cards, setSlug }: { cards: any[]; setSlug?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [dotIdx, setDotIdx] = useState(0);
   const [dotCount, setDotCount] = useState(1);
 
-  const onScroll = () => {
+  const recalcDots = useCallback(() => {
     const el = ref.current;
-    if (!el) return;
-    const w = el.clientWidth;
-    setDotIdx(Math.round(el.scrollLeft / w));
-    setDotCount(Math.ceil(el.scrollWidth / w));
-  };
+    if (!el || !el.clientWidth) return;
+    setDotIdx(Math.round(el.scrollLeft / el.clientWidth));
+    setDotCount(Math.max(1, Math.ceil(el.scrollWidth / el.clientWidth)));
+  }, []);
+
+  useEffect(() => {
+    recalcDots();
+    const ro = new ResizeObserver(recalcDots);
+    if (ref.current) ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, [cards, recalcDots]);
 
   const scroll = (dir: 1 | -1) =>
     ref.current?.scrollBy({ left: dir * (ref.current.clientWidth * 0.85), behavior: 'smooth' });
@@ -105,7 +111,7 @@ function SetCardsRow({ cards, setSlug, setName }: { cards: any[]; setSlug?: stri
   if (!cards.length) return null;
 
   return (
-    <section className="border-t border-white/[0.07] pt-4 pb-2 sm:pb-4">
+    <section className="border-t border-white/[0.07] pt-4 pb-4">
       <div className="max-w-screen-xl mx-auto px-4 sm:px-8">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -132,7 +138,7 @@ function SetCardsRow({ cards, setSlug, setName }: { cards: any[]; setSlug?: stri
           </div>
         </div>
 
-        <div ref={ref} onScroll={onScroll}
+        <div ref={ref} onScroll={recalcDots}
           className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
           {cards.map((c: any) => (
             <Link key={c.id} href={`/kart/${c.slug}`}>
@@ -144,9 +150,7 @@ function SetCardsRow({ cards, setSlug, setName }: { cards: any[]; setSlug?: stri
                     style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.7))' }}
                   />
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1 font-medium text-center truncate px-0.5 group-hover:text-white transition-colors">
-                  {c.name}
-                </p>
+                <p className="text-[10px] text-zinc-400 mt-1 font-medium text-center truncate px-0.5 group-hover:text-white transition-colors">{c.name}</p>
                 {c.min_price && (
                   <p className="text-[10px] text-indigo-400 font-semibold text-center">
                     {parseFloat(c.min_price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
@@ -249,12 +253,11 @@ export default function CardDetail() {
     </div>
   );
 
-  /* ── Stat items ── */
   const statItems = [
-    card.hp            ? { Icon: Heart,     label: 'HP',             val: String(card.hp) } : null,
-    cardTypes.length   ? { Icon: Zap,       label: 'Tür',            val: cardTypes.join(', ') } : null,
-    card.artist        ? { Icon: Pencil,    label: 'Sanatçı',        val: card.artist } : null,
-    card.set_release_date ? { Icon: Calendar, label: 'Çıkış Tarihi', val: fmtDate(card.set_release_date) ?? '' } : null,
+    card.hp               ? { Icon: Heart,    label: 'HP',             val: String(card.hp) } : null,
+    cardTypes.length      ? { Icon: Zap,      label: 'Tür',            val: cardTypes.join(', ') } : null,
+    card.artist           ? { Icon: Pencil,   label: 'Sanatçı',        val: card.artist } : null,
+    card.set_release_date ? { Icon: Calendar, label: 'Çıkış Tarihi',   val: fmtDate(card.set_release_date) ?? '' } : null,
     (card.card_number && card.set_total_cards)
       ? { Icon: Hash, label: 'Sıra', val: `${card.card_number}/${card.set_total_cards}` } : null,
   ].filter(Boolean) as { Icon: any; label: string; val: string }[];
@@ -267,7 +270,7 @@ export default function CardDetail() {
       />
       <Header />
 
-      <main className="pb-20 sm:pb-0">
+      <main>
 
         {/* ── Breadcrumb ── */}
         <nav className="max-w-screen-xl mx-auto px-4 sm:px-8 pt-3 pb-1">
@@ -282,241 +285,236 @@ export default function CardDetail() {
           </ol>
         </nav>
 
-        {/* ── Main content ── */}
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-8 py-3 lg:py-5">
-          <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-6 lg:gap-10 items-start">
+        {/* ── Desktop: viewport-height flex container ─── Mobile: normal flow ── */}
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-8 pt-3
+          lg:flex lg:gap-10 lg:items-start lg:overflow-hidden lg:h-[calc(100vh-132px)]">
 
-            {/* ── LEFT: card visual ── */}
-            <div className="flex flex-col items-center lg:sticky lg:top-4">
+          {/* ── LEFT: card (sticky on desktop) ── */}
+          <div className="lg:w-[340px] xl:w-[380px] lg:shrink-0 lg:sticky lg:top-0 lg:self-start flex flex-col items-center">
 
-              {/* Mobile: card + name side by side */}
-              <div className="grid grid-cols-[auto_1fr] gap-3 w-full lg:block">
-                <div className="lg:w-full">
-                  <HoloCard src={imgSrc} alt={card.name} />
-                </div>
-
-                {/* Mobile-only: badges + name beside card */}
-                <div className="lg:hidden flex flex-col justify-center gap-2 min-w-0">
-                  <div className="flex flex-wrap gap-1">
-                    {card.rarity && (
-                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
-                        {card.rarity}
-                      </span>
-                    )}
-                    {card.card_number && (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
-                        #{card.card_number}
-                      </span>
-                    )}
-                  </div>
-                  <h1 className="text-[22px] font-bold text-white leading-[1.08] tracking-tight"
-                    style={{ fontFamily: 'var(--font-display)' }}>
-                    {card.name}
-                  </h1>
-                  <p className="text-xs text-zinc-500 leading-tight">
-                    {card.set_name}{card.set_series ? ` · ${card.set_series}` : ''}
-                  </p>
-                </div>
+            {/* Mobile: card + name in 2-col */}
+            <div className="grid grid-cols-[auto_1fr] gap-3 w-full lg:block">
+              <div className="lg:w-full">
+                <HoloCard src={imgSrc} alt={card.name} />
               </div>
-
-              {/* Set logo */}
-              {(card.set_logo_url || card.set_symbol_url) && (
-                <div className="flex items-center gap-3 mt-2 opacity-50 hover:opacity-75 transition-opacity">
-                  {card.set_logo_url && <img src={card.set_logo_url} alt={card.set_name} className="h-7 object-contain" />}
-                  {card.set_symbol_url && <img src={card.set_symbol_url} alt="" className="h-5 object-contain" />}
-                </div>
-              )}
-            </div>
-
-            {/* ── RIGHT: info panel ── */}
-            <div className="space-y-3.5">
-
-              {/* Desktop-only: badges + name */}
-              <div className="hidden lg:block space-y-2">
-                <div className="flex flex-wrap gap-1.5">
+              <div className="lg:hidden flex flex-col justify-center gap-2 min-w-0">
+                <div className="flex flex-wrap gap-1">
                   {card.rarity && (
-                    <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
                       {card.rarity}
                     </span>
                   )}
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
-                    {card.set_name}
-                  </span>
                   {card.card_number && (
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
                       #{card.card_number}
                     </span>
                   )}
                 </div>
-                <h1 className="text-[34px] xl:text-[40px] font-bold text-white leading-[1.05] tracking-[-0.025em]"
+                <h1 className="text-[22px] font-bold text-white leading-[1.08] tracking-tight"
                   style={{ fontFamily: 'var(--font-display)' }}>
                   {card.name}
                 </h1>
-                <p className="text-sm text-zinc-500">
-                  <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-300 transition-colors">{card.set_name}</Link>
-                  {card.set_series && <span> · {card.set_series}</span>}
+                <p className="text-xs text-zinc-500 leading-tight">
+                  {card.set_name}{card.set_series ? ` · ${card.set_series}` : ''}
                 </p>
               </div>
+            </div>
 
-              {/* Desktop stat grid */}
-              {statItems.length > 0 && (
-                <div className="hidden lg:grid grid-cols-5 gap-3 py-3 border-y border-white/[0.07]">
-                  {statItems.map(({ Icon, label, val }) => (
-                    <div key={label} className="flex flex-col gap-0.5">
-                      <span className="text-[9px] text-zinc-600 uppercase tracking-widest">{label}</span>
-                      <span className="text-sm font-semibold text-zinc-200 truncate">{val}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Mobile stat rows (icon + label left, value right) */}
-              {statItems.length > 0 && (
-                <div className="lg:hidden rounded-xl border border-white/[0.07] overflow-hidden">
-                  {statItems.map(({ Icon, label, val }, i) => (
-                    <div key={label} className={`flex items-center justify-between px-3.5 py-2.5 ${i > 0 ? 'border-t border-white/[0.06]' : ''}`}>
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-                        <span className="text-xs text-zinc-500">{label}</span>
-                      </div>
-                      <span className="text-sm font-semibold text-zinc-200 truncate max-w-[140px] text-right">{val}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Mobile: Orijinal Kart Garantisi badge */}
-              <div className="lg:hidden flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-white/[0.07]">
-                <Shield className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span className="text-sm font-medium text-zinc-300">Orijinal Kart Garantisi</span>
+            {/* Set logo */}
+            {(card.set_logo_url || card.set_symbol_url) && (
+              <div className="flex items-center gap-3 mt-2 opacity-50 hover:opacity-75 transition-opacity">
+                {card.set_logo_url && <img src={card.set_logo_url} alt={card.set_name} className="h-7 object-contain" />}
+                {card.set_symbol_url && <img src={card.set_symbol_url} alt="" className="h-5 object-contain" />}
               </div>
+            )}
+          </div>
 
-              {/* ── Condition + Price Box ── */}
-              <div className="rounded-2xl border border-white/[0.1] overflow-hidden" style={{ background: 'rgba(255,255,255,0.035)' }}>
+          {/* ── RIGHT: info panel (scrollable on desktop) ── */}
+          <div className="mt-4 lg:mt-0 lg:flex-1 lg:min-w-0 lg:overflow-y-auto lg:h-full lg:pr-1 space-y-3.5 pb-6">
 
-                {sortedListings.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2">
-
-                    {/* Left: condition list */}
-                    <div className="sm:border-r border-b sm:border-b-0 border-white/[0.08]">
-                      <div className="px-4 py-2.5 border-b border-white/[0.08]">
-                        <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Kart Durumu</span>
-                      </div>
-                      {sortedListings.map((listing: any) => {
-                        const isSel = (selectedListingId ?? sortedListings[0]?.id) === listing.id;
-                        return (
-                          <button key={listing.id}
-                            data-testid={`btn-condition-${listing.condition}`}
-                            onClick={() => { setSelectedListingId(listing.id); setQuantity(1); }}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] last:border-0 transition-all duration-150 text-left ${
-                              isSel ? 'bg-indigo-600/25' : 'hover:bg-white/[0.04]'
-                            }`}
-                          >
-                            <span className={`text-sm ${isSel ? 'text-white font-medium' : 'text-zinc-400'}`}>
-                              {CONDITION_LABELS[listing.condition] ?? listing.condition}
-                            </span>
-                            <span className={`text-sm font-semibold tabular-nums ${isSel ? 'text-indigo-300' : 'text-zinc-400'}`}>
-                              ₺{parseFloat(listing.price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Right: price + buy */}
-                    <div className="flex flex-col p-4 gap-3">
-                      <div className="px-0 py-0 border-b border-white/[0.08] pb-3">
-                        <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Fiyat</span>
-                      </div>
-
-                      {price != null ? (
-                        <div className="text-[36px] sm:text-[40px] font-bold leading-none tracking-tight"
-                          style={{ color: '#8b7cf8', fontFamily: 'var(--font-display)' }}>
-                          ₺{price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 py-2">
-                          {[0, 150, 300].map((d) => (
-                            <span key={d} className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-pulse" style={{ animationDelay: `${d}ms` }} />
-                          ))}
-                          <span className="text-sm text-zinc-600 ml-1">Fiyat yakında</span>
-                        </div>
-                      )}
-
-                      {lowStock && stock !== null && (
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          <span className="text-xs text-emerald-400">Stokta son {stock} ürün kaldı!</span>
-                        </div>
-                      )}
-
-                      {selectedListing && (
-                        <div className="flex items-center gap-2 mt-auto">
-                          <div className="flex items-center rounded-lg overflow-hidden border border-white/10">
-                            <button data-testid="btn-qty-dec"
-                              onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                              disabled={quantity <= 1}
-                              className="w-8 h-8 flex items-center justify-center bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-25">
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <div className="w-10 h-8 bg-white/[0.03] flex items-center justify-center border-x border-white/10">
-                              <span className="text-sm font-bold text-white">{quantity}</span>
-                            </div>
-                            <button data-testid="btn-qty-inc"
-                              onClick={() => setQuantity(q => Math.min(q + 1, 99))}
-                              disabled={quantity >= 99}
-                              className="w-8 h-8 flex items-center justify-center bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-25">
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      <button data-testid="btn-addtocart"
-                        onClick={handleAddToCart}
-                        disabled={isAdding || !selectedListing}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-indigo-950/50">
-                        {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
-                        {isAdding ? 'Ekleniyor…' : selectedListing ? 'Sepete Ekle' : 'Fiyat Bekleniyor'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* No listings */
-                  <div className="p-5 text-center">
-                    <div className="flex items-center justify-center gap-1.5 mb-2">
-                      {[0, 150, 300].map((d) => (
-                        <span key={d} className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-pulse" style={{ animationDelay: `${d}ms` }} />
-                      ))}
-                    </div>
-                    <p className="text-sm text-zinc-500">Fiyat yakında güncelleniyor</p>
-                  </div>
+            {/* Desktop-only: badges + name */}
+            <div className="hidden lg:block space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {card.rarity && (
+                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
+                    {card.rarity}
+                  </span>
+                )}
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
+                  {card.set_name}
+                </span>
+                {card.card_number && (
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
+                    #{card.card_number}
+                  </span>
                 )}
               </div>
+              <h1 className="text-[34px] xl:text-[40px] font-bold text-white leading-[1.05] tracking-[-0.025em]"
+                style={{ fontFamily: 'var(--font-display)' }}>
+                {card.name}
+              </h1>
+              <p className="text-sm text-zinc-500">
+                <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-300 transition-colors">{card.set_name}</Link>
+                {card.set_series && <span> · {card.set_series}</span>}
+              </p>
+            </div>
 
-              {/* ── Trust row ── */}
-              <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/[0.07] p-3">
-                {[
-                  { Icon: Shield,  title: 'Güvenli Alışveriş', sub: '256-Bit SSL ile korunur' },
-                  { Icon: Zap,     title: 'Hızlı Kargo',       sub: '1-2 iş günü içinde kargoda' },
-                  { Icon: Package, title: 'İade Garantisi',     sub: '14 gün koşulsuz iade' },
-                ].map(({ Icon, title, sub }) => (
-                  <div key={title} className="flex flex-col items-center text-center gap-1.5">
-                    <div className="w-7 h-7 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                      <Icon className="w-3.5 h-3.5 text-indigo-400" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-zinc-300 leading-tight">{title}</span>
-                    <span className="text-[9px] text-zinc-600 leading-tight hidden sm:block">{sub}</span>
+            {/* Desktop stat grid (5 cols) */}
+            {statItems.length > 0 && (
+              <div className="hidden lg:grid grid-cols-5 gap-3 py-3 border-y border-white/[0.07]">
+                {statItems.map(({ Icon, label, val }) => (
+                  <div key={label} className="flex flex-col gap-0.5">
+                    <span className="text-[9px] text-zinc-600 uppercase tracking-widest">{label}</span>
+                    <span className="text-sm font-semibold text-zinc-200 truncate">{val}</span>
                   </div>
                 ))}
               </div>
+            )}
 
+            {/* Mobile stat rows */}
+            {statItems.length > 0 && (
+              <div className="lg:hidden rounded-xl border border-white/[0.07] overflow-hidden">
+                {statItems.map(({ Icon, label, val }, i) => (
+                  <div key={label} className={`flex items-center justify-between px-3.5 py-2.5 ${i > 0 ? 'border-t border-white/[0.06]' : ''}`}>
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+                      <span className="text-xs text-zinc-500">{label}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-zinc-200 truncate max-w-[140px] text-right">{val}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Mobile: Orijinal Kart Garantisi badge */}
+            <div className="lg:hidden flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-white/[0.07]">
+              <Shield className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span className="text-sm font-medium text-zinc-300">Orijinal Kart Garantisi</span>
             </div>
+
+            {/* ── Condition + Price box ── */}
+            <div className="rounded-2xl border border-white/[0.1] overflow-hidden" style={{ background: 'rgba(255,255,255,0.035)' }}>
+              {sortedListings.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2">
+
+                  {/* Left: condition list */}
+                  <div className="sm:border-r border-b sm:border-b-0 border-white/[0.08]">
+                    <div className="px-4 py-2.5 border-b border-white/[0.08]">
+                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Kart Durumu</span>
+                    </div>
+                    {sortedListings.map((listing: any) => {
+                      const isSel = (selectedListingId ?? sortedListings[0]?.id) === listing.id;
+                      return (
+                        <button key={listing.id}
+                          data-testid={`btn-condition-${listing.condition}`}
+                          onClick={() => { setSelectedListingId(listing.id); setQuantity(1); }}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] last:border-0 transition-all duration-150 text-left ${
+                            isSel ? 'bg-indigo-600/25' : 'hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <span className={`text-sm ${isSel ? 'text-white font-medium' : 'text-zinc-400'}`}>
+                            {CONDITION_LABELS[listing.condition] ?? listing.condition}
+                          </span>
+                          <span className={`text-sm font-semibold tabular-nums ${isSel ? 'text-indigo-300' : 'text-zinc-400'}`}>
+                            ₺{parseFloat(listing.price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right: price + buy */}
+                  <div className="flex flex-col p-4 gap-3">
+                    <div className="border-b border-white/[0.08] pb-3">
+                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Fiyat</span>
+                    </div>
+
+                    {price != null ? (
+                      <div className="text-[36px] sm:text-[40px] font-bold leading-none tracking-tight"
+                        style={{ color: '#8b7cf8', fontFamily: 'var(--font-display)' }}>
+                        ₺{price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 py-2">
+                        {[0, 150, 300].map((d) => (
+                          <span key={d} className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-pulse" style={{ animationDelay: `${d}ms` }} />
+                        ))}
+                        <span className="text-sm text-zinc-600 ml-1">Fiyat yakında</span>
+                      </div>
+                    )}
+
+                    {lowStock && stock !== null && (
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span className="text-xs text-emerald-400">Stokta son {stock} ürün kaldı!</span>
+                      </div>
+                    )}
+
+                    {selectedListing && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center rounded-lg overflow-hidden border border-white/10">
+                          <button data-testid="btn-qty-dec"
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            disabled={quantity <= 1}
+                            className="w-8 h-8 flex items-center justify-center bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-25">
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <div className="w-10 h-8 bg-white/[0.03] flex items-center justify-center border-x border-white/10">
+                            <span className="text-sm font-bold text-white">{quantity}</span>
+                          </div>
+                          <button data-testid="btn-qty-inc"
+                            onClick={() => setQuantity(q => Math.min(q + 1, 99))}
+                            disabled={quantity >= 99}
+                            className="w-8 h-8 flex items-center justify-center bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-25">
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button data-testid="btn-addtocart"
+                      onClick={handleAddToCart}
+                      disabled={isAdding || !selectedListing}
+                      className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-indigo-950/50">
+                      {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
+                      {isAdding ? 'Ekleniyor…' : selectedListing ? 'Sepete Ekle' : 'Fiyat Bekleniyor'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-2">
+                    {[0, 150, 300].map((d) => (
+                      <span key={d} className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-pulse" style={{ animationDelay: `${d}ms` }} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-zinc-500">Fiyat yakında güncelleniyor</p>
+                </div>
+              )}
+            </div>
+
+            {/* ── Trust row (subtitles shown on all breakpoints) ── */}
+            <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/[0.07] p-3">
+              {[
+                { Icon: Shield,  title: 'Güvenli Alışveriş', sub: '256-Bit SSL ile korunur' },
+                { Icon: Zap,     title: 'Hızlı Kargo',       sub: '1-2 iş günü içinde kargoda' },
+                { Icon: Package, title: 'İade Garantisi',     sub: '14 gün koşulsuz iade' },
+              ].map(({ Icon, title, sub }) => (
+                <div key={title} className="flex flex-col items-center text-center gap-1.5">
+                  <div className="w-7 h-7 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                    <Icon className="w-3.5 h-3.5 text-indigo-400" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-zinc-300 leading-tight">{title}</span>
+                  <span className="text-[9px] text-zinc-600 leading-tight">{sub}</span>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
 
-        {/* ── Set cards ── */}
-        <SetCardsRow cards={similar} setSlug={card.set_slug} setName={card.set_name} />
+        {/* ── Set cards (always below the viewport-constrained area) ── */}
+        <SetCardsRow cards={similar} setSlug={card.set_slug} />
 
       </main>
     </div>

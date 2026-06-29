@@ -39,6 +39,8 @@ const GamePage = lazy(() => import("@/pages/GamePage"));
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 const PaymentFail = lazy(() => import("@/pages/PaymentFail"));
 const OrderTracking = lazy(() => import("@/pages/OrderTracking"));
+const Collection = lazy(() => import("@/pages/Collection"));
+const Favorites = lazy(() => import("@/pages/Favorites"));
 
 function PageLoader() {
   return (
@@ -77,6 +79,8 @@ function Router() {
         <Route path="/mesafeli-satis-sozlesmesi" component={DistanceSalesAgreement} />
         <Route path="/iptal-ve-iade" component={CancellationPolicy} />
         <Route path="/kvkk" component={KVKK} />
+        <Route path="/koleksiyon" component={Collection} />
+        <Route path="/favoriler" component={Favorites} />
         <Route path="/toov-admin/login" component={AdminLogin} />
         <Route path="/toov-admin/orders/:id" component={AdminOrderDetail} />
         <Route path="/toov-admin" component={AdminDashboard} />
@@ -94,7 +98,7 @@ function App() {
         <CartProvider>
           <CartModalProvider>
             <TooltipProvider>
-              <div className="relative w-full">
+              <div className="relative w-full pb-16 sm:pb-0">
                 <SmoothScroll />
                 <Toaster />
                 <Router />
