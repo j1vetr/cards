@@ -828,6 +828,9 @@ export class DbStorage implements IStorage {
     const existing = await db.select().from(cartItems).where(
       and(
         eq(cartItems.sessionId, item.sessionId),
+        item.cardListingId
+          ? eq(cartItems.cardListingId, item.cardListingId)
+          : sql`${cartItems.cardListingId} IS NULL`,
         item.productId ? eq(cartItems.productId, item.productId) : sql`${cartItems.productId} IS NULL`,
         item.variantId ? eq(cartItems.variantId, item.variantId) : sql`${cartItems.variantId} IS NULL`
       )
