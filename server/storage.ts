@@ -2355,14 +2355,21 @@ export class DbStorage implements IStorage {
     const setFilter = filters.setSlug ? sql`AND cs.slug = ${filters.setSlug}` : sql``;
     const rarityFilter = filters.rarity ? sql`AND LOWER(c.rarity) = LOWER(${filters.rarity})` : sql``;
     const cardTypeFilter = filters.cardType ? sql`AND c.card_types @> ${JSON.stringify([filters.cardType])}::jsonb` : sql``;
-    const searchFilter = filters.search ? sql`AND (c.name ILIKE ${'%' + filters.search + '%'} OR c.card_number ILIKE ${'%' + filters.search + '%'})` : sql``;
-    const conditionJoinFilter = filters.condition ? sql`AND cl.condition = ${filters.condition}` : sql``;
+    const searchQuery = filters.search ? '%' + filters.search + '%' : null;
+    const searchFilter = searchQuery
+      ? sql`AND (c.name ILIKE ${searchQuery} OR c.card_number ILIKE ${searchQuery} OR cs.name ILIKE ${searchQuery})`
+      : sql``;
+
+    // listingExpr: unified predicate for a "qualifying" listing row (respects condition filter)
+    const listingExpr = filters.condition
+      ? sql`(cl.is_active = true AND cl.stock > 0 AND cl.condition = ${filters.condition})`
+      : sql`(cl.is_active = true AND cl.stock > 0)`;
 
     const minPriceHaving = filters.minPrice != null
-      ? sql`AND MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 ${conditionJoinFilter} THEN cl.price::numeric END) >= ${filters.minPrice}`
+      ? sql`AND MIN(CASE WHEN ${listingExpr} THEN cl.price::numeric END) >= ${filters.minPrice}`
       : sql``;
     const maxPriceHaving = filters.maxPrice != null
-      ? sql`AND MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 ${conditionJoinFilter} THEN cl.price::numeric END) <= ${filters.maxPrice}`
+      ? sql`AND MIN(CASE WHEN ${listingExpr} THEN cl.price::numeric END) <= ${filters.maxPrice}`
       : sql``;
 
     let orderClause: ReturnType<typeof sql>;
@@ -2378,13 +2385,15 @@ export class DbStorage implements IStorage {
         cs.id AS set_id, cs.name AS set_name, cs.slug AS set_slug,
         cs.logo_url AS set_logo_url, cs.symbol_url AS set_symbol_url,
         cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug,
-        MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.price::numeric END) AS min_price,
-        COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END)::int AS listing_count,
-        ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.condition END), NULL) AS available_conditions
+        MIN(CASE WHEN ${listingExpr} THEN cl.price::numeric END) AS min_price,
+        COUNT(CASE WHEN ${listingExpr} THEN 1 END)::int AS listing_count,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN ${listingExpr} THEN cl.condition END), NULL) AS available_conditions,
+        MAX(cp.price_market::numeric) AS market_price
       FROM cards c
       JOIN card_sets cs ON cs.id = c.set_id
       JOIN card_games cg ON cg.id = cs.game_id
       LEFT JOIN card_listings cl ON cl.card_id = c.id
+      LEFT JOIN card_prices cp ON cp.card_id = c.id AND cp.source = 'pricecharting'
       WHERE c.is_active = true
         ${gameFilter}
         ${setFilter}
@@ -2392,7 +2401,7 @@ export class DbStorage implements IStorage {
         ${cardTypeFilter}
         ${searchFilter}
       GROUP BY c.id, cs.id, cg.id
-      HAVING COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END) > 0
+      HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0
         ${minPriceHaving}
         ${maxPriceHaving}
       ORDER BY ${orderClause}
@@ -2413,7 +2422,7 @@ export class DbStorage implements IStorage {
           ${cardTypeFilter}
           ${searchFilter}
         GROUP BY c.id
-        HAVING COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END) > 0
+        HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0
           ${minPriceHaving}
           ${maxPriceHaving}
       ) sub
@@ -2531,6 +2540,19 @@ export class DbStorage implements IStorage {
       ORDER BY c.rarity ASC
     `);
     return (result.rows as any[]).map(r => r.rarity).filter(Boolean);
+  }
+
+  async getCardTypesPublic(gameSlug?: string): Promise<string[]> {
+    const gameFilter = gameSlug ? sql`AND cg.slug = ${gameSlug}` : sql``;
+    const result = await db.execute(sql`
+      SELECT DISTINCT jsonb_array_elements_text(c.card_types) AS type
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      WHERE c.is_active = true AND jsonb_array_length(c.card_types) > 0 ${gameFilter}
+      ORDER BY type ASC
+    `);
+    return (result.rows as any[]).map(r => r.type).filter(Boolean);
   }
 
 }

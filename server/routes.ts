@@ -5542,6 +5542,16 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  app.get("/api/cards/types", async (req, res) => {
+    try {
+      const game = req.query.game as string | undefined;
+      const types = await storage.getCardTypesPublic(game);
+      res.json(types);
+    } catch (err) {
+      res.status(500).json({ error: "Tipler yüklenemedi" });
+    }
+  });
+
   app.get("/api/cards/:slug", async (req, res) => {
     try {
       const card = await storage.getCardPublicBySlug(req.params.slug);

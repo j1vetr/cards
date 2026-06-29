@@ -25,6 +25,7 @@ export interface CardPublic {
   min_price: string | null;
   listing_count: number;
   available_conditions: string[];
+  market_price?: string | null;
 }
 
 const RARITY_COLORS: Record<string, string> = {
@@ -164,9 +165,16 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
 
               <div className="flex items-center justify-between pt-1">
                 {price != null ? (
-                  <p className="text-base font-bold text-indigo-700">
-                    {price.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
-                  </p>
+                  <div>
+                    <p className="text-base font-bold text-indigo-700">
+                      {price.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
+                    </p>
+                    {card.market_price && (
+                      <p className="text-[10px] text-zinc-400">
+                        Piyasa: ${parseFloat(card.market_price).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-sm text-zinc-400">Stok yok</p>
                 )}

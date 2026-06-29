@@ -126,6 +126,18 @@ export function useRarities(gameSlug?: string) {
   });
 }
 
+export function useCardTypes(gameSlug?: string) {
+  return useQuery<string[]>({
+    queryKey: ['card-types', gameSlug],
+    queryFn: async () => {
+      const qs = gameSlug ? `?game=${gameSlug}` : '';
+      const res = await fetch(`/api/cards/types${qs}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+}
+
 export function useSimilarCards(slug: string) {
   return useQuery<CardPublic[]>({
     queryKey: ['card-similar', slug],

@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCards, useCardSets, useCardGames, useRarities } from '@/hooks/useTcg';
+import { useCards, useCardSets, useCardGames, useRarities, useCardTypes } from '@/hooks/useTcg';
 
 const LIMIT = 24;
 
@@ -45,6 +45,7 @@ export default function Store() {
   const selectedGame = urlParams.get('game') || '';
   const selectedSet = urlParams.get('set') || '';
   const selectedRarity = urlParams.get('rarity') || '';
+  const selectedType = urlParams.get('type') || '';
   const selectedCondition = urlParams.get('condition') || '';
   const searchQuery = urlParams.get('search') || '';
   const sort = urlParams.get('sort') || 'newest';
@@ -63,11 +64,13 @@ export default function Store() {
   const { data: games = [] } = useCardGames();
   const { data: sets = [] } = useCardSets(selectedGame || undefined);
   const { data: rarities = [] } = useRarities(selectedGame || undefined);
+  const { data: cardTypes = [] } = useCardTypes(selectedGame || undefined);
 
   const { data, isLoading } = useCards({
     game: selectedGame || undefined,
     set: selectedSet || undefined,
     rarity: selectedRarity || undefined,
+    type: selectedType || undefined,
     condition: selectedCondition || undefined,
     search: searchQuery || undefined,
     sort: sort as any,
@@ -110,7 +113,7 @@ export default function Store() {
     return () => clearTimeout(t);
   }, [localSearch]);
 
-  const activeFilterCount = [selectedGame, selectedSet, selectedRarity, selectedCondition,
+  const activeFilterCount = [selectedGame, selectedSet, selectedRarity, selectedType, selectedCondition,
     urlMinPrice > 0 || urlMaxPrice < MAX_PRICE ? 'price' : ''].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -118,6 +121,8 @@ export default function Store() {
     setLocalSearch('');
     navigate('/magaza', { replace: true });
   };
+
+  // Expose selectedType to FiltersPanel (it's in scope as a closure variable)
 
   const FiltersPanel = () => (
     <div className="space-y-6">
@@ -187,6 +192,28 @@ export default function Store() {
                 }`}
               >
                 {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {cardTypes.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Tip</p>
+          <div className="flex flex-wrap gap-1.5">
+            {cardTypes.map(t => (
+              <button
+                key={t}
+                data-testid={`filter-type-${t}`}
+                onClick={() => setFilter({ type: selectedType === t ? null : t })}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  selectedType === t
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-300'
+                }`}
+              >
+                {t}
               </button>
             ))}
           </div>
