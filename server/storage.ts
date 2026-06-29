@@ -2489,20 +2489,19 @@ export class DbStorage implements IStorage {
     return card;
   }
 
-  async getSimilarCards(cardId: string, setId: string, limit = 8): Promise<any[]> {
+  async getSimilarCards(cardId: string, setId: string, limit = 24): Promise<any[]> {
     const result = await db.execute(sql`
       SELECT
-        c.id, c.name, c.slug, c.rarity, c.image_url,
+        c.id, c.name, c.slug, c.rarity, c.image_url, c.card_number,
         cs.name AS set_name, cs.slug AS set_slug,
-        MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.price::numeric END) AS min_price,
-        ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.condition END), NULL) AS available_conditions
+        MIN(CASE WHEN cl.is_active = true THEN cl.price::numeric END) AS min_price,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN cl.is_active = true THEN cl.condition END), NULL) AS available_conditions
       FROM cards c
       JOIN card_sets cs ON cs.id = c.set_id
       LEFT JOIN card_listings cl ON cl.card_id = c.id
       WHERE c.set_id = ${setId} AND c.id != ${cardId} AND c.is_active = true
       GROUP BY c.id, cs.id
-      HAVING COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END) > 0
-      ORDER BY RANDOM()
+      ORDER BY c.card_number ASC NULLS LAST
       LIMIT ${limit}
     `);
     return result.rows as any[];
@@ -2804,14 +2803,17 @@ export class DbStorage implements IStorage {
     const gameFilter = opts.gameSlug ? sql`AND cg.slug = ${opts.gameSlug}` : sql``;
 
     const rows = await db.execute(sql`
-      SELECT c.id AS card_id, cp.price_market
+      SELECT c.id AS card_id,
+        GREATEST(
+          COALESCE(cp.price_high::numeric, 0),
+          COALESCE(cp.price_market::numeric, 0)
+        ) AS best_price
       FROM cards c
       JOIN card_sets cs ON cs.id = c.set_id
       JOIN card_games cg ON cg.id = cs.game_id
       JOIN card_prices cp ON cp.card_id = c.id AND cp.source = 'pricecharting'
       WHERE c.is_active = true
-        AND cp.price_market IS NOT NULL
-        AND cp.price_market::numeric > 0
+        AND GREATEST(COALESCE(cp.price_high::numeric, 0), COALESCE(cp.price_market::numeric, 0)) > 0
         ${gameFilter}
     `);
 
@@ -2819,7 +2821,7 @@ export class DbStorage implements IStorage {
     let updated = 0;
 
     for (const row of rows.rows as any[]) {
-      const price = (parseFloat(row.price_market) * opts.multiplier).toFixed(2);
+      const price = (parseFloat(row.best_price) * opts.multiplier).toFixed(2);
       const [existing] = await db
         .select({ id: cardListings.id })
         .from(cardListings)

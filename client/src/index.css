@@ -524,3 +524,16 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── TCG Card Detail — Marquee ─────────────────────────────────────── */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-scroll {
+  animation: marquee-scroll 40s linear infinite;
+  will-change: transform;
+}
+.marquee-scroll:hover {
+  animation-play-state: paused;
+}
