@@ -1,7 +1,7 @@
 /**
  * TCG Sync Engine
  * Orchestrates set/card import from Pokemon TCG API and Riftbound (RiftCodex).
- * Logs progress to tcg_sync_runs table.
+ * Creates and manages exactly ONE tcg_sync_run record per call.
  */
 
 import { storage } from "../storage";
@@ -30,9 +30,11 @@ export type SyncMode = "sets" | "cards" | "prices";
 export interface SyncOptions {
   game: SyncGame;
   mode: SyncMode;
-  setApiId?: string;    // if undefined and mode='cards': sync all sets for game
+  setApiId?: string;
   pokemonApiKey?: string;
   pricechartingApiKey?: string;
+  /** If provided, engine uses this existing run record instead of creating a new one. */
+  existingRunId?: string;
   onProgress?: (msg: string) => void;
 }
 
@@ -50,21 +52,29 @@ export interface SyncResult {
   errors: Array<{ context: string; message: string }>;
 }
 
-async function getGameId(slug: "pokemon" | "riftbound"): Promise<string | null> {
+async function getGameId(slug: "pokemon" | "riftbound"): Promise<string> {
   const games = await storage.listCardGames();
   const game = games.find((g) => g.slug === slug);
-  return game?.id ?? null;
+  if (!game) throw new Error(`Oyun bulunamadı: slug="${slug}". Veritabanında card_games seeded mi?`);
+  return game.id;
 }
 
+/**
+ * Run a TCG sync.
+ * If opts.existingRunId is provided, reuses that run record (avoids duplication).
+ * Otherwise creates a new run record.
+ */
 export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
-  const run = await storage.createTcgSyncRun({
-    game: opts.game,
-    mode: opts.mode,
-    status: "running",
-    setApiId: opts.setApiId ?? null,
-    stats: {},
-    errors: [],
-  });
+  const run = opts.existingRunId
+    ? { id: opts.existingRunId }
+    : await storage.createTcgSyncRun({
+        game: opts.game,
+        mode: opts.mode,
+        status: "running",
+        setApiId: opts.setApiId ?? null,
+        stats: {},
+        errors: [],
+      });
 
   const stats = {
     setsProcessed: 0,
@@ -78,7 +88,7 @@ export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
 
   const log = (msg: string) => {
     opts.onProgress?.(msg);
-    console.log(`[tcg-sync] ${msg}`);
+    console.log(`[tcg-sync:${run.id}] ${msg}`);
   };
 
   try {
@@ -110,38 +120,30 @@ async function syncSets(
   if (opts.game === "pokemon_tcg") {
     log("Pokemon TCG setlerini çekiyor…");
     const gameId = await getGameId("pokemon");
-    if (!gameId) throw new Error("Pokemon oyunu veritabanında bulunamadı");
-
     const sets = await fetchPokemonSets(opts.pokemonApiKey);
     log(`${sets.length} set bulundu`);
 
     for (const set of sets) {
       try {
-        const dbData = mapPokemonSetToDb(set, gameId);
-        await storage.upsertCardSet(dbData);
+        await storage.upsertCardSet(mapPokemonSetToDb(set, gameId));
         stats.setsProcessed++;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        errors.push({ context: `set:${set.id}`, message: msg });
+        errors.push({ context: `set:${set.id}`, message: String(err) });
         stats.errors++;
       }
     }
   } else if (opts.game === "riftbound") {
-    log("Riftbound setlerini çekiyor…");
+    log("Riftbound setlerini çekiyor (api.riftcodex.com)…");
     const gameId = await getGameId("riftbound");
-    if (!gameId) throw new Error("Riftbound oyunu veritabanında bulunamadı");
-
     const sets = await fetchRiftboundSets();
     log(`${sets.length} set bulundu`);
 
     for (const set of sets) {
       try {
-        const dbData = mapRiftboundSetToDb(set, gameId);
-        await storage.upsertCardSet(dbData);
+        await storage.upsertCardSet(mapRiftboundSetToDb(set, gameId));
         stats.setsProcessed++;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        errors.push({ context: `set:${set.id}`, message: msg });
+        errors.push({ context: `set:${set.set_id}`, message: String(err) });
         stats.errors++;
       }
     }
@@ -157,26 +159,24 @@ async function syncCards(
 ) {
   const gameSlug = opts.game === "pokemon_tcg" ? "pokemon" : "riftbound";
   const gameId = await getGameId(gameSlug);
-  if (!gameId) throw new Error(`${opts.game} oyunu veritabanında bulunamadı`);
-
   const apiSource = opts.game === "pokemon_tcg" ? "pokemon_tcg" : "riftbound";
+
   const setsToProcess = opts.setApiId
-    ? [await storage.getCardSetByApiId(opts.setApiId, apiSource)]
+    ? [await storage.getCardSetByApiId(opts.setApiId, apiSource)].filter(Boolean)
     : await storage.listCardSetsByGame(gameId);
 
-  const validSets = setsToProcess.filter(Boolean) as Awaited<ReturnType<typeof storage.listCardSetsByGame>>;
-
-  if (validSets.length === 0) {
-    log("İşlenecek set bulunamadı. Önce set sync yapın.");
-    return;
+  if (setsToProcess.length === 0) {
+    throw new Error(
+      "İşlenecek set bulunamadı. Önce 'Set Import' modunu çalıştırın.",
+    );
   }
 
-  log(`${validSets.length} set için kart import başlıyor…`);
+  log(`${setsToProcess.length} set için kart import başlıyor…`);
 
-  for (const set of validSets) {
+  for (const set of setsToProcess) {
     if (!set) continue;
     try {
-      log(`Set işleniyor: ${set.name} (${set.apiId})`);
+      log(`Set işleniyor: ${set.name} (apiId: ${set.apiId})`);
 
       const rawCards =
         opts.game === "pokemon_tcg"
@@ -197,15 +197,13 @@ async function syncCards(
           else stats.cardsUpdated++;
           stats.cardsProcessed++;
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          errors.push({ context: `card:${(raw as any).id}`, message: msg });
+          errors.push({ context: `card:${(raw as any).id}`, message: String(err) });
           stats.errors++;
         }
       }
       stats.setsProcessed++;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      errors.push({ context: `set:${set.name}`, message: msg });
+      errors.push({ context: `set:${set.name}`, message: String(err) });
       stats.errors++;
     }
   }
@@ -220,11 +218,10 @@ async function syncPrices(
   log: (m: string) => void,
 ) {
   if (!opts.pricechartingApiKey) {
-    throw new Error("PriceCharting API key gerekli. Ayarlar → pricecharting_api_key.");
+    throw new Error("PriceCharting API key gerekli. Ayarlar → site_settings → pricecharting_api_key.");
   }
 
   log("PriceCharting fiyat güncellemesi başlıyor…");
-
   const allCards = await storage.listAllActiveCards();
   log(`${allCards.length} kart için fiyat çekilecek`);
 
@@ -245,8 +242,7 @@ async function syncPrices(
       }
       await sleep(RATE_DELAY_MS);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      errors.push({ context: `price:${card.name}`, message: msg });
+      errors.push({ context: `price:${card.name}`, message: String(err) });
       stats.errors++;
     }
   }

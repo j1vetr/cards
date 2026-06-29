@@ -5427,11 +5427,13 @@ Sitemap: ${baseUrl}/sitemap.xml
         });
       }
 
-      // Run sync in background (don't await — respond immediately with runId)
+      // Engine creates exactly one run record; fire-and-forget background execution
       const { runTcgSync } = await import("./tcg/syncEngine");
 
-      // Create the run record first so client gets the ID
-      const run = await storage.createTcgSyncRun({
+      // Start sync in background so route responds immediately
+      // runTcgSync creates the DB run record itself — we pre-create a placeholder
+      // row so the client has an ID to poll before the engine has started
+      const pendingRun = await storage.createTcgSyncRun({
         game,
         mode,
         status: "running",
@@ -5440,27 +5442,21 @@ Sitemap: ${baseUrl}/sitemap.xml
         errors: [],
       });
 
-      // Fire and forget
+      // Fire and forget — engine will NOT create a duplicate run when given
+      // a pre-created runId (engine reads opts.existingRunId if present)
       runTcgSync({
         game,
         mode,
         setApiId,
         pokemonApiKey,
         pricechartingApiKey,
-        onProgress: (msg) => console.log(`[tcg-sync:${run.id}] ${msg}`),
-      }).then(async (result) => {
-        await storage.completeTcgSyncRun(run.id, result.status, result.stats, result.errors);
-      }).catch(async (err) => {
-        console.error("[tcg-sync] unexpected error:", err);
-        await storage.completeTcgSyncRun(
-          run.id,
-          "failed",
-          {},
-          [{ context: "engine", message: String(err) }],
-        );
+        existingRunId: pendingRun.id,
+        onProgress: (msg) => console.log(`[tcg-sync:${pendingRun.id}] ${msg}`),
+      }).catch((err) => {
+        console.error("[tcg-sync] unexpected engine error:", err);
       });
 
-      res.json({ runId: run.id, message: "Sync başlatıldı" });
+      res.json({ runId: pendingRun.id, message: "Sync başlatıldı" });
     } catch (err) {
       console.error("[TCG] sync error:", err);
       res.status(500).json({ error: "Sync başlatılamadı" });
