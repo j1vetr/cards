@@ -62,7 +62,7 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
   return (
     <div
       className="relative flex items-center justify-center select-none touch-none"
-      style={{ perspective: '1000px', padding: '32px 20px' }}
+      style={{ perspective: '1000px', padding: '24px 16px' }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       onTouchMove={onTouchMove}
@@ -85,7 +85,7 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
           draggable={false}
           className="h-auto w-full"
           style={{
-            maxWidth: 'clamp(160px, 45vw, 280px)',
+            maxWidth: 'clamp(200px, 52vw, 300px)',
             borderRadius: '4.5% / 3.3%',
             filter: 'drop-shadow(0 24px 48px rgba(79,70,229,0.65)) drop-shadow(0 4px 12px rgba(0,0,0,0.95))',
           }}
@@ -270,9 +270,9 @@ export default function CardDetail() {
             <div className="flex flex-col items-center gap-3 sm:sticky sm:top-6">
               <HoloCard src={imgSrc} alt={card.name} />
               {(card.set_logo_url || card.set_symbol_url) && (
-                <div className="flex items-center gap-3 opacity-35 hover:opacity-60 transition-opacity">
-                  {card.set_logo_url && <img src={card.set_logo_url} alt={card.set_name} className="h-5 object-contain" />}
-                  {card.set_symbol_url && <img src={card.set_symbol_url} alt="" className="h-4 object-contain" />}
+                <div className="flex items-center gap-3 opacity-50 hover:opacity-75 transition-opacity">
+                  {card.set_logo_url && <img src={card.set_logo_url} alt={card.set_name} className="h-7 object-contain" />}
+                  {card.set_symbol_url && <img src={card.set_symbol_url} alt="" className="h-5 object-contain" />}
                 </div>
               )}
             </div>
@@ -309,13 +309,13 @@ export default function CardDetail() {
                   <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-300 transition-colors">
                     {card.set_name}
                   </Link>
-                  {card.set_series && <span className="text-zinc-700"> · {card.set_series}</span>}
+                  {card.set_series && <span className="text-zinc-500"> · {card.set_series}</span>}
                 </p>
               </div>
 
               {/* Stat row: HP · types · artist · number */}
               {(card.hp || cardTypes.length || card.artist || card.card_number) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 border-y border-white/[0.07]">
+                <div className="grid grid-cols-3 gap-x-4 gap-y-3 py-3 border-y border-white/[0.07]">
                   {card.hp && (
                     <div className="flex flex-col">
                       <span className="text-[9px] text-zinc-600 uppercase tracking-widest">HP</span>
