@@ -21,6 +21,7 @@ const CONDITION_LABELS: Record<string, string> = {
 
 const FALLBACK = 'https://images.pokemontcg.io/sv3pt5/logo.png';
 
+/* ── 3D Tilt Card ──────────────────────────────────────────────────── */
 function HoloCard({ src, alt }: { src: string; alt: string }) {
   const [imgSrc, setImgSrc] = useState(src);
   const x = useMotionValue(0);
@@ -32,27 +33,41 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
 
   useEffect(() => { if (src) setImgSrc(src); }, [src]);
 
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    x.set((e.clientX - r.left) / r.width - 0.5);
-    y.set((e.clientY - r.top) / r.height - 0.5);
-  }, [x, y]);
+  const getRelative = (clientX: number, clientY: number, el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    x.set((clientX - r.left) / r.width - 0.5);
+    y.set((clientY - r.top) / r.height - 0.5);
+  };
 
-  const onLeave = useCallback(() => { x.set(0); y.set(0); }, [x, y]);
+  const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    getRelative(e.clientX, e.clientY, e.currentTarget);
+  }, []);
+
+  const onMouseLeave = useCallback(() => { x.set(0); y.set(0); }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const t = e.touches[0];
+    if (t) getRelative(t.clientX, t.clientY, e.currentTarget);
+  }, []);
+
+  const onTouchEnd = useCallback(() => { x.set(0); y.set(0); }, []);
 
   return (
     <div
-      className="relative flex items-center justify-center select-none py-8"
+      className="relative flex items-center justify-center select-none py-6 sm:py-8 touch-none"
       style={{ perspective: '1100px' }}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
+      {/* Ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 60%, rgba(99,102,241,0.55) 0%, rgba(79,70,229,0.22) 38%, transparent 68%)',
-          filter: 'blur(48px)',
-          transform: 'scale(1.4)',
+          background: 'radial-gradient(ellipse at 50% 65%, rgba(99,102,241,0.6) 0%, rgba(79,70,229,0.25) 40%, transparent 70%)',
+          filter: 'blur(50px)',
+          transform: 'scale(1.5)',
         }}
       />
       <motion.div
@@ -64,10 +79,10 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
           alt={alt}
           onError={() => setImgSrc(FALLBACK)}
           draggable={false}
-          className="w-full max-w-[230px] sm:max-w-[270px] lg:max-w-[300px] xl:max-w-[320px] h-auto"
+          className="w-full max-w-[190px] sm:max-w-[240px] lg:max-w-[290px] xl:max-w-[310px] h-auto"
           style={{
             borderRadius: '4.5% / 3.3%',
-            filter: 'drop-shadow(0 32px 56px rgba(79,70,229,0.6)) drop-shadow(0 4px 16px rgba(0,0,0,0.9))',
+            filter: 'drop-shadow(0 28px 50px rgba(79,70,229,0.65)) drop-shadow(0 4px 14px rgba(0,0,0,0.95))',
           }}
         />
       </motion.div>
@@ -75,49 +90,61 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+/* ── Same-Set Marquee ──────────────────────────────────────────────── */
 function Marquee({ cards, setSlug, setName }: {
   cards: any[];
   setSlug?: string;
   setName?: string;
 }) {
   if (!cards.length) return null;
-  const items = cards.length < 6 ? [...cards, ...cards, ...cards, ...cards] : [...cards, ...cards];
+  const copies = cards.length < 8 ? 4 : 2;
+  const items = Array.from({ length: copies }, () => cards).flat();
 
   return (
-    <section className="border-t border-white/[0.06] py-10 overflow-hidden">
-      <div className="max-w-screen-xl mx-auto px-6 sm:px-10 mb-7 flex items-center justify-between">
-        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.14em]">
+    <section className="border-t border-white/[0.08] py-10 overflow-hidden">
+      <div className="max-w-screen-xl mx-auto px-5 sm:px-8 mb-5 flex items-center justify-between">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-[0.15em]">
           Bu Setteki Diğer Kartlar
         </h2>
         {setSlug && (
           <Link
             href={`/set/${setSlug}`}
-            className="text-[11px] text-indigo-500 hover:text-indigo-400 transition-colors flex items-center gap-1"
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
           >
-            {setName} <ChevronRight className="w-3 h-3" />
+            {setName} <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         )}
       </div>
 
-      <div className="flex gap-4 marquee-scroll" style={{ width: 'max-content', paddingLeft: '1rem' }}>
+      <div
+        className="flex marquee-scroll"
+        style={{ width: 'max-content', gap: '14px', paddingLeft: '16px' }}
+      >
         {items.map((c: any, i: number) => (
           <Link key={`${c.id}-${i}`} href={`/kart/${c.slug}`}>
-            <div className="w-[96px] shrink-0 group cursor-pointer">
-              <div className="rounded-xl overflow-hidden bg-white/[0.03]">
+            <div className="shrink-0 group cursor-pointer" style={{ width: '160px' }}>
+              {/* Card image */}
+              <div className="rounded-xl overflow-hidden" style={{ height: '224px', background: 'rgba(255,255,255,0.03)' }}>
                 <img
                   src={c.image_url || FALLBACK}
                   alt={c.name}
                   loading="lazy"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
-                  className="w-full h-[132px] object-contain transition-transform duration-300 group-hover:scale-105"
-                  style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6))' }}
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.7))' }}
                 />
               </div>
-              <p className="text-[10px] text-zinc-700 mt-1.5 truncate group-hover:text-zinc-400 transition-colors text-center">
+              {/* Name */}
+              <p className="text-xs text-zinc-300 mt-2 leading-tight font-medium text-center truncate group-hover:text-white transition-colors px-1">
                 {c.name}
               </p>
+              {/* Rarity */}
+              {c.rarity && (
+                <p className="text-[10px] text-zinc-600 text-center truncate px-1">{c.rarity}</p>
+              )}
+              {/* Price */}
               {c.min_price && (
-                <p className="text-[10px] text-indigo-500 font-semibold text-center">
+                <p className="text-xs text-indigo-400 font-semibold text-center mt-0.5">
                   {parseFloat(c.min_price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
                 </p>
               )}
@@ -129,6 +156,7 @@ function Marquee({ cards, setSlug, setName }: {
   );
 }
 
+/* ── Main Page ─────────────────────────────────────────────────────── */
 export default function CardDetail() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? '';
@@ -155,9 +183,10 @@ export default function CardDetail() {
     }
   }, [card?.id]);
 
-  const selectedListing = sortedListings.find((l: any) => l.id === selectedListingId)
-    ?? sortedListings[0]
-    ?? null;
+  const selectedListing =
+    sortedListings.find((l: any) => l.id === selectedListingId) ??
+    sortedListings[0] ??
+    null;
   const price = selectedListing ? parseFloat(selectedListing.price) : null;
   const marketPrice = card?.marketPrice;
 
@@ -186,6 +215,7 @@ export default function CardDetail() {
     }
   };
 
+  /* Loading */
   if (isLoading) {
     return (
       <div className="min-h-screen" style={{ background: '#09090f' }}>
@@ -197,6 +227,7 @@ export default function CardDetail() {
     );
   }
 
+  /* Error */
   if (isError || !card) {
     return (
       <div className="min-h-screen" style={{ background: '#09090f' }}>
@@ -204,7 +235,7 @@ export default function CardDetail() {
         <div className="max-w-xl mx-auto px-6 py-40 text-center">
           <p className="text-6xl mb-6">🃏</p>
           <h1 className="text-2xl font-bold text-white mb-3">Kart bulunamadı</h1>
-          <p className="text-zinc-500 mb-8">Bu kart mevcut değil veya kaldırılmış.</p>
+          <p className="text-zinc-400 mb-8">Bu kart mevcut değil veya kaldırılmış.</p>
           <Link href="/magaza">
             <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-medium transition-colors">
               Mağazaya Dön
@@ -220,20 +251,22 @@ export default function CardDetail() {
     <div style={{ background: '#09090f' }} className="min-h-screen">
       <SEO
         title={`${card.name} — ${card.set_name} | Ecarte TCG`}
-        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name}. Ecarte TCG Marketplace'de satın al.`}
+        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name}. Ecarte'de satın al.`}
       />
       <Header />
 
       <main>
         {/* Breadcrumb */}
-        <nav className="max-w-screen-xl mx-auto px-6 sm:px-10 pt-7 pb-0">
-          <ol className="flex items-center gap-1.5 text-[11px] text-zinc-700 flex-wrap">
-            <li><Link href="/magaza" className="hover:text-zinc-400 transition-colors">Mağaza</Link></li>
+        <nav className="max-w-screen-xl mx-auto px-5 sm:px-8 pt-5 pb-0">
+          <ol className="flex items-center gap-1.5 text-[11px] text-zinc-500 flex-wrap">
+            <li>
+              <Link href="/magaza" className="hover:text-zinc-300 transition-colors">Mağaza</Link>
+            </li>
             {card.game_slug && (
               <>
-                <ChevronRight className="w-2.5 h-2.5 text-zinc-800" />
+                <ChevronRight className="w-2.5 h-2.5 text-zinc-600 shrink-0" />
                 <li>
-                  <Link href={`/magaza?game=${card.game_slug}`} className="hover:text-zinc-400 transition-colors">
+                  <Link href={`/magaza?game=${card.game_slug}`} className="hover:text-zinc-300 transition-colors">
                     {card.game_name}
                   </Link>
                 </li>
@@ -241,83 +274,94 @@ export default function CardDetail() {
             )}
             {card.set_slug && (
               <>
-                <ChevronRight className="w-2.5 h-2.5 text-zinc-800" />
+                <ChevronRight className="w-2.5 h-2.5 text-zinc-600 shrink-0" />
                 <li>
-                  <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-400 transition-colors">
+                  <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-300 transition-colors">
                     {card.set_name}
                   </Link>
                 </li>
               </>
             )}
-            <ChevronRight className="w-2.5 h-2.5 text-zinc-800" />
-            <li className="text-zinc-500 truncate max-w-[180px]">{card.name}</li>
+            <ChevronRight className="w-2.5 h-2.5 text-zinc-600 shrink-0" />
+            <li className="text-zinc-300 truncate max-w-[160px] sm:max-w-[240px]">{card.name}</li>
           </ol>
         </nav>
 
         {/* Hero grid */}
-        <div className="max-w-screen-xl mx-auto px-6 sm:px-10 py-10 lg:py-14">
-          <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] xl:grid-cols-[440px_1fr] gap-10 lg:gap-20 items-start">
+        <div className="max-w-screen-xl mx-auto px-5 sm:px-8 py-8 lg:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr] gap-6 sm:gap-10 lg:gap-16 items-start">
 
             {/* LEFT — card visual */}
-            <div className="flex flex-col items-center gap-5 lg:sticky lg:top-8">
+            <div className="flex flex-col items-center gap-4 sm:sticky sm:top-6">
               <HoloCard src={imgSrc} alt={card.name} />
 
+              {/* Set logos */}
               {(card.set_logo_url || card.set_symbol_url) && (
-                <div className="flex items-center gap-4 opacity-50 hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-3 opacity-40 hover:opacity-70 transition-opacity">
                   {card.set_logo_url && (
-                    <img src={card.set_logo_url} alt={card.set_name} className="h-7 object-contain" />
+                    <img src={card.set_logo_url} alt={card.set_name} className="h-6 sm:h-7 object-contain" />
                   )}
                   {card.set_symbol_url && (
-                    <img src={card.set_symbol_url} alt="" className="h-5 object-contain" />
+                    <img src={card.set_symbol_url} alt="" className="h-4 sm:h-5 object-contain" />
                   )}
                 </div>
               )}
             </div>
 
             {/* RIGHT — details */}
-            <div className="space-y-7 pt-2">
+            <div className="space-y-5 sm:space-y-6">
 
-              {/* Badges */}
+              {/* ── Rarity & badges ── */}
               <div className="flex flex-wrap gap-2">
                 {card.rarity && (
-                  <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-indigo-500/[0.15] text-indigo-300 border border-indigo-500/[0.25] tracking-wide">
+                  <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
                     {card.rarity}
                   </span>
                 )}
-                <span className="text-[11px] px-3 py-1 rounded-full bg-white/[0.05] text-zinc-500 border border-white/[0.08]">
+                <span className="text-[11px] px-3 py-1 rounded-full bg-white/[0.07] text-zinc-400 border border-white/10">
                   {card.game_name}
                 </span>
                 {card.card_number && (
-                  <span className="text-[11px] px-3 py-1 rounded-full bg-white/[0.05] text-zinc-500 border border-white/[0.08]">
+                  <span className="text-[11px] px-3 py-1 rounded-full bg-white/[0.07] text-zinc-400 border border-white/10">
                     #{card.card_number}
                   </span>
                 )}
               </div>
 
-              {/* Name */}
+              {/* ── Card name ── */}
               <div>
                 <h1
-                  className="text-[40px] sm:text-[50px] font-bold text-white leading-[1.03] tracking-[-0.02em]"
+                  className="text-[32px] sm:text-[40px] lg:text-[48px] font-bold text-white leading-[1.05] tracking-[-0.02em]"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
                   {card.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-3 text-sm text-zinc-500">
-                  <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-300 transition-colors">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-sm text-zinc-400">
+                  <Link href={`/set/${card.set_slug}`} className="hover:text-zinc-200 transition-colors">
                     {card.set_name}
                   </Link>
-                  {card.hp && <><span className="text-zinc-800">·</span><span>{card.hp} HP</span></>}
-                  {card.artist && <><span className="text-zinc-800">·</span><span className="text-zinc-600">{card.artist}</span></>}
+                  {card.hp && (
+                    <>
+                      <span className="text-zinc-600">·</span>
+                      <span>{card.hp} HP</span>
+                    </>
+                  )}
+                  {card.artist && (
+                    <>
+                      <span className="text-zinc-600">·</span>
+                      <span className="text-zinc-500">{card.artist}</span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Types */}
+              {/* ── Types ── */}
               {cardTypes.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {cardTypes.map((t: string) => (
                     <span
                       key={t}
-                      className="text-[11px] px-3 py-1.5 rounded-full bg-white/[0.05] text-zinc-400 border border-white/[0.07]"
+                      className="text-xs px-3 py-1.5 rounded-full bg-white/[0.07] text-zinc-300 border border-white/10"
                     >
                       {t}
                     </span>
@@ -325,47 +369,50 @@ export default function CardDetail() {
                 </div>
               )}
 
-              <div className="border-t border-white/[0.07]" />
+              <div className="border-t border-white/10" />
 
-              {/* Market price reference */}
+              {/* ── PriceCharting reference ── */}
               {marketPrice && (
-                <div className="flex flex-wrap items-center gap-4 text-[11px]">
-                  <span className="text-zinc-700 uppercase tracking-widest">PriceCharting ref</span>
+                <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                  <span className="text-zinc-500 uppercase tracking-widest font-medium">PriceCharting</span>
                   {marketPrice.price_market && (
-                    <span className="text-zinc-600">
-                      Ort: <span className="text-zinc-400">${parseFloat(marketPrice.price_market).toFixed(2)}</span>
+                    <span className="text-zinc-400">
+                      Ort: <span className="text-zinc-300">${parseFloat(marketPrice.price_market).toFixed(2)}</span>
                     </span>
                   )}
                   {marketPrice.price_high && (
-                    <span className="text-zinc-600">
-                      Maks: <span className="text-zinc-400">${parseFloat(marketPrice.price_high).toFixed(2)}</span>
+                    <span className="text-zinc-400">
+                      Maks: <span className="text-zinc-300">${parseFloat(marketPrice.price_high).toFixed(2)}</span>
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Condition pills */}
+              {/* ── Condition picker ── */}
               {sortedListings.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-zinc-700 uppercase tracking-[0.14em] mb-3">Kondisyon</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-[0.15em] font-semibold mb-3">
+                    Kondisyon Seç
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {sortedListings.map((listing: any) => {
-                      const isSelected = (selectedListingId ?? sortedListings[0]?.id) === listing.id;
+                      const isSelected =
+                        (selectedListingId ?? sortedListings[0]?.id) === listing.id;
                       return (
                         <button
                           key={listing.id}
                           data-testid={`btn-condition-${listing.condition}`}
                           onClick={() => { setSelectedListingId(listing.id); setQuantity(1); }}
-                          className={`flex flex-col items-start px-4 py-2.5 rounded-xl border transition-all duration-150 ${
+                          className={`flex flex-col items-start px-3 sm:px-4 py-2.5 rounded-xl border transition-all duration-150 ${
                             isSelected
-                              ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-900/30'
-                              : 'bg-white/[0.04] border-white/[0.08] hover:border-indigo-500/40 hover:bg-white/[0.06]'
+                              ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-900/40'
+                              : 'bg-white/[0.05] border-white/10 hover:border-indigo-500/50 hover:bg-white/[0.08]'
                           }`}
                         >
-                          <span className={`text-[10px] font-bold tracking-wide ${isSelected ? 'text-indigo-200' : 'text-zinc-600'}`}>
+                          <span className={`text-[10px] font-bold tracking-wide uppercase ${isSelected ? 'text-indigo-200' : 'text-zinc-400'}`}>
                             {listing.condition}
                           </span>
-                          <span className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
+                          <span className={`text-sm font-semibold mt-0.5 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
                             {parseFloat(listing.price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
                           </span>
                         </button>
@@ -373,66 +420,69 @@ export default function CardDetail() {
                     })}
                   </div>
                   {selectedListing && (
-                    <p className="text-[11px] text-zinc-600 mt-2">
+                    <p className="text-[11px] text-zinc-500 mt-2">
                       {CONDITION_LABELS[selectedListing.condition] ?? selectedListing.condition}
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Price + qty + CTA */}
-              <div className="space-y-5">
+              {/* ── Price + Qty + CTA ── */}
+              <div className="space-y-4">
+                {/* Price display */}
                 {price != null ? (
                   <div>
                     <p
-                      className="text-[52px] sm:text-[58px] leading-none font-bold text-white tracking-tight"
+                      className="text-[46px] sm:text-[54px] leading-none font-bold text-white tracking-tight"
                       style={{ fontFamily: 'var(--font-display)' }}
                     >
                       {price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <span className="text-3xl text-zinc-600 ml-2.5 font-normal">₺</span>
+                      <span className="text-2xl sm:text-3xl text-zinc-500 ml-2 font-normal">₺</span>
                     </p>
                     {quantity > 1 && (
-                      <p className="text-sm text-zinc-500 mt-1.5">
+                      <p className="text-sm text-zinc-400 mt-1.5">
                         Toplam: {(price * quantity).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xl text-zinc-600 italic">Fiyat bilgisi yok</p>
+                  <div className="py-3 px-4 rounded-xl bg-white/[0.04] border border-white/10">
+                    <p className="text-sm text-zinc-400">Bu kart henüz fiyatlanmamış.</p>
+                    <p className="text-[11px] text-zinc-600 mt-0.5">Admin panelinden otomatik listeleme yapabilirsiniz.</p>
+                  </div>
                 )}
 
                 {/* Qty selector */}
                 {selectedListing && (
-                  <div className="inline-flex items-center">
+                  <div className="inline-flex items-center rounded-xl overflow-hidden border border-white/10">
                     <button
                       data-testid="btn-qty-dec"
                       onClick={() => setQuantity(q => Math.max(1, q - 1))}
                       disabled={quantity <= 1}
-                      className="w-10 h-10 rounded-l-xl bg-white/[0.06] border border-white/[0.09] border-r-0 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                      className="w-10 h-10 flex items-center justify-center bg-white/[0.05] text-zinc-300 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <div className="w-12 h-10 border-y border-white/[0.09] bg-white/[0.03] flex items-center justify-center">
+                    <div className="w-12 h-10 bg-white/[0.03] flex items-center justify-center border-x border-white/10">
                       <span className="text-sm font-bold text-white">{quantity}</span>
                     </div>
                     <button
                       data-testid="btn-qty-inc"
                       onClick={() => setQuantity(q => Math.min(q + 1, 99))}
                       disabled={quantity >= 99}
-                      className="w-10 h-10 rounded-r-xl bg-white/[0.06] border border-white/[0.09] border-l-0 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                      className="w-10 h-10 flex items-center justify-center bg-white/[0.05] text-zinc-300 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
 
-                {/* Add to cart */}
+                {/* Add to cart button */}
                 <button
                   data-testid="btn-addtocart"
                   onClick={handleAddToCart}
                   disabled={isAdding || !selectedListing}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold py-4 rounded-2xl transition-all flex items-center justify-center gap-2.5 text-[15px] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl shadow-indigo-950/60"
-                  style={{ letterSpacing: '-0.01em' }}
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold py-3.5 sm:py-4 rounded-2xl transition-all flex items-center justify-center gap-2.5 text-sm sm:text-[15px] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl shadow-indigo-950/60"
                 >
                   {isAdding ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -441,11 +491,13 @@ export default function CardDetail() {
                   )}
                   {isAdding
                     ? 'Ekleniyor…'
-                    : `Sepete Ekle${price && quantity ? ` — ${(price * quantity).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺` : ''}`}
+                    : selectedListing
+                    ? `Sepete Ekle${price && quantity ? ` — ${(price * quantity).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺` : ''}`
+                    : 'Sepete Ekle'}
                 </button>
 
-                {/* Trust row */}
-                <div className="grid grid-cols-3 gap-2.5">
+                {/* Trust badges */}
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { Icon: Shield, label: 'Güvenli Ödeme' },
                     { Icon: Zap, label: 'Hızlı Teslimat' },
@@ -453,34 +505,34 @@ export default function CardDetail() {
                   ].map(({ Icon, label }) => (
                     <div
                       key={label}
-                      className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                      className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07]"
                     >
-                      <Icon className="w-4 h-4 text-zinc-600" />
-                      <span className="text-[10px] text-zinc-700 text-center leading-tight">{label}</span>
+                      <Icon className="w-4 h-4 text-zinc-400" />
+                      <span className="text-[10px] text-zinc-400 text-center leading-tight">{label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Meta grid */}
+              {/* ── Card meta ── */}
               {(card.set_series || card.set_release_date || card.set_total_cards) && (
-                <div className="border-t border-white/[0.07] pt-5 grid grid-cols-3 gap-4">
+                <div className="border-t border-white/10 pt-5 grid grid-cols-3 gap-3">
                   {card.set_series && (
                     <div>
-                      <p className="text-[9px] text-zinc-800 uppercase tracking-widest mb-1">Seri</p>
-                      <p className="text-xs text-zinc-400 truncate">{card.set_series}</p>
+                      <p className="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">Seri</p>
+                      <p className="text-xs text-zinc-300 truncate">{card.set_series}</p>
                     </div>
                   )}
                   {card.set_release_date && (
                     <div>
-                      <p className="text-[9px] text-zinc-800 uppercase tracking-widest mb-1">Çıkış</p>
-                      <p className="text-xs text-zinc-400">{card.set_release_date}</p>
+                      <p className="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">Çıkış</p>
+                      <p className="text-xs text-zinc-300">{card.set_release_date}</p>
                     </div>
                   )}
                   {card.set_total_cards && (
                     <div>
-                      <p className="text-[9px] text-zinc-800 uppercase tracking-widest mb-1">Set</p>
-                      <p className="text-xs text-zinc-400">{card.set_total_cards} kart</p>
+                      <p className="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">Set</p>
+                      <p className="text-xs text-zinc-300">{card.set_total_cards} kart</p>
                     </div>
                   )}
                 </div>
