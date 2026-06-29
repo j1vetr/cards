@@ -2433,6 +2433,7 @@ export class DbStorage implements IStorage {
           ${setFilter}
           ${rarityFilter}
           ${cardTypeFilter}
+          ${featuredFilter}
           ${searchFilter}
         GROUP BY c.id
         HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0

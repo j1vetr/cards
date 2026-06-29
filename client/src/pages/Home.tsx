@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Sparkles,
   Layers,
+  Package,
+  RotateCcw,
 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -364,12 +366,17 @@ function NewSetsSection() {
                       <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-white opacity-60" />
 
                       {set.logo_url ? (
-                        <img
-                          src={set.logo_url}
-                          alt={set.name}
-                          className="relative z-10 max-h-14 object-contain mb-3"
-                          loading="lazy"
-                        />
+                        <div className="relative z-10 mb-3 w-28 h-14 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-zinc-200/60 animate-pulse rounded" />
+                          <img
+                            src={set.logo_url}
+                            alt={set.name}
+                            className="relative max-h-14 w-auto object-contain transition-opacity duration-300"
+                            loading="lazy"
+                            decoding="async"
+                            onLoad={e => (e.currentTarget.previousElementSibling as HTMLElement | null)?.remove()}
+                          />
+                        </div>
                       ) : (
                         <div className="relative z-10 mb-3 flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100">
                           <Layers className="w-6 h-6 text-indigo-600" />
@@ -380,17 +387,33 @@ function NewSetsSection() {
                         {set.name}
                       </p>
 
-                      {set.listed_cards > 0 && (
-                        <p className="relative z-10 text-[11px] text-indigo-500 font-medium mt-1">
-                          {set.listed_cards} kart stokta
-                        </p>
-                      )}
+                      <div className="relative z-10 flex flex-wrap justify-center gap-x-3 gap-y-0.5 mt-1.5">
+                        {set.listed_cards > 0 && (
+                          <span className="text-[11px] text-indigo-500 font-medium">
+                            {set.listed_cards} stokta
+                          </span>
+                        )}
+                        {set.total_cards != null && (
+                          <span className="text-[11px] text-zinc-400">
+                            {set.total_cards} kart toplam
+                          </span>
+                        )}
+                        {set.release_date && (
+                          <span className="text-[11px] text-zinc-400">
+                            {new Date(set.release_date).getFullYear()}
+                          </span>
+                        )}
+                      </div>
 
                       {set.game_slug && (
                         <span className="relative z-10 mt-2 text-[10px] text-zinc-400 uppercase tracking-widest">
                           {set.game_name}
                         </span>
                       )}
+
+                      <span className="relative z-10 mt-2 inline-flex items-center gap-1 text-[11px] text-indigo-500 font-medium hover:text-indigo-700 transition-colors">
+                        İncele <ChevronRight className="w-3 h-3" />
+                      </span>
                     </div>
                   </motion.div>
                 </Link>
@@ -426,6 +449,92 @@ const GAME_CARDS = [
   },
 ];
 
+interface GameStats {
+  cardCount: number;
+  setCount: number;
+}
+
+function useGameStats(slug: string): GameStats {
+  const { data: cardsData } = useQuery<{ cards: CardPublic[]; total: number }>({
+    queryKey: ['/api/cards', 'stats', slug],
+    queryFn: async () => {
+      const r = await fetch(`/api/cards?game=${slug}&limit=1`);
+      if (!r.ok) throw new Error('');
+      return r.json();
+    },
+    staleTime: 300_000,
+  });
+
+  const { data: sets = [] } = useQuery<CardSetPublic[]>({
+    queryKey: ['/api/card-sets', 'game', slug],
+    queryFn: async () => {
+      const r = await fetch(`/api/card-sets?game=${slug}`);
+      if (!r.ok) throw new Error('');
+      return r.json();
+    },
+    staleTime: 300_000,
+  });
+
+  return {
+    cardCount: cardsData?.total ?? 0,
+    setCount: sets.length,
+  };
+}
+
+function GameTile({ game }: { game: typeof GAME_CARDS[number] }) {
+  const stats = useGameStats(game.slug);
+
+  return (
+    <Link href={`/oyun/${game.slug}`}>
+      <motion.div
+        data-testid={`card-game-${game.slug}`}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.2 }}
+        className="relative rounded-3xl overflow-hidden cursor-pointer h-56 sm:h-72 flex items-end"
+        style={{ background: game.bgColor }}
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-80`} />
+
+        {/* decorative circles */}
+        <div className="absolute top-6 right-6 w-24 h-24 rounded-full border-2 border-white/10" />
+        <div className="absolute top-10 right-10 w-14 h-14 rounded-full border border-white/10" />
+
+        <div className="absolute top-6 left-6 text-4xl select-none">{game.emoji}</div>
+
+        <div className="relative z-10 p-7 w-full">
+          <h3 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>
+            {game.name}
+          </h3>
+          <p className="text-white/75 text-sm leading-snug max-w-xs mb-3">{game.label}</p>
+
+          {/* API-backed stats */}
+          {(stats.cardCount > 0 || stats.setCount > 0) && (
+            <div className="flex gap-4 mb-4">
+              {stats.cardCount > 0 && (
+                <div>
+                  <p className="text-white font-bold text-sm">{stats.cardCount.toLocaleString('tr-TR')}</p>
+                  <p className="text-white/60 text-[10px] uppercase tracking-widest">Kart</p>
+                </div>
+              )}
+              {stats.setCount > 0 && (
+                <div>
+                  <p className="text-white font-bold text-sm">{stats.setCount}</p>
+                  <p className="text-white/60 text-[10px] uppercase tracking-widest">Set</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <span className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors border border-white/20">
+            Kartları Gör <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
+      </motion.div>
+    </Link>
+  );
+}
+
 function BrowseByGameSection() {
   return (
     <section className="py-20 bg-white" data-testid="section-browse-game">
@@ -454,34 +563,7 @@ function BrowseByGameSection() {
         >
           {GAME_CARDS.map(game => (
             <motion.div key={game.slug} variants={fadeUp}>
-              <Link href={`/oyun/${game.slug}`}>
-                <motion.div
-                  data-testid={`card-game-${game.slug}`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                  className="relative rounded-3xl overflow-hidden cursor-pointer h-56 sm:h-72 flex items-end"
-                  style={{ background: game.bgColor }}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-80`} />
-
-                  {/* decorative circles */}
-                  <div className="absolute top-6 right-6 w-24 h-24 rounded-full border-2 border-white/10" />
-                  <div className="absolute top-10 right-10 w-14 h-14 rounded-full border border-white/10" />
-
-                  <div className="absolute top-6 left-6 text-4xl select-none">{game.emoji}</div>
-
-                  <div className="relative z-10 p-7 w-full">
-                    <h3 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                      {game.name}
-                    </h3>
-                    <p className="text-white/75 text-sm leading-snug max-w-xs mb-4">{game.label}</p>
-                    <span className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-4 py-2 rounded-full transition-colors border border-white/20">
-                      Kartları Gör <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </motion.div>
-              </Link>
+              <GameTile game={game} />
             </motion.div>
           ))}
         </motion.div>
@@ -495,23 +577,23 @@ function BrowseByGameSection() {
 const TRUST_ITEMS = [
   {
     icon: ShieldCheck,
-    title: 'Garantili Özgünlük',
-    desc: 'Her kart uzman ekibimiz tarafından incelenip doğrulanır.',
+    title: 'Koşul Garantisi',
+    desc: 'Her kart listede belirtilen koşulda gönderilir. NM, LP, PSA — tam şeffaflık.',
+  },
+  {
+    icon: Package,
+    title: 'Güvenli Paketleme',
+    desc: 'Kartlar sleeve, top loader ve baloncuklu naylon ile çift korumalı paketlenir.',
   },
   {
     icon: Truck,
     title: 'Hızlı Kargo',
-    desc: 'Siparişler 1-2 iş günü içinde kargoya verilir.',
+    desc: 'Siparişler 1-2 iş günü içinde kargoya verilir, takip numarası anında iletilir.',
   },
   {
-    icon: Star,
-    title: 'Koşul Şeffaflığı',
-    desc: 'NM, LP, MP, PSA — koşul fotoğrafı ile tam şeffaflık.',
-  },
-  {
-    icon: Headphones,
-    title: '7/24 Destek',
-    desc: 'WhatsApp ve e-posta ile dilediğin zaman ulaş.',
+    icon: RotateCcw,
+    title: '30 Günlük İade',
+    desc: 'Koşul uyuşmazlığında 30 gün içinde ücretsiz iade veya tam para iadesi.',
   },
 ];
 
