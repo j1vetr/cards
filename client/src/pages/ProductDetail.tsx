@@ -358,10 +358,7 @@ export default function ProductDetail() {
     }
     setIsAddingWholesale(true);
     try {
-      await addToCart(product.id, undefined, 1, {
-        itemType: 'wholesale',
-        seriesId: wholesaleSeries.id,
-      });
+      await addToCart(product.id, undefined, 1, {});
       const mainImage =
         product.images && product.images.length > 0
           ? product.images[0]

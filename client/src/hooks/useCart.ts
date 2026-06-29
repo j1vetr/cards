@@ -4,43 +4,43 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 interface CartItem {
   id: string;
   sessionId: string;
-  productId: string;
+  productId: string | null;
   variantId: string | null;
+  cardListingId: string | null;
   quantity: number;
   createdAt: string;
-  itemType?: 'retail' | 'wholesale';
-  seriesId?: string | null;
   product?: {
     id: string;
     name: string;
     slug: string;
     basePrice: string;
     images: string[];
-    wholesaleEnabled?: boolean;
-    wholesalePrice?: string | null;
-  };
+  } | null;
   variant?: {
     id: string;
     size: string | null;
     color: string | null;
     price: string;
-  };
-  // Wholesale-only enrichment (computed server-side in getCartItems)
-  series?: {
+    condition?: string;
+  } | null;
+  listing?: {
+    id: string;
+    price: string;
+    condition: string;
+    stock: number;
+  } | null;
+  card?: {
     id: string;
     name: string;
-    sizeDistribution: { size: string; quantity: number }[];
+    slug: string;
+    imageUrl: string | null;
   } | null;
-  totalPieces?: number;
-  unitPrice?: number;
-  seriesPrice?: number;
-  lineTotal?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
   isLoading: boolean;
-  addToCart: (productId: string, variantId?: string, quantity?: number, opts?: { itemType?: 'retail' | 'wholesale'; seriesId?: string }) => Promise<void>;
+  addToCart: (productId?: string, variantId?: string, quantity?: number, opts?: { cardListingId?: string }) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -73,11 +73,11 @@ export function useCartProvider() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async ({ productId, variantId, quantity = 1, itemType, seriesId }: { productId: string; variantId?: string; quantity?: number; itemType?: 'retail' | 'wholesale'; seriesId?: string }) => {
+    mutationFn: async ({ productId, variantId, quantity = 1, cardListingId }: { productId?: string; variantId?: string; quantity?: number; cardListingId?: string }) => {
       const res = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, variantId, quantity, itemType, seriesId }),
+        body: JSON.stringify({ productId, variantId, quantity, cardListingId }),
         credentials: 'include',
       });
       if (!res.ok) {
@@ -135,18 +135,19 @@ export function useCartProvider() {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   
   const subtotal = items.reduce((sum, item) => {
-    if (item.itemType === 'wholesale') {
-      return sum + (item.lineTotal ?? 0);
+    // Card-listing: use listing price as authoritative
+    if (item.cardListingId && item.listing) {
+      return sum + parseFloat(item.listing.price) * item.quantity;
     }
-    const price = item.product?.basePrice || '0';
+    const price = item.variant?.price || item.product?.basePrice || '0';
     return sum + parseFloat(price) * item.quantity;
   }, 0);
 
   return {
     items,
     isLoading,
-    addToCart: async (productId: string, variantId?: string, quantity = 1, opts?: { itemType?: 'retail' | 'wholesale'; seriesId?: string }) => {
-      await addMutation.mutateAsync({ productId, variantId, quantity, itemType: opts?.itemType, seriesId: opts?.seriesId });
+    addToCart: async (productId?: string, variantId?: string, quantity = 1, opts?: { cardListingId?: string }) => {
+      await addMutation.mutateAsync({ productId, variantId, quantity, cardListingId: opts?.cardListingId });
       await queryClient.refetchQueries({ queryKey: ['cart'] });
     },
     updateQuantity: async (itemId: string, quantity: number) => {

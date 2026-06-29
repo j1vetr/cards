@@ -34,7 +34,7 @@ export default function Cart() {
     return { ...item, product };
   });
 
-  const hasWholesale = items.some(item => item.itemType === 'wholesale');
+  const hasWholesale = false;
 
   const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 200;
   const total = subtotal + shippingCost;
@@ -197,35 +197,20 @@ export default function Cart() {
                               </h3>
                             </Link>
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {item.itemType === 'wholesale' ? (
-                                <>
-                                  <span className="text-xs px-2 py-0.5 bg-polen-orange/10 text-polen-orange rounded font-medium" data-testid={`badge-wholesale-${item.id}`}>
-                                    Toptan Seri{item.series?.name ? `: ${item.series.name}` : ''}
-                                  </span>
-                                  {item.series?.sizeDistribution?.map((d) => (
-                                    <span key={d.size} className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                      {d.size}×{d.quantity}
-                                    </span>
-                                  ))}
-                                  {typeof item.totalPieces === 'number' && (
-                                    <span className="text-xs text-black/40">
-                                      {item.totalPieces} adet/seri
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  {item.variant?.size && (
-                                    <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                      Beden: {item.variant.size}
-                                    </span>
-                                  )}
-                                  {item.variant?.color && (
-                                    <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                      {item.variant.color}
-                                    </span>
-                                  )}
-                                </>
+                              {item.variant?.condition && (
+                                <span className="text-xs px-2 py-0.5 bg-polen-orange/10 text-polen-orange rounded font-medium" data-testid={`badge-condition-${item.id}`}>
+                                  {item.variant.condition}
+                                </span>
+                              )}
+                              {item.variant?.size && (
+                                <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
+                                  Beden: {item.variant.size}
+                                </span>
+                              )}
+                              {item.variant?.color && (
+                                <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
+                                  {item.variant.color}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -254,9 +239,9 @@ export default function Cart() {
                             </div>
 
                             <p className="font-bold text-base sm:text-lg shrink-0 text-black" data-testid={`text-price-${item.id}`}>
-                              {(item.itemType === 'wholesale'
-                                ? (item.lineTotal ?? 0)
-                                : parseFloat(item.product?.basePrice || '0') * item.quantity
+                              {(item.cardListingId && item.listing
+                                ? parseFloat(item.listing.price) * item.quantity
+                                : parseFloat(item.variant?.price || item.product?.basePrice || '0') * item.quantity
                               ).toLocaleString('tr-TR')} ₺
                             </p>
                           </div>

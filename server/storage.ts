@@ -757,13 +757,50 @@ export class DbStorage implements IStorage {
     const items = await db.select().from(cartItems).where(eq(cartItems.sessionId, sessionId));
     
     const itemsWithDetails = await Promise.all(items.map(async (item) => {
-      const [product] = await db.select({
-        id: products.id,
-        name: products.name,
-        slug: products.slug,
-        basePrice: products.basePrice,
-        images: products.images,
-      }).from(products).where(eq(products.id, item.productId as string));
+      // ── Card-listing path (TCG primary) ──────────────────────────────────
+      if (item.cardListingId) {
+        const [listing] = await db.select().from(cardListings).where(eq(cardListings.id, item.cardListingId));
+        let card = null;
+        if (listing) {
+          const [c] = await db.select({
+            id: cards.id,
+            name: cards.name,
+            slug: cards.slug,
+            imageUrl: cards.imageUrl,
+          }).from(cards).where(eq(cards.id, listing.cardId));
+          card = c || null;
+        }
+        return {
+          ...item,
+          product: listing && card ? {
+            id: card.id,
+            name: card.name,
+            slug: card.slug,
+            basePrice: String(listing.price),
+            images: card.imageUrl ? [card.imageUrl] : [],
+          } : null,
+          variant: listing ? {
+            id: item.cardListingId,
+            size: null,
+            color: null,
+            price: String(listing.price),
+            condition: listing.condition,
+          } : null,
+          listing: listing || null,
+          card: card || null,
+        };
+      }
+
+      // ── Product/variant path (fallback) ──────────────────────────────────
+      const [product] = item.productId
+        ? await db.select({
+            id: products.id,
+            name: products.name,
+            slug: products.slug,
+            basePrice: products.basePrice,
+            images: products.images,
+          }).from(products).where(eq(products.id, item.productId))
+        : [undefined];
       
       let variant = null;
       if (item.variantId) {
@@ -776,7 +813,7 @@ export class DbStorage implements IStorage {
         variant = v || null;
       }
 
-      return { ...item, product, variant };
+      return { ...item, product: product || null, variant };
     }));
     
     return itemsWithDetails;

@@ -120,7 +120,7 @@ export default function Checkout() {
     return { ...item, product };
   });
 
-  const hasWholesale = items.some(item => item.itemType === 'wholesale');
+  const hasWholesale = false;
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -1208,18 +1208,14 @@ export default function Checkout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{item.product?.name || 'Ürün'}</p>
-                        {item.itemType === 'wholesale' ? (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Toptan seri{item.series?.name ? `: ${item.series.name}` : ''} · {item.quantity} seri
-                            {typeof item.totalPieces === 'number' ? ` (${item.totalPieces * item.quantity} adet)` : ''}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground mt-0.5">Adet: {item.quantity}</p>
+                        {item.variant?.condition && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{item.variant.condition}</p>
                         )}
+                        <p className="text-xs text-muted-foreground mt-0.5">Adet: {item.quantity}</p>
                         <p className="text-sm font-bold mt-1">
-                          {(item.itemType === 'wholesale'
-                            ? (item.lineTotal ?? 0)
-                            : parseFloat(item.product?.basePrice || '0') * item.quantity
+                          {(item.cardListingId && item.listing
+                            ? parseFloat(item.listing.price) * item.quantity
+                            : parseFloat(item.variant?.price || item.product?.basePrice || '0') * item.quantity
                           ).toLocaleString('tr-TR')} ₺
                         </p>
                       </div>

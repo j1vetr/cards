@@ -16,8 +16,8 @@ export default function KVKK() {
   return (
     <div className="min-h-screen bg-stone-50">
       <SEO
-        title="KVKK Aydınlatma Metni - Marka Giyim & Moda"
-        description="Marka Giyim & Moda kişisel verilerin korunması kanunu aydınlatma metni."
+        title="KVKK Aydınlatma Metni - Ecarte TCG"
+        description="Ecarte TCG kişisel verilerin korunması kanunu aydınlatma metni."
       />
       <Header />
 
@@ -75,7 +75,7 @@ export default function KVKK() {
                 <p>
                   KVKK (Kişisel Verilerin Korunması Kanunu) kapsamında kişisel verilerinizi işleyen veri sorumlusu aşağıdaki şekildedir:
                 </p>
-                <p><strong>Marka Giyim & Moda</strong></p>
+                <p><strong>Ecarte TCG</strong></p>
                 <p><strong>Web Sitesi:</strong> <a href="https://www.ecartejeans.com">www.ecartejeans.com</a></p>
                 <p><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></p>
                 <p><strong>Telefon:</strong> <a href="tel:+905312171130">0531 217 11 30</a></p>
@@ -83,7 +83,7 @@ export default function KVKK() {
 
                 <h2>2) Kişisel Verilerin Toplanma Yöntemi</h2>
                 <p>
-                  Kişisel verileriniz; <strong>www.ecartejeans.com</strong> web sitesi, sosyal medya hesaplarımız, müşteri destek hattı, e-posta veya fiziksel formlar aracılığıyla tamamen veya kısmen otomatik yollarla toplanmaktadır.
+                  Kişisel verileriniz; <strong>www.ecartejeans.com</strong> web sitesi, sosyal medya hesaplarımız, müşteri destek hattı ve e-posta aracılığıyla tamamen veya kısmen otomatik yollarla toplanmaktadır.
                 </p>
 
                 <h2>3) Kişisel Verilerin İşlenme Amaçları</h2>
@@ -123,7 +123,7 @@ export default function KVKK() {
 
                 <h2>7) Kişisel Verilerin Güvenliği</h2>
                 <p>
-                  Marka, kişisel verilerinizi korumak için gerekli tüm teknik ve idari tedbirleri almaktadır. Verileriniz SSL sertifikaları, güvenli sunucular ve erişim yetkilendirme sistemleriyle korunmaktadır.
+                  Ecarte TCG, kişisel verilerinizi korumak için gerekli tüm teknik ve idari tedbirleri almaktadır. Verileriniz SSL sertifikaları, güvenli sunucular ve erişim yetkilendirme sistemleriyle korunmaktadır.
                 </p>
 
                 <h2>8) İlgili Kişi Olarak Haklarınız</h2>
@@ -160,7 +160,7 @@ export default function KVKK() {
 
                 <h2>11) Güncellemeler ve Değişiklikler</h2>
                 <p>
-                  Bu Aydınlatma Metni, mevzuat değişiklikleri ve şirket politikalarına uygun olarak güncellenebilir. Güncel versiyon her zaman <strong>www.ecartejeans.com</strong> adresinde yayınlanır.
+                  Bu Aydınlatma Metni, mevzuat değişiklikleri ve platform politikalarına uygun olarak güncellenebilir. Güncel versiyon her zaman <strong>www.ecartejeans.com</strong> adresinde yayınlanır.
                 </p>
               </div>
             </div>
