@@ -2305,12 +2305,8 @@ export async function registerRoutes(
             quantity: item.quantity,
             subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
           });
-          // Decrement card listing stock for TCG items
-          if (item.cardListingId) {
-            await tx.update(cardListings)
-              .set({ stock: sql`GREATEST(0, ${cardListings.stock} - ${item.quantity})` })
-              .where(eq(cardListings.id, item.cardListingId));
-          }
+          // card_listings stock deferred — decremented only on admin confirmation (bank transfer)
+          // This matches the variant stock pattern: create order first, reduce stock on confirm.
         }
 
         return newOrder;
@@ -4058,18 +4054,17 @@ export async function registerRoutes(
 
       // Reduce stock now (was deferred at order creation time)
       for (const item of orderItems) {
-        if (item.variantId) {
+        if (item.cardListingId) {
+          // TCG listing: decrement card_listings.stock on confirmation
+          await db.update(cardListings)
+            .set({ stock: sql`GREATEST(0, ${cardListings.stock} - ${item.quantity})` })
+            .where(eq(cardListings.id, item.cardListingId));
+        } else if (item.variantId) {
+          // Legacy product variant (no-op stubs — product_variants dropped)
           const variant = await storage.getProductVariant(item.variantId);
           if (variant) {
             const newStock = Math.max(0, variant.stock - item.quantity);
             await storage.updateProductVariant(item.variantId, { stock: newStock });
-            await storage.createStockAdjustment({
-              variantId: item.variantId,
-              previousStock: variant.stock,
-              newStock,
-              adjustmentType: 'sale',
-              reason: `Havale onayı: ${order.orderNumber}`,
-            });
           }
         }
       }
@@ -4135,8 +4130,9 @@ export async function registerRoutes(
   });
 
   // ── Bank Transfer (Havale) Reddetme ────────────────────────────────────
-  // Admin havale ödemesini reddeder: sipariş iptal edilir (stok düşmemişti,
-  // restore gerekmiyor), müşteriye iptal bildirimi gönderilir.
+  // Admin havale ödemesini reddeder: sipariş iptal edilir.
+  // card_listings stock creation'da düşürülmediğinden restore gerekmez
+  // (stok yalnızca confirm adımında azaltılır — deferral pattern).
   app.post("/api/admin/orders/:id/reject-bank-transfer", requireAdmin, async (req, res) => {
     try {
       const parsed = rejectBankTransferSchema.safeParse(req.body ?? {});
@@ -4150,6 +4146,8 @@ export async function registerRoutes(
       if (order.paymentStatus !== 'awaiting_transfer') {
         return res.status(400).json({ error: "Sipariş zaten işlem görmüş" });
       }
+
+      // No stock restore needed: card_listings stock is decremented only at confirm, not at creation.
 
       const updatedOrder = await storage.updateOrder(req.params.id, {
         status: 'cancelled',

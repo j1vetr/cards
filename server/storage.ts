@@ -485,10 +485,8 @@ export class DbStorage implements IStorage {
   }): Promise<{ products: Product[]; total: number }> {
     const conditions: SQL[] = [eq(products.isActive, true)];
 
-    // En az 1 aktif varyant olsun (stok 0 olanlar da gösterilir — frontend "stokta yok" badge'i ile gösterir)
-    conditions.push(
-      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true)`
-    );
+    // product_variants dropped — ürün listeleme doğrudan isActive=true ile yapılır
+    // (TCG akışında card_listings availability; legacy ürünler için de tüm aktif ürünler gösterilir)
 
     // Kategori filtresi: primary field VEYA junction table
     if (filters?.categoryId) {
@@ -568,10 +566,8 @@ export class DbStorage implements IStorage {
     minPrice?: number;
     maxPrice?: number;
   }): Promise<{ sizes: string[]; colors: { name: string; hex: string | null }[]; fits: string[] }> {
+    // product_variants dropped — facet sorgusu doğrudan isActive=true üzerinden
     const conditions: SQL[] = [eq(products.isActive, true)];
-    conditions.push(
-      sql`EXISTS (SELECT 1 FROM product_variants WHERE product_id = ${products.id} AND is_active = true)`
-    );
     if (filters?.categoryId) {
       conditions.push(
         sql`(${products.categoryId} = ${filters.categoryId} OR ${products.id} IN (SELECT product_id FROM product_categories WHERE category_id = ${filters.categoryId}))`
