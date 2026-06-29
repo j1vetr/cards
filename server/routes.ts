@@ -5475,6 +5475,120 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // ── Admin TCG card management ─────────────────────────────────────────────
+
+  app.get("/api/admin/cards", requireAdmin, async (req, res) => {
+    try {
+      const { search, gameId, setId, rarity, page, limit } = req.query as Record<string, string>;
+      const result = await storage.getAdminCards({
+        search: search || undefined,
+        gameId: gameId || undefined,
+        setId: setId || undefined,
+        rarity: rarity || undefined,
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 30,
+      });
+      res.json(result);
+    } catch (err) {
+      console.error("[admin] getAdminCards:", err);
+      res.status(500).json({ error: "Kartlar yüklenemedi" });
+    }
+  });
+
+  app.put("/api/admin/cards/:id", requireAdmin, async (req, res) => {
+    try {
+      const { isActive, isFeatured, isNew } = req.body;
+      const updated = await storage.updateAdminCard(req.params.id, { isActive, isFeatured, isNew });
+      if (!updated) return res.status(404).json({ error: "Kart bulunamadı" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Kart güncellenemedi" });
+    }
+  });
+
+  app.get("/api/admin/cards/:id/listings", requireAdmin, async (req, res) => {
+    try {
+      const listings = await storage.getAdminCardListings(req.params.id);
+      res.json(listings);
+    } catch (err) {
+      res.status(500).json({ error: "Listing'ler yüklenemedi" });
+    }
+  });
+
+  app.post("/api/admin/cards/:id/listings", requireAdmin, async (req, res) => {
+    try {
+      const { condition, price, stock, isActive } = req.body;
+      if (!condition || price == null || stock == null) {
+        return res.status(400).json({ error: "condition, price ve stock gerekli" });
+      }
+      const listing = await storage.upsertAdminCardListing({
+        cardId: req.params.id,
+        condition,
+        price: String(price),
+        stock: Number(stock),
+        isActive: isActive !== false,
+      });
+      res.json(listing);
+    } catch (err) {
+      res.status(500).json({ error: "Listing oluşturulamadı" });
+    }
+  });
+
+  app.put("/api/admin/cards/:id/listings/:listingId", requireAdmin, async (req, res) => {
+    try {
+      const { condition, price, stock, isActive } = req.body;
+      const listing = await storage.upsertAdminCardListing({
+        cardId: req.params.id,
+        condition,
+        price: String(price),
+        stock: Number(stock),
+        isActive: isActive !== false,
+      });
+      res.json(listing);
+    } catch (err) {
+      res.status(500).json({ error: "Listing güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/admin/cards/:id/listings/:listingId", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteAdminCardListing(req.params.listingId);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Listing silinemedi" });
+    }
+  });
+
+  app.get("/api/admin/card-sets", requireAdmin, async (req, res) => {
+    try {
+      const { gameId } = req.query as Record<string, string>;
+      const sets = await storage.getAdminCardSets(gameId || undefined);
+      res.json(sets);
+    } catch (err) {
+      res.status(500).json({ error: "Setler yüklenemedi" });
+    }
+  });
+
+  app.put("/api/admin/card-sets/:id", requireAdmin, async (req, res) => {
+    try {
+      const { isActive } = req.body;
+      const updated = await storage.updateAdminCardSet(req.params.id, { isActive });
+      if (!updated) return res.status(404).json({ error: "Set bulunamadı" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Set güncellenemedi" });
+    }
+  });
+
+  app.get("/api/admin/card-games", requireAdmin, async (req, res) => {
+    try {
+      const games = await storage.getAdminCardGames();
+      res.json(games);
+    } catch (err) {
+      res.status(500).json({ error: "Oyunlar yüklenemedi" });
+    }
+  });
+
   // ── Public TCG routes ─────────────────────────────────────────────────────
 
   app.get("/api/card-games", async (_req, res) => {

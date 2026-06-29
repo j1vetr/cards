@@ -661,9 +661,24 @@ export default function AdminOrderDetail() {
                         </p>
                       )}
                       {item.variantDetails && (
-                        <p className="text-[11px] text-neutral-500 mt-1">
-                          {item.variantDetails}
-                        </p>
+                        (() => {
+                          const TCG_CONDS = ['NM','LP','MP','HP','DMG','PSA10','PSA9','PSA8','PSA7'];
+                          const isTcg = TCG_CONDS.includes(item.variantDetails!);
+                          const condColor: Record<string,string> = {
+                            NM:'bg-emerald-100 text-emerald-800',LP:'bg-blue-100 text-blue-800',
+                            MP:'bg-yellow-100 text-yellow-800',HP:'bg-orange-100 text-orange-800',
+                            DMG:'bg-red-100 text-red-800',PSA10:'bg-purple-100 text-purple-800',
+                            PSA9:'bg-purple-100 text-purple-800',PSA8:'bg-purple-100 text-purple-800',
+                            PSA7:'bg-purple-100 text-purple-800',
+                          };
+                          return isTcg ? (
+                            <span className={`inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${condColor[item.variantDetails!] ?? 'bg-neutral-100 text-neutral-700'}`}>
+                              {item.variantDetails}
+                            </span>
+                          ) : (
+                            <p className="text-[11px] text-neutral-500 mt-1">{item.variantDetails}</p>
+                          );
+                        })()
                       )}
                       {item.sku && (
                         <p className="text-[11px] text-neutral-400 mt-0.5 inline-flex items-center gap-1">

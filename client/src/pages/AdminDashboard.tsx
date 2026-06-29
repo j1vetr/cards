@@ -16,6 +16,8 @@ import MenuTab from './admin/MenuTab';
 import CouponsTab from './admin/CouponsTab';
 import ReviewsTab from './admin/ReviewsTab';
 import CardApiSyncTab from './admin/CardApiSyncTab';
+import CardsTab from './admin/CardsTab';
+import CardSetsTab from './admin/CardSetsTab';
 
 import CategoryModal from './admin/modals/CategoryModal';
 import UserDetailModal from './admin/modals/UserDetailModal';
@@ -188,6 +190,8 @@ export default function AdminDashboard() {
         {activeTab === 'coupons' && <CouponsTab />}
         {activeTab === 'reviews' && <ReviewsTab />}
         {activeTab === 'card-api-sync' && <CardApiSyncTab />}
+        {activeTab === 'cards' && <CardsTab />}
+        {activeTab === 'card-sets' && <CardSetsTab />}
       </AdminLayout>
 
       {showCategoryModal && (

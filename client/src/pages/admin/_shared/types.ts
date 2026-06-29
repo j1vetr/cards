@@ -64,6 +64,8 @@ export interface Stats {
   totalUsers: number;
   totalRevenue: number;
   pendingOrders: number;
+  totalCards: number;
+  activeListings: number;
 }
 
 export interface ProductVariant {
@@ -149,4 +151,6 @@ export type TabType =
   | 'menu'
   | 'coupons'
   | 'reviews'
-  | 'card-api-sync';
+  | 'card-api-sync'
+  | 'cards'
+  | 'card-sets';

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ArrowUpRight,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import type { ReactNode, ComponentType } from 'react';
 import type { Stats, Order, Product, TabType } from './_shared/types';
@@ -230,8 +231,8 @@ export default function DashboardTab({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KpiCard
           icon={Package}
-          label="Ürün"
-          value={formatNumber(stats?.totalProducts ?? 0)}
+          label="Kart"
+          value={formatNumber(stats?.totalCards ?? 0)}
           loading={showStatsLoading}
         />
         <KpiCard
@@ -342,18 +343,18 @@ export default function DashboardTab({
               errored={statsError && !stats}
             />
             <StatRow
+              icon={Sparkles}
+              label="Aktif listing"
+              value={formatNumber(stats?.activeListings ?? 0)}
+              loading={showStatsLoading}
+              errored={statsError && !stats}
+            />
+            <StatRow
               icon={Layers}
               label="Kategoriler"
               value={formatNumber(stats?.totalCategories ?? 0)}
               loading={showStatsLoading}
               errored={statsError && !stats}
-            />
-            <StatRow
-              icon={CheckCircle2}
-              label="Aktif ürünler"
-              value={formatNumber(activeProducts)}
-              loading={productsLoading && products.length === 0 && !productsError}
-              errored={productsError && products.length === 0}
             />
           </div>
         </PageSection>

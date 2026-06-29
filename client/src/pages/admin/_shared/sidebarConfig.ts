@@ -12,6 +12,8 @@ import {
   Ticket,
   MessageSquare,
   RefreshCw,
+  Layers,
+  BookOpen,
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
@@ -30,6 +32,8 @@ export const VALID_TABS: TabType[] = [
   'coupons',
   'reviews',
   'card-api-sync',
+  'cards',
+  'card-sets',
 ];
 
 export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
@@ -68,6 +72,8 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
   {
     title: 'TCG',
     items: [
+      { id: 'cards', icon: Layers, label: 'Kartlar' },
+      { id: 'card-sets', icon: BookOpen, label: 'Kart Setleri' },
       { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
     ],
   },

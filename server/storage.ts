@@ -134,6 +134,8 @@ export interface AdminStats {
   totalUsers: number;
   totalRevenue: number;
   pendingOrders: number;
+  totalCards: number;
+  activeListings: number;
 }
 
 export interface IStorage {
@@ -433,7 +435,9 @@ export class DbStorage implements IStorage {
     const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
     const [pendingCount] = await db.select({ count: sql<number>`count(*)` }).from(orders).where(eq(orders.status, 'pending'));
     const [revenue] = await db.select({ total: sql<number>`COALESCE(SUM(CAST(total AS DECIMAL)), 0)` }).from(orders);
-    
+    const [cardCount] = await db.select({ count: sql<number>`count(*)` }).from(cards).where(eq(cards.isActive, true));
+    const [listingCount] = await db.select({ count: sql<number>`count(*)` }).from(cardListings).where(and(eq(cardListings.isActive, true), gt(cardListings.stock, 0)));
+
     return {
       totalProducts: Number(productCount.count),
       totalCategories: Number(categoryCount.count),
@@ -441,6 +445,8 @@ export class DbStorage implements IStorage {
       totalUsers: Number(userCount.count),
       totalRevenue: Number(revenue.total),
       pendingOrders: Number(pendingCount.count),
+      totalCards: Number(cardCount.count),
+      activeListings: Number(listingCount.count),
     };
   }
 
@@ -2553,6 +2559,134 @@ export class DbStorage implements IStorage {
       ORDER BY type ASC
     `);
     return (result.rows as any[]).map(r => r.type).filter(Boolean);
+  }
+
+  // ── Admin TCG management ──────────────────────────────────────────────────
+
+  async getAdminCards(filters: {
+    search?: string;
+    gameId?: string;
+    setId?: string;
+    rarity?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ cards: any[]; total: number }> {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(50, Math.max(1, filters.limit ?? 30));
+    const offset = (page - 1) * limit;
+
+    const searchFilter = filters.search
+      ? sql`AND (c.name ILIKE ${'%' + filters.search + '%'} OR c.card_number ILIKE ${'%' + filters.search + '%'})`
+      : sql``;
+    const gameFilter = filters.gameId ? sql`AND cg.id = ${filters.gameId}` : sql``;
+    const setFilter = filters.setId ? sql`AND cs.id = ${filters.setId}` : sql``;
+    const rarityFilter = filters.rarity ? sql`AND LOWER(c.rarity) = LOWER(${filters.rarity})` : sql``;
+
+    const rowsResult = await db.execute(sql`
+      SELECT
+        c.id, c.name, c.slug, c.card_number, c.rarity, c.image_url,
+        c.is_active, c.is_featured, c.is_new, c.created_at,
+        cs.id AS set_id, cs.name AS set_name,
+        cg.id AS game_id, cg.name AS game_name,
+        COUNT(DISTINCT cl.id) FILTER (WHERE cl.is_active = true AND cl.stock > 0)::int AS active_listings,
+        COUNT(DISTINCT cl.id)::int AS total_listings
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      LEFT JOIN card_listings cl ON cl.card_id = c.id
+      WHERE 1=1 ${searchFilter} ${gameFilter} ${setFilter} ${rarityFilter}
+      GROUP BY c.id, cs.id, cg.id
+      ORDER BY c.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `);
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS total
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      WHERE 1=1 ${searchFilter} ${gameFilter} ${setFilter} ${rarityFilter}
+    `);
+
+    return {
+      cards: rowsResult.rows as any[],
+      total: Number((countResult.rows[0] as any)?.total ?? 0),
+    };
+  }
+
+  async updateAdminCard(id: string, patch: {
+    isActive?: boolean;
+    isFeatured?: boolean;
+    isNew?: boolean;
+  }): Promise<any> {
+    const [updated] = await db.update(cards)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(cards.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getAdminCardListings(cardId: string): Promise<any[]> {
+    return db.select().from(cardListings)
+      .where(eq(cardListings.cardId, cardId))
+      .orderBy(cardListings.condition);
+  }
+
+  async upsertAdminCardListing(data: {
+    cardId: string;
+    condition: string;
+    price: string;
+    stock: number;
+    isActive: boolean;
+  }): Promise<any> {
+    const [existing] = await db.select().from(cardListings)
+      .where(and(eq(cardListings.cardId, data.cardId), eq(cardListings.condition, data.condition)));
+
+    if (existing) {
+      const [updated] = await db.update(cardListings)
+        .set({ price: data.price, stock: data.stock, isActive: data.isActive, updatedAt: new Date() })
+        .where(eq(cardListings.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [inserted] = await db.insert(cardListings).values(data).returning();
+    return inserted;
+  }
+
+  async deleteAdminCardListing(id: string): Promise<void> {
+    await db.delete(cardListings).where(eq(cardListings.id, id));
+  }
+
+  async getAdminCardSets(gameId?: string): Promise<any[]> {
+    const gameFilter = gameId ? sql`AND cg.id = ${gameId}` : sql``;
+    const result = await db.execute(sql`
+      SELECT
+        cs.id, cs.name, cs.slug, cs.series, cs.release_date, cs.total_cards,
+        cs.logo_url, cs.symbol_url, cs.is_active,
+        cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug,
+        COUNT(DISTINCT c.id)::int AS card_count,
+        COUNT(DISTINCT cl.id) FILTER (WHERE cl.is_active = true AND cl.stock > 0)::int AS active_listings
+      FROM card_sets cs
+      JOIN card_games cg ON cg.id = cs.game_id
+      LEFT JOIN cards c ON c.set_id = cs.id AND c.is_active = true
+      LEFT JOIN card_listings cl ON cl.card_id = c.id
+      WHERE 1=1 ${gameFilter}
+      GROUP BY cs.id, cg.id
+      ORDER BY cs.release_date DESC NULLS LAST, cs.name ASC
+    `);
+    return result.rows as any[];
+  }
+
+  async updateAdminCardSet(id: string, patch: { isActive?: boolean }): Promise<any> {
+    const [updated] = await db.update(cardSets)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(cardSets.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getAdminCardGames(): Promise<any[]> {
+    return db.select().from(cardGames).orderBy(cardGames.name);
   }
 
 }
