@@ -5463,6 +5463,50 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // Auto-list cards from PriceCharting prices × multiplier
+  app.post("/api/admin/tcg/auto-list", requireAdmin, async (req, res) => {
+    try {
+      const { multiplier = 1.9, condition = "NM", stock = 1, gameSlug } = req.body as {
+        multiplier?: number;
+        condition?: string;
+        stock?: number;
+        gameSlug?: string;
+      };
+
+      if (multiplier <= 0 || multiplier > 100) {
+        return res.status(400).json({ error: "Çarpan 0-100 arasında olmalı" });
+      }
+      if (stock < 0 || stock > 9999) {
+        return res.status(400).json({ error: "Stok 0-9999 arasında olmalı" });
+      }
+
+      const result = await storage.bulkAutoListFromPrices({
+        multiplier: Number(multiplier),
+        condition: condition || "NM",
+        stock: Number(stock),
+        gameSlug: gameSlug || undefined,
+      });
+
+      res.json({
+        message: `${result.created} yeni listing oluşturuldu, ${result.updated} güncellendi`,
+        ...result,
+      });
+    } catch (err) {
+      console.error("[TCG] auto-list error:", err);
+      res.status(500).json({ error: "Otomatik listeleme başarısız" });
+    }
+  });
+
+  // TCG stats for admin
+  app.get("/api/admin/tcg/stats", requireAdmin, async (_req, res) => {
+    try {
+      const stats = await storage.getTcgStats();
+      res.json(stats);
+    } catch (err) {
+      res.status(500).json({ error: "İstatistikler alınamadı" });
+    }
+  });
+
   // Get a single sync run (for polling)
   app.get("/api/admin/tcg/sync-runs/:id", requireAdmin, async (req, res) => {
     try {
@@ -5719,7 +5763,7 @@ Sitemap: ${baseUrl}/sitemap.xml
     try {
       const {
         game, set, rarity, type, condition, search, sort, page, limit,
-        minPrice, maxPrice, featured,
+        minPrice, maxPrice, featured, inStock,
       } = req.query as Record<string, string>;
       const result = await storage.getCardsPublic({
         gameSlug: game || undefined,
@@ -5734,6 +5778,7 @@ Sitemap: ${baseUrl}/sitemap.xml
         minPrice: minPrice ? parseFloat(minPrice) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
         featured: featured === 'true' ? true : undefined,
+        inStock: inStock === 'true' ? true : undefined,
       });
       res.json(result);
     } catch (err) {

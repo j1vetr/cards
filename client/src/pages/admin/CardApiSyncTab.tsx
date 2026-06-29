@@ -10,6 +10,9 @@ import {
   Database,
   Layers,
   Info,
+  Zap,
+  BarChart3,
+  Tag,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
 
@@ -48,6 +51,12 @@ interface SyncRun {
   completedAt?: string | null;
 }
 
+interface TcgStats {
+  totalCards: number;
+  totalListings: number;
+  totalPrices: number;
+}
+
 const GAME_LABELS: Record<string, string> = {
   pokemon_tcg: "Pokemon TCG",
   riftbound: "Riftbound",
@@ -59,6 +68,8 @@ const MODE_LABELS: Record<string, string> = {
   cards: "Kart Import",
   prices: "Fiyat Güncelleme",
 };
+
+const CONDITIONS = ["NM", "LP", "MP", "HP", "DMG"];
 
 function StatusBadge({ status }: { status: string }) {
   const base = "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium";
@@ -97,6 +108,18 @@ export default function CardApiSyncTab() {
   const [selectedSetId, setSelectedSetId] = useState<string>("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
 
+  // Auto-list state
+  const [autoListMultiplier, setAutoListMultiplier] = useState<string>("1.9");
+  const [autoListCondition, setAutoListCondition] = useState<string>("NM");
+  const [autoListStock, setAutoListStock] = useState<string>("1");
+  const [autoListGame, setAutoListGame] = useState<string>("");
+  const [autoListResult, setAutoListResult] = useState<{
+    created: number;
+    updated: number;
+    noPrice: number;
+    message: string;
+  } | null>(null);
+
   const { data: games = [] } = useQuery<CardGame[]>({
     queryKey: ["/api/admin/tcg/games"],
     refetchInterval: false,
@@ -121,6 +144,11 @@ export default function CardApiSyncTab() {
     refetchInterval: activeRunId ? 3000 : 15000,
   });
 
+  const { data: tcgStats, refetch: refetchStats } = useQuery<TcgStats>({
+    queryKey: ["/api/admin/tcg/stats"],
+    refetchInterval: 30000,
+  });
+
   const { data: activeRun } = useQuery<SyncRun>({
     queryKey: ["/api/admin/tcg/sync-runs", activeRunId],
     queryFn: async (): Promise<SyncRun> => {
@@ -137,6 +165,7 @@ export default function CardApiSyncTab() {
     if (activeRun && activeRun.status !== "running") {
       setActiveRunId(null);
       qc.invalidateQueries({ queryKey: ["/api/admin/tcg/sync-runs"] });
+      refetchStats();
     }
   }, [activeRun?.status]);
 
@@ -167,20 +196,84 @@ export default function CardApiSyncTab() {
     },
   });
 
+  const autoListMutation = useMutation({
+    mutationFn: async () => {
+      const multiplier = parseFloat(autoListMultiplier);
+      const stock = parseInt(autoListStock, 10);
+      if (isNaN(multiplier) || multiplier <= 0) throw new Error("Geçerli bir çarpan girin (örn. 1.9)");
+      if (isNaN(stock) || stock < 0) throw new Error("Geçerli bir stok miktarı girin");
+
+      const res = await fetch("/api/admin/tcg/auto-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          multiplier,
+          condition: autoListCondition,
+          stock,
+          gameSlug: autoListGame || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Bilinmeyen hata" }));
+        throw new Error(err.error ?? "Listeleme başarısız");
+      }
+      return res.json() as Promise<{ created: number; updated: number; noPrice: number; message: string }>;
+    },
+    onSuccess: (data) => {
+      setAutoListResult(data);
+      refetchStats();
+      qc.invalidateQueries({ queryKey: ["/api/admin/tcg/stats"] });
+    },
+  });
+
   const isRunning = !!activeRunId && activeRun?.status === "running";
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Kart API Senkronizasyonu"
-        description="Pokemon TCG ve Riftbound verilerini API'den çek; PriceCharting ile fiyatları güncelle."
+        description="Pokemon TCG ve Riftbound verilerini API'den çek; PriceCharting ile fiyatları güncelle ve otomatik listele."
       />
+
+      {/* Stats overview */}
+      {tcgStats && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white border border-neutral-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <Database className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-wide">Toplam Kart</p>
+              <p className="text-xl font-bold text-neutral-900">{tcgStats.totalCards.toLocaleString("tr-TR")}</p>
+            </div>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-wide">PriceCharting Fiyat</p>
+              <p className="text-xl font-bold text-neutral-900">{tcgStats.totalPrices.toLocaleString("tr-TR")}</p>
+            </div>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
+              <Tag className="w-4 h-4 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-wide">Aktif Listing</p>
+              <p className="text-xl font-bold text-neutral-900">{tcgStats.totalListings.toLocaleString("tr-TR")}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sync Configuration */}
       <Card className="p-5">
         <h3 className="text-[13px] font-semibold text-neutral-800 mb-4 flex items-center gap-2">
           <Layers className="w-4 h-4 text-indigo-600" />
-          Senkronizasyon Ayarları
+          API Senkronizasyonu
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -253,7 +346,7 @@ export default function CardApiSyncTab() {
             {selectedMode === "cards" &&
               "Seçili set (veya tüm setler) için kartlar API'den çekilip upsert edilir. Önce set import yapılmış olmalı."}
             {selectedMode === "prices" &&
-              "Tüm aktif kartlar için PriceCharting'den market/low/high fiyatlar çekilir. API key gereklidir (Ayarlar → pricecharting_api_key)."}
+              "Tüm aktif kartlar için PriceCharting'den market/low/high fiyatlar çekilir. API key gereklidir (Ayarlar → pricecharting_api_key). 8.000+ kart için 40+ dakika sürebilir."}
           </span>
         </div>
 
@@ -316,6 +409,144 @@ export default function CardApiSyncTab() {
           </div>
         </Card>
       )}
+
+      {/* Auto-listing from PriceCharting */}
+      <Card className="p-5">
+        <h3 className="text-[13px] font-semibold text-neutral-800 mb-1 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-amber-500" />
+          PriceCharting × Çarpan ile Otomatik Listeleme
+        </h3>
+        <p className="text-[12px] text-neutral-500 mb-4">
+          Fiyat verisi çekilmiş kartlar için otomatik olarak listing oluşturur.
+          Önce "Fiyat Güncelleme" sync'ini çalıştırın.
+        </p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+          {/* Multiplier */}
+          <div>
+            <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
+              Çarpan (× USD)
+            </label>
+            <input
+              data-testid="input-auto-list-multiplier"
+              type="number"
+              step="0.1"
+              min="0.1"
+              max="100"
+              value={autoListMultiplier}
+              onChange={(e) => setAutoListMultiplier(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              placeholder="1.9"
+            />
+          </div>
+
+          {/* Condition */}
+          <div>
+            <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
+              Kondisyon
+            </label>
+            <select
+              data-testid="select-auto-list-condition"
+              value={autoListCondition}
+              onChange={(e) => setAutoListCondition(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            >
+              {CONDITIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Stock */}
+          <div>
+            <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
+              Stok Adedi
+            </label>
+            <input
+              data-testid="input-auto-list-stock"
+              type="number"
+              min="0"
+              max="9999"
+              value={autoListStock}
+              onChange={(e) => setAutoListStock(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              placeholder="1"
+            />
+          </div>
+
+          {/* Game filter */}
+          <div>
+            <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
+              Oyun Filtresi
+            </label>
+            <select
+              data-testid="select-auto-list-game"
+              value={autoListGame}
+              onChange={(e) => setAutoListGame(e.target.value)}
+              className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            >
+              <option value="">Tüm oyunlar</option>
+              <option value="pokemon">Pokemon TCG</option>
+              <option value="riftbound">Riftbound</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="mb-4 bg-amber-50 border border-amber-100 rounded-md p-3 flex gap-2 text-[12px] text-amber-800">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+          <span>
+            Mevcut listing varsa fiyat ve stok güncellenir. Yoksa yeni oluşturulur.
+            Fiyat = PriceCharting USD market fiyat × {autoListMultiplier || "1.9"}.
+            Şu an <strong>{tcgStats?.totalPrices ?? 0}</strong> kartın fiyat verisi var.
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            {autoListMutation.isError && (
+              <p className="text-[12px] text-red-600 flex items-center gap-1">
+                <XCircle className="w-3.5 h-3.5" />
+                {autoListMutation.error instanceof Error ? autoListMutation.error.message : "Hata oluştu"}
+              </p>
+            )}
+            {autoListResult && !autoListMutation.isPending && (
+              <div className="text-[12px] text-emerald-700 flex flex-col gap-0.5">
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  {autoListResult.message}
+                </span>
+                <span className="text-neutral-500 ml-4">
+                  Fiyatsız kart: {autoListResult.noPrice.toLocaleString("tr-TR")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <PrimaryButton
+            data-testid="button-auto-list"
+            onClick={() => {
+              setAutoListResult(null);
+              autoListMutation.mutate();
+            }}
+            disabled={autoListMutation.isPending || (tcgStats?.totalPrices ?? 0) === 0}
+            className="flex items-center gap-2"
+          >
+            {autoListMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4" />
+            )}
+            {autoListMutation.isPending ? "Listeleniyor…" : "Otomatik Listele"}
+          </PrimaryButton>
+        </div>
+
+        {(tcgStats?.totalPrices ?? 0) === 0 && (
+          <p className="mt-2 text-[11px] text-neutral-400 text-right">
+            Önce "Fiyat Güncelleme" sync modunu çalıştırın ve PriceCharting API key'ini ayarlayın.
+          </p>
+        )}
+      </Card>
 
       {/* Sync History */}
       <Card>

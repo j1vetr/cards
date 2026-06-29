@@ -2357,6 +2357,7 @@ export class DbStorage implements IStorage {
     page?: number;
     limit?: number;
     featured?: boolean;
+    inStock?: boolean;
   }): Promise<{ cards: any[]; total: number }> {
     const page = Math.max(1, filters.page ?? 1);
     const limit = Math.min(48, Math.max(1, filters.limit ?? 24));
@@ -2414,9 +2415,9 @@ export class DbStorage implements IStorage {
         ${featuredFilter}
         ${searchFilter}
       GROUP BY c.id, cs.id, cg.id
-      HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0
-        ${minPriceHaving}
-        ${maxPriceHaving}
+      ${(filters.inStock || filters.minPrice != null || filters.maxPrice != null)
+        ? sql`HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0 ${minPriceHaving} ${maxPriceHaving}`
+        : sql``}
       ORDER BY ${orderClause}
       LIMIT ${limit} OFFSET ${offset}
     `);
@@ -2436,9 +2437,9 @@ export class DbStorage implements IStorage {
           ${featuredFilter}
           ${searchFilter}
         GROUP BY c.id
-        HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0
-          ${minPriceHaving}
-          ${maxPriceHaving}
+        ${(filters.inStock || filters.minPrice != null || filters.maxPrice != null)
+          ? sql`HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0 ${minPriceHaving} ${maxPriceHaving}`
+          : sql``}
       ) sub
     `);
 
@@ -2792,6 +2793,75 @@ export class DbStorage implements IStorage {
     const [row] = await db.select().from(cardPrices)
       .where(and(eq(cardPrices.cardId, cardId), eq(cardPrices.source, 'pricecharting')));
     return row ?? null;
+  }
+
+  async bulkAutoListFromPrices(opts: {
+    multiplier: number;
+    condition: string;
+    stock: number;
+    gameSlug?: string;
+  }): Promise<{ created: number; updated: number; noPrice: number }> {
+    const gameFilter = opts.gameSlug ? sql`AND cg.slug = ${opts.gameSlug}` : sql``;
+
+    const rows = await db.execute(sql`
+      SELECT c.id AS card_id, cp.price_market
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      JOIN card_prices cp ON cp.card_id = c.id AND cp.source = 'pricecharting'
+      WHERE c.is_active = true
+        AND cp.price_market IS NOT NULL
+        AND cp.price_market::numeric > 0
+        ${gameFilter}
+    `);
+
+    let created = 0;
+    let updated = 0;
+
+    for (const row of rows.rows as any[]) {
+      const price = (parseFloat(row.price_market) * opts.multiplier).toFixed(2);
+      const [existing] = await db
+        .select({ id: cardListings.id })
+        .from(cardListings)
+        .where(and(eq(cardListings.cardId, row.card_id), eq(cardListings.condition, opts.condition)));
+
+      if (existing) {
+        await db.update(cardListings)
+          .set({ price, stock: opts.stock, isActive: true, updatedAt: new Date() })
+          .where(eq(cardListings.id, existing.id));
+        updated++;
+      } else {
+        await db.insert(cardListings).values({
+          cardId: row.card_id,
+          condition: opts.condition,
+          price,
+          stock: opts.stock,
+          isActive: true,
+        });
+        created++;
+      }
+    }
+
+    const totalWithPrices = rows.rows.length;
+    const [allActive] = await db.select({ cnt: sql<number>`COUNT(*)::int` }).from(cards).where(eq(cards.isActive, true));
+    const noPrice = Math.max(0, (allActive?.cnt ?? 0) - totalWithPrices);
+
+    return { created, updated, noPrice };
+  }
+
+  async getTcgStats(): Promise<{ totalCards: number; totalListings: number; totalPrices: number }> {
+    const result = await db.execute(sql`
+      SELECT
+        (SELECT COUNT(*)::int FROM cards WHERE is_active = true) AS total_cards,
+        (SELECT COUNT(*)::int FROM card_listings WHERE is_active = true AND stock > 0) AS total_listings,
+        (SELECT COUNT(*)::int FROM card_prices WHERE source = 'pricecharting' AND price_market IS NOT NULL) AS total_prices
+    `);
+    const r = result.rows[0] as any;
+    return {
+      totalCards: r?.total_cards ?? 0,
+      totalListings: r?.total_listings ?? 0,
+      totalPrices: r?.total_prices ?? 0,
+    };
   }
 
 }
