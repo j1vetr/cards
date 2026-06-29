@@ -126,6 +126,11 @@ ALTER TABLE users DROP COLUMN IF EXISTS company_name;
 ALTER TABLE users DROP COLUMN IF EXISTS tax_number;
 ALTER TABLE users DROP COLUMN IF EXISTS tax_office;
 
+-- NOTE: product_variants table is intentionally retained for backward compatibility
+-- (existing product catalog, marketplace sync, shipping logic).
+-- It will be deprecated/removed in a follow-up migration once
+-- the full TCG catalog replaces the legacy clothing catalog.
+
 -- ============================================================
 -- 8. Seed default games
 -- ============================================================

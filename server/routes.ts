@@ -11,7 +11,7 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants, cardListings } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
 import {
   validateBody, firstZodMessage,
@@ -2345,12 +2345,19 @@ export async function registerRoutes(
             orderId: newOrder.id,
             productId: item.productId,
             variantId: item.variantId,
+            cardListingId: item.cardListingId,
             productName: item.productName,
             variantDetails: item.variantDetails,
             price: item.price,
             quantity: item.quantity,
             subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
           });
+          // Decrement card listing stock for TCG items
+          if (item.cardListingId) {
+            await tx.update(cardListings)
+              .set({ stock: sql`GREATEST(0, ${cardListings.stock} - ${item.quantity})` })
+              .where(eq(cardListings.id, item.cardListingId));
+          }
         }
 
         return newOrder;
@@ -2521,12 +2528,20 @@ export async function registerRoutes(
               orderId: newOrder.id,
               productId: item.productId,
               variantId: item.variantId,
+              cardListingId: item.cardListingId ?? null,
               productName: item.productName,
               variantDetails: item.variantDetails,
               price: item.price,
               quantity: item.quantity,
               subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
             });
+
+            // Decrement card listing stock for TCG items
+            if (item.cardListingId) {
+              await tx.update(cardListings)
+                .set({ stock: sql`GREATEST(0, ${cardListings.stock} - ${item.quantity})` })
+                .where(eq(cardListings.id, item.cardListingId));
+            }
 
             if (item.variantId && variantStock !== null) {
               const newStock = Math.max(0, variantStock - item.quantity);
@@ -4082,24 +4097,6 @@ export async function registerRoutes(
         content: `Sipariş iptal edildi. Sebep: ${req.body.reason || 'Belirtilmedi'}`,
         isPrivate: false,
       });
-
-      // If Aras Kargo was used for this order, try to cancel the shipment too
-      // Derive the barcodeNumber the same way createShipment does
-      const { getArasCredentials, cancelShipment: arasCancel } = await import('./arasKargoService.js');
-      const arasCreds = await getArasCredentials();
-      if (arasCreds.enabled && arasCreds.username) {
-        const existingNotes = await storage.getOrderNotes(req.params.id);
-        const wasSentToAras = existingNotes.some(n => n.content.includes("Aras Kargo API'ye kayıt gönderildi"));
-        if (wasSentToAras) {
-          const barcodeNumber = order.orderNumber.replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
-          arasCancel(barcodeNumber, req.body.reason || 'Siparis iptali').then(result => {
-            const noteContent = result.success
-              ? `Aras Kargo'da kargo iptali yapıldı. (OperationCode: ${result.operationCode || '-'})`
-              : `Aras Kargo iptal denenedi ancak başarısız: ${result.error}`;
-            storage.createOrderNote({ orderId: req.params.id, content: noteContent, authorId: 'system' }).catch(() => {});
-          }).catch(err => console.error('[ArasKargo] Auto-cancel failed:', err));
-        }
-      }
 
       res.json(updatedOrder);
     } catch (error) {
