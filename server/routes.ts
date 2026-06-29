@@ -4538,6 +4538,12 @@ export async function registerRoutes(
       if (settings.aras_kargo_password) {
         settings.aras_kargo_password = '••••••••';
       }
+      if (settings.pricecharting_api_key) {
+        settings.pricecharting_api_key = '••••••••';
+      }
+      if (settings.pokemon_tcg_api_key) {
+        settings.pokemon_tcg_api_key = '••••••••';
+      }
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -4561,6 +4567,12 @@ export async function registerRoutes(
       }
       if (settings.aras_kargo_password === '••••••••') {
         delete settings.aras_kargo_password;
+      }
+      if (settings.pricecharting_api_key === '••••••••') {
+        delete settings.pricecharting_api_key;
+      }
+      if (settings.pokemon_tcg_api_key === '••••••••') {
+        delete settings.pokemon_tcg_api_key;
       }
       await storage.setSiteSettings(settings as any);
       res.json({ success: true });

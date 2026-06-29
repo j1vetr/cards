@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound, ShieldCheck, Truck, MapPin } from 'lucide-react';
+import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound, ShieldCheck, Truck, MapPin, Layers } from 'lucide-react';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 
 type WhatsAppEvent =
@@ -195,6 +195,8 @@ export default function SettingsPanel() {
     aras_kargo_query_url: 'https://customerservices.araskargo.com.tr/ArasCargoCustomerIntegrationService/ArasCargoIntegrationService.svc',
     aras_kargo_sender_address_id: '',
     aras_kargo_default_desi: '1',
+    pokemon_tcg_api_key: '',
+    pricecharting_api_key: '',
     ...Object.fromEntries(WHATSAPP_EVENTS.flatMap(({ key, defaultTpl }) => [
       [`wpileti_evt_${key}`, 'true'],
       [`wpileti_tpl_${key}`, defaultTpl],
@@ -1211,6 +1213,80 @@ export default function SettingsPanel() {
 
         <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
           Boş bırakılırsa sunucudaki ortam değişkenleri (TURNSTILE_SITE_KEY / TURNSTILE_SECRET_KEY) kullanılır. Production'da her ikisi de boşsa misafir yorumları reddedilir.
+        </div>
+      </div>
+
+      {/* TCG API Keys */}
+      <div className="bg-white border border-neutral-200 rounded-xl p-6" data-testid="card-tcg-api-keys">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-indigo-50 rounded-lg">
+            <Layers className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-neutral-900">TCG API Anahtarları</h3>
+            <p className="text-sm text-neutral-500">
+              Pokemon TCG ve PriceCharting API anahtarları. Kart senkronizasyonu ve fiyat güncellemesi için gereklidir.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-500 mb-2">
+              Pokemon TCG API Key{' '}
+              <a
+                href="https://dev.pokemontcg.io/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline text-xs font-normal"
+              >
+                (dev.pokemontcg.io)
+              </a>
+            </label>
+            <input
+              type="password"
+              value={settings.pokemon_tcg_api_key}
+              onChange={(e) => setSettings(s => ({ ...s, pokemon_tcg_api_key: e.target.value }))}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 font-mono text-sm"
+              data-testid="input-pokemon-tcg-api-key"
+            />
+            <p className="text-xs text-neutral-500 mt-1">
+              Opsiyonel. Boş bırakılırsa ücretsiz (rate-limited) API kullanılır.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-500 mb-2">
+              PriceCharting API Key{' '}
+              <a
+                href="https://www.pricecharting.com/api-documentation"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline text-xs font-normal"
+              >
+                (pricecharting.com/api-documentation)
+              </a>
+            </label>
+            <input
+              type="password"
+              value={settings.pricecharting_api_key}
+              onChange={(e) => setSettings(s => ({ ...s, pricecharting_api_key: e.target.value }))}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 font-mono text-sm"
+              data-testid="input-pricecharting-api-key"
+            />
+            <p className="text-xs text-neutral-500 mt-1">
+              Zorunlu. Kart API → Fiyat Güncelleme sync için gereklidir.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800">
+          Anahtarları kaydettikten sonra Admin → Kart API → Mod: <strong>Fiyat Güncelleme</strong> → Sync Başlat.
+          Ardından "Otomatik Listele" ile fiyatlı kartları mağazaya ekleyebilirsiniz.
         </div>
       </div>
 
