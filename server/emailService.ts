@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { storage } from './storage';
-import type { Order, OrderItem, User, PaymentRequest } from '@shared/schema';
+import type { Order, OrderItem, User } from '@shared/schema';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 import { formatTRDateTime } from '@shared/dateFormat';
 
@@ -794,6 +794,42 @@ function abandonedCartTemplate(userName: string, cartItems: CartItem[], cartTota
   `, { preheader: `Sepetinizde ${cartItems.length} ürün bekliyor — toplam ${cartTotal.toLocaleString('tr-TR')} ₺`, title: 'Sepetiniz', unsubscribeEmail: userEmail });
 }
 
+interface AbandonedCartItem {
+  productName: string;
+  variantDetails?: string | null;
+  quantity: string | number;
+  price: string | number;
+}
+
+export async function sendAbandonedCartEmail(
+  email: string,
+  userName: string,
+  cartItems: AbandonedCartItem[],
+  cartTotal: number,
+  siteUrl?: string,
+): Promise<EmailResult> {
+  try {
+    const transporter = await createTransporter();
+    if (!transporter) {
+      return { success: false, error: 'SMTP yapılandırması eksik' };
+    }
+    const settings = await storage.getSiteSettings();
+    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
+    const html = abandonedCartTemplate(userName, cartItems as any, cartTotal, siteUrl, email);
+    await transporter.sendMail({
+      from: `"Ecarte Jeans" <${fromEmail}>`,
+      to: email,
+      subject: 'Sepetiniz sizi bekliyor 🛒',
+      html,
+    });
+    console.log(`[Email] Abandoned cart sent to ${email}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Email] Failed to send abandoned cart email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Email sending functions
 export async function sendWelcomeEmail(user: User): Promise<EmailResult> {
   try {
@@ -1188,179 +1224,94 @@ export async function sendBankTransferPendingEmail(order: Order, items: OrderIte
   }
 }
 
-function paymentRequestPaidTemplate(reqRow: PaymentRequest): string {
-  const name = reqRow.customerName?.trim() || 'Değerli müşterimiz';
-  const amount = Number(reqRow.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-  const paidStr = formatTRDateTime(reqRow.paidAt ?? new Date());
-  return wrapTemplate(`
-    ${H1('Ödemeniz Alındı.')}
-    ${P(`Merhaba ${escapeHtml(name)},`)}
-    ${Lede('Kredi kartı ödemeniz başarıyla tahsil edildi. Detaylar aşağıdadır.')}
 
-    ${infoCard(`
-      <div style="font-size:13px;color:${BRAND.body};line-height:1.8;">
-        <div><strong style="color:${BRAND.ink};">Tutar:</strong> ${amount} ₺</div>
-        ${reqRow.description ? `<div><strong style="color:${BRAND.ink};">Açıklama:</strong> ${escapeHtml(reqRow.description)}</div>` : ''}
-        <div><strong style="color:${BRAND.ink};">Ödeme Tarihi:</strong> ${escapeHtml(paidStr)}</div>
-      </div>
-    `)}
-
-    ${P('Bizi tercih ettiğiniz için teşekkür ederiz.', BRAND.muted)}
-  `, { preheader: `Ödemeniz alındı — ${amount} ₺`, title: 'Ödeme Alındı' });
-}
-
-export async function sendPaymentRequestPaidEmail(reqRow: PaymentRequest): Promise<EmailResult> {
-  try {
-    if (!reqRow.customerEmail) {
-      return { success: false, error: 'E-posta adresi yok' };
-    }
-    const transporter = await createTransporter();
-    if (!transporter) {
-      return { success: false, error: 'SMTP yapılandırması eksik' };
-    }
-    const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
-
-    await transporter.sendMail({
-      from: `"Ecarte Jeans" <${fromEmail}>`,
-      to: reqRow.customerEmail,
-      subject: 'Ödemeniz Alındı',
-      html: paymentRequestPaidTemplate(reqRow),
-    });
-
-    console.log(`[Email] Payment request paid email sent to ${reqRow.customerEmail}`);
-    return { success: true };
-  } catch (error: any) {
-    console.error('[Email] Failed to send payment request paid email:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-export async function sendPasswordResetEmail(user: User, resetToken: string): Promise<EmailResult> {
+export async function sendPasswordResetEmail(user: User, token: string): Promise<EmailResult> {
   try {
     const transporter = await createTransporter();
-    if (!transporter) {
-      return { success: false, error: 'SMTP yapılandırması eksik' };
-    }
-    
+    if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
     const settings = await storage.getSiteSettings();
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
-    const siteUrl = settings.site_url || 'https://ecartejeans.com';
-    
-    const resetLink = `${siteUrl}/sifre-sifirla?token=${resetToken}`;
-    const userName = user.firstName || 'Değerli Müşterimiz';
-    
+    const siteUrl = CONTACT.siteUrl;
+    const resetUrl = `${siteUrl}/sifre-sifirla?token=${encodeURIComponent(token)}`;
+    const html = wrapTemplate(`
+      ${H1('Şifre Sıfırlama')}
+      ${P(`Merhaba ${escapeHtml(user.firstName || user.email)},`)}
+      ${Lede('Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Bu bağlantı 1 saat geçerlidir.')}
+      ${emailButton(resetUrl, 'Şifremi Sıfırla')}
+      ${Small('Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.')}
+    `, { preheader: 'Şifre sıfırlama bağlantınız', title: 'Şifre Sıfırlama' });
     await transporter.sendMail({
       from: `"Ecarte Jeans" <${fromEmail}>`,
       to: user.email,
-      subject: 'Şifre Sıfırlama Talebi',
-      html: passwordResetTemplate(userName, resetLink),
+      subject: 'Şifre Sıfırlama',
+      html,
     });
-    
-    console.log(`[Email] Password reset email sent to ${user.email}`);
     return { success: true };
   } catch (error: any) {
-    console.error('[Email] Failed to send password reset email:', error);
+    console.error('[Email] Password reset error:', error);
     return { success: false, error: error.message };
   }
 }
 
 export async function sendReviewRequestEmail(
-  userEmail: string,
-  userName: string,
+  email: string,
+  name: string,
   orderNumber: string,
-  products: string[]
+  products: Array<{ name: string; image?: string | null }>,
+  reviewToken: string,
 ): Promise<EmailResult> {
   try {
     const transporter = await createTransporter();
-    if (!transporter) {
-      return { success: false, error: 'SMTP yapılandırması eksik' };
-    }
-    
+    if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
     const settings = await storage.getSiteSettings();
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
-    
+    const siteUrl = CONTACT.siteUrl;
+    const reviewUrl = `${siteUrl}/yorum-yaz?token=${encodeURIComponent(reviewToken)}`;
+    const productList = products.map(p => `<li style="margin-bottom:4px;">${escapeHtml(p.name)}</li>`).join('');
+    const html = wrapTemplate(`
+      ${H1('Deneyiminizi Paylaşın')}
+      ${P(`Merhaba ${escapeHtml(name)},`)}
+      ${Lede(`#${escapeHtml(orderNumber)} siparişinizle ilgili deneyiminizi duymak isteriz.`)}
+      ${infoCard(`<ul style="margin:0;padding-left:18px;color:${BRAND.body};font-size:14px;">${productList}</ul>`)}
+      ${emailButton(reviewUrl, 'Yorum Yaz')}
+    `, { preheader: 'Siparişiniz hakkında yorum yapın', title: 'Yorum Daveti' });
     await transporter.sendMail({
       from: `"Ecarte Jeans" <${fromEmail}>`,
-      to: userEmail,
-      subject: 'Deneyiminizi Paylaşın',
-      html: reviewRequestTemplate(userName, orderNumber, products, userEmail),
+      to: email,
+      subject: 'Siparişiniz hakkında ne düşünüyorsunuz?',
+      html,
     });
-    
-    console.log(`[Email] Review request sent to ${userEmail}`);
     return { success: true };
   } catch (error: any) {
-    console.error('[Email] Failed to send review request:', error);
+    console.error('[Email] Review request error:', error);
     return { success: false, error: error.message };
   }
 }
 
-export async function sendTestEmail(toEmail: string): Promise<EmailResult> {
+export async function sendTestEmail(to: string): Promise<EmailResult> {
   try {
     const transporter = await createTransporter();
-    if (!transporter) {
-      return { success: false, error: 'SMTP yapılandırması eksik' };
-    }
-    
+    if (!transporter) return { success: false, error: 'SMTP yapılandırması eksik' };
     const settings = await storage.getSiteSettings();
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
-    
+    const html = wrapTemplate(`
+      ${H1('Test E-postası')}
+      ${P('Bu bir test e-postasıdır. SMTP ayarlarınız doğru çalışıyor.')}
+    `, { preheader: 'SMTP test', title: 'Test' });
     await transporter.sendMail({
       from: `"Ecarte Jeans" <${fromEmail}>`,
-      to: toEmail,
-      subject: 'Ecarte Jeans - Test E-postası',
-      html: wrapTemplate(`
-        ${H1('Test E-Postası.')}
-        ${Lede('Bu bir test e-postasıdır. SMTP ayarlarınız başarıyla yapılandırıldı.')}
-        ${infoCard(`
-          <div style="font-family:Helvetica,Arial,sans-serif;color:${BRAND.ink};font-size:14px;font-weight:600;">
-            <span style="display:inline-block;width:8px;height:8px;background:${BRAND.primary};border-radius:50%;margin-right:10px;vertical-align:middle;"></span>
-            E-posta sistemi çalışıyor.
-          </div>
-        `)}
-      `, { preheader: 'SMTP test e-postası — sistem çalışıyor', title: 'Test E-postası' }),
+      to,
+      subject: 'E-posta Testi — Ecarte Jeans',
+      html,
     });
-    
-    console.log(`[Email] Test email sent to ${toEmail}`);
     return { success: true };
   } catch (error: any) {
-    console.error('[Email] Failed to send test email:', error);
+    console.error('[Email] Test email error:', error);
     return { success: false, error: error.message };
   }
 }
 
-export async function sendAbandonedCartEmail(
-  userEmail: string,
-  userName: string,
-  cartItems: CartItem[],
-  cartTotal: number
-): Promise<EmailResult> {
-  try {
-    const transporter = await createTransporter();
-    if (!transporter) {
-      return { success: false, error: 'SMTP yapılandırması eksik' };
-    }
-    
-    const settings = await storage.getSiteSettings();
-    const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
-    const siteUrl = settings.site_url || 'https://ecartejeans.com';
-    
-    await transporter.sendMail({
-      from: `"Ecarte Jeans" <${fromEmail}>`,
-      to: userEmail,
-      subject: 'Sepetiniz Sizi Bekliyor! 🛒',
-      html: abandonedCartTemplate(userName, cartItems, cartTotal, siteUrl, userEmail),
-    });
-    
-    console.log(`[Email] Abandoned cart reminder sent to ${userEmail}`);
-    return { success: true };
-  } catch (error: any) {
-    console.error('[Email] Failed to send abandoned cart email:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-// Quote Email Template
+// Quote Email Template (kept for legacy compatibility, not actively used)
 interface QuoteEmailData {
   quoteNumber: string;
   dealerName: string;

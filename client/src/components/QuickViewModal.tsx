@@ -84,10 +84,10 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
   const needsSelection = hasVariants && !selectedVariant;
 
   const sizes = hasVariants
-    ? [...new Set(product.variants!.filter((v) => v.size).map((v) => v.size!))]
+    ? Array.from(new Set(product.variants!.filter((v) => v.size).map((v) => v.size!)))
     : [];
   const colors = hasVariants
-    ? [...new Set(product.variants!.filter((v) => v.color).map((v) => v.color!))]
+    ? Array.from(new Set(product.variants!.filter((v) => v.color).map((v) => v.color!)))
     : [];
 
   const handleAddToCart = async () => {

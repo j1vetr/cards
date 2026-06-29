@@ -11,25 +11,24 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, insertWholesaleSeriesSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertProductVariantSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, productVariants } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
 import {
   validateBody, firstZodMessage,
   profileUpdateSchema, addressCreateSchema, addressUpdateSchema,
-  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema, bulkWholesaleSchema, variantUpdateSchema,
+  categoryUpdateSchema, productUpdateSchema, bulkPriceSchema, bulkBadgeSchema, variantUpdateSchema,
   cartUpdateSchema, orderStatusUpdateSchema, orderTrackingSchema, orderUpdateSchema,
   orderNoteSchema, orderCancelSchema, couponWriteSchema, couponUpdateSchema,
   inventoryBulkUpdateSchema, campaignWriteSchema, campaignUpdateSchema,
   settingsWriteSchema, testEmailSchema, updateCredentialsSchema,
-  dealerWriteSchema, dealerUpdateSchema, quoteWriteSchema, quoteUpdateSchema, quoteStatusSchema,
-  sizeChartWriteSchema, sizeChartUpdateSchema, menuItemWriteSchema, menuItemUpdateSchema, menuReorderSchema,
+  menuItemWriteSchema, menuItemUpdateSchema, menuReorderSchema,
   woocommerceSettingsSchema, woocommerceTestSchema, iyzicoCredentialsSchema, adminInitSchema,
   influencerBulkSchema, paymentCreateSchema, whatsappTestSchema,
   confirmBankTransferSchema, rejectBankTransferSchema,
   adminLoginSchema, userLoginSchema, registerWriteSchema, forgotPasswordSchema, resetPasswordSchema,
   bankTransferOrderSchema, couponValidateSchema, maintenanceSchema,
   adminAccountUpdateSchema, productReviewSchema, dbClearTableSchema,
-  menuRegenerateSchema, wholesalePdfSchema, cartAddSchema,
+  menuRegenerateSchema, cartAddSchema,
   reviewRejectSchema, iyzicoCallbackSchema,
 } from "./validation";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
@@ -48,7 +47,6 @@ import {
   sendAdminReviewNotificationEmail,
   sendGuestReviewApprovedEmail,
   sendGuestReviewRejectedEmail,
-  sendPaymentRequestPaidEmail,
   type AdminReviewNotificationPayload,
 } from "./emailService";
 import { verifyTurnstile, getClientIp } from "./captcha";
@@ -62,8 +60,6 @@ import {
   sendOrderCancelledToAdmin,
   sendBankTransferPendingToCustomer,
   sendBankTransferPendingToAdmin,
-  sendPaymentRequestPaidToCustomer,
-  sendPaymentRequestPaidToAdmin,
   sendTestWhatsApp,
   sendReviewPendingToAdmin,
 } from "./whatsappService";
@@ -124,105 +120,41 @@ async function getAuthPayload(req: Request, res: Response): Promise<JwtPayload |
   return null;
 }
 
-// ─── Wholesale cart explosion ────────────────────────────────────────────────
-// A wholesale cart row is ONE "seri": a fixed size distribution sold as a single
-// unit, priced per piece (wholesalePrice). At payment time we explode that row
-// into one order line per size so the existing stock-deduct / restore /
-// idempotency loops downstream stay completely untouched. Retail rows pass
-// through 1:1. Returns flat order lines + a server-trusted subtotal. On any
-// integrity problem (missing variant, stock shortfall, deactivated series) it
-// returns an `error` string the caller surfaces as a 400 — it never throws.
+// ─── Cart line expansion (retail + TCG cards) ─────────────────────────────
 type ExpandedLine = {
-  productId: string;
+  productId: string | null;
   variantId: string | null;
+  cardListingId: string | null;
   quantity: number;
   productName: string;
   variantDetails: string | null;
   price: string;
-  itemType: 'retail' | 'wholesale';
-  seriesName: string | null;
-  seriesGroup: string | null;
 };
 
 async function expandCartLinesToOrderItems(
   cartItems: any[]
-): Promise<{ lines: ExpandedLine[]; subtotal: number; hasWholesale: boolean; error?: string }> {
+): Promise<{ lines: ExpandedLine[]; subtotal: number; error?: string }> {
   const lines: ExpandedLine[] = [];
   let subtotal = 0;
-  let hasWholesale = false;
 
   for (const cartItem of cartItems) {
-    if (cartItem.itemType === 'wholesale') {
-      hasWholesale = true;
-      // A wholesale row without a seriesId means its series was deleted out from
-      // under the cart (cart_items.seriesId is ON DELETE SET NULL). Never let it
-      // silently fall through to the retail branch (basePrice×1, coupons/bank %10
-      // re-enabled) — surface an explicit error so the buyer re-adds a valid series.
-      if (!cartItem.seriesId) {
-        return { lines, subtotal, hasWholesale, error: 'Toptan serisi artık mevcut değil. Lütfen ürünü sepetten çıkarıp yeniden ekleyin.' };
-      }
-      const product = await storage.getProduct(cartItem.productId);
-      if (!product) return { lines, subtotal, hasWholesale, error: 'Toptan ürün bulunamadı' };
-      if (!product.wholesaleEnabled || !product.wholesalePrice || !product.wholesaleSeriesId) {
-        return { lines, subtotal, hasWholesale, error: `${product.name} artık toptan satışa uygun değil` };
-      }
-      const series = await storage.getWholesaleSeries(cartItem.seriesId);
-      if (!series || !series.isActive) {
-        return { lines, subtotal, hasWholesale, error: 'Seri bulunamadı veya pasif' };
-      }
-      const distribution = series.sizeDistribution || [];
-      if (distribution.length === 0) {
-        return { lines, subtotal, hasWholesale, error: 'Seri beden dağılımı tanımlı değil' };
-      }
-      const unitPrice = parseFloat(product.wholesalePrice || '0');
-      const setCount = cartItem.quantity || 1;
-      const variants = await storage.getProductVariants(product.id);
-      const seriesGroup = cartItem.id;
-      for (const dist of distribution) {
-        const sizeQty = Number(dist.quantity) || 0;
-        if (sizeQty <= 0) continue;
-        const lineQty = sizeQty * setCount;
-        const variant = variants.find(v => v.isActive && (v.size || '').toLowerCase() === String(dist.size).toLowerCase());
-        if (!variant) {
-          return { lines, subtotal, hasWholesale, error: `${product.name}: ${dist.size} bedeni için varyant bulunamadı` };
-        }
-        if ((variant.stock ?? 0) < lineQty) {
-          return { lines, subtotal, hasWholesale, error: `${product.name} (${dist.size}) için yeterli stok yok (gerekli: ${lineQty}, mevcut: ${variant.stock ?? 0})` };
-        }
-        subtotal += unitPrice * lineQty;
-        lines.push({
-          productId: product.id,
-          variantId: variant.id,
-          quantity: lineQty,
-          productName: product.name,
-          variantDetails: `${dist.size}${variant.color ? ' ' + variant.color : ''}`.trim(),
-          price: unitPrice.toFixed(2),
-          itemType: 'wholesale',
-          seriesName: series.name,
-          seriesGroup,
-        });
-      }
-    } else {
-      const variant = cartItem.variantId ? await storage.getProductVariant(cartItem.variantId) : null;
-      const actualProductId = variant?.productId || cartItem.productId;
-      const product = await storage.getProduct(actualProductId);
-      if (!product) continue;
-      const itemPrice = parseFloat(product.basePrice);
-      subtotal += itemPrice * cartItem.quantity;
-      lines.push({
-        productId: product.id,
-        variantId: variant?.id || null,
-        quantity: cartItem.quantity,
-        productName: product.name,
-        variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() : null,
-        price: product.basePrice,
-        itemType: 'retail',
-        seriesName: null,
-        seriesGroup: null,
-      });
-    }
+    const variant = cartItem.variantId ? await storage.getProductVariant(cartItem.variantId) : null;
+    const actualProductId = variant?.productId || cartItem.productId;
+    const product = actualProductId ? await storage.getProduct(actualProductId) : null;
+    if (!product) continue;
+    const itemPrice = parseFloat(product.basePrice);
+    subtotal += itemPrice * cartItem.quantity;
+    lines.push({
+      productId: product.id,
+      variantId: variant?.id || null,
+      cardListingId: cartItem.cardListingId || null,
+      quantity: cartItem.quantity,
+      productName: product.name,
+      variantDetails: variant ? `${variant.size || ''} ${variant.color || ''}`.trim() || null : null,
+      price: product.basePrice,
+    });
   }
-  return { lines, subtotal, hasWholesale };
+  return { lines, subtotal };
 }
 
 // Configure multer for file uploads
@@ -272,180 +204,6 @@ const upload = multer({
   },
 });
 
-// Helper function to generate quote PDF as buffer for email attachment
-async function generateQuotePdfBuffer(quote: any, dealer: any, items: any[]): Promise<Buffer> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const chunks: Buffer[] = [];
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
-      
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
-      
-      // Register Inter fonts for Turkish character support
-      const fontPath = path.join(process.cwd(), 'public', 'fonts');
-      const regularFontPath = path.join(fontPath, 'inter-regular.ttf');
-      const boldFontPath = path.join(fontPath, 'inter-bold.ttf');
-      
-      if (fs.existsSync(regularFontPath) && fs.existsSync(boldFontPath)) {
-        doc.registerFont('Inter', regularFontPath);
-        doc.registerFont('Inter-Bold', boldFontPath);
-      }
-      
-      const fontRegular = fs.existsSync(regularFontPath) ? 'Inter' : 'Helvetica';
-      const fontBold = fs.existsSync(boldFontPath) ? 'Inter-Bold' : 'Helvetica-Bold';
-      
-      // Header logo - convert SVG to PNG using sharp
-      const svgLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-logo.svg');
-      const pngLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-icon.png');
-      
-      let logoAdded = false;
-      if (fs.existsSync(svgLogoPath)) {
-        try {
-          const pngBuffer = await sharp(svgLogoPath).resize(120).png().toBuffer();
-          doc.image(pngBuffer, 50, 35, { width: 80 });
-          logoAdded = true;
-        } catch (e) {
-          console.log('[PDF] SVG to PNG conversion failed:', e);
-        }
-      }
-      
-      if (!logoAdded && fs.existsSync(pngLogoPath)) {
-        doc.image(pngLogoPath, 50, 40, { width: 60 });
-        logoAdded = true;
-      }
-      
-      if (!logoAdded) {
-        doc.fontSize(28).font(fontBold).fillColor('#000000').text('Marka', 50, 50);
-      }
-      
-      // Quote title
-      doc.fontSize(24).font(fontBold).fillColor('#000000').text('TEKLİF', 350, 50, { align: 'right' });
-      doc.fontSize(12).font(fontRegular).fillColor('#666666').text(quote.quoteNumber, 350, 80, { align: 'right' });
-      
-      doc.moveDown(2);
-      
-      // Dealer info box
-      const yStart = 120;
-      doc.rect(50, yStart, 250, 100).fillAndStroke('#f5f5f5', '#e0e0e0');
-      doc.fontSize(10).font(fontBold).fillColor('#333333').text('BAYİ BİLGİLERİ', 60, yStart + 10);
-      doc.fontSize(11).font(fontRegular).fillColor('#000000').text(dealer?.name || 'Bilinmeyen', 60, yStart + 30);
-      if (dealer?.contactPerson) {
-        doc.fontSize(9).fillColor('#666666').text(dealer.contactPerson, 60, yStart + 45);
-      }
-      if (dealer?.email) {
-        doc.fontSize(9).text(dealer.email, 60, yStart + 60);
-      }
-      if (dealer?.phone) {
-        doc.fontSize(9).text(dealer.phone, 60, yStart + 75);
-      }
-      
-      // Quote details box
-      doc.rect(310, yStart, 235, 100).fillAndStroke('#f5f5f5', '#e0e0e0');
-      doc.fontSize(10).font(fontBold).fillColor('#333333').text('TEKLİF DETAYLARI', 320, yStart + 10);
-      doc.fontSize(9).font(fontRegular).fillColor('#666666');
-      doc.text('Oluşturulma:', 320, yStart + 30);
-      doc.fillColor('#000000').text(new Date(quote.createdAt).toLocaleDateString('tr-TR'), 420, yStart + 30);
-      doc.fillColor('#666666').text('Geçerlilik:', 320, yStart + 45);
-      doc.fillColor('#000000').text(quote.validUntil ? new Date(quote.validUntil).toLocaleDateString('tr-TR') : '-', 420, yStart + 45);
-      doc.fillColor('#666666').text('Ödeme:', 320, yStart + 60);
-      const paymentLabels: Record<string, string> = { cash: 'Peşin Ödeme', credit_card: 'Kredi Kartı', eft: 'Havale / EFT', net15: '15 Gün Vadeli', net30: '30 Gün Vadeli', net45: '45 Gün Vadeli', net60: '60 Gün Vadeli', net90: '90 Gün Vadeli', installment_3: '3 Taksit', installment_6: '6 Taksit', installment_9: '9 Taksit', installment_12: '12 Taksit' };
-      const paymentLabel = paymentLabels[quote.paymentTerms || ''] || '-';
-      doc.fillColor('#000000').text(paymentLabel, 420, yStart + 60);
-      doc.fillColor('#666666').text('KDV:', 320, yStart + 75);
-      doc.fillColor('#000000').text(quote.includesVat ? 'Dahil' : 'Hariç', 420, yStart + 75);
-      
-      // Products table
-      const tableTop = yStart + 130;
-      doc.fontSize(12).font(fontBold).fillColor('#000000').text('ÜRÜNLER', 50, tableTop);
-      
-      // Table header
-      const headerY = tableTop + 25;
-      doc.rect(50, headerY, 495, 22).fillAndStroke('#333333', '#333333');
-      doc.fontSize(7).font(fontBold).fillColor('#ffffff');
-      doc.text('Ürün', 55, headerY + 7, { width: 220 });
-      doc.text('Beden', 275, headerY + 7, { width: 40, align: 'center' });
-      doc.text('Adet', 315, headerY + 7, { width: 30, align: 'center' });
-      doc.text('Birim Fiyat', 345, headerY + 7, { width: 55, align: 'right' });
-      doc.text('İsk.', 400, headerY + 7, { width: 30, align: 'center' });
-      doc.text('Toplam', 430, headerY + 7, { width: 110, align: 'right' });
-      
-      // Table rows - compact layout
-      let currentY = headerY + 22;
-      const rowHeight = 22;
-      
-      for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
-        const item = items[itemIdx];
-        if (currentY > 740) {
-          doc.addPage();
-          currentY = 50;
-        }
-        
-        const bgColor = itemIdx % 2 === 0 ? '#ffffff' : '#f8f8f8';
-        doc.rect(50, currentY, 495, rowHeight).fillAndStroke(bgColor, '#e0e0e0');
-        
-        doc.fontSize(7).font(fontRegular).fillColor('#000000');
-        const skuPrefix = item.productSku ? `[${item.productSku}] ` : '';
-        doc.text(`${skuPrefix}${item.productName}`, 55, currentY + 7, { width: 220, lineBreak: false, ellipsis: true });
-        
-        doc.fontSize(7).fillColor('#333333');
-        doc.text(item.variantDetails || '-', 275, currentY + 7, { width: 40, align: 'center' });
-        
-        doc.fillColor('#000000');
-        doc.text(item.quantity.toString(), 315, currentY + 7, { width: 30, align: 'center' });
-        doc.text(`${parseFloat(item.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`, 345, currentY + 7, { width: 55, align: 'right' });
-        
-        if (parseFloat(item.discountPercent) > 0) {
-          doc.fillColor('#22c55e').text(`%${item.discountPercent}`, 400, currentY + 7, { width: 30, align: 'center' });
-        } else {
-          doc.fillColor('#999999').text('-', 400, currentY + 7, { width: 30, align: 'center' });
-        }
-        
-        doc.font(fontBold).fillColor('#000000');
-        doc.text(`${parseFloat(item.lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`, 430, currentY + 7, { width: 110, align: 'right' });
-        
-        currentY += rowHeight;
-      }
-      
-      // Totals section
-      currentY += 10;
-      doc.rect(350, currentY, 195, 80).fillAndStroke('#f5f5f5', '#e0e0e0');
-      
-      doc.fontSize(10).font(fontRegular).fillColor('#666666');
-      doc.text('Ara Toplam:', 360, currentY + 15);
-      doc.fillColor('#000000').text(`${parseFloat(quote.subtotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL`, 460, currentY + 15, { width: 75, align: 'right' });
-      
-      if (parseFloat(quote.discountTotal) > 0) {
-        doc.fillColor('#22c55e').text('İskonto:', 360, currentY + 35);
-        doc.text(`-${parseFloat(quote.discountTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL`, 460, currentY + 35, { width: 75, align: 'right' });
-      }
-      
-      doc.fontSize(12).font(fontBold).fillColor('#000000');
-      doc.text('GENEL TOPLAM:', 360, currentY + 55);
-      doc.text(`${parseFloat(quote.grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL`, 460, currentY + 55, { width: 75, align: 'right' });
-      
-      // Notes
-      if (quote.notes) {
-        currentY += 100;
-        if (currentY > 700) {
-          doc.addPage();
-          currentY = 50;
-        }
-        doc.fontSize(10).font(fontBold).fillColor('#333333').text('NOTLAR', 50, currentY);
-        doc.fontSize(9).font(fontRegular).fillColor('#666666').text(quote.notes, 50, currentY + 15, { width: 495 });
-      }
-      
-      // Footer
-      doc.fontSize(8).font(fontRegular).fillColor('#999999');
-      doc.text('Marka | www.ecartejeans.com | info@ecartejeans.com', 50, 780, { align: 'center', width: 495 });
-      
-      doc.end();
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -1011,10 +769,6 @@ export async function registerRoutes(
         city,
         district,
         postalCode,
-        customerType: isWholesale ? "wholesale" : "retail",
-        companyName: isWholesale ? (companyName || null) : null,
-        taxNumber: isWholesale ? (taxNumber || null) : null,
-        taxOffice: isWholesale ? (taxOffice || null) : null,
       });
 
       // Set JWT cookies for the new user
@@ -1049,7 +803,7 @@ export async function registerRoutes(
       
       res.status(201).json({ 
         success: true, 
-        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, customerType: user.customerType } 
+        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } 
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -1114,7 +868,7 @@ export async function registerRoutes(
       return res.status(404).json({ error: "Kullanıcı bulunamadı" });
     }
 
-    res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, address: user.address, city: user.city, district: user.district, postalCode: user.postalCode, country: user.country, whatsappOptIn: user.whatsappOptIn, customerType: user.customerType, companyName: user.companyName, taxNumber: user.taxNumber, taxOffice: user.taxOffice, createdAt: user.createdAt });
+    res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, address: user.address, city: user.city, district: user.district, postalCode: user.postalCode, country: user.country, whatsappOptIn: user.whatsappOptIn, createdAt: user.createdAt });
   });
 
   app.patch("/api/auth/profile", async (req: Request, res) => {
@@ -1276,87 +1030,6 @@ export async function registerRoutes(
       res.json(orders);
     } catch (error) {
       res.status(500).json({ error: "Siparişler yüklenemedi" });
-    }
-  });
-
-  // Logged-in customer's own payment requests (linked by userId or email), newest first.
-  app.get("/api/payment-requests/mine", async (req: Request, res) => {
-    const payload = await getAuthPayload(req, res);
-    if (!payload || payload.type !== 'user' || !payload.userId) {
-      return res.status(401).json({ error: "Giriş yapılmamış" });
-    }
-    try {
-      const user = await storage.getUser(payload.userId);
-      if (!user) {
-        return res.status(404).json({ error: "Kullanıcı bulunamadı" });
-      }
-      const byUser = await storage.getPaymentRequestsByUserId(user.id);
-      const byEmail = await storage.getPaymentRequestsByEmail(user.email);
-      const seen = new Set<string>();
-      const merged = [...byUser, ...byEmail]
-        .filter(r => (seen.has(r.id) ? false : (seen.add(r.id), true)))
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .map(r => ({
-          token: r.token,
-          amount: r.amount,
-          description: r.description,
-          status: r.status,
-          createdAt: r.createdAt,
-          paidAt: r.paidAt,
-          expiresAt: r.expiresAt,
-        }));
-      res.json(merged);
-    } catch (error) {
-      res.status(500).json({ error: "Ödeme talepleri yüklenemedi" });
-    }
-  });
-
-  // Wholesale customer self-service: create a free-amount payment request for the
-  // logged-in wholesale user, then pay it by card via the public /odeme/:token
-  // flow. Retail/guest users are rejected (wholesale-only per spec).
-  app.post("/api/payment-requests", async (req: Request, res) => {
-    const payload = await getAuthPayload(req, res);
-    if (!payload || payload.type !== 'user' || !payload.userId) {
-      return res.status(401).json({ error: "Giriş yapılmamış" });
-    }
-    try {
-      const user = await storage.getUser(payload.userId);
-      if (!user) {
-        return res.status(404).json({ error: "Kullanıcı bulunamadı" });
-      }
-      if (user.customerType !== 'wholesale') {
-        return res.status(403).json({ error: "Bu işlem yalnızca toptan müşteriler içindir" });
-      }
-      const amountNum = parseFloat(String(req.body?.amount));
-      if (!Number.isFinite(amountNum) || amountNum <= 0) {
-        return res.status(400).json({ error: "Geçerli bir tutar girin" });
-      }
-      const description = typeof req.body?.description === 'string'
-        ? req.body.description.trim().slice(0, 500)
-        : null;
-      const customerName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim()
-        || user.companyName || null;
-      const token = crypto.randomBytes(8).toString('base64url');
-      const created = await storage.createPaymentRequest({
-        token,
-        userId: user.id,
-        customerName,
-        customerEmail: user.email,
-        customerPhone: user.phone || null,
-        amount: amountNum.toFixed(2),
-        description: description || null,
-        status: 'pending',
-        merchantOid: null,
-        paymentToken: null,
-        iyzicoPaymentId: null,
-        createdBy: 'customer',
-        paidAt: null,
-        expiresAt: null,
-      });
-      res.json({ token: created.token, paymentUrl: `/odeme/${created.token}` });
-    } catch (error) {
-      console.error('[payment-requests] self-service create error:', error);
-      res.status(500).json({ error: "Ödeme talebi oluşturulamadı" });
     }
   });
 
@@ -1572,62 +1245,17 @@ export async function registerRoutes(
         await storage.setProductCategories(product.id, [product.categoryId]);
       }
       
-      // Auto-create variants — beden/renk mantığı (giyim ürünleri)
-      const sizes = product.availableSizes || [];
-      const colors = product.availableColors || [];
+      // Auto-create a default variant if no variants exist yet
       const baseSku = product.sku || '';
       const stockValue = initialStock ? parseInt(initialStock, 10) : 0;
-
-      if (sizes.length > 0 && colors.length > 0) {
-        // Eski mantık: hem beden hem renk varsa kombinasyon
-        for (const size of sizes) {
-          for (const color of colors as Array<{name: string, hex: string}>) {
-            const variantSku = baseSku ? `${baseSku}-${size}` : null;
-            await storage.createProductVariant({
-              productId: product.id,
-              size,
-              color: color.name,
-              sku: variantSku,
-              stock: stockValue,
-              price: product.basePrice,
-            });
-          }
-        }
-      } else if (sizes.length > 0) {
-        for (const size of sizes) {
-          const variantSku = baseSku ? `${baseSku}-${size}` : null;
-          await storage.createProductVariant({
-            productId: product.id,
-            size,
-            color: null,
-            sku: variantSku,
-            stock: stockValue,
-            price: product.basePrice,
-          });
-        }
-      } else if (colors.length > 0) {
-        // Bedensiz, sadece renk(ler): her renk için bir varyant
-        for (const color of colors as Array<{name: string, hex: string}>) {
-          await storage.createProductVariant({
-            productId: product.id,
-            size: null,
-            color: color.name,
-            sku: baseSku || null,
-            stock: stockValue,
-            price: product.basePrice,
-          });
-        }
-      } else {
-        // Bedensiz ve renksiz: tek default varyant (stok yönetimine gözüksün diye)
-        await storage.createProductVariant({
-          productId: product.id,
-          size: null,
-          color: null,
-          sku: baseSku || null,
-          stock: stockValue,
-          price: product.basePrice,
-        });
-      }
+      await storage.createProductVariant({
+        productId: product.id,
+        size: null,
+        color: null,
+        sku: baseSku || null,
+        stock: stockValue,
+        price: product.basePrice,
+      });
 
       // Return product with categoryIds
       const productCategoryIds = await storage.getProductCategoryIds(product.id);
@@ -1667,59 +1295,10 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Product not found" });
       }
       
-      // Auto-create missing variants
-      const sizes = product.availableSizes || [];
-      const colors = product.availableColors || [];
-      const baseSku = product.sku || '';
+      // Auto-create a default variant if no variants exist yet
       const existingVariants = await storage.getProductVariants(product.id);
-
-      if (sizes.length > 0 && colors.length > 0) {
-        for (const size of sizes) {
-          for (const color of colors as Array<{name: string, hex: string}>) {
-            const exists = existingVariants.some(v => v.size === size && v.color === color.name);
-            if (!exists) {
-              const variantSku = baseSku ? `${baseSku}-${size}` : null;
-              await storage.createProductVariant({
-                productId: product.id,
-                size,
-                color: color.name,
-                sku: variantSku,
-                stock: 0,
-                price: product.basePrice,
-              });
-            }
-          }
-        }
-      } else if (sizes.length > 0) {
-        for (const size of sizes) {
-          const exists = existingVariants.some(v => v.size === size && !v.color);
-          if (!exists) {
-            const variantSku = baseSku ? `${baseSku}-${size}` : null;
-            await storage.createProductVariant({
-              productId: product.id,
-              size,
-              color: null,
-              sku: variantSku,
-              stock: 0,
-              price: product.basePrice,
-            });
-          }
-        }
-      } else if (colors.length > 0) {
-        for (const color of colors as Array<{name: string, hex: string}>) {
-          const exists = existingVariants.some(v => !v.size && v.color === color.name);
-          if (!exists) {
-            await storage.createProductVariant({
-              productId: product.id,
-              size: null,
-              color: color.name,
-              sku: baseSku || null,
-              stock: 0,
-              price: product.basePrice,
-            });
-          }
-        }
-      } else if (existingVariants.length === 0) {
+      const baseSku = product.sku || '';
+      if (existingVariants.length === 0) {
         // Hiç varyant yoksa default tek varyant oluştur (stok yönetimi için)
         await storage.createProductVariant({
           productId: product.id,
@@ -1848,28 +1427,6 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/products/bulk-wholesale", requireAdmin, async (req, res) => {
-    try {
-      const parsed = bulkWholesaleSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { productIds, wholesaleEnabled, wholesalePrice, wholesaleSeriesId } = parsed.data;
-
-      let updated = 0;
-      for (const id of productIds) {
-        await storage.updateProduct(id, {
-          wholesaleEnabled,
-          wholesalePrice: wholesaleEnabled && wholesalePrice ? wholesalePrice : null,
-          wholesaleSeriesId: wholesaleEnabled && wholesaleSeriesId ? wholesaleSeriesId : null,
-        } as any);
-        updated++;
-      }
-      res.json({ updated });
-    } catch (error) {
-      console.error('[bulk-wholesale]', error);
-      res.status(500).json({ error: "Toplu toptan güncelleme başarısız" });
-    }
-  });
-
   // Delete all products (for WooCommerce re-import)
   app.delete("/api/admin/products-all", requireAdmin, async (req, res) => {
     try {
@@ -1974,71 +1531,8 @@ export async function registerRoutes(
       // Existing cart — used to enforce "no mixed retail+wholesale cart" (v1).
       const existingCart = await storage.getCartItems(cartToken);
 
-      // ===== WHOLESALE: add ONE series row (explodes into variants at payment) =====
-      if (itemType === "wholesale") {
-        // Only authenticated wholesale customers may add series.
-        const payload = await getAuthPayload(req, res);
-        if (!payload || payload.type !== "user" || !payload.userId) {
-          return res.status(401).json({ error: "Toptan alım için giriş yapmalısınız" });
-        }
-        const user = await storage.getUser(payload.userId);
-        if (!user || user.customerType !== "wholesale") {
-          return res.status(403).json({ error: "Bu işlem yalnızca toptan hesaplar içindir" });
-        }
 
-        if (existingCart.some((it: any) => it.itemType !== "wholesale")) {
-          return res.status(400).json({ error: "Sepetinizde bireysel ürünler var. Toptan ve bireysel ürünler aynı sepette birleştirilemez." });
-        }
-
-        if (!product.wholesaleEnabled || !product.wholesalePrice || !product.wholesaleSeriesId) {
-          return res.status(400).json({ error: "Bu ürün toptan satışa uygun değil" });
-        }
-        if (rawSeriesId && rawSeriesId !== product.wholesaleSeriesId) {
-          return res.status(400).json({ error: "Geçersiz seri seçimi" });
-        }
-
-        const series = await storage.getWholesaleSeries(product.wholesaleSeriesId);
-        if (!series || !series.isActive) {
-          return res.status(400).json({ error: "Seri bulunamadı veya pasif" });
-        }
-        const distribution = series.sizeDistribution || [];
-        if (distribution.length === 0) {
-          return res.status(400).json({ error: "Seri beden dağılımı tanımlı değil" });
-        }
-
-        const setCount = quantity || 1;
-
-        // Resolve each size in the series to a variant and verify stock >= sizeQty * setCount.
-        const variants = await storage.getProductVariants(productId);
-        for (const dist of distribution) {
-          const sizeQty = Number(dist.quantity) || 0;
-          if (sizeQty <= 0) continue;
-          const needed = sizeQty * setCount;
-          const variant = variants.find(v => v.isActive && (v.size || "").toLowerCase() === String(dist.size).toLowerCase());
-          if (!variant) {
-            return res.status(400).json({ error: `Seride yer alan ${dist.size} bedeni için ürün varyantı bulunamadı` });
-          }
-          if ((variant.stock ?? 0) < needed) {
-            return res.status(400).json({ error: `${dist.size} bedeni için yeterli stok yok (gerekli: ${needed}, mevcut: ${variant.stock ?? 0})` });
-          }
-        }
-
-        const validatedWholesale = insertCartItemSchema.parse({
-          productId,
-          variantId: null,
-          quantity: setCount,
-          sessionId: cartToken,
-          itemType: "wholesale",
-          seriesId: series.id,
-        });
-        const wholesaleItem = await storage.addToCart(validatedWholesale);
-        return res.status(201).json(wholesaleItem);
-      }
-
-      // ===== RETAIL (default) =====
-      if (existingCart.some((it: any) => it.itemType === "wholesale")) {
-        return res.status(400).json({ error: "Sepetinizde toptan ürünler var. Toptan ve bireysel ürünler aynı sepette birleştirilemez." });
-      }
+      // ===== RETAIL / TCG =====
 
       // Giyim: eğer client variant göndermediyse ürünün ilk aktif & stoklu
       // varyantını otomatik seçeriz — böylece stok yine varyant bazlı doğru düşer.
@@ -2490,22 +1984,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: expanded.error });
       }
 
-      // Carts are session-bound, so a wholesale cart must be re-verified against a
-      // live wholesale account at payment time (not just at add-to-cart). Coupons
-      // are not honoured on wholesale orders.
-      if (expanded.hasWholesale) {
-        if (!userId) {
-          return res.status(401).json({ error: "Toptan ödeme için giriş yapmalısınız" });
-        }
-        const buyer = await storage.getUser(userId);
-        if (!buyer || buyer.customerType !== 'wholesale') {
-          return res.status(403).json({ error: "Toptan sipariş yalnızca toptan hesaplarla tamamlanabilir" });
-        }
-        if (couponCode) {
-          return res.status(400).json({ error: "Toptan siparişlerde kupon kullanılamaz" });
-        }
-      }
-
       const serverSubtotal = expanded.subtotal;
       const cartItemsForStorage = expanded.lines;
 
@@ -2635,7 +2113,7 @@ export async function registerRoutes(
         customerEmail,
         customerPhone,
         shippingAddress: { address, city, district, postalCode: postalCode || '', country: selectedCountry },
-        cartItems: cartItemsForStorage,
+        cartItems: cartItemsForStorage as any,
         subtotal: serverSubtotal.toFixed(2),
         shippingCost: shippingCost.toFixed(2),
         discountAmount: discountAmount.toFixed(2),
@@ -2755,22 +2233,10 @@ export async function registerRoutes(
         accountPasswordHash = await bcrypt.hash(accountPassword, 10);
       }
 
-      // Server-side cart validation — wholesale "seri" rows explode into per-size lines.
+      // Server-side cart validation
       const expandedBT = await expandCartLinesToOrderItems(cartItems);
       if (expandedBT.error) {
         return res.status(400).json({ error: expandedBT.error });
-      }
-      if (expandedBT.hasWholesale) {
-        if (!userId) {
-          return res.status(401).json({ error: "Toptan ödeme için giriş yapmalısınız" });
-        }
-        const btBuyer = await storage.getUser(userId);
-        if (!btBuyer || btBuyer.customerType !== 'wholesale') {
-          return res.status(403).json({ error: "Toptan sipariş yalnızca toptan hesaplarla tamamlanabilir" });
-        }
-        if (couponCode) {
-          return res.status(400).json({ error: "Toptan siparişlerde kupon kullanılamaz" });
-        }
       }
       const serverSubtotal = expandedBT.subtotal;
       const cartItemsForOrder = expandedBT.lines;
@@ -2812,9 +2278,7 @@ export async function registerRoutes(
       // Bank transfer 10% discount applies to (subtotal - couponDiscount + shippingCost)
       // Bank-transfer 10% perk does not apply to wholesale orders.
       const baseAfterCoupon = Math.max(0, serverSubtotal - couponDiscount) + shippingCost;
-      const bankTransferDiscount = expandedBT.hasWholesale
-        ? 0
-        : Math.round(baseAfterCoupon * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100;
+      const bankTransferDiscount = Math.round(baseAfterCoupon * BANK_TRANSFER_DISCOUNT_RATE * 100) / 100;
       const totalDiscount = couponDiscount + bankTransferDiscount;
       const serverTotal = Math.max(0, serverSubtotal - totalDiscount + shippingCost);
 
@@ -2864,9 +2328,6 @@ export async function registerRoutes(
             price: item.price,
             quantity: item.quantity,
             subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
-            itemType: item.itemType ?? 'retail',
-            seriesName: item.seriesName ?? null,
-            seriesGroup: item.seriesGroup ?? null,
           });
         }
 
@@ -2896,347 +2357,6 @@ export async function registerRoutes(
     }
   });
 
-  // ─── Wholesale Series (admin CRUD) ───────────────────────────────────────────
-  // A "seri" is a fixed size distribution sold as one unit (priced per piece on the product).
-  app.get("/api/admin/wholesale-series", requireAdmin, async (_req, res) => {
-    try {
-      const rows = await storage.getWholesaleSeriesList();
-      res.json(rows);
-    } catch (error) {
-      console.error('[wholesale-series] list error:', error);
-      res.status(500).json({ error: "Seriler yüklenemedi" });
-    }
-  });
-
-  app.post("/api/admin/wholesale-series", requireAdmin, async (req, res) => {
-    try {
-      const parsed = insertWholesaleSeriesSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: firstZodMessage(parsed.error) || "Geçersiz seri verisi" });
-      }
-      const dist = parsed.data.sizeDistribution || [];
-      if (!Array.isArray(dist) || dist.length === 0 || dist.some((d) => !d.size || !Number.isFinite(d.quantity) || d.quantity <= 0)) {
-        return res.status(400).json({ error: "Seri en az bir geçerli beden/adet içermeli" });
-      }
-      const created = await storage.createWholesaleSeries(parsed.data);
-      res.json(created);
-    } catch (error) {
-      console.error('[wholesale-series] create error:', error);
-      res.status(500).json({ error: "Seri oluşturulamadı" });
-    }
-  });
-
-  app.put("/api/admin/wholesale-series/:id", requireAdmin, async (req, res) => {
-    try {
-      const parsed = insertWholesaleSeriesSchema.partial().safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: firstZodMessage(parsed.error) || "Geçersiz seri verisi" });
-      }
-      if (parsed.data.sizeDistribution !== undefined) {
-        const dist = parsed.data.sizeDistribution || [];
-        if (!Array.isArray(dist) || dist.length === 0 || dist.some((d) => !d.size || !Number.isFinite(d.quantity) || d.quantity <= 0)) {
-          return res.status(400).json({ error: "Seri en az bir geçerli beden/adet içermeli" });
-        }
-      }
-      const updated = await storage.updateWholesaleSeries(req.params.id, { ...parsed.data, updatedAt: new Date() } as any);
-      if (!updated) {
-        return res.status(404).json({ error: "Seri bulunamadı" });
-      }
-      res.json(updated);
-    } catch (error) {
-      console.error('[wholesale-series] update error:', error);
-      res.status(500).json({ error: "Seri güncellenemedi" });
-    }
-  });
-
-  app.delete("/api/admin/wholesale-series/:id", requireAdmin, async (req, res) => {
-    try {
-      await storage.deleteWholesaleSeries(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[wholesale-series] delete error:', error);
-      res.status(500).json({ error: "Seri silinemedi" });
-    }
-  });
-
-  // Public: active wholesale series (used by ProductDetail wholesale panel).
-  app.get("/api/wholesale-series", async (_req, res) => {
-    try {
-      const rows = await storage.getWholesaleSeriesList();
-      res.json(rows.filter((s) => s.isActive));
-    } catch (error) {
-      console.error('[wholesale-series] public list error:', error);
-      res.status(500).json({ error: "Seriler yüklenemedi" });
-    }
-  });
-
-  // ─── Payment Requests (standalone payment links) ─────────────────────────────
-  // Admin generates a tokenized link (/odeme/:token) for ad-hoc collection.
-  // Payment runs through a SEPARATE iyzico callback so there is zero coupling to the
-  // cart/order flow: a paid request creates NO order and touches NO stock.
-
-  // Admin: create a payment request → returns the public payment path.
-  app.post("/api/admin/payment-requests", requireAdmin, async (req, res) => {
-    try {
-      const amountNum = parseFloat(String(req.body?.amount));
-      if (!Number.isFinite(amountNum) || amountNum <= 0) {
-        return res.status(400).json({ error: "Geçerli bir tutar girin" });
-      }
-      const { customerName, customerEmail, customerPhone, description, userId, expiresInDays, showcaseItems } = req.body || {};
-      const token = crypto.randomBytes(8).toString('base64url');
-      let expiresAt: Date | null = null;
-      const days = Number(expiresInDays);
-      if (Number.isFinite(days) && days > 0) {
-        expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + days);
-      }
-      const created = await storage.createPaymentRequest({
-        token,
-        userId: userId || null,
-        customerName: customerName || null,
-        customerEmail: customerEmail || null,
-        customerPhone: customerPhone || null,
-        amount: amountNum.toFixed(2),
-        description: description || null,
-        showcaseItems: Array.isArray(showcaseItems) ? showcaseItems : [],
-        status: 'pending',
-        merchantOid: null,
-        paymentToken: null,
-        iyzicoPaymentId: null,
-        createdBy: 'admin',
-        paidAt: null,
-        expiresAt,
-      });
-      res.json({ ...created, paymentUrl: `/odeme/${created.token}` });
-    } catch (error) {
-      console.error('[payment-requests] create error:', error);
-      res.status(500).json({ error: "Ödeme talebi oluşturulamadı" });
-    }
-  });
-
-  // Admin: list all payment requests (most recent first).
-  app.get("/api/admin/payment-requests", requireAdmin, async (_req, res) => {
-    try {
-      const rows = await storage.getPaymentRequests();
-      res.json(rows);
-    } catch (error) {
-      console.error('[payment-requests] list error:', error);
-      res.status(500).json({ error: "Ödeme talepleri yüklenemedi" });
-    }
-  });
-
-  // Admin: cancel a pending payment request.
-  app.post("/api/admin/payment-requests/:id/cancel", requireAdmin, async (req, res) => {
-    try {
-      const cancelled = await storage.cancelPaymentRequest(req.params.id);
-      if (!cancelled) {
-        return res.status(400).json({ error: "Yalnızca bekleyen talepler iptal edilebilir" });
-      }
-      res.json(cancelled);
-    } catch (error) {
-      console.error('[payment-requests] cancel error:', error);
-      res.status(500).json({ error: "Ödeme talebi iptal edilemedi" });
-    }
-  });
-
-  // Public: fetch a payment request by token (sanitized; lazily expires).
-  app.get("/api/payment-requests/:token", trackingLimiter, async (req, res) => {
-    try {
-      const reqRow = await storage.getPaymentRequestByToken(req.params.token);
-      if (!reqRow) {
-        return res.status(404).json({ error: "Ödeme talebi bulunamadı" });
-      }
-      let status = reqRow.status;
-      if (status === 'pending' && reqRow.expiresAt && new Date(reqRow.expiresAt) < new Date()) {
-        await storage.updatePaymentRequest(reqRow.id, { status: 'expired' });
-        status = 'expired';
-      }
-      res.json({
-        token: reqRow.token,
-        amount: reqRow.amount,
-        description: reqRow.description,
-        customerName: reqRow.customerName,
-        showcaseItems: reqRow.showcaseItems ?? [],
-        status,
-        expiresAt: reqRow.expiresAt,
-        paidAt: reqRow.paidAt,
-      });
-    } catch (error) {
-      console.error('[payment-requests] get error:', error);
-      res.status(500).json({ error: "Ödeme talebi yüklenemedi" });
-    }
-  });
-
-  // Public: initialize iyzico checkout for a payment request (double-pay guarded).
-  app.post("/api/payment-requests/:token/pay", trackingLimiter, async (req, res) => {
-    try {
-      const reqRow = await storage.getPaymentRequestByToken(req.params.token);
-      if (!reqRow) {
-        return res.status(404).json({ error: "Ödeme talebi bulunamadı" });
-      }
-      if (reqRow.status !== 'pending') {
-        return res.status(400).json({ error: "Bu ödeme talebi artık ödenemez" });
-      }
-      if (reqRow.expiresAt && new Date(reqRow.expiresAt) < new Date()) {
-        await storage.updatePaymentRequest(reqRow.id, { status: 'expired' });
-        return res.status(400).json({ error: "Bu ödeme talebinin süresi dolmuş" });
-      }
-      if (!(await isIyzicoConfigured())) {
-        console.error('[payment-requests] iyzico not configured');
-        return res.status(500).json({ error: "Ödeme sistemi henüz yapılandırılmadı. Lütfen daha sonra tekrar deneyin." });
-      }
-
-      const baseUrl = process.env.NODE_ENV === 'production'
-        ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
-        : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
-
-      const merchantOid = `PR${Date.now()}${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-      const amountTry = parseFloat(reqRow.amount).toFixed(2);
-      const userIp = (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.ip || '127.0.0.1').trim();
-
-      const displayName = (reqRow.customerName || 'Müşteri').trim();
-      const nameParts = displayName.split(/\s+/);
-      const firstName = nameParts[0] || displayName;
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
-      let gsmNumber = (reqRow.customerPhone || '').trim();
-      if (gsmNumber && !gsmNumber.startsWith('+')) {
-        gsmNumber = `+90${gsmNumber.replace(/^0/, '')}`;
-      }
-      if (!gsmNumber) gsmNumber = '+905555555555';
-
-      const iyzicoResp = await createCheckoutFormInitialize({
-        conversationId: merchantOid,
-        price: amountTry,
-        paidPrice: amountTry,
-        currency: 'TRY',
-        basketId: merchantOid,
-        callbackUrl: `${baseUrl}/api/payment/payment-request/callback`,
-        enabledInstallments: [1],
-        buyer: {
-          id: reqRow.id.substring(0, 64),
-          name: firstName,
-          surname: lastName,
-          gsmNumber,
-          email: reqRow.customerEmail || 'info@ecartejeans.com',
-          identityNumber: '11111111111',
-          registrationAddress: 'Ecarte Jeans',
-          city: 'İstanbul',
-          country: 'Türkiye',
-          ip: userIp,
-        },
-        shippingAddress: {
-          contactName: displayName,
-          city: 'İstanbul',
-          country: 'Türkiye',
-          address: 'Ecarte Jeans',
-        },
-        billingAddress: {
-          contactName: displayName,
-          city: 'İstanbul',
-          country: 'Türkiye',
-          address: 'Ecarte Jeans',
-        },
-        basketItems: [{
-          id: reqRow.id.substring(0, 64),
-          name: (reqRow.description || 'Ödeme').substring(0, 250),
-          category1: 'Ödeme',
-          itemType: 'VIRTUAL',
-          price: amountTry,
-        }],
-      });
-
-      if (iyzicoResp.status === 'success' && iyzicoResp.token) {
-        // Append (never overwrite) the issued token so a callback fired against an
-        // earlier form/tab can still resolve this request and settle it atomically.
-        await storage.addPaymentRequestToken(reqRow.id, iyzicoResp.token, merchantOid);
-        return res.json({
-          success: true,
-          token: iyzicoResp.token,
-          checkoutFormContent: iyzicoResp.checkoutFormContent,
-          paymentPageUrl: iyzicoResp.paymentPageUrl,
-        });
-      }
-      console.error('[payment-requests] iyzico init failed:', iyzicoResp.errorCode, iyzicoResp.errorMessage);
-      return res.status(400).json({ error: iyzicoResp.errorMessage || 'Ödeme sistemi bağlantısı kurulamadı.' });
-    } catch (error) {
-      console.error('[payment-requests] pay error:', error);
-      res.status(500).json({ error: "Ödeme başlatılamadı" });
-    }
-  });
-
-  // Separate iyzico callback for payment requests — settles the request only.
-  // No order is created and no stock is moved (a payment request is a pure money move).
-  const paymentRequestCallbackHandler = async (req: Request, res: Response) => {
-    const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
-      : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
-    const sendRedirect = (path: string) => {
-      const url = `${baseUrl}${path}`;
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(
-        `<!DOCTYPE html><html><head><meta charset="utf-8">` +
-        `<script>` +
-        `try{if(window.top&&window.top!==window){window.top.location.href=${JSON.stringify(url)};}else{window.location.href=${JSON.stringify(url)};}}` +
-        `catch(e){window.location.href=${JSON.stringify(url)};}` +
-        `</script>` +
-        `<noscript><meta http-equiv="refresh" content="0;url=${url}"></noscript>` +
-        `</head><body></body></html>`
-      );
-    };
-    const token = (req.body?.token || req.query?.token) as string | undefined;
-
-    try {
-      if (!token) {
-        return sendRedirect('/odeme-basarisiz');
-      }
-      const reqRow = await storage.getPaymentRequestByPaymentToken(String(token));
-      if (!reqRow) {
-        return sendRedirect('/odeme-basarisiz');
-      }
-      // Idempotency: a concurrent/duplicate callback already settled this request.
-      // We still log it: a second callback token on an already-paid request can
-      // mean a buyer completed a second iyzico form (e.g. two tabs) and was charged
-      // twice — surface it so an admin can reconcile/refund manually.
-      if (reqRow.status === 'paid') {
-        console.warn('[payment-request callback] duplicate callback on already-paid request', {
-          id: reqRow.id,
-          token: String(token),
-        });
-        return sendRedirect(`/odeme/${reqRow.token}?durum=basarili`);
-      }
-
-      const result = await retrieveCheckoutForm(String(token));
-      const isPaid = result.status === 'success' && result.paymentStatus === 'SUCCESS';
-      if (!isPaid) {
-        return sendRedirect(`/odeme/${reqRow.token}?durum=basarisiz`);
-      }
-
-      // Verify the captured amount matches the request (within 1 kuruş).
-      const expected = parseFloat(reqRow.amount);
-      const paid = result.paidPrice ?? 0;
-      if (Math.abs(expected - paid) > 0.01) {
-        console.error('[payment-request callback] amount mismatch', { expected, paid, id: reqRow.id });
-        return sendRedirect(`/odeme/${reqRow.token}?durum=basarisiz`);
-      }
-
-      const settledRow = await storage.markPaymentRequestPaid(reqRow.id, result.paymentId || null);
-      // Fire-and-forget completion notification via the existing email / WhatsApp
-      // infra. Only the callback that WON the atomic pending→paid update gets a row
-      // back, so concurrent callbacks can't double-send. settledRow carries the
-      // freshly-set paidAt; both notifications fall back gracefully if unconfigured.
-      if (settledRow) {
-        sendPaymentRequestPaidEmail(settledRow).catch(err => console.error('[Email] Payment request paid email failed:', err));
-        sendPaymentRequestPaidToCustomer(settledRow).catch(err => console.error('[WhatsApp] Payment request paid (customer) failed:', err));
-        sendPaymentRequestPaidToAdmin(settledRow).catch(err => console.error('[WhatsApp] Payment request paid (admin) failed:', err));
-      }
-      return sendRedirect(`/odeme/${reqRow.token}?durum=basarili`);
-    } catch (error) {
-      console.error('[payment-request callback] error:', error);
-      return sendRedirect('/odeme-basarisiz');
-    }
-  };
-  app.post("/api/payment/payment-request/callback", paymentRequestCallbackHandler);
-  app.get("/api/payment/payment-request/callback", paymentRequestCallbackHandler);
 
   // iyzico Callback - browser POSTs here after Checkout Form completes.
   // The legacy /api/payment/callback path is kept as an alias for older webhooks.
@@ -3384,9 +2504,6 @@ export async function registerRoutes(
               price: item.price,
               quantity: item.quantity,
               subtotal: (parseFloat(item.price) * item.quantity).toFixed(2),
-              itemType: item.itemType ?? 'retail',
-              seriesName: item.seriesName ?? null,
-              seriesGroup: item.seriesGroup ?? null,
             });
 
             if (item.variantId && variantStock !== null) {
@@ -3762,13 +2879,6 @@ export async function registerRoutes(
       
       if (cartItems.length === 0) {
         return res.status(400).json({ error: "Cart is empty" });
-      }
-
-      // Wholesale rows must go through /api/payment/* (the explosion path that prices
-      // per-piece and deducts stock per size). This legacy endpoint prices at retail
-      // and never explodes, so reject any wholesale line outright.
-      if (cartItems.some((ci) => ci.itemType === 'wholesale')) {
-        return res.status(400).json({ error: "Toptan ürünler bu ödeme yöntemiyle tamamlanamaz. Lütfen ödeme adımından devam edin." });
       }
 
       // Generate order number
@@ -4273,17 +3383,17 @@ export async function registerRoutes(
                     categoryId = cat?.id || null;
                   }
                   
-                  // Extract sizes and colors from attributes
-                  const availableSizes: string[] = [];
-                  const availableColors: { name: string; hex: string }[] = [];
+                  // Extract sizes and colors from attributes (for variant creation)
+                  const wooSizes: string[] = [];
+                  const wooColors: { name: string; hex: string }[] = [];
                   
                   for (const attr of (wooProd.attributes || [])) {
                     if (attr.name.toLowerCase().includes('beden') || attr.name.toLowerCase().includes('size')) {
-                      availableSizes.push(...(attr.options || []));
+                      wooSizes.push(...(attr.options || []));
                     }
                     if (attr.name.toLowerCase().includes('renk') || attr.name.toLowerCase().includes('color')) {
                       for (const colorName of (attr.options || [])) {
-                        availableColors.push({ name: colorName, hex: '#000000' });
+                        wooColors.push({ name: colorName, hex: '#000000' });
                       }
                     }
                   }
@@ -4296,8 +3406,6 @@ export async function registerRoutes(
                     categoryId,
                     basePrice: wooProd.price || wooProd.regular_price || '0',
                     images: productImages,
-                    availableSizes,
-                    availableColors,
                     isActive: wooProd.status === 'publish',
                     isFeatured: wooProd.featured || false,
                     isNew: false,
@@ -4346,10 +3454,10 @@ export async function registerRoutes(
                       errors.push(`Varyasyonlar alınamadı: ${wooProd.name}`);
                     }
                   } else if (newProduct) {
-                    // Simple product - create a single variant
-                    if (availableSizes.length > 0 && availableColors.length > 0) {
-                      for (const size of availableSizes) {
-                        for (const colorObj of availableColors) {
+                    // Simple product - create variants from extracted sizes/colors
+                    if (wooSizes.length > 0 && wooColors.length > 0) {
+                      for (const size of wooSizes) {
+                        for (const colorObj of wooColors) {
                           await storage.createProductVariant({
                             productId: newProduct.id,
                             sku: wooProd.sku ? `${wooProd.sku}-${size}-${colorObj.name}` : null,
@@ -4362,8 +3470,8 @@ export async function registerRoutes(
                           });
                         }
                       }
-                    } else if (availableSizes.length > 0) {
-                      for (const size of availableSizes) {
+                    } else if (wooSizes.length > 0) {
+                      for (const size of wooSizes) {
                         await storage.createProductVariant({
                           productId: newProduct.id,
                           sku: wooProd.sku ? `${wooProd.sku}-${size}` : null,
@@ -4375,8 +3483,8 @@ export async function registerRoutes(
                           isActive: true,
                         });
                       }
-                    } else if (availableColors.length > 0) {
-                      for (const colorObj of availableColors) {
+                    } else if (wooColors.length > 0) {
+                      for (const colorObj of wooColors) {
                         await storage.createProductVariant({
                           productId: newProduct.id,
                           sku: wooProd.sku ? `${wooProd.sku}-${colorObj.name}` : null,
@@ -4705,7 +3813,7 @@ export async function registerRoutes(
       const orders = await storage.getOrders();
       
       const issues = {
-        productsWithoutVariants: [] as { id: string; name: string; sku: string | null; availableSizes: string[] }[],
+        productsWithoutVariants: [] as { id: string; name: string; sku: string | null }[],
         productsWithMissingVariants: [] as { id: string; name: string; definedSizes: string[]; existingVariantSizes: string[] }[],
         ordersWithoutVariants: [] as { id: string; orderNumber: string; itemsWithoutVariant: { productName: string; variantDetails: string | null }[] }[],
       };
@@ -4714,27 +3822,12 @@ export async function registerRoutes(
       for (const product of products) {
         const productVariants = allVariants.filter(v => v.productId === product.id);
         
-        if (productVariants.length === 0 && product.availableSizes && product.availableSizes.length > 0) {
+        if (productVariants.length === 0) {
           issues.productsWithoutVariants.push({
             id: product.id,
             name: product.name,
             sku: product.sku,
-            availableSizes: product.availableSizes as string[],
           });
-        } else if (product.availableSizes && product.availableSizes.length > 0) {
-          // Check if all sizes have variants
-          const existingSizes = productVariants.map(v => v.size).filter(Boolean);
-          const definedSizes = product.availableSizes as string[];
-          const missingSizes = definedSizes.filter(s => !existingSizes.includes(s));
-          
-          if (missingSizes.length > 0) {
-            issues.productsWithMissingVariants.push({
-              id: product.id,
-              name: product.name,
-              definedSizes: definedSizes,
-              existingVariantSizes: existingSizes as string[],
-            });
-          }
         }
       }
 
@@ -4778,76 +3871,23 @@ export async function registerRoutes(
       }
 
       const productVariants = await storage.getProductVariants(product.id);
-      const definedSizes = (product.availableSizes as string[]) || [];
-      const colors = (product.availableColors as Array<{name: string, hex: string}>) || [];
-      const baseSku = product.sku || '';
 
+      // If no variants exist, create a default one
       let createdCount = 0;
-      let deletedCount = 0;
-
-      // If no sizes defined, delete all variants
-      if (definedSizes.length === 0) {
-        for (const variant of productVariants) {
-          await storage.deleteProductVariant(variant.id);
-          deletedCount++;
-        }
-      } else {
-        // Delete variants with sizes not in defined sizes
-        for (const variant of productVariants) {
-          if (variant.size && !definedSizes.includes(variant.size)) {
-            await storage.deleteProductVariant(variant.id);
-            deletedCount++;
-          }
-        }
-
-        // Create missing variants for defined sizes
-        for (const size of definedSizes) {
-          if (colors.length > 0) {
-            for (const color of colors) {
-              const exists = productVariants.some(v => v.size === size && v.color === color.name);
-              if (!exists) {
-                const variantSku = baseSku ? `${baseSku}-${size}` : null;
-                await storage.createProductVariant({
-                  productId: product.id,
-                  size: size,
-                  color: color.name,
-                  sku: variantSku,
-                  stock: 0,
-                  price: product.basePrice,
-                });
-                createdCount++;
-              }
-            }
-          } else {
-            const exists = productVariants.some(v => v.size === size);
-            if (!exists) {
-              const variantSku = baseSku ? `${baseSku}-${size}` : null;
-              await storage.createProductVariant({
-                productId: product.id,
-                size: size,
-                color: null,
-                sku: variantSku,
-                stock: 0,
-                price: product.basePrice,
-              });
-              createdCount++;
-            }
-          }
-        }
+      if (productVariants.length === 0) {
+        await storage.createProductVariant({
+          productId: product.id,
+          size: null,
+          color: null,
+          sku: product.sku || null,
+          stock: 0,
+          price: product.basePrice,
+        });
+        createdCount = 1;
       }
 
-      let message = '';
-      if (createdCount > 0 && deletedCount > 0) {
-        message = `${createdCount} varyant oluşturuldu, ${deletedCount} varyant silindi`;
-      } else if (createdCount > 0) {
-        message = `${createdCount} varyant oluşturuldu`;
-      } else if (deletedCount > 0) {
-        message = `${deletedCount} varyant silindi`;
-      } else {
-        message = 'Varyantlar zaten senkronize';
-      }
-
-      res.json({ success: true, createdCount, deletedCount, message });
+      const message = createdCount > 0 ? `${createdCount} varyant oluşturuldu` : 'Varyantlar zaten senkronize';
+      res.json({ success: true, createdCount, deletedCount: 0, message });
     } catch (error) {
       console.error('Sync variants error:', error);
       res.status(500).json({ error: "Varyant senkronizasyonu başarısız" });
@@ -4867,64 +3907,18 @@ export async function registerRoutes(
 
       for (const product of products) {
         const productVariants = allVariants.filter(v => v.productId === product.id);
-        const definedSizes = (product.availableSizes as string[]) || [];
-        const colors = (product.availableColors as Array<{name: string, hex: string}>) || [];
-        const baseSku = product.sku || '';
-
-        // If no sizes defined, delete all variants for this product
-        if (definedSizes.length === 0) {
-          for (const variant of productVariants) {
-            await storage.deleteProductVariant(variant.id);
-            deletedCount++;
-            deletedVariants.push({ productName: product.name, size: variant.size });
-          }
-          continue;
-        }
-
-        // Delete variants with sizes not in defined sizes
-        for (const variant of productVariants) {
-          if (variant.size && !definedSizes.includes(variant.size)) {
-            await storage.deleteProductVariant(variant.id);
-            deletedCount++;
-            deletedVariants.push({ productName: product.name, size: variant.size });
-          }
-        }
-
-        // Create missing variants for defined sizes
-        for (const size of definedSizes) {
-          if (colors.length > 0) {
-            for (const color of colors) {
-              const exists = productVariants.some(v => v.size === size && v.color === color.name);
-              if (!exists) {
-                const variantSku = baseSku ? `${baseSku}-${size}` : null;
-                await storage.createProductVariant({
-                  productId: product.id,
-                  size: size,
-                  color: color.name,
-                  sku: variantSku,
-                  stock: 0,
-                  price: product.basePrice,
-                });
-                createdCount++;
-                createdVariants.push({ productName: product.name, size, sku: variantSku });
-              }
-            }
-          } else {
-            const exists = productVariants.some(v => v.size === size);
-            if (!exists) {
-              const variantSku = baseSku ? `${baseSku}-${size}` : null;
-              await storage.createProductVariant({
-                productId: product.id,
-                size: size,
-                color: null,
-                sku: variantSku,
-                stock: 0,
-                price: product.basePrice,
-              });
-              createdCount++;
-              createdVariants.push({ productName: product.name, size, sku: variantSku });
-            }
-          }
+        // Ensure every product has at least one variant
+        if (productVariants.length === 0) {
+          await storage.createProductVariant({
+            productId: product.id,
+            size: null,
+            color: null,
+            sku: product.sku || null,
+            stock: 0,
+            price: product.basePrice,
+          });
+          createdCount++;
+          createdVariants.push({ productName: product.name, size: 'default', sku: product.sku });
         }
       }
 
@@ -6344,13 +5338,15 @@ window.addEventListener('load', function() {
       if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
       
       const items = await storage.getOrderItems(order.id);
-      const productNames = items.map(item => item.productName);
+      const productObjs = items.map(item => ({ name: item.productName }));
+      const reviewToken = crypto.randomBytes(24).toString('hex');
       
       const result = await sendReviewRequestEmail(
         order.customerEmail,
         order.customerName,
         order.orderNumber,
-        productNames
+        productObjs,
+        reviewToken
       );
       
       if (result.success) {
@@ -6618,656 +5614,6 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
-  // ============= DEALER (BAYİ) MANAGEMENT =============
-
-  // Get all dealers
-  app.get("/api/admin/dealers", requireAdmin, async (req, res) => {
-    try {
-      const dealerList = await storage.getDealers();
-      res.json(dealerList);
-    } catch (error) {
-      console.error('[Dealers] Get all error:', error);
-      res.status(500).json({ error: "Bayiler alınamadı" });
-    }
-  });
-
-  // Get single dealer
-  app.get("/api/admin/dealers/:id", requireAdmin, async (req, res) => {
-    try {
-      const dealer = await storage.getDealer(req.params.id);
-      if (!dealer) {
-        return res.status(404).json({ error: "Bayi bulunamadı" });
-      }
-      res.json(dealer);
-    } catch (error) {
-      console.error('[Dealers] Get one error:', error);
-      res.status(500).json({ error: "Bayi alınamadı" });
-    }
-  });
-
-  // Create dealer
-  app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
-    try {
-      const parsed = dealerWriteSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { name, email, phone, contactPerson, address, notes, status } = parsed.data;
-      const newDealer = await storage.createDealer({
-        name,
-        email,
-        phone,
-        contactPerson,
-        address: address ?? null,
-        notes: notes ?? null,
-        status: status ?? 'active'
-      });
-      
-      res.status(201).json(newDealer);
-    } catch (error) {
-      console.error('[Dealers] Create error:', error);
-      res.status(500).json({ error: "Bayi oluşturulamadı" });
-    }
-  });
-
-  // Update dealer
-  app.put("/api/admin/dealers/:id", requireAdmin, async (req, res) => {
-    try {
-      const parsed = dealerUpdateSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const updated = await storage.updateDealer(req.params.id, parsed.data);
-      if (!updated) {
-        return res.status(404).json({ error: "Bayi bulunamadı" });
-      }
-      res.json(updated);
-    } catch (error) {
-      console.error('[Dealers] Update error:', error);
-      res.status(500).json({ error: "Bayi güncellenemedi" });
-    }
-  });
-
-  // Delete dealer
-  app.delete("/api/admin/dealers/:id", requireAdmin, async (req, res) => {
-    try {
-      await storage.deleteDealer(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[Dealers] Delete error:', error);
-      res.status(500).json({ error: "Bayi silinemedi" });
-    }
-  });
-
-  // ============= QUOTE (TEKLİF) MANAGEMENT =============
-
-  // Get all quotes (optionally by dealer)
-  app.get("/api/admin/quotes", requireAdmin, async (req, res) => {
-    try {
-      const dealerId = req.query.dealerId as string | undefined;
-      const quoteList = await storage.getQuotes(dealerId);
-      
-      // Enrich with dealer info
-      const enriched = await Promise.all(quoteList.map(async (quote) => {
-        const dealer = await storage.getDealer(quote.dealerId);
-        const items = await storage.getQuoteItems(quote.id);
-        return { ...quote, dealer, itemCount: items.length };
-      }));
-      
-      res.json(enriched);
-    } catch (error) {
-      console.error('[Quotes] Get all error:', error);
-      res.status(500).json({ error: "Teklifler alınamadı" });
-    }
-  });
-
-  // Get single quote with items
-  app.get("/api/admin/quotes/:id", requireAdmin, async (req, res) => {
-    try {
-      const quote = await storage.getQuote(req.params.id);
-      if (!quote) {
-        return res.status(404).json({ error: "Teklif bulunamadı" });
-      }
-      
-      const dealer = await storage.getDealer(quote.dealerId);
-      const items = await storage.getQuoteItems(quote.id);
-      
-      res.json({ ...quote, dealer, items });
-    } catch (error) {
-      console.error('[Quotes] Get one error:', error);
-      res.status(500).json({ error: "Teklif alınamadı" });
-    }
-  });
-
-  // Generate PDF for quote
-  app.get("/api/admin/quotes/:id/pdf", requireAdmin, async (req, res) => {
-    try {
-      const quote = await storage.getQuote(req.params.id);
-      if (!quote) {
-        return res.status(404).json({ error: "Teklif bulunamadı" });
-      }
-      
-      const dealer = await storage.getDealer(quote.dealerId);
-      const items = await storage.getQuoteItems(quote.id);
-      
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
-      
-      // Register Inter fonts for Turkish character support
-      const fontPath = path.join(process.cwd(), 'public', 'fonts');
-      const regularFontPath = path.join(fontPath, 'inter-regular.ttf');
-      const boldFontPath = path.join(fontPath, 'inter-bold.ttf');
-      
-      if (fs.existsSync(regularFontPath) && fs.existsSync(boldFontPath)) {
-        doc.registerFont('Inter', regularFontPath);
-        doc.registerFont('Inter-Bold', boldFontPath);
-      }
-      
-      const fontRegular = fs.existsSync(regularFontPath) ? 'Inter' : 'Helvetica';
-      const fontBold = fs.existsSync(boldFontPath) ? 'Inter-Bold' : 'Helvetica-Bold';
-      
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Teklif-${quote.quoteNumber}.pdf"`);
-      
-      doc.pipe(res);
-      
-      // Header logo - convert SVG to PNG using sharp
-      const svgLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-logo.svg');
-      const pngLogoPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding', 'polen-icon.png');
-      
-      let logoAdded = false;
-      if (fs.existsSync(svgLogoPath)) {
-        try {
-          const pngBuffer = await sharp(svgLogoPath).resize(120).png().toBuffer();
-          doc.image(pngBuffer, 50, 35, { width: 80 });
-          logoAdded = true;
-        } catch (e) {
-          console.log('[PDF] SVG to PNG conversion failed:', e);
-        }
-      }
-      
-      if (!logoAdded && fs.existsSync(pngLogoPath)) {
-        doc.image(pngLogoPath, 50, 40, { width: 60 });
-        logoAdded = true;
-      }
-      
-      if (!logoAdded) {
-        doc.fontSize(28).font(fontBold).fillColor('#000000').text('Marka', 50, 50);
-      }
-      
-      // Quote title
-      doc.fontSize(24).font(fontBold).fillColor('#000000').text('TEKLİF', 350, 50, { align: 'right' });
-      doc.fontSize(12).font(fontRegular).fillColor('#666666').text(quote.quoteNumber, 350, 80, { align: 'right' });
-      
-      doc.moveDown(2);
-      
-      // Dealer info box
-      const yStart = 120;
-      doc.rect(50, yStart, 250, 100).fillAndStroke('#f5f5f5', '#e0e0e0');
-      doc.fontSize(10).font(fontBold).fillColor('#333333').text('BAYİ BİLGİLERİ', 60, yStart + 10);
-      doc.fontSize(11).font(fontRegular).fillColor('#000000').text(dealer?.name || 'Bilinmeyen', 60, yStart + 30);
-      if (dealer?.contactPerson) {
-        doc.fontSize(9).fillColor('#666666').text(dealer.contactPerson, 60, yStart + 45);
-      }
-      if (dealer?.email) {
-        doc.fontSize(9).text(dealer.email, 60, yStart + 60);
-      }
-      if (dealer?.phone) {
-        doc.fontSize(9).text(dealer.phone, 60, yStart + 75);
-      }
-      
-      // Quote details box
-      doc.rect(310, yStart, 235, 100).fillAndStroke('#f5f5f5', '#e0e0e0');
-      doc.fontSize(10).font(fontBold).fillColor('#333333').text('TEKLİF DETAYLARI', 320, yStart + 10);
-      doc.fontSize(9).font(fontRegular).fillColor('#666666');
-      doc.text('Oluşturulma:', 320, yStart + 30);
-      doc.fillColor('#000000').text(new Date(quote.createdAt).toLocaleDateString('tr-TR'), 420, yStart + 30);
-      doc.fillColor('#666666').text('Geçerlilik:', 320, yStart + 45);
-      doc.fillColor('#000000').text(quote.validUntil ? new Date(quote.validUntil).toLocaleDateString('tr-TR') : '-', 420, yStart + 45);
-      doc.fillColor('#666666').text('Ödeme:', 320, yStart + 60);
-      const paymentLabels: Record<string, string> = { cash: 'Peşin Ödeme', credit_card: 'Kredi Kartı', eft: 'Havale / EFT', net15: '15 Gün Vadeli', net30: '30 Gün Vadeli', net45: '45 Gün Vadeli', net60: '60 Gün Vadeli', net90: '90 Gün Vadeli', installment_3: '3 Taksit', installment_6: '6 Taksit', installment_9: '9 Taksit', installment_12: '12 Taksit' };
-      const paymentLabel = paymentLabels[quote.paymentTerms || ''] || '-';
-      doc.fillColor('#000000').text(paymentLabel, 420, yStart + 60);
-      doc.fillColor('#666666').text('KDV:', 320, yStart + 75);
-      doc.fillColor('#000000').text(quote.includesVat ? 'Dahil' : 'Hariç', 420, yStart + 75);
-      
-      // Products table
-      const tableTop = yStart + 130;
-      doc.fontSize(12).font(fontBold).fillColor('#000000').text('ÜRÜNLER', 50, tableTop);
-      
-      // Table header
-      const headerY = tableTop + 25;
-      doc.rect(50, headerY, 495, 22).fillAndStroke('#333333', '#333333');
-      doc.fontSize(7).font(fontBold).fillColor('#ffffff');
-      doc.text('Ürün', 60, headerY + 7);
-      doc.text('Beden', 290, headerY + 7, { width: 40, align: 'center' });
-      doc.text('Adet', 330, headerY + 7, { width: 30, align: 'center' });
-      doc.text('Birim Fiyat', 360, headerY + 7, { width: 55, align: 'right' });
-      doc.text('İsk.', 415, headerY + 7, { width: 30, align: 'center' });
-      doc.text('Toplam', 445, headerY + 7, { width: 95, align: 'right' });
-      
-      // Table rows
-      let currentY = headerY + 22;
-      const rowHeight = 50;
-      
-      for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
-        const item = items[itemIdx];
-        if (currentY > 710) {
-          doc.addPage();
-          currentY = 50;
-        }
-        
-        const bgColor = itemIdx % 2 === 0 ? '#ffffff' : '#fafafa';
-        doc.rect(50, currentY, 495, rowHeight).fillAndStroke(bgColor, '#e0e0e0');
-        
-        if (item.productImage) {
-          try {
-            let imageUrl = item.productImage;
-            if (imageUrl.startsWith('/uploads/')) {
-              imageUrl = `https://ecartejeans.com${imageUrl}`;
-            }
-            
-            if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-              const imageResponse = await fetch(imageUrl);
-              if (imageResponse.ok) {
-                const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-                doc.image(imageBuffer, 55, currentY + 5, { width: 38, height: 38 });
-              }
-            }
-          } catch (e) {
-            // skip image
-          }
-        }
-        
-        doc.fontSize(7).font(fontRegular).fillColor('#000000');
-        doc.text(item.productName, 98, currentY + 6, { width: 190, lineBreak: true, height: 20 });
-        
-        if (item.productSku) {
-          doc.fontSize(6).fillColor('#888888').text(`SKU: ${item.productSku}`, 98, currentY + 30, { width: 190 });
-        }
-        
-        doc.fontSize(7).fillColor('#333333');
-        doc.text(item.variantDetails || '-', 290, currentY + 18, { width: 40, align: 'center' });
-        
-        doc.fillColor('#000000');
-        doc.text(item.quantity.toString(), 330, currentY + 18, { width: 30, align: 'center' });
-        doc.text(`${parseFloat(item.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`, 360, currentY + 18, { width: 55, align: 'right' });
-        
-        if (parseFloat(item.discountPercent) > 0) {
-          doc.fillColor('#22c55e').text(`%${item.discountPercent}`, 415, currentY + 18, { width: 30, align: 'center' });
-        } else {
-          doc.fillColor('#999999').text('-', 415, currentY + 18, { width: 30, align: 'center' });
-        }
-        
-        doc.font(fontBold).fillColor('#000000');
-        doc.text(`${parseFloat(item.lineTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`, 445, currentY + 18, { width: 95, align: 'right' });
-        
-        currentY += rowHeight;
-      }
-      
-      // Totals section
-      currentY += 10;
-      doc.rect(350, currentY, 195, 80).fillAndStroke('#f5f5f5', '#e0e0e0');
-      
-      doc.fontSize(10).font(fontRegular).fillColor('#666666');
-      doc.text('Ara Toplam:', 360, currentY + 15);
-      doc.fillColor('#000000').text(`${parseFloat(quote.subtotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL`, 460, currentY + 15, { width: 75, align: 'right' });
-      
-      if (parseFloat(quote.discountTotal) > 0) {
-        doc.fillColor('#22c55e').text('İskonto:', 360, currentY + 35);
-        doc.text(`-${parseFloat(quote.discountTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL`, 460, currentY + 35, { width: 75, align: 'right' });
-      }
-      
-      doc.fontSize(12).font(fontBold).fillColor('#000000');
-      doc.text('GENEL TOPLAM:', 360, currentY + 55);
-      doc.text(`${parseFloat(quote.grandTotal).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL`, 460, currentY + 55, { width: 75, align: 'right' });
-      
-      // Notes
-      if (quote.notes) {
-        currentY += 100;
-        if (currentY > 700) {
-          doc.addPage();
-          currentY = 50;
-        }
-        doc.fontSize(10).font(fontBold).fillColor('#333333').text('NOTLAR', 50, currentY);
-        doc.fontSize(9).font(fontRegular).fillColor('#666666').text(quote.notes, 50, currentY + 15, { width: 495 });
-      }
-      
-      // Footer
-      doc.fontSize(8).font(fontRegular).fillColor('#999999');
-      doc.text('Marka | www.ecartejeans.com | info@ecartejeans.com', 50, 780, { align: 'center', width: 495 });
-      
-      doc.end();
-    } catch (error) {
-      console.error('[Quotes] PDF generation error:', error);
-      res.status(500).json({ error: "PDF oluşturulamadı" });
-    }
-  });
-
-  // Create quote
-  app.post("/api/admin/quotes", requireAdmin, async (req, res) => {
-    try {
-      const parsed = quoteWriteSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { dealerId, validUntil, paymentTerms, notes, includesVat, items } = parsed.data;
-      
-      // Generate quote number
-      const quoteNumber = await storage.getNextQuoteNumber();
-      
-      // Calculate totals from items
-      let subtotal = 0;
-      let discountTotal = 0;
-      
-      if (items && items.length > 0) {
-        for (const item of items) {
-          const lineSubtotal = parseFloat(item.unitPrice) * item.quantity;
-          const discountAmount = lineSubtotal * (parseFloat(String(item.discountPercent ?? 0)) / 100);
-          subtotal += lineSubtotal;
-          discountTotal += discountAmount;
-        }
-      }
-      
-      const grandTotal = subtotal - discountTotal;
-      
-      const newQuote = await storage.createQuote({
-        quoteNumber,
-        dealerId,
-        status: 'draft',
-        validUntil: validUntil ? new Date(validUntil) : null,
-        paymentTerms: paymentTerms || null,
-        notes: notes || null,
-        subtotal: subtotal.toFixed(2),
-        discountTotal: discountTotal.toFixed(2),
-        grandTotal: grandTotal.toFixed(2),
-        includesVat: includesVat !== false
-      });
-      
-      // Create quote items
-      if (items && items.length > 0) {
-        for (const item of items) {
-          const lineSubtotal = parseFloat(item.unitPrice as string) * item.quantity;
-          const discountAmount = lineSubtotal * (parseFloat(String(item.discountPercent ?? 0)) / 100);
-          const lineTotal = lineSubtotal - discountAmount;
-          
-          await storage.createQuoteItem({
-            quoteId: newQuote.id,
-            productId: item.productId,
-            variantId: item.variantId || null,
-            productName: item.productName,
-            productSku: item.productSku || null,
-            productImage: item.productImage || null,
-            variantDetails: item.variantDetails || null,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            discountPercent: (item.discountPercent || 0).toString(),
-            lineTotal: lineTotal.toFixed(2)
-          });
-        }
-      }
-      
-      res.status(201).json(newQuote);
-    } catch (error) {
-      console.error('[Quotes] Create error:', error);
-      res.status(500).json({ error: "Teklif oluşturulamadı" });
-    }
-  });
-
-  // Update quote
-  app.put("/api/admin/quotes/:id", requireAdmin, async (req, res) => {
-    try {
-      const parsed = quoteUpdateSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { items, ...quoteDataRaw } = parsed.data;
-      const quoteData: any = { ...quoteDataRaw };
-      
-      // If items provided, recalculate totals and update items
-      if (items) {
-        // Delete existing items
-        await storage.deleteQuoteItems(req.params.id);
-        
-        let subtotal = 0;
-        let discountTotal = 0;
-        
-        for (const item of items) {
-          const lineSubtotal = parseFloat(item.unitPrice as string) * item.quantity;
-          const discountAmount = lineSubtotal * (parseFloat(String(item.discountPercent ?? 0)) / 100);
-          const lineTotal = lineSubtotal - discountAmount;
-          
-          subtotal += lineSubtotal;
-          discountTotal += discountAmount;
-          
-          await storage.createQuoteItem({
-            quoteId: req.params.id,
-            productId: item.productId,
-            variantId: item.variantId || null,
-            productName: item.productName,
-            productSku: item.productSku || null,
-            productImage: item.productImage || null,
-            variantDetails: item.variantDetails || null,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            discountPercent: (item.discountPercent || 0).toString(),
-            lineTotal: lineTotal.toFixed(2)
-          });
-        }
-        
-        quoteData.subtotal = subtotal.toFixed(2);
-        quoteData.discountTotal = discountTotal.toFixed(2);
-        quoteData.grandTotal = (subtotal - discountTotal).toFixed(2);
-      }
-      
-      const updated = await storage.updateQuote(req.params.id, quoteData);
-      if (!updated) {
-        return res.status(404).json({ error: "Teklif bulunamadı" });
-      }
-      
-      res.json(updated);
-    } catch (error) {
-      console.error('[Quotes] Update error:', error);
-      res.status(500).json({ error: "Teklif güncellenemedi" });
-    }
-  });
-
-  // Update quote status
-  app.put("/api/admin/quotes/:id/status", requireAdmin, async (req, res) => {
-    try {
-      const parsed = quoteStatusSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { status } = parsed.data;
-      
-      const updateData: any = { status };
-      
-      if (status === 'sent') {
-        updateData.sentAt = new Date();
-      } else if (status === 'accepted') {
-        updateData.acceptedAt = new Date();
-      } else if (status === 'rejected') {
-        updateData.rejectedAt = new Date();
-      }
-      
-      const updated = await storage.updateQuote(req.params.id, updateData);
-      if (!updated) {
-        return res.status(404).json({ error: "Teklif bulunamadı" });
-      }
-      
-      if (status === 'accepted') {
-        try {
-          const quoteItems = await storage.getQuoteItems(req.params.id);
-          for (const item of quoteItems) {
-            if (item.variantId) {
-              const variant = await storage.getProductVariant(item.variantId);
-              if (variant) {
-                const newStock = Math.max(0, variant.stock - item.quantity);
-                await storage.updateProductVariant(item.variantId, { stock: newStock } as any);
-                await db.insert(stockAdjustments).values({
-                  variantId: item.variantId,
-                  previousStock: variant.stock,
-                  newStock,
-                  adjustmentType: 'sale',
-                  reason: `B2B Teklif kabul: ${updated.quoteNumber}`,
-                });
-              }
-            }
-          }
-          console.log(`[Quotes] Stock reduced for accepted quote ${updated.quoteNumber}`);
-        } catch (stockErr) {
-          console.error('[Quotes] Stock reduction error:', stockErr);
-        }
-      }
-      
-      // Send email with PDF when status is 'sent'
-      if (status === 'sent') {
-        try {
-          const quote = await storage.getQuote(req.params.id);
-          const dealer = await storage.getDealer(quote!.dealerId);
-          const items = await storage.getQuoteItems(quote!.id);
-          
-          if (dealer?.email) {
-            // Generate PDF buffer
-            const pdfBuffer = await generateQuotePdfBuffer(quote!, dealer, items);
-            
-            // Send email with PDF
-            const { sendQuoteEmail } = await import('./emailService');
-            await sendQuoteEmail(dealer.email, {
-              quoteNumber: quote!.quoteNumber,
-              dealerName: dealer.name,
-              contactPerson: dealer.contactPerson,
-              validUntil: quote!.validUntil,
-              grandTotal: quote!.grandTotal,
-              itemCount: items.length
-            }, pdfBuffer);
-            
-            console.log(`[Quotes] Email sent to ${dealer.email} for quote ${quote!.quoteNumber}`);
-          } else {
-            console.log(`[Quotes] No email for dealer, skipping email send`);
-          }
-        } catch (emailError) {
-          console.error('[Quotes] Failed to send quote email:', emailError);
-          // Don't fail the request, just log the error
-        }
-      }
-      
-      res.json(updated);
-    } catch (error) {
-      console.error('[Quotes] Status update error:', error);
-      res.status(500).json({ error: "Teklif durumu güncellenemedi" });
-    }
-  });
-
-  // Delete quote
-  app.delete("/api/admin/quotes/:id", requireAdmin, async (req, res) => {
-    try {
-      await storage.deleteQuote(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[Quotes] Delete error:', error);
-      res.status(500).json({ error: "Teklif silinemedi" });
-    }
-  });
-
-  // Get next quote number (for preview)
-  app.get("/api/admin/quotes/next-number", requireAdmin, async (req, res) => {
-    try {
-      const nextNumber = await storage.getNextQuoteNumber();
-      res.json({ quoteNumber: nextNumber });
-    } catch (error) {
-      console.error('[Quotes] Next number error:', error);
-      res.status(500).json({ error: "Teklif numarası alınamadı" });
-    }
-  });
-
-  // ============= SIZE CHARTS (BEDEN TABLOLARI) =============
-  
-  // Public: Get size chart by category ID
-  app.get("/api/size-charts/category/:categoryId", async (req, res) => {
-    try {
-      const chart = await storage.getSizeChartByCategory(req.params.categoryId);
-      res.json(chart || null);
-    } catch (error) {
-      console.error('[SizeCharts] Get by category error:', error);
-      res.status(500).json({ error: "Beden tablosu alınamadı" });
-    }
-  });
-  
-  // Admin: Get all size charts
-  app.get("/api/admin/size-charts", requireAdmin, async (req, res) => {
-    try {
-      const charts = await storage.getSizeCharts();
-      // Enrich with category info
-      const enriched = await Promise.all(charts.map(async (chart) => {
-        const category = await storage.getCategory(chart.categoryId);
-        return { ...chart, category };
-      }));
-      res.json(enriched);
-    } catch (error) {
-      console.error('[SizeCharts] Get all error:', error);
-      res.status(500).json({ error: "Beden tabloları alınamadı" });
-    }
-  });
-  
-  // Admin: Get single size chart
-  app.get("/api/admin/size-charts/:id", requireAdmin, async (req, res) => {
-    try {
-      const chart = await storage.getSizeChart(req.params.id);
-      if (!chart) {
-        return res.status(404).json({ error: "Beden tablosu bulunamadı" });
-      }
-      const category = await storage.getCategory(chart.categoryId);
-      res.json({ ...chart, category });
-    } catch (error) {
-      console.error('[SizeCharts] Get one error:', error);
-      res.status(500).json({ error: "Beden tablosu alınamadı" });
-    }
-  });
-  
-  // Admin: Create size chart
-  app.post("/api/admin/size-charts", requireAdmin, async (req, res) => {
-    try {
-      const parsed = sizeChartWriteSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { categoryId, columns, rows } = parsed.data;
-      
-      // Check if category already has a size chart
-      const existing = await storage.getSizeChartByCategory(categoryId);
-      if (existing) {
-        return res.status(400).json({ error: "Bu kategori için zaten bir beden tablosu var" });
-      }
-      
-      const chart = await storage.createSizeChart({
-        categoryId,
-        columns: columns || ["Beden", "Göğüs (cm)", "Boy (cm)"],
-        rows: rows || []
-      });
-      
-      res.status(201).json(chart);
-    } catch (error) {
-      console.error('[SizeCharts] Create error:', error);
-      res.status(500).json({ error: "Beden tablosu oluşturulamadı" });
-    }
-  });
-  
-  // Admin: Update size chart
-  app.put("/api/admin/size-charts/:id", requireAdmin, async (req, res) => {
-    try {
-      const parsed = sizeChartUpdateSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      const { columns, rows } = parsed.data;
-      const updated = await storage.updateSizeChart(req.params.id, { columns, rows });
-      if (!updated) {
-        return res.status(404).json({ error: "Beden tablosu bulunamadı" });
-      }
-      res.json(updated);
-    } catch (error) {
-      console.error('[SizeCharts] Update error:', error);
-      res.status(500).json({ error: "Beden tablosu güncellenemedi" });
-    }
-  });
-  
-  // Admin: Delete size chart
-  app.delete("/api/admin/size-charts/:id", requireAdmin, async (req, res) => {
-    try {
-      await storage.deleteSizeChart(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[SizeCharts] Delete error:', error);
-      res.status(500).json({ error: "Beden tablosu silinemedi" });
-    }
-  });
 
   // ==================== MENU ITEMS ====================
   // Public endpoint for active menu items
@@ -7496,8 +5842,6 @@ Sitemap: ${baseUrl}/sitemap.xml
         success: true,
         createdParents,
         createdChildren,
-        totalCategories: plan.totalCategories,
-        unmatchedCount: plan.unmatchedCount,
         groups: plan.groups.map((g) => ({
           title: g.title,
           count: g.categories.length,
@@ -7635,354 +5979,6 @@ ${items.join("\n")}
   // ==========================================================================
   // Marketplaces (Trendyol / N11 / Hepsiburada ...) — admin-only
   // ==========================================================================
-  app.post("/api/admin/wholesale/pdf", requireAdmin, async (req, res) => {
-    try {
-      const parsedWholesale = wholesalePdfSchema.safeParse(req.body ?? {});
-      if (!parsedWholesale.success) return res.status(400).json({ error: firstZodMessage(parsedWholesale.error) });
-      const { discountRate = 0, productIds, categoryId, categoryDiscounts, productDiscounts } = parsedWholesale.data;
-      const generalRate = Math.max(0, Math.min(99, Number(discountRate) || 0));
-
-      const catDiscountMap = new Map<string, number>();
-      if (categoryDiscounts && typeof categoryDiscounts === 'object') {
-        for (const [catId, r] of Object.entries(categoryDiscounts)) {
-          const rv = Math.max(0, Math.min(99, Number(r) || 0));
-          if (rv > 0) catDiscountMap.set(catId, rv);
-        }
-      }
-
-      const prodDiscountMap = new Map<string, number>();
-      if (productDiscounts && typeof productDiscounts === 'object') {
-        for (const [pid, r] of Object.entries(productDiscounts)) {
-          const rv = Math.max(0, Math.min(99, Number(r) || 0));
-          if (rv > 0) prodDiscountMap.set(pid, rv);
-        }
-      }
-
-      const hasAnyDiscount = generalRate > 0 || catDiscountMap.size > 0 || prodDiscountMap.size > 0;
-
-      const allVariants = await db.select().from(productVariants);
-      const stockByProduct = new Map<string, number>();
-      const variantCountByProduct = new Map<string, number>();
-      for (const v of allVariants) {
-        stockByProduct.set(v.productId, (stockByProduct.get(v.productId) || 0) + (v.stock || 0));
-        variantCountByProduct.set(v.productId, (variantCountByProduct.get(v.productId) || 0) + 1);
-      }
-
-      let filteredProducts = await storage.getAllProducts();
-      filteredProducts = filteredProducts.filter((p) => {
-        if (!p.isActive) return false;
-        const variantCount = variantCountByProduct.get(p.id) || 0;
-        if (variantCount === 0) return true;
-        return (stockByProduct.get(p.id) || 0) > 0;
-      });
-
-      if (productIds && Array.isArray(productIds) && productIds.length > 0) {
-        const idSet = new Set(productIds as string[]);
-        filteredProducts = filteredProducts.filter((p) => idSet.has(p.id));
-      } else if (categoryId) {
-        const catProductIds = await db
-          .selectDistinct({ productId: productCategories.productId })
-          .from(productCategories)
-          .where(eq(productCategories.categoryId, categoryId));
-        const catIdSet = new Set(catProductIds.map((r) => r.productId));
-        filteredProducts = filteredProducts.filter(
-          (p) => p.categoryId === categoryId || catIdSet.has(p.id),
-        );
-      }
-
-      const allCategories = await storage.getCategories();
-      const catMap = new Map(allCategories.map((c) => [c.id, c.name]));
-
-      const allProductCats = await db.select().from(productCategories);
-      const productCategoryMap = new Map<string, string[]>();
-      for (const pc of allProductCats) {
-        const arr = productCategoryMap.get(pc.productId) || [];
-        arr.push(pc.categoryId);
-        productCategoryMap.set(pc.productId, arr);
-      }
-
-      const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
-
-      const fontPath = path.join(process.cwd(), 'public', 'fonts');
-      const regularFontPath = path.join(fontPath, 'inter-regular.ttf');
-      const boldFontPath = path.join(fontPath, 'inter-bold.ttf');
-      if (fs.existsSync(regularFontPath) && fs.existsSync(boldFontPath)) {
-        doc.registerFont('Inter', regularFontPath);
-        doc.registerFont('Inter-Bold', boldFontPath);
-      }
-      const fontR = fs.existsSync(regularFontPath) ? 'Inter' : 'Helvetica';
-      const fontB = fs.existsSync(boldFontPath) ? 'Inter-Bold' : 'Helvetica-Bold';
-
-      const getEffectiveRate = (productId: string, pCatId: string | null): number => {
-        const pRate = prodDiscountMap.get(productId);
-        if (pRate !== undefined && pRate > 0) return pRate;
-
-        const catIds: string[] = [];
-        if (pCatId) catIds.push(pCatId);
-        const extraCats = productCategoryMap.get(productId) || [];
-        for (const cid of extraCats) {
-          if (!catIds.includes(cid)) catIds.push(cid);
-        }
-        for (const cid of catIds) {
-          const cRate = catDiscountMap.get(cid);
-          if (cRate !== undefined && cRate > 0) return cRate;
-        }
-
-        return generalRate;
-      };
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Toptan-Fiyat-Listesi-${new Date().toISOString().slice(0, 10)}.pdf"`);
-      doc.pipe(res);
-
-      const pageW = 595.28;
-      const marginL = 40;
-      const marginR = 40;
-      const usableW = pageW - marginL - marginR;
-      const brandColor = '#fdb51d';
-      const darkColor = '#1a1a1a';
-
-      const brandingDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'branding');
-      const logoFiles = ['polen-logo.png', 'polen-logo.svg', 'polen-icon.png', 'hank-logo.svg', 'hank-icon.png'];
-
-      let logoAdded = false;
-      const logoTopY = 30;
-      const logoHeight = 60;
-      for (const logoFile of logoFiles) {
-        if (logoAdded) break;
-        const logoPath = path.join(brandingDir, logoFile);
-        if (!fs.existsSync(logoPath)) continue;
-        try {
-          if (logoFile.endsWith('.svg')) {
-            const pngBuf = await sharp(logoPath).resize(140).png().toBuffer();
-            doc.image(pngBuf, marginL, logoTopY, { height: logoHeight });
-          } else {
-            doc.image(logoPath, marginL, logoTopY, { height: logoHeight });
-          }
-          logoAdded = true;
-        } catch (logoErr) {
-          console.warn(`[Wholesale PDF] Logo embed failed (${logoFile}):`, logoErr);
-        }
-      }
-      if (!logoAdded) {
-        doc.fontSize(22).font(fontB).fillColor(darkColor).text('Marka', marginL, logoTopY + 15);
-      }
-
-      const dateStr = new Date().toLocaleDateString('tr-TR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      });
-
-      const rightColX = 300;
-      const rightColW = pageW - marginR - rightColX;
-      doc.fontSize(18).font(fontB).fillColor(darkColor).text('TOPTAN FİYAT LİSTESİ', rightColX, logoTopY, { width: rightColW, align: 'right' });
-      doc.fontSize(9).font(fontR).fillColor('#666666');
-      doc.text(dateStr, rightColX, logoTopY + 25, { width: rightColW, align: 'right' });
-      let infoY = logoTopY + 38;
-      if (generalRate > 0) {
-        doc.text(`Genel İndirim: %${generalRate}`, rightColX, infoY, { width: rightColW, align: 'right' });
-        infoY += 13;
-      }
-      if (catDiscountMap.size > 0) {
-        doc.text(`${catDiscountMap.size} kategori özel indirimli`, rightColX, infoY, { width: rightColW, align: 'right' });
-        infoY += 13;
-      }
-      if (prodDiscountMap.size > 0) {
-        doc.text(`${prodDiscountMap.size} ürün özel indirimli`, rightColX, infoY, { width: rightColW, align: 'right' });
-        infoY += 13;
-      }
-      doc.text(`${filteredProducts.length} ürün`, rightColX, infoY, { width: rightColW, align: 'right' });
-      infoY += 13;
-      if (categoryId) {
-        const catName = catMap.get(categoryId) || '';
-        if (catName) {
-          doc.text(catName, rightColX, infoY, { width: rightColW, align: 'right' });
-        }
-      }
-
-      const separatorY = logoTopY + logoHeight + 8;
-      doc.rect(marginL, separatorY, usableW, 2).fill(brandColor);
-
-      const colImg = marginL;
-      const colImgW = 42;
-      const colName = colImg + colImgW + 4;
-      const colNameW = hasAnyDiscount ? 210 : 260;
-      const colCat = colName + colNameW + 4;
-      const colCatW = 60;
-      const colPrice = colCat + colCatW + 4;
-      const colPriceW = hasAnyDiscount ? 65 : 90;
-      const colDisc = colPrice + colPriceW + 4;
-      const colDiscW = 70;
-      const colBadge = colDisc + colDiscW + 4;
-      const colBadgeW = 28;
-      const headerY = separatorY + 10;
-
-      const drawTableHeader = (y: number) => {
-        doc.rect(marginL, y, usableW, 20).fill(darkColor);
-        doc.fontSize(7).font(fontB).fillColor('#ffffff');
-        doc.text('', colImg + 2, y + 6, { width: colImgW, align: 'center' });
-        doc.text('Ürün Adı', colName, y + 6, { width: colNameW });
-        doc.text('Kategori', colCat, y + 6, { width: colCatW });
-        doc.text('Liste Fiyatı', colPrice, y + 6, { width: colPriceW, align: 'right' });
-        if (hasAnyDiscount) {
-          doc.text('İndirimli Fiyat', colDisc, y + 6, { width: colDiscW, align: 'right' });
-          doc.text('İnd.', colBadge, y + 6, { width: colBadgeW, align: 'center' });
-        }
-        return y + 20;
-      };
-
-      const allowedHosts = ['ecartejeans.com', 'cdn.ecartejeans.com', 'img.trendyol.com', 'cdn.dsmcdn.com'];
-      const isAllowedHost = (url: string): boolean => {
-        try {
-          const u = new URL(url);
-          return ['http:', 'https:'].includes(u.protocol) &&
-            allowedHosts.some(h => u.hostname === h || u.hostname.endsWith('.' + h));
-        } catch (_e) { return false; }
-      };
-
-      const fetchImage = async (src: string): Promise<Buffer | null> => {
-        try {
-          let imageUrl = src;
-          if (imageUrl.startsWith('/uploads/')) {
-            imageUrl = `https://ecartejeans.com${imageUrl}`;
-          }
-          if (!isAllowedHost(imageUrl)) return null;
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000);
-          const imgRes = await fetch(imageUrl, { signal: controller.signal });
-          clearTimeout(timeout);
-          if (!imgRes.ok) return null;
-          const imgBuf = Buffer.from(await imgRes.arrayBuffer());
-          return sharp(imgBuf).resize(80, 80, { fit: 'cover' }).jpeg({ quality: 70 }).toBuffer();
-        } catch (_fetchErr) {
-          return null;
-        }
-      };
-
-      const BATCH_SIZE = 5;
-      const imageCache = new Map<string, Buffer | null>();
-      for (let b = 0; b < filteredProducts.length; b += BATCH_SIZE) {
-        const batch = filteredProducts.slice(b, b + BATCH_SIZE);
-        const results = await Promise.allSettled(
-          batch.map((p) => {
-            const src = p.images?.[0];
-            if (!src) return Promise.resolve(null);
-            return fetchImage(src);
-          }),
-        );
-        batch.forEach((p, idx) => {
-          const result = results[idx];
-          imageCache.set(p.id, result.status === 'fulfilled' ? result.value : null);
-        });
-      }
-
-      let currentY = drawTableHeader(headerY);
-      const rowH = 50;
-      const pageBottom = 790;
-
-      for (let i = 0; i < filteredProducts.length; i++) {
-        if (currentY + rowH > pageBottom) {
-          doc.addPage();
-          currentY = drawTableHeader(40);
-        }
-
-        const p = filteredProducts[i];
-        const bgColor = i % 2 === 0 ? '#ffffff' : '#f8f8f8';
-        doc.rect(marginL, currentY, usableW, rowH).fill(bgColor);
-        doc.rect(marginL, currentY, usableW, rowH).stroke('#e5e5e5');
-
-        const cachedImg = imageCache.get(p.id);
-        if (cachedImg) {
-          try {
-            doc.image(cachedImg, colImg + 2, currentY + 4, { width: 38, height: 42 });
-          } catch (imgErr) {
-            console.warn(`[Wholesale PDF] Image embed failed for product ${p.id}:`, imgErr instanceof Error ? imgErr.message : imgErr);
-          }
-        }
-
-        doc.fontSize(8).font(fontB).fillColor(darkColor);
-        doc.text(p.name, colName, currentY + 8, { width: colNameW, lineBreak: true, height: 22 });
-        if (p.sku) {
-          doc.fontSize(6).font(fontR).fillColor('#888888');
-          doc.text(`SKU: ${p.sku}`, colName, currentY + 32, { width: colNameW });
-        }
-
-        const productCatIds = productCategoryMap.get(p.id) || [];
-        const allCatIds = p.categoryId ? [p.categoryId, ...productCatIds.filter(id => id !== p.categoryId)] : productCatIds;
-        const catNames = allCatIds.map((id) => catMap.get(id)).filter(Boolean).join(', ');
-        doc.fontSize(7).font(fontR).fillColor('#666666');
-        doc.text(catNames || '—', colCat, currentY + 15, { width: colCatW, lineBreak: true, height: 20 });
-
-        const basePrice = parseFloat(p.basePrice);
-        const effectiveRate = getEffectiveRate(p.id, p.categoryId);
-        const discountedPrice = effectiveRate > 0 ? basePrice * (1 - effectiveRate / 100) : basePrice;
-
-        if (hasAnyDiscount && effectiveRate > 0) {
-          doc.fontSize(7).font(fontR).fillColor('#999999');
-          const listPriceText = `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`;
-          doc.text(listPriceText, colPrice, currentY + 15, { width: colPriceW, align: 'right' });
-          const textWidth = doc.widthOfString(listPriceText);
-          const strikeX = colPrice + colPriceW - textWidth;
-          const strikeY = currentY + 15 + 4;
-          doc.save().moveTo(strikeX, strikeY).lineTo(strikeX + textWidth, strikeY).lineWidth(0.5).stroke('#999999').restore();
-
-          doc.fontSize(8).font(fontB).fillColor('#16a34a');
-          doc.text(
-            `${discountedPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
-            colDisc,
-            currentY + 15,
-            { width: colDiscW, align: 'right' },
-          );
-
-          doc.fontSize(7).font(fontB).fillColor(brandColor);
-          doc.text(`%${effectiveRate}`, colBadge, currentY + 15, { width: colBadgeW, align: 'center' });
-        } else if (hasAnyDiscount && effectiveRate === 0) {
-          doc.fontSize(8).font(fontB).fillColor(darkColor);
-          doc.text(
-            `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
-            colPrice,
-            currentY + 15,
-            { width: colPriceW, align: 'right' },
-          );
-          doc.fontSize(8).font(fontR).fillColor('#999999');
-          doc.text('—', colDisc, currentY + 15, { width: colDiscW, align: 'right' });
-        } else {
-          doc.fontSize(8).font(fontB).fillColor(darkColor);
-          doc.text(
-            `${basePrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`,
-            colPrice,
-            currentY + 15,
-            { width: colPriceW, align: 'right' },
-          );
-        }
-
-        currentY += rowH;
-      }
-
-      const range = doc.bufferedPageRange();
-      for (let pi = range.start; pi < range.start + range.count; pi++) {
-        doc.switchToPage(pi);
-        doc.rect(marginL, pageBottom - 2, usableW, 0.5).fill('#e5e5e5');
-        doc.fontSize(7).font(fontR).fillColor('#999999');
-        doc.text('ecartejeans.com', marginL, pageBottom + 4);
-        doc.text(
-          `Sayfa ${pi + 1} / ${range.count}`,
-          marginL,
-          pageBottom + 4,
-          { width: usableW, align: 'center' },
-        );
-        doc.text(dateStr, marginL, pageBottom + 4, { width: usableW, align: 'right' });
-      }
-
-      doc.end();
-    } catch (error) {
-      console.error('[Wholesale PDF] Error:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'PDF oluşturma hatası' });
-      }
-    }
-  });
 
   const { registerMarketplaceRoutes } = await import("./marketplaces/routes");
   registerMarketplaceRoutes(app, requireAdmin);
@@ -8005,12 +6001,9 @@ async function notifyAdminNewReview(payload: AdminReviewNotificationPayload): Pr
       sendAdminReviewNotificationEmail(payload),
       sendReviewPendingToAdmin({
         productName: payload.productName,
-        authorName: payload.authorName,
-        authorEmail: payload.authorEmail,
         rating: payload.rating,
-        title: payload.title,
-        content: payload.content,
-        isGuest: payload.isGuest,
+        comment: payload.content,
+        reviewerName: payload.authorName,
       }),
     ]);
   } catch (error) {

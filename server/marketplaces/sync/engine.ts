@@ -666,11 +666,6 @@ async function upsertProduct(
     basePrice: np.basePrice.toFixed(2),
     categoryId: siteCategoryId,
     images: images.length > 0 ? images : siteProduct?.images ?? [],
-    availableSizes: np.variants.map((v) => v.size).filter((s): s is string => !!s),
-    availableColors: np.variants
-      .map((v) => v.color)
-      .filter((c): c is { name: string; hex?: string | null } => !!c)
-      .map((c) => ({ name: c.name, hex: c.hex ?? "#cccccc" })),
     videoUrl: np.videoUrl ?? siteProduct?.videoUrl ?? null,
     attributes: np.attributes ?? {},
     isActive: np.isActive,
@@ -1097,7 +1092,7 @@ async function runFullSync(
   const imageUrlCache = new Map<string, { relativePath: string; hash: string } | null>();
   let processedSinceFlush = 0;
 
-  for (const [groupKey, np] of groupedMap) {
+  for (const [groupKey, np] of Array.from(groupedMap)) {
     seen.add(groupKey);
     stats.currentProductName = np.name;
     try {

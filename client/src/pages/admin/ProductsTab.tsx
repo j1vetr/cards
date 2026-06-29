@@ -42,7 +42,6 @@ interface ProductsTabProps {
   setSearchQuery: (q: string) => void;
   setShowBulkBadgeModal: (b: boolean) => void;
   setShowBulkPriceModal: (b: boolean) => void;
-  setShowBulkWholesaleModal: (b: boolean) => void;
   setBulkPreselectedIds?: (ids: string[]) => void;
   deleteProductMutation: { mutate: (id: string) => void };
   productsLoading?: boolean;
@@ -259,7 +258,6 @@ export default function ProductsTab({
   setSearchQuery,
   setShowBulkBadgeModal,
   setShowBulkPriceModal,
-  setShowBulkWholesaleModal,
   setBulkPreselectedIds,
   deleteProductMutation,
   productsLoading,
@@ -412,17 +410,6 @@ export default function ProductsTab({
               <Tag className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Toplu etiket</span>
             </GhostButton>
-            <GhostButton
-              onClick={() => {
-                setBulkPreselectedIds?.([]);
-                setShowBulkWholesaleModal(true);
-              }}
-              data-testid="button-header-bulk-wholesale"
-              title="Toptan satış ayarları"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Toptan ayarla</span>
-            </GhostButton>
             <SecondaryButton
               onClick={handleSyncVariants}
               disabled={isSyncing}
@@ -557,17 +544,6 @@ export default function ProductsTab({
             >
               <Tag className="w-3.5 h-3.5" />
               Toplu etiket
-            </SecondaryButton>
-            <SecondaryButton
-              onClick={() => {
-                setBulkPreselectedIds?.(Array.from(selectedIds));
-                setShowBulkWholesaleModal(true);
-              }}
-              disabled={selectedIds.size === 0}
-              data-testid="button-bulk-wholesale"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              Toptan ayarla
             </SecondaryButton>
             <div className="ml-auto">
               <GhostButton onClick={clearSelection}>

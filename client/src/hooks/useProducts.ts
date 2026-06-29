@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface Product {
+  videoUrl?: string | null;
   id: string;
   name: string;
   slug: string;
@@ -119,7 +120,7 @@ export function useFacets(filters?: {
       if (filters?.minPrice !== undefined) params.set('minPrice', String(filters.minPrice));
       if (filters?.maxPrice !== undefined) params.set('maxPrice', String(filters.maxPrice));
       const res = await fetch(`/api/products/facets?${params.toString()}`);
-      if (!res.ok) return { sizes: [], colors: [] };
+      if (!res.ok) return { sizes: [], colors: [], fits: [] };
       return res.json() as Promise<FacetsResponse>;
     },
     staleTime: 60_000,

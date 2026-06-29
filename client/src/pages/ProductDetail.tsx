@@ -1153,12 +1153,12 @@ export default function ProductDetail() {
 
               {/* Beden / Renk seçici */}
               {product.variants && product.variants.length > 0 && (() => {
-                const sizes = [...new Set(product.variants!.filter(v => v.size).map(v => v.size!))].sort((a, b) => {
+                const sizes = Array.from(new Set(product.variants!.filter(v => v.size).map(v => v.size!))).sort((a, b) => {
                   const na = parseFloat(a), nb = parseFloat(b);
                   if (!isNaN(na) && !isNaN(nb)) return na - nb;
                   return a.localeCompare(b, 'tr');
                 });
-                const colors = [...new Set(product.variants!.filter(v => v.color).map(v => v.color!))];
+                const colors = Array.from(new Set(product.variants!.filter(v => v.color).map(v => v.color!)));
 
                 return (
                   <div className="mb-6 space-y-4">

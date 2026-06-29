@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 
 import OrdersTab from './admin/OrdersTab';
-import MarketplacesTab from './admin/MarketplacesTab';
 import AdminLayout from './admin/_layout/AdminLayout';
 
 import DashboardTab from './admin/DashboardTab';
@@ -16,15 +15,11 @@ import DatabaseTab from './admin/DatabaseTab';
 import MenuTab from './admin/MenuTab';
 import CouponsTab from './admin/CouponsTab';
 import ReviewsTab from './admin/ReviewsTab';
-import WholesaleTab from './admin/WholesaleTab';
-import WholesaleSeriesTab from './admin/WholesaleSeriesTab';
-import PaymentRequestsTab from './admin/PaymentRequestsTab';
 
 import CategoryModal from './admin/modals/CategoryModal';
 import UserDetailModal from './admin/modals/UserDetailModal';
 import BulkPriceModal from './admin/modals/BulkPriceModal';
 import BulkBadgeModal from './admin/modals/BulkBadgeModal';
-import BulkWholesaleModal from './admin/modals/BulkWholesaleModal';
 
 import type { Category, User, TabType } from './admin/_shared/types';
 import {
@@ -51,7 +46,6 @@ export default function AdminDashboard() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
   const [showBulkBadgeModal, setShowBulkBadgeModal] = useState(false);
-  const [showBulkWholesaleModal, setShowBulkWholesaleModal] = useState(false);
   const [bulkPreselectedIds, setBulkPreselectedIds] = useState<string[] | undefined>(undefined);
 
   const data = useAdminDashboardData({
@@ -159,7 +153,6 @@ export default function AdminDashboard() {
             setSearchQuery={setSearchQuery}
             setShowBulkBadgeModal={setShowBulkBadgeModal}
             setShowBulkPriceModal={setShowBulkPriceModal}
-            setShowBulkWholesaleModal={setShowBulkWholesaleModal}
             setBulkPreselectedIds={setBulkPreselectedIds}
             deleteProductMutation={deleteProductMutation}
             productsLoading={productsLoading}
@@ -191,23 +184,8 @@ export default function AdminDashboard() {
         {activeTab === 'settings' && <SettingsTab />}
         {activeTab === 'database' && <DatabaseTab />}
         {activeTab === 'menu' && <MenuTab categories={categories} />}
-        {activeTab === 'marketplaces' && (
-          <MarketplacesTab
-            siteCategories={categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug }))}
-          />
-        )}
         {activeTab === 'coupons' && <CouponsTab />}
         {activeTab === 'reviews' && <ReviewsTab />}
-        {activeTab === 'wholesale' && (
-          <WholesaleTab
-            products={products}
-            categories={categories}
-            allVariants={allVariants}
-            productsLoading={productsLoading}
-          />
-        )}
-        {activeTab === 'wholesale-series' && <WholesaleSeriesTab />}
-        {activeTab === 'payment-requests' && <PaymentRequestsTab />}
       </AdminLayout>
 
       {showCategoryModal && (
@@ -249,22 +227,6 @@ export default function AdminDashboard() {
           }}
           onSuccess={() => {
             setShowBulkBadgeModal(false);
-            setBulkPreselectedIds(undefined);
-            queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
-          }}
-        />
-      )}
-      {showBulkWholesaleModal && (
-        <BulkWholesaleModal
-          products={products}
-          categories={categories}
-          preselectedProductIds={bulkPreselectedIds}
-          onClose={() => {
-            setShowBulkWholesaleModal(false);
-            setBulkPreselectedIds(undefined);
-          }}
-          onSuccess={() => {
-            setShowBulkWholesaleModal(false);
             setBulkPreselectedIds(undefined);
             queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
           }}

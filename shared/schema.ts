@@ -31,10 +31,6 @@ export const users = pgTable("users", {
   postalCode: text("postal_code"),
   country: text("country").default("Türkiye"),
   whatsappOptIn: boolean("whatsapp_opt_in").default(true).notNull(),
-  customerType: text("customer_type").default("retail").notNull(), // 'retail' | 'wholesale'
-  companyName: text("company_name"),
-  taxNumber: text("tax_number"),
-  taxOffice: text("tax_office"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -91,28 +87,8 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
-// Wholesale "seri" — a fixed size distribution sold as one unit, priced per piece.
-// e.g. [{size:"31",quantity:1},{size:"34",quantity:2},...] = N pieces per series.
-export const wholesaleSeries = pgTable("wholesale_series", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  sizeDistribution: jsonb("size_distribution").$type<{ size: string; quantity: number }[]>().default([]).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertWholesaleSeriesSchema = createInsertSchema(wholesaleSeries, {
-  sizeDistribution: z.array(z.object({ size: z.string(), quantity: z.number() })),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertWholesaleSeries = z.infer<typeof insertWholesaleSeriesSchema>;
-export type WholesaleSeries = typeof wholesaleSeries.$inferSelect;
-
+// Products table — kept for backward compatibility with existing orders/cart.
+// New TCG cards use the cards + card_listings tables below.
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -122,17 +98,12 @@ export const products = pgTable("products", {
   categoryId: varchar("category_id").references(() => categories.id),
   basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull(),
   images: jsonb("images").$type<string[]>().default([]).notNull(),
-  availableSizes: jsonb("available_sizes").$type<string[]>().default([]).notNull(),
-  availableColors: jsonb("available_colors").$type<{name: string, hex: string | null}[]>().default([]).notNull(),
   videoUrl: text("video_url"),
   attributes: jsonb("attributes").$type<Record<string, string>>().default({}).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   isFeatured: boolean("is_featured").default(false).notNull(),
   isNew: boolean("is_new").default(false).notNull(),
   discountBadge: text("discount_badge"),
-  wholesaleEnabled: boolean("wholesale_enabled").default(false).notNull(),
-  wholesalePrice: decimal("wholesale_price", { precision: 10, scale: 2 }),
-  wholesaleSeriesId: varchar("wholesale_series_id").references(() => wholesaleSeries.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -180,6 +151,7 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
 
 export type ProductCategory = typeof productCategories.$inferSelect;
 
+// Product variants — kept for backward compat with existing orders/stock records.
 export const productVariants = pgTable("product_variants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
@@ -199,14 +171,137 @@ export const insertProductVariantSchema = createInsertSchema(productVariants).om
 export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
 export type ProductVariant = typeof productVariants.$inferSelect;
 
+// ============================================================================
+// TCG — Trading Card Game (Pokemon TCG / Riftbound)
+// ============================================================================
+
+// Games: pokemon | riftbound
+export const cardGames = pgTable("card_games", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  logoUrl: text("logo_url"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCardGameSchema = createInsertSchema(cardGames).omit({ id: true, createdAt: true });
+export type InsertCardGame = z.infer<typeof insertCardGameSchema>;
+export type CardGame = typeof cardGames.$inferSelect;
+
+// Card sets / expansions
+export const cardSets = pgTable("card_sets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  gameId: varchar("game_id").references(() => cardGames.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  series: text("series"),
+  releaseDate: text("release_date"),
+  totalCards: integer("total_cards"),
+  logoUrl: text("logo_url"),
+  symbolUrl: text("symbol_url"),
+  apiId: text("api_id"),           // external API ID (e.g. 'sv8' for Pokemon)
+  apiSource: text("api_source"),   // 'pokemon_tcg' | 'riftbound'
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCardSetSchema = createInsertSchema(cardSets).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCardSet = z.infer<typeof insertCardSetSchema>;
+export type CardSet = typeof cardSets.$inferSelect;
+
+// Individual cards
+export const cards = pgTable("cards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  setId: varchar("set_id").references(() => cardSets.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  cardNumber: text("card_number"),           // "001/165"
+  rarity: text("rarity"),                    // "Common" | "Rare" | "Ultra Rare" | etc.
+  cardTypes: jsonb("card_types").$type<string[]>().default([]).notNull(), // ["Fire", "Fighting"]
+  hp: integer("hp"),                         // Pokemon HP (null for non-Pokemon or Riftbound)
+  artist: text("artist"),
+  imageUrl: text("image_url"),
+  imageUrlHiRes: text("image_url_hi_res"),
+  description: text("description"),
+  apiId: text("api_id"),                     // external API card ID
+  apiSource: text("api_source"),             // 'pokemon_tcg' | 'riftbound'
+  isActive: boolean("is_active").default(true).notNull(),
+  isFeatured: boolean("is_featured").default(false).notNull(),
+  isNew: boolean("is_new").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  apiUniq: uniqueIndex("uniq_card_api").on(t.apiSource, t.apiId),
+}));
+
+export const insertCardSchema = createInsertSchema(cards).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCard = z.infer<typeof insertCardSchema>;
+export type Card = typeof cards.$inferSelect;
+
+// Card listings — a specific card in a specific condition, with stock and price.
+// This is the "purchaseable unit" (replaces product_variants for TCG).
+export const cardListings = pgTable("card_listings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }).notNull(),
+  condition: text("condition").notNull(), // 'NM' | 'LP' | 'MP' | 'HP' | 'DMG' | 'PSA10' | 'PSA9' | 'PSA8' | 'PSA7'
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  stock: integer("stock").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCardListingSchema = createInsertSchema(cardListings).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCardListing = z.infer<typeof insertCardListingSchema>;
+export type CardListing = typeof cardListings.$inferSelect;
+
+// PriceCharting reference prices (market data, not our selling price)
+export const cardPrices = pgTable("card_prices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }).notNull(),
+  source: text("source").notNull().default("pricecharting"), // 'pricecharting' | 'tcgplayer'
+  priceMarket: decimal("price_market", { precision: 10, scale: 2 }),
+  priceLow: decimal("price_low", { precision: 10, scale: 2 }),
+  priceHigh: decimal("price_high", { precision: 10, scale: 2 }),
+  currency: text("currency").default("USD").notNull(),
+  fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqCardSource: uniqueIndex("uniq_card_price_source").on(t.cardId, t.source),
+}));
+
+export const insertCardPriceSchema = createInsertSchema(cardPrices).omit({ id: true, fetchedAt: true });
+export type InsertCardPrice = z.infer<typeof insertCardPriceSchema>;
+export type CardPrice = typeof cardPrices.$inferSelect;
+
+// Relations
+export const cardSetsRelations = relations(cardSets, ({ one, many }) => ({
+  game: one(cardGames, { fields: [cardSets.gameId], references: [cardGames.id] }),
+  cards: many(cards),
+}));
+
+export const cardsRelations = relations(cards, ({ one, many }) => ({
+  set: one(cardSets, { fields: [cards.setId], references: [cardSets.id] }),
+  listings: many(cardListings),
+  prices: many(cardPrices),
+}));
+
+export const cardListingsRelations = relations(cardListings, ({ one }) => ({
+  card: one(cards, { fields: [cardListings.cardId], references: [cards.id] }),
+}));
+
+// ============================================================================
+// Cart & Orders
+// ============================================================================
+
 export const cartItems = pgTable("cart_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: text("session_id").notNull(),
-  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
+  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
   variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+  cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "cascade" }),
   quantity: integer("quantity").default(1).notNull(),
-  itemType: text("item_type").default("retail").notNull(), // 'retail' | 'wholesale'
-  seriesId: varchar("series_id").references(() => wholesaleSeries.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -266,14 +361,12 @@ export const orderItems = pgTable("order_items", {
   orderId: varchar("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
   productId: varchar("product_id").references(() => products.id, { onDelete: "set null" }),
   variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
+  cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "set null" }),
   productName: text("product_name").notNull(),
-  variantDetails: text("variant_details"),
+  variantDetails: text("variant_details"), // Stores condition for TCG cards (e.g. "NM", "PSA10")
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  itemType: text("item_type").default("retail").notNull(), // 'retail' | 'wholesale'
-  seriesName: text("series_name"), // wholesale display: series label
-  seriesGroup: text("series_group"), // groups exploded rows belonging to one wholesale line
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
@@ -283,46 +376,12 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
-// WooCommerce Integration
-export const woocommerceSettings = pgTable("woocommerce_settings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  siteUrl: text("site_url").notNull(),
-  consumerKey: text("consumer_key").notNull(),
-  consumerSecret: text("consumer_secret").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  lastSync: timestamp("last_sync"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertWoocommerceSettingsSchema = createInsertSchema(woocommerceSettings).omit({
-  id: true,
-  lastSync: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertWoocommerceSettings = z.infer<typeof insertWoocommerceSettingsSchema>;
-export type WoocommerceSettings = typeof woocommerceSettings.$inferSelect;
-
-export const woocommerceSyncLogs = pgTable("woocommerce_sync_logs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  status: text("status").notNull(), // 'running', 'completed', 'failed'
-  productsImported: integer("products_imported").default(0).notNull(),
-  categoriesImported: integer("categories_imported").default(0).notNull(),
-  imagesDownloaded: integer("images_downloaded").default(0).notNull(),
-  errors: jsonb("errors").$type<string[]>().default([]).notNull(),
-  startedAt: timestamp("started_at").defaultNow().notNull(),
-  completedAt: timestamp("completed_at"),
-});
-
-export type WoocommerceSyncLog = typeof woocommerceSyncLogs.$inferSelect;
-
 // Favorites/Wishlist
 export const favorites = pgTable("favorites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
+  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
+  cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -338,9 +397,7 @@ export type Favorite = typeof favorites.$inferSelect;
 export const productReviews = pgTable("product_reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
-  // Üye yorumu için doldurulur. Misafir yorumlarında null kalır.
   userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
-  // Misafir yorumlarında doldurulur. Üye yorumunda null kalır.
   guestName: text("guest_name"),
   guestEmail: text("guest_email"),
   rating: integer("rating").notNull(), // 1-5
@@ -382,11 +439,10 @@ export const coupons = pgTable("coupons", {
   isActive: boolean("is_active").default(true).notNull(),
   startsAt: timestamp("starts_at"),
   expiresAt: timestamp("expires_at"),
-  // Influencer tracking fields
   isInfluencerCode: boolean("is_influencer_code").default(false).notNull(),
   influencerName: text("influencer_name"),
   influencerInstagram: text("influencer_instagram"),
-  commissionType: text("commission_type"), // 'per_use' | 'percentage' | 'fixed_total'
+  commissionType: text("commission_type"),
   commissionValue: decimal("commission_value", { precision: 10, scale: 2 }),
   totalCommissionEarned: decimal("total_commission_earned", { precision: 10, scale: 2 }).default("0"),
   isPaid: boolean("is_paid").default(false).notNull(),
@@ -435,8 +491,8 @@ export const orderNotes = pgTable("order_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
   authorId: varchar("author_id"),
-  authorType: text("author_type").default("admin").notNull(), // 'admin' | 'system' | 'customer'
-  noteType: text("note_type").default("general").notNull(), // 'general' | 'status_change' | 'shipping' | 'payment' | 'customer_service'
+  authorType: text("author_type").default("admin").notNull(),
+  noteType: text("note_type").default("general").notNull(),
   content: text("content").notNull(),
   isPrivate: boolean("is_private").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -453,10 +509,11 @@ export type OrderNote = typeof orderNotes.$inferSelect;
 // Stock Adjustments Log
 export const stockAdjustments = pgTable("stock_adjustments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }).notNull(),
+  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+  cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "cascade" }),
   previousStock: integer("previous_stock").notNull(),
   newStock: integer("new_stock").notNull(),
-  adjustmentType: text("adjustment_type").notNull(), // 'manual' | 'sale' | 'return' | 'restock' | 'correction'
+  adjustmentType: text("adjustment_type").notNull(),
   reason: text("reason"),
   authorId: varchar("author_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -467,7 +524,8 @@ export type StockAdjustment = typeof stockAdjustments.$inferSelect;
 // Low Stock Alerts Configuration
 export const lowStockAlerts = pgTable("low_stock_alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }).notNull().unique(),
+  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "cascade" }),
+  cardListingId: varchar("card_listing_id").references(() => cardListings.id, { onDelete: "cascade" }),
   threshold: integer("threshold").default(5).notNull(),
   isEnabled: boolean("is_enabled").default(true).notNull(),
   lastNotifiedAt: timestamp("last_notified_at"),
@@ -481,8 +539,8 @@ export const campaigns = pgTable("campaigns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description"),
-  campaignType: text("campaign_type").notNull(), // 'email' | 'discount' | 'banner'
-  status: text("status").default("draft").notNull(), // 'draft' | 'scheduled' | 'active' | 'paused' | 'completed'
+  campaignType: text("campaign_type").notNull(),
+  status: text("status").default("draft").notNull(),
   targetAudience: jsonb("target_audience").$type<{
     type: 'all' | 'segment';
     filters?: { field: string; operator: string; value: any }[];
@@ -517,7 +575,7 @@ export const emailJobs = pgTable("email_jobs", {
   campaignId: varchar("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
   recipientEmail: text("recipient_email").notNull(),
   recipientName: text("recipient_name"),
-  status: text("status").default("pending").notNull(), // 'pending' | 'sent' | 'failed' | 'bounced'
+  status: text("status").default("pending").notNull(),
   sentAt: timestamp("sent_at"),
   openedAt: timestamp("opened_at"),
   clickedAt: timestamp("clicked_at"),
@@ -527,7 +585,7 @@ export const emailJobs = pgTable("email_jobs", {
 
 export type EmailJob = typeof emailJobs.$inferSelect;
 
-// Site Settings (SMTP, Admin Email, etc.)
+// Site Settings (SMTP, Admin Email, API keys, etc.)
 export const siteSettings = pgTable("site_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   key: text("key").notNull().unique(),
@@ -594,13 +652,11 @@ export const pendingPayments = pgTable("pending_payments", {
   cartItems: jsonb("cart_items").$type<Array<{
     productId: string;
     variantId: string | null;
+    cardListingId?: string | null;
     quantity: number;
     productName: string;
     variantDetails: string | null;
     price: string;
-    itemType?: string;
-    seriesName?: string | null;
-    seriesGroup?: string | null;
   }>>().notNull(),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
   shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).notNull(),
@@ -608,9 +664,6 @@ export const pendingPayments = pgTable("pending_payments", {
   couponCode: text("coupon_code"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   status: text("status").default("pending").notNull(),
-  // Provider-agnostic payment token (was `paytr_token` pre-migration to iyzico).
-  // The column was renamed in-place via direct SQL — no historical PayTR token
-  // backfill is required since pending_payments are short-lived (24h expiry).
   paymentToken: text("payment_token"),
   iyzicoPaymentId: text("iyzico_payment_id"),
   createAccount: boolean("create_account").default(false),
@@ -623,143 +676,14 @@ export const pendingPayments = pgTable("pending_payments", {
 
 export type PendingPayment = typeof pendingPayments.$inferSelect;
 
-// Payment requests — flexible/standalone payment links for a custom amount.
-// Admin (or a wholesale customer self-service) creates a request, sends the
-// /odeme/:token link to a customer,
-// who pays via iyzico. Decoupled from cart orders (no stock, no order_items).
-export const paymentRequests = pgTable("payment_requests", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  token: text("token").notNull().unique(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
-  customerName: text("customer_name"),
-  customerEmail: text("customer_email"),
-  customerPhone: text("customer_phone"),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  description: text("description"),
-  showcaseItems: jsonb("showcase_items").$type<{ productId: number; productName: string; quantity: number; imageUrl: string | null; note: string | null; }[]>().default([]).notNull(),
-  status: text("status").default("pending").notNull(), // 'pending' | 'paid' | 'cancelled' | 'expired'
-  merchantOid: text("merchant_oid"),
-  paymentToken: text("payment_token"),
-  paymentTokens: text("payment_tokens").array().default(sql`ARRAY[]::text[]`).notNull(),
-  iyzicoPaymentId: text("iyzico_payment_id"),
-  createdBy: text("created_by").default("admin").notNull(), // 'admin' | 'customer'
-  paidAt: timestamp("paid_at"),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertPaymentRequestSchema = createInsertSchema(paymentRequests).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertPaymentRequest = z.infer<typeof insertPaymentRequestSchema>;
-export type PaymentRequest = typeof paymentRequests.$inferSelect;
-
-// Dealers (Bayiler)
-export const dealers = pgTable("dealers", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone").notNull(),
-  contactPerson: text("contact_person").notNull(),
-  address: text("address"),
-  status: text("status").default("active").notNull(), // 'active' | 'inactive'
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertDealerSchema = createInsertSchema(dealers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertDealer = z.infer<typeof insertDealerSchema>;
-export type Dealer = typeof dealers.$inferSelect;
-
-// Quotes (Teklifler)
-export const quotes = pgTable("quotes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  quoteNumber: text("quote_number").notNull().unique(),
-  dealerId: varchar("dealer_id").references(() => dealers.id, { onDelete: "cascade" }).notNull(),
-  status: text("status").default("draft").notNull(), // 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'
-  validUntil: timestamp("valid_until"),
-  paymentTerms: text("payment_terms"), // 'cash' | 'net15' | 'net30' | 'net45' | 'net60'
-  notes: text("notes"),
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0").notNull(),
-  discountTotal: decimal("discount_total", { precision: 10, scale: 2 }).default("0").notNull(),
-  grandTotal: decimal("grand_total", { precision: 10, scale: 2 }).default("0").notNull(),
-  includesVat: boolean("includes_vat").default(true).notNull(),
-  sentAt: timestamp("sent_at"),
-  acceptedAt: timestamp("accepted_at"),
-  rejectedAt: timestamp("rejected_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertQuoteSchema = createInsertSchema(quotes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertQuote = z.infer<typeof insertQuoteSchema>;
-export type Quote = typeof quotes.$inferSelect;
-
-// Quote Items (Teklif Kalemleri)
-export const quoteItems = pgTable("quote_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  quoteId: varchar("quote_id").references(() => quotes.id, { onDelete: "cascade" }).notNull(),
-  productId: varchar("product_id").references(() => products.id, { onDelete: "set null" }),
-  variantId: varchar("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
-  productName: text("product_name").notNull(),
-  productSku: text("product_sku"),
-  productImage: text("product_image"),
-  variantDetails: text("variant_details"),
-  quantity: integer("quantity").notNull(),
-  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  discountPercent: decimal("discount_percent", { precision: 5, scale: 2 }).default("0").notNull(),
-  lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
-});
-
-export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({
-  id: true,
-});
-
-export type InsertQuoteItem = z.infer<typeof insertQuoteItemSchema>;
-export type QuoteItem = typeof quoteItems.$inferSelect;
-
-// Size Charts (Beden Tabloları)
-export const sizeCharts = pgTable("size_charts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  categoryId: varchar("category_id").references(() => categories.id, { onDelete: "cascade" }).notNull().unique(),
-  columns: jsonb("columns").$type<string[]>().default([]).notNull(), // ["Beden", "Göğüs (cm)", "Boy (cm)", "Omuz (cm)"]
-  rows: jsonb("rows").$type<string[][]>().default([]).notNull(), // [["S", "96-100", "70-72", "44-46"], ["M", "100-104", "72-74", "46-48"]]
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertSizeChartSchema = createInsertSchema(sizeCharts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertSizeChart = z.infer<typeof insertSizeChartSchema>;
-export type SizeChart = typeof sizeCharts.$inferSelect;
-
 // Menu Items (Menü Öğeleri)
 export const menuItems = pgTable("menu_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   type: text("type").notNull(), // "category", "link", "submenu"
   categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
-  url: text("url"), // for type "link"
-  parentId: varchar("parent_id"), // for submenu items (self-reference)
+  url: text("url"),
+  parentId: varchar("parent_id"),
   displayOrder: integer("display_order").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   openInNewTab: boolean("open_in_new_tab").default(false).notNull(),
@@ -777,23 +701,18 @@ export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type MenuItem = typeof menuItems.$inferSelect;
 
 // ============================================================================
-// MARKETPLACES — Çoklu pazaryeri (Trendyol / N11 / Hepsiburada ...) çatısı
-// Tek yön: pazaryeri → site (read-only katalog senkronu)
+// MARKETPLACES — kept for future multi-marketplace integrations
 // ============================================================================
 
 export const marketplaces = pgTable("marketplaces", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  type: text("type").notNull(), // 'trendyol' | 'n11' | 'hepsiburada' | 'amazon'
+  type: text("type").notNull(),
   name: text("name").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  // AES-256-GCM encrypted JSON of credentials (supplier id, api key, api secret, ...)
-  // Format: base64(iv:cipher:tag). MARKETPLACE_ENCRYPTION_KEY required.
   encryptedCredentials: text("encrypted_credentials").notNull(),
-  // Adapter-specific non-secret config (e.g. { sandbox: false, rateLimit: 600 })
   config: jsonb("config").$type<Record<string, unknown>>().default({}).notNull(),
   lastFullSyncAt: timestamp("last_full_sync_at"),
   lastDeltaSyncAt: timestamp("last_delta_sync_at"),
-  /** Pazaryeri kategori ağacının en son DB'ye snapshot edildiği zaman (cache yaşı). */
   categoryTreeFetchedAt: timestamp("category_tree_fetched_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -814,12 +733,10 @@ export const marketplaceCategories = pgTable("marketplace_categories", {
   marketplaceId: varchar("marketplace_id")
     .references(() => marketplaces.id, { onDelete: "cascade" })
     .notNull(),
-  externalId: text("external_id").notNull(), // pazaryeri kategori ID'si
+  externalId: text("external_id").notNull(),
   name: text("name").notNull(),
   parentExternalId: text("parent_external_id"),
-  /** Atalardan leaf'e kategori yolu — örn "Ev & Yaşam > Bahçe > Saksılar". Snapshot'tan üretilir. */
   fullPath: text("full_path"),
-  // Eşlenen Polen Stone kategorisi (NULL = otomatik üretildi / eşlenmedi)
   siteCategoryId: varchar("site_category_id").references(() => categories.id, {
     onDelete: "set null",
   }),
@@ -842,12 +759,10 @@ export const marketplaceProducts = pgTable("marketplace_products", {
   marketplaceId: varchar("marketplace_id")
     .references(() => marketplaces.id, { onDelete: "cascade" })
     .notNull(),
-  externalId: text("external_id").notNull(), // Trendyol contentId / barcode
+  externalId: text("external_id").notNull(),
   externalProductCode: text("external_product_code"),
   productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
-  // sha256 hash listesi — yeniden indirmeyi önlemek için
   imageHashes: jsonb("image_hashes").$type<string[]>().default([]).notNull(),
-  // İçerik diff hash'i (name + description + basePrice + stock) — değişmediyse skip
   contentHash: text("content_hash"),
   lastSyncedAt: timestamp("last_synced_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -868,68 +783,24 @@ export const marketplaceSyncRuns = pgTable("marketplace_sync_runs", {
   marketplaceId: varchar("marketplace_id")
     .references(() => marketplaces.id, { onDelete: "cascade" })
     .notNull(),
-  mode: text("mode").notNull(), // 'delta' | 'full'
-  status: text("status").default("running").notNull(), // 'running' | 'completed' | 'failed' | 'partial'
-  trigger: text("trigger").default("manual").notNull(), // 'manual' | 'cron'
+  mode: text("mode").notNull(),
+  status: text("status").default("running").notNull(),
+  trigger: text("trigger").default("manual").notNull(),
   stats: jsonb("stats")
-    .$type<{
-      categoriesAdded?: number;
-      categoriesUpdated?: number;
-      productsAdded?: number;
-      productsUpdated?: number;
-      productsDeactivated?: number;
-      productsReactivated?: number;
-      variantsUpdated?: number;
-      variantsUnmatched?: number;
-      imagesDownloaded?: number;
-      imagesSkipped?: number;
-      imagesFailed?: number;
-      pagesProcessed?: number;
-      /** Live progress: how many products have been processed so far. */
-      processedTotal?: number;
-      /** Live progress: total products expected (from adapter or estimate). */
-      expectedTotal?: number;
-      /** Live progress: ad of the currently processing product (UI marquee). */
-      currentProductName?: string;
-      /** Live progress: shu an okunmakta olan sayfa indeksi (0-based). */
-      currentPage?: number;
-      /** HTTP retried request sayısı (rate-limit / 5xx / network). */
-      retriedRequests?: number;
-      /** Recover edilen istek sayısı (retry sonunda 2xx). */
-      recoveredRequests?: number;
-      /** Bu sync sırasında kategori ağacı snapshot'ı kullanıldıysa eşleşen leaf sayısı. */
-      categoriesCachedFromTree?: number;
-    }>()
+    .$type<Record<string, unknown>>()
     .default({})
     .notNull(),
   errors: jsonb("errors")
     .$type<Array<{ context: string; message: string }>>()
     .default([])
     .notNull(),
-  /**
-   * Hata raporu — completeSyncRun aşamasında doldurulur. Gruplar:
-   *   - http4xx: client-side (auth/validation) hatalar
-   *   - http5xx: upstream/gateway hataları
-   *   - network: AbortError, ENOTFOUND, ECONNRESET, timeout
-   *   - parse: JSON / SyntaxError
-   *   - other: kategorize edilemeyen
-   * Her grup en fazla 5 örnek mesaj tutar (UI sample list için).
-   */
   errorSummary: jsonb("error_summary")
-    .$type<{
-      http4xx?: { count: number; samples: string[] };
-      http5xx?: { count: number; samples: string[] };
-      network?: { count: number; samples: string[] };
-      parse?: { count: number; samples: string[] };
-      other?: { count: number; samples: string[] };
-      imagesFailed?: number;
-    }>()
+    .$type<Record<string, unknown>>()
     .default({})
     .notNull(),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 }, (t) => ({
-  // Marketplace başına sadece bir 'running' run — race-safe lock
   uniqRunning: uniqueIndex("uniq_mp_running_per_marketplace")
     .on(t.marketplaceId)
     .where(sql`status = 'running'`),
@@ -943,3 +814,38 @@ export const insertMarketplaceSyncRunSchema = createInsertSchema(marketplaceSync
 });
 export type InsertMarketplaceSyncRun = z.infer<typeof insertMarketplaceSyncRunSchema>;
 export type MarketplaceSyncRun = typeof marketplaceSyncRuns.$inferSelect;
+
+// WooCommerce Integration (legacy, kept for backward compat)
+export const woocommerceSettings = pgTable("woocommerce_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  siteUrl: text("site_url").notNull(),
+  consumerKey: text("consumer_key").notNull(),
+  consumerSecret: text("consumer_secret").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastSync: timestamp("last_sync"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWoocommerceSettingsSchema = createInsertSchema(woocommerceSettings).omit({
+  id: true,
+  lastSync: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertWoocommerceSettings = z.infer<typeof insertWoocommerceSettingsSchema>;
+export type WoocommerceSettings = typeof woocommerceSettings.$inferSelect;
+
+export const woocommerceSyncLogs = pgTable("woocommerce_sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  status: text("status").notNull(),
+  productsImported: integer("products_imported").default(0).notNull(),
+  categoriesImported: integer("categories_imported").default(0).notNull(),
+  imagesDownloaded: integer("images_downloaded").default(0).notNull(),
+  errors: jsonb("errors").$type<string[]>().default([]).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export type WoocommerceSyncLog = typeof woocommerceSyncLogs.$inferSelect;

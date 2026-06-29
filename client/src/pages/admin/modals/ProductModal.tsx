@@ -87,8 +87,6 @@ export default function ProductModal({
     categoryIds:
       (product?.categoryIds && product.categoryIds.length > 0) ? product.categoryIds : (product?.categoryId ? [product.categoryId] : ([] as string[])),
     images: product?.images || ([] as string[]),
-    availableSizes: product?.availableSizes || ([] as string[]),
-    availableColors: product?.availableColors || [],
     attributes: product?.attributes || ({} as Record<string, string>),
     isActive: product?.isActive ?? true,
     isFeatured: product?.isFeatured ?? false,
@@ -102,9 +100,7 @@ export default function ProductModal({
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const [colorInput, setColorInput] = useState<string>(
-    formData.availableColors[0]?.name ? toTurkishUpper(formData.availableColors[0].name) : '',
-  );
+  const [colorInput, setColorInput] = useState<string>('');
   const [previewImage, setPreviewImage] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -127,8 +123,6 @@ export default function ProductModal({
       categoryIds:
         (product?.categoryIds && product.categoryIds.length > 0) ? product.categoryIds : (product?.categoryId ? [product.categoryId] : ([] as string[])),
       images: product?.images || ([] as string[]),
-      availableSizes: product?.availableSizes || ([] as string[]),
-      availableColors: product?.availableColors || [],
       attributes: product?.attributes || ({} as Record<string, string>),
       isActive: product?.isActive ?? true,
       isFeatured: product?.isFeatured ?? false,
@@ -138,11 +132,7 @@ export default function ProductModal({
     setPendingFiles([]);
     setUploadError(null);
     setPreviewImage(0);
-    setColorInput(
-      product?.availableColors?.[0]?.name
-        ? toTurkishUpper(product.availableColors[0].name)
-        : '',
-    );
+    setColorInput('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
@@ -222,12 +212,6 @@ export default function ProductModal({
       }
     }
 
-    const trimmedColor = colorInput.trim();
-    const normalizedColors = trimmedColor
-      ? [{ name: toTurkishUpper(trimmedColor), hex: null }]
-      : [];
-
-    // Boş attribute değerlerini temizle
     const cleanAttributes: Record<string, string> = {};
     for (const [k, v] of Object.entries(formData.attributes)) {
       if (v && v.trim()) cleanAttributes[k] = v.trim();
@@ -238,7 +222,6 @@ export default function ProductModal({
       ...formData,
       slug: formData.slug || generateSlug(formData.name),
       images: [...formData.images, ...uploadedUrls],
-      availableColors: normalizedColors,
       attributes: cleanAttributes,
     });
   };
@@ -564,93 +547,15 @@ export default function ProductModal({
               description="Ürünün beden ve rengini belirtin (opsiyonel)."
             />
 
-            {/* Jean bedenleri (sayısal 32-44) */}
-            <div className="mb-4">
-              <p className="text-[12px] font-medium text-neutral-700 mb-2">
-                Jean Bedenleri (sayısal)
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {[32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44].map((s) => {
-                  const sz = String(s);
-                  const selected = formData.availableSizes.includes(sz);
-                  return (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => {
-                        const next = selected
-                          ? formData.availableSizes.filter((x) => x !== sz)
-                          : [...formData.availableSizes, sz];
-                        setFormData({ ...formData, availableSizes: next });
-                      }}
-                      className={`w-10 h-9 rounded-md text-[12px] font-medium border transition-colors ${
-                        selected
-                          ? 'bg-neutral-900 text-white border-neutral-900'
-                          : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                      }`}
-                      data-testid={`button-size-${sz}`}
-                    >
-                      {sz}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Harf bedenleri (XS-3XL) */}
-            <div className="mb-4">
-              <p className="text-[12px] font-medium text-neutral-700 mb-2">
-                Harf Bedenleri (XS–3XL)
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'].map((s) => {
-                  const selected = formData.availableSizes.includes(s);
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => {
-                        const next = selected
-                          ? formData.availableSizes.filter((x) => x !== s)
-                          : [...formData.availableSizes, s];
-                        setFormData({ ...formData, availableSizes: next });
-                      }}
-                      className={`min-w-[40px] px-2 h-9 rounded-md text-[12px] font-medium border transition-colors ${
-                        selected
-                          ? 'bg-neutral-900 text-white border-neutral-900'
-                          : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                      }`}
-                      data-testid={`button-size-${s}`}
-                    >
-                      {s}
-                    </button>
-                  );
-                })}
-              </div>
-              {formData.availableSizes.length > 0 && (
-                <p className="mt-2 text-[11px] text-neutral-500">
-                  Seçili bedenler: {formData.availableSizes.join(', ')}
-                  {' '}·{' '}
-                  <button
-                    type="button"
-                    className="text-red-500 hover:underline"
-                    onClick={() => setFormData({ ...formData, availableSizes: [] })}
-                  >
-                    Temizle
-                  </button>
-                </p>
-              )}
-            </div>
-
-            <FormField label="Renk (otomatik büyük harf)">
+            <FormField label="Renk">
               <TextInput
                 value={colorInput}
-                onChange={(e) => setColorInput(toTurkishUpper(e.target.value))}
-                placeholder="Örn. SİYAH, BEYAZ, LACİVERT, KIRMIZI"
+                onChange={(e) => setColorInput(e.target.value)}
+                placeholder="Örn. SİYAH, BEYAZ"
                 data-testid="input-product-color"
               />
               <p className="mt-1 text-[11px] text-neutral-500">
-                Boş bırakılırsa renksiz tek varyant oluşturulur.
+                Boş bırakılırsa renksiz varyant oluşturulur.
               </p>
             </FormField>
           </section>
@@ -854,7 +759,7 @@ export default function ProductModal({
                   <p className="text-[12px] text-neutral-500 mb-1.5">
                     Renk:{' '}
                     <span className="text-neutral-900 font-medium tracking-wide">
-                      {toTurkishUpper(colorInput.trim())}
+                      {colorInput.trim().toUpperCase()}
                     </span>
                   </p>
                 </div>

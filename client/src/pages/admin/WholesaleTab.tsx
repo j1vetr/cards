@@ -203,7 +203,7 @@ export default function WholesaleTab({
   };
 
   if (productsLoading) {
-    return <LoadingState message="Ürünler yükleniyor..." />;
+    return <LoadingState label="Ürünler yükleniyor..." />;
   }
 
   const categoryName =

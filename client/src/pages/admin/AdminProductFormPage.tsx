@@ -185,16 +185,6 @@ export default function AdminProductFormPage() {
     enabled: !!adminUser && (!!productId || !!copyFromId),
   });
 
-  const { data: wholesaleSeriesList = [] } = useQuery<WholesaleSeries[]>({
-    queryKey: ['admin', 'wholesale-series'],
-    queryFn: async () => {
-      const r = await fetch('/api/admin/wholesale-series', { credentials: 'include' });
-      if (!r.ok) throw new Error('Failed');
-      return r.json();
-    },
-    enabled: !!adminUser,
-  });
-
   const existingProduct: Product | null = productId
     ? products.find((p) => p.id === productId) ?? null
     : null;
@@ -216,15 +206,10 @@ export default function AdminProductFormPage() {
     categoryIds: (p?.categoryIds && p.categoryIds.length > 0) ? p.categoryIds : (p?.categoryId ? [p.categoryId] : [] as string[]),
     images: p?.images || [] as string[],
     videoUrl: p?.videoUrl || '',
-    availableSizes: p?.availableSizes || [] as string[],
-    availableColors: p?.availableColors || [],
     attributes: p?.attributes || {} as Record<string, string>,
     isActive: p?.isActive ?? true,
     isFeatured: p?.isFeatured ?? false,
     isNew: p?.isNew ?? false,
-    wholesaleEnabled: p?.wholesaleEnabled ?? false,
-    wholesalePrice: p?.wholesalePrice || '',
-    wholesaleSeriesId: p?.wholesaleSeriesId || '',
     initialStock: '',
   });
 
@@ -245,22 +230,12 @@ export default function AdminProductFormPage() {
         slug: '',
         sku: copySource.sku ? `${copySource.sku}-KOPYA` : '',
       });
-      setColorInput(
-        copySource.availableColors?.[0]?.name
-          ? toTurkishUpper(copySource.availableColors[0].name)
-          : '',
-      );
       setInitialized(true);
       return;
     }
     if (existingProduct && !initialized) {
       setFormData(initForm(existingProduct));
       setInitialized(true);
-      setColorInput(
-        existingProduct.availableColors?.[0]?.name
-          ? toTurkishUpper(existingProduct.availableColors[0].name)
-          : '',
-      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingProduct?.id, copySource?.id, productId, copyFromId]);
@@ -270,7 +245,6 @@ export default function AdminProductFormPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [colorInput, setColorInput] = useState('');
   const [previewImage, setPreviewImage] = useState(0);
 
   useEffect(() => {
@@ -372,21 +346,9 @@ export default function AdminProductFormPage() {
       }
     }
 
-    const trimmedColor = colorInput.trim();
-    const normalizedColors = trimmedColor ? [{ name: toTurkishUpper(trimmedColor), hex: null }] : [];
     const cleanAttributes: Record<string, string> = {};
     for (const [k, v] of Object.entries(formData.attributes)) {
       if (v && v.trim()) cleanAttributes[k] = v.trim();
-    }
-
-    const wholesaleEnabled = !!formData.wholesaleEnabled;
-    const wholesalePriceTrimmed = String(formData.wholesalePrice || '').trim();
-
-    // A wholesale-enabled product without a price + series is a dead-end on the PDP
-    // (the "Toptan Sepete Ekle" button can never resolve a series). Block the save.
-    if (wholesaleEnabled && (!wholesalePriceTrimmed || !formData.wholesaleSeriesId)) {
-      setUploadError('Toptan satış açıkken adet fiyatı ve seri seçimi zorunludur.');
-      return;
     }
 
     saveMutation.mutate({
@@ -394,17 +356,12 @@ export default function AdminProductFormPage() {
       ...formData,
       slug: formData.slug || generateSlug(formData.name),
       images: [...formData.images, ...uploadedUrls],
-      availableColors: normalizedColors,
       attributes: cleanAttributes,
-      wholesaleEnabled,
-      wholesalePrice: wholesaleEnabled && wholesalePriceTrimmed ? wholesalePriceTrimmed : null,
-      wholesaleSeriesId: wholesaleEnabled && formData.wholesaleSeriesId ? formData.wholesaleSeriesId : null,
     });
   };
 
   /* ── derived ── */
-  const wholesaleValid = !formData.wholesaleEnabled || (!!String(formData.wholesalePrice || '').trim() && !!formData.wholesaleSeriesId);
-  const isValid = !!formData.name.trim() && !!formData.basePrice.trim() && formData.categoryIds.length > 0 && wholesaleValid;
+  const isValid = !!formData.name.trim() && !!formData.basePrice.trim() && formData.categoryIds.length > 0;
   const isSaving = saveMutation.isPending;
   const totalImageCount = formData.images.length + pendingFiles.length;
   const previewImages = useMemo(() => [
@@ -722,71 +679,6 @@ export default function AdminProductFormPage() {
                   </div>
                 </div>
 
-                {/* Section 4 — Beden & Renk */}
-                <div className="bg-white rounded-xl border border-neutral-200 p-6">
-                  <SectionHeading number={4} title="Beden & Renk" description="Ürünün beden ve rengini belirtin (opsiyonel)." />
-
-                  <div className="mb-4">
-                    <p className="text-[12px] font-medium text-neutral-700 mb-2">Jean Bedenleri (sayısal)</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[32,33,34,35,36,37,38,39,40,41,42,43,44].map((s) => {
-                        const sz = String(s);
-                        const selected = formData.availableSizes.includes(sz);
-                        return (
-                          <button
-                            key={sz} type="button"
-                            onClick={() => {
-                              const next = selected ? formData.availableSizes.filter((x) => x !== sz) : [...formData.availableSizes, sz];
-                              setFormData({ ...formData, availableSizes: next });
-                            }}
-                            className={`w-10 h-9 rounded-md text-[12px] font-medium border transition-colors ${selected ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'}`}
-                            data-testid={`button-size-${sz}`}
-                          >
-                            {sz}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-[12px] font-medium text-neutral-700 mb-2">Harf Bedenleri (XS–3XL)</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {['XS','S','M','L','XL','XXL','3XL'].map((s) => {
-                        const selected = formData.availableSizes.includes(s);
-                        return (
-                          <button
-                            key={s} type="button"
-                            onClick={() => {
-                              const next = selected ? formData.availableSizes.filter((x) => x !== s) : [...formData.availableSizes, s];
-                              setFormData({ ...formData, availableSizes: next });
-                            }}
-                            className={`min-w-[40px] px-2 h-9 rounded-md text-[12px] font-medium border transition-colors ${selected ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'}`}
-                            data-testid={`button-size-${s}`}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {formData.availableSizes.length > 0 && (
-                      <p className="mt-2 text-[11px] text-neutral-500">
-                        Seçili: {formData.availableSizes.join(', ')} ·{' '}
-                        <button type="button" className="text-red-500 hover:underline" onClick={() => setFormData({ ...formData, availableSizes: [] })}>Temizle</button>
-                      </p>
-                    )}
-                  </div>
-
-                  <FormField label="Renk (otomatik büyük harf)">
-                    <TextInput
-                      value={colorInput}
-                      onChange={(e) => setColorInput(toTurkishUpper(e.target.value))}
-                      placeholder="Örn. SİYAH, BEYAZ, LACİVERT, KIRMIZI"
-                      data-testid="input-product-color"
-                    />
-                    <p className="mt-1 text-[11px] text-neutral-500">Boş bırakılırsa renksiz tek varyant oluşturulur.</p>
-                  </FormField>
-                </div>
 
                 {/* Section 5 — Fiyat & Stok */}
                 <div className="bg-white rounded-xl border border-neutral-200 p-6">
@@ -821,58 +713,6 @@ export default function AdminProductFormPage() {
                   </div>
                 </div>
 
-                {/* Section — Toptan Satış */}
-                <div className="bg-white rounded-xl border border-neutral-200 p-6">
-                  <SectionHeading
-                    title="Toptan Satış"
-                    description="Toptan müşterilere seri (sabit beden dağılımı) bazlı satış için fiyat ve seri seçin."
-                  />
-                  <label className="flex items-center justify-between p-3 border border-neutral-200 rounded-md bg-white cursor-pointer hover:bg-neutral-50 mb-3">
-                    <div>
-                      <p className="text-[13px] font-medium text-neutral-900">Toptan satışa aç</p>
-                      <p className="text-[11px] text-neutral-500">Açık olduğunda toptan müşteriler bu ürünü seri olarak sipariş edebilir.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, wholesaleEnabled: !formData.wholesaleEnabled })}
-                      className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${formData.wholesaleEnabled ? 'bg-emerald-500' : 'bg-neutral-300'}`}
-                      aria-pressed={formData.wholesaleEnabled}
-                      data-testid="toggle-wholesale-enabled"
-                    >
-                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow ${formData.wholesaleEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
-                    </button>
-                  </label>
-                  {formData.wholesaleEnabled && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <FormField label="Toptan Fiyat — adet başına (₺)" required>
-                        <TextInput
-                          type="text"
-                          value={formData.wholesalePrice}
-                          onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })}
-                          placeholder="Örn: 850"
-                          data-testid="input-wholesale-price"
-                        />
-                      </FormField>
-                      <FormField label="Seri" hint="Sabit beden dağılımı. Toplam tutar = adet fiyatı × seri adedi.">
-                        <SelectInput
-                          value={formData.wholesaleSeriesId}
-                          onChange={(e) => setFormData({ ...formData, wholesaleSeriesId: e.target.value })}
-                          data-testid="select-wholesale-series"
-                        >
-                          <option value="">Seri seçin…</option>
-                          {wholesaleSeriesList.filter((s) => s.isActive).map((s) => {
-                            const total = s.sizeDistribution.reduce((sum, d) => sum + (d.quantity || 0), 0);
-                            return (
-                              <option key={s.id} value={s.id}>
-                                {s.name} ({total} adet)
-                              </option>
-                            );
-                          })}
-                        </SelectInput>
-                      </FormField>
-                    </div>
-                  )}
-                </div>
 
                 {/* Section 6 — Ürün Özellikleri */}
                 <div className="bg-white rounded-xl border border-neutral-200 p-6">
@@ -1012,12 +852,6 @@ export default function AdminProductFormPage() {
                         {formData.isNew && <StatusBadge tone="blue">Yeni</StatusBadge>}
                       </div>
                     </div>
-
-                    {colorInput.trim() && (
-                      <p className="text-[11px] text-neutral-500">
-                        Renk: <span className="text-neutral-900 font-medium">{toTurkishUpper(colorInput.trim())}</span>
-                      </p>
-                    )}
 
                     <button type="button" className="w-full h-9 bg-neutral-900 text-white rounded-md font-semibold text-[11px] uppercase tracking-wide opacity-50 cursor-not-allowed" disabled>
                       SEPETE EKLE

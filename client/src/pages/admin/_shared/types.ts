@@ -8,44 +8,19 @@ export interface Product {
   categoryId: string;
   categoryIds?: string[];
   images: string[];
-  availableSizes: string[];
-  availableColors: { name: string; hex: string | null }[];
+  videoUrl?: string | null;
   attributes?: Record<string, string>;
   isActive: boolean;
   isFeatured: boolean;
   isNew: boolean;
   discountBadge?: string | null;
-  wholesaleEnabled?: boolean;
-  wholesalePrice?: string | null;
-  wholesaleSeriesId?: string | null;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface WholesaleSeries {
   id: string;
   name: string;
-  sizeDistribution: { size: string; quantity: number }[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PaymentRequest {
-  id: string;
-  token: string;
-  userId?: string | null;
-  customerName?: string | null;
-  customerEmail?: string | null;
-  customerPhone?: string | null;
-  amount: string;
-  description?: string | null;
-  status: 'pending' | 'paid' | 'cancelled' | 'expired';
-  merchantOid?: string | null;
-  createdBy?: string | null;
-  paidAt?: string | null;
-  expiresAt?: string | null;
-  createdAt: string;
-  paymentUrl?: string;
 }
 
 export interface Category {
@@ -112,8 +87,6 @@ export interface OrderItem {
   productName?: string;
   productImage?: string;
   sku?: string;
-  size?: string;
-  color?: string;
   quantity: number;
   price: number | string;
   subtotal?: number | string;
@@ -174,9 +147,5 @@ export type TabType =
   | 'settings'
   | 'database'
   | 'menu'
-  | 'marketplaces'
   | 'coupons'
-  | 'reviews'
-  | 'wholesale'
-  | 'wholesale-series'
-  | 'payment-requests';
+  | 'reviews';

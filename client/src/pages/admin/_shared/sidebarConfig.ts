@@ -6,15 +6,11 @@ import {
   Warehouse,
   ShoppingCart,
   Users,
-  Globe,
   Menu as MenuIcon,
   Settings,
   Database,
   Ticket,
   MessageSquare,
-  HandCoins,
-  Layers,
-  Link2,
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
@@ -30,12 +26,8 @@ export const VALID_TABS: TabType[] = [
   'settings',
   'database',
   'menu',
-  'marketplaces',
   'coupons',
   'reviews',
-  'wholesale',
-  'wholesale-series',
-  'payment-requests',
 ];
 
 export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
@@ -58,9 +50,6 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
     title: 'Satış & Siparişler',
     items: [
       { id: 'orders', icon: ShoppingCart, label: 'Siparişler' },
-      { id: 'wholesale', icon: HandCoins, label: 'Toptan Fiyat Listesi' },
-      { id: 'wholesale-series', icon: Layers, label: 'Toptan Seriler' },
-      { id: 'payment-requests', icon: Link2, label: 'Ödeme Talepleri' },
     ],
   },
   {
@@ -73,10 +62,6 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
       { id: 'users', icon: Users, label: 'Kullanıcılar' },
       { id: 'reviews', icon: MessageSquare, label: 'Yorumlar' },
     ],
-  },
-  {
-    title: 'Entegrasyonlar',
-    items: [{ id: 'marketplaces', icon: Globe, label: 'Pazaryerleri' }],
   },
   {
     title: 'Sistem',

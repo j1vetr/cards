@@ -1,5 +1,5 @@
 import { storage } from './storage';
-import type { Order, PaymentRequest } from '@shared/schema';
+import type { Order } from '@shared/schema';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 import { formatTRDate, formatTRTime, formatTRDateTime } from '@shared/dateFormat';
 
@@ -329,111 +329,15 @@ export async function sendOrderCancelledToAdmin(order: Order) {
 export async function sendBankTransferPendingToCustomer(order: Order) {
   return sendEventToCustomer(order, 'order_bank_transfer_pending_customer');
 }
-
-// Standalone payment-request paid notification. Not tied to the order/event
-// template system (a payment request is a pure money move with no order), so it
-// builds its own transactional message and sends via the shared wpileti channel.
-export async function sendPaymentRequestPaidToCustomer(reqRow: PaymentRequest): Promise<WhatsAppResult> {
-  const config = await getConfig();
-  if (!config) return { success: false, skipped: true, error: 'WhatsApp servisi kapalı' };
-
-  // KVKK opt-out: skip if the linked/registered customer turned off WhatsApp.
-  if (reqRow.customerEmail) {
-    try {
-      const user = await storage.getUserByEmail(reqRow.customerEmail);
-      if (user && user.whatsappOptIn === false) {
-        return { success: false, skipped: true, error: 'Müşteri WhatsApp bildirimlerini kapatmış' };
-      }
-    } catch (err) {
-      console.error('[WhatsApp] payment-request opt-in lookup failed, sending anyway:', err);
-    }
-  }
-
-  const name = reqRow.customerName?.trim() || 'Değerli müşterimiz';
-  const amount = Number(reqRow.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-  const lines = [
-    `Merhaba ${name},`,
-    `${amount} ₺ tutarındaki ödemeniz başarıyla alınmıştır.`,
-  ];
-  if (reqRow.description) lines.push(`Açıklama: ${reqRow.description}`);
-  lines.push(`${config.siteName} olarak teşekkür ederiz.`);
-  return sendRaw(config, reqRow.customerPhone, lines.join('\n'), 'payment_request_paid');
-}
 export async function sendBankTransferPendingToAdmin(order: Order) {
   return sendEventToAdmin(order, 'order_bank_transfer_admin');
 }
 
-export async function sendPaymentRequestPaidToAdmin(reqRow: PaymentRequest): Promise<WhatsAppResult> {
+export async function sendReviewPendingToAdmin(payload: { productName: string; rating: number; comment?: string | null; reviewerName?: string | null }): Promise<WhatsAppResult> {
   const config = await getConfig();
-  if (!config) return { success: false, skipped: true, error: 'WhatsApp servisi kapalı' };
-  if (!config.events['payment_request_paid_admin']) {
-    console.log('[WhatsApp] event payment_request_paid_admin disabled, skipping');
-    return { success: false, skipped: true, error: 'Bu olay için bildirim kapalı' };
-  }
-  if (!config.adminPhone) {
-    console.log('[WhatsApp] admin phone not configured, skipping event=payment_request_paid_admin');
-    return { success: false, skipped: true, error: 'Yönetici telefonu yapılandırılmamış' };
-  }
-
-  const siteUrl = await resolveSiteUrl();
-  const amount = Number(reqRow.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-  const paidStr = formatTRDateTime(reqRow.paidAt ?? new Date());
-
-  const vars: Record<string, string> = {
-    tutar: amount,
-    musteriAdi: reqRow.customerName?.trim() || 'Belirtilmedi',
-    musteriTelefon: reqRow.customerPhone || '-',
-    aciklama: reqRow.description || '-',
-    tarih: paidStr,
-    adminPanelUrl: `${siteUrl}/toov-admin`,
-    siteAdi: config.siteName,
-  };
-
-  const message = renderTemplate(config.templates['payment_request_paid_admin'], vars);
-  return sendRaw(config, config.adminPhone, message, 'payment_request_paid_admin');
-}
-
-export interface ReviewPendingPayload {
-  productName: string;
-  authorName: string;
-  authorEmail: string | null;
-  rating: number;
-  title: string | null;
-  content: string | null;
-  isGuest: boolean;
-}
-
-export async function sendReviewPendingToAdmin(payload: ReviewPendingPayload): Promise<WhatsAppResult> {
-  const config = await getConfig();
-  if (!config) return { success: false, skipped: true, error: 'WhatsApp servisi kapalı' };
-  if (!config.events.review_pending_admin) {
-    console.log('[WhatsApp] event review_pending_admin disabled, skipping');
-    return { success: false, skipped: true, error: 'Bu olay için bildirim kapalı' };
-  }
-  if (!config.adminPhone) {
-    console.log('[WhatsApp] admin phone not configured, skipping event=review_pending_admin');
-    return { success: false, skipped: true, error: 'Yönetici telefonu yapılandırılmamış' };
-  }
-
-  const stars = '⭐'.repeat(payload.rating);
-  const truncate = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
-  const baslikSatiri = payload.title ? `Başlık: _${truncate(payload.title, 80)}_\n` : '';
-  const icerikSatiri = payload.content ? `Yorum: "${truncate(payload.content, 200)}"\n\n` : '\n';
-
-  const siteUrl = await resolveSiteUrl();
-  const vars: Record<string, string> = {
-    urunAdi: payload.productName,
-    yorumYazari: payload.authorName,
-    misafirEtiketi: payload.isGuest ? '(misafir)' : '',
-    yildizlar: stars,
-    puan: String(payload.rating),
-    baslikSatiri,
-    icerikSatiri,
-    siteAdi: config.siteName,
-    adminPanelUrl: `${siteUrl}/toov-admin?tab=reviews`,
-  };
-
-  const message = renderTemplate(config.templates.review_pending_admin, vars);
+  if (!config) return { success: false, skipped: true };
+  const message = `📝 Yeni yorum onay bekliyor\nÜrün: ${payload.productName}\nPuan: ${'⭐'.repeat(Math.max(1, Math.min(5, payload.rating)))}\nYorumcu: ${payload.reviewerName || 'Anonim'}\n${payload.comment ? `Yorum: ${payload.comment.slice(0, 200)}` : ''}`;
+  if (!config.adminPhone) return { success: false, skipped: true, error: 'Admin telefon numarası ayarlanmamış' };
   return sendRaw(config, config.adminPhone, message, 'review_pending_admin');
 }
 

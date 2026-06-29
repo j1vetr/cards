@@ -143,13 +143,13 @@ export function Header() {
               <div className="marquee-track text-[10.5px] tracking-[0.20em] uppercase font-medium whitespace-nowrap">
                 {[0, 1].map(i => (
                   <span key={i} className="flex items-center">
-                    <span className="px-6">Toptan Satış Mevcut</span>
+                    <span className="px-6">Pokemon TCG &amp; Riftbound</span>
                     <span className="text-white/30">✦</span>
                     <span className="px-6">500 ₺ ve Üzeri Ücretsiz Kargo</span>
                     <span className="text-white/30">✦</span>
-                    <span className="px-6">30 Gün İade Garantisi</span>
+                    <span className="px-6">Türkiye'nin TCG Marketplace'i</span>
                     <span className="text-white/30">✦</span>
-                    <span className="px-6">Yeni Sezon Koleksiyonu</span>
+                    <span className="px-6">Yeni Setler Mevcut</span>
                     <span className="text-white/30">✦</span>
                     <span className="px-6">Hızlı Teslimat</span>
                     <span className="text-white/30">✦</span>

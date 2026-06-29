@@ -44,6 +44,7 @@ interface OrderItem {
   id: string;
   productId: string;
   productName: string;
+  productSlug?: string;
   variantId?: string;
   variantDetails?: string;
   sku?: string;

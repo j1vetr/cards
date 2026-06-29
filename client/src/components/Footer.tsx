@@ -46,7 +46,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-white/50 text-[13.5px] leading-[1.75] max-w-sm mb-6">
-              Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânıyla Türkiye'nin kaliteli jean markası.
+              Pokemon TCG, Riftbound ve koleksiyon kartları için Türkiye'nin güvenilir marketplace'i. Booster, single kart ve aksesuar çeşitliliğiyle hizmetinizdeyiz.
             </p>
             <a
               href="https://www.instagram.com/ecartejeans/"

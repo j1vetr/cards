@@ -24,9 +24,6 @@ import {
   siteSettings,
   passwordResetTokens,
   reviewRequests,
-  dealers,
-  quotes,
-  quoteItems,
   menuItems,
   type AdminUser,
   type InsertAdminUser,
@@ -68,15 +65,6 @@ import {
   type ReviewRequest,
   pendingPayments,
   type PendingPayment,
-  type Dealer,
-  type InsertDealer,
-  type Quote,
-  type InsertQuote,
-  type QuoteItem,
-  type InsertQuoteItem,
-  sizeCharts,
-  type SizeChart,
-  type InsertSizeChart,
   type MenuItem,
   type InsertMenuItem,
   influencerPayments,
@@ -93,12 +81,6 @@ import {
   type InsertMarketplaceProduct,
   type MarketplaceSyncRun,
   type InsertMarketplaceSyncRun,
-  wholesaleSeries,
-  type WholesaleSeries,
-  type InsertWholesaleSeries,
-  paymentRequests,
-  type PaymentRequest,
-  type InsertPaymentRequest,
 } from "@shared/schema";
 import { eq, and, or, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum, type SQL } from "drizzle-orm";
 
@@ -272,37 +254,6 @@ export interface IStorage {
   claimPendingPaymentForProcessing(merchantOid: string): Promise<PendingPayment | undefined>;
   deletePendingPayment(merchantOid: string): Promise<void>;
 
-  // Dealers (Bayiler)
-  getDealers(): Promise<Dealer[]>;
-  getDealer(id: string): Promise<Dealer | undefined>;
-  createDealer(dealer: InsertDealer): Promise<Dealer>;
-  updateDealer(id: string, dealer: Partial<InsertDealer>): Promise<Dealer | undefined>;
-  deleteDealer(id: string): Promise<void>;
-
-  // Quotes (Teklifler)
-  getQuotes(dealerId?: string): Promise<Quote[]>;
-  getQuote(id: string): Promise<Quote | undefined>;
-  getQuoteByNumber(quoteNumber: string): Promise<Quote | undefined>;
-  createQuote(quote: InsertQuote): Promise<Quote>;
-  updateQuote(id: string, quote: Partial<InsertQuote>): Promise<Quote | undefined>;
-  deleteQuote(id: string): Promise<void>;
-  getNextQuoteNumber(): Promise<string>;
-
-  // Quote Items (Teklif Kalemleri)
-  getQuoteItems(quoteId: string): Promise<QuoteItem[]>;
-  createQuoteItem(item: InsertQuoteItem): Promise<QuoteItem>;
-  updateQuoteItem(id: string, item: Partial<InsertQuoteItem>): Promise<QuoteItem | undefined>;
-  deleteQuoteItem(id: string): Promise<void>;
-  deleteQuoteItems(quoteId: string): Promise<void>;
-
-  // Size Charts (Beden Tabloları)
-  getSizeCharts(): Promise<SizeChart[]>;
-  getSizeChart(id: string): Promise<SizeChart | undefined>;
-  getSizeChartByCategory(categoryId: string): Promise<SizeChart | undefined>;
-  createSizeChart(sizeChart: InsertSizeChart): Promise<SizeChart>;
-  updateSizeChart(id: string, sizeChart: Partial<InsertSizeChart>): Promise<SizeChart | undefined>;
-  deleteSizeChart(id: string): Promise<void>;
-
   // Marketplaces (Trendyol / N11 / ...)
   getMarketplaces(): Promise<Marketplace[]>;
   getMarketplace(id: string): Promise<Marketplace | undefined>;
@@ -369,30 +320,6 @@ export interface IStorage {
   getRunningSyncRun(marketplaceId: string): Promise<MarketplaceSyncRun | undefined>;
   getRecentSyncRuns(marketplaceId: string, limit?: number): Promise<MarketplaceSyncRun[]>;
 
-  // Wholesale Series (Toptan Seriler)
-  getWholesaleSeriesList(): Promise<WholesaleSeries[]>;
-  getWholesaleSeries(id: string): Promise<WholesaleSeries | undefined>;
-  createWholesaleSeries(series: InsertWholesaleSeries): Promise<WholesaleSeries>;
-  updateWholesaleSeries(id: string, series: Partial<InsertWholesaleSeries>): Promise<WholesaleSeries | undefined>;
-  deleteWholesaleSeries(id: string): Promise<void>;
-
-  // Payment Requests (Ödeme Talepleri — flexible payment links)
-  createPaymentRequest(request: InsertPaymentRequest): Promise<PaymentRequest>;
-  getPaymentRequest(id: string): Promise<PaymentRequest | undefined>;
-  getPaymentRequestByToken(token: string): Promise<PaymentRequest | undefined>;
-  getPaymentRequestByPaymentToken(paymentToken: string): Promise<PaymentRequest | undefined>;
-  addPaymentRequestToken(id: string, paymentToken: string, merchantOid: string): Promise<PaymentRequest | undefined>;
-  getPaymentRequestByMerchantOid(merchantOid: string): Promise<PaymentRequest | undefined>;
-  getPaymentRequests(): Promise<PaymentRequest[]>;
-  getPaymentRequestsByUserId(userId: string): Promise<PaymentRequest[]>;
-  getPaymentRequestsByEmail(email: string): Promise<PaymentRequest[]>;
-  updatePaymentRequest(id: string, patch: Partial<PaymentRequest>): Promise<PaymentRequest | undefined>;
-  /**
-   * Atomically transition a payment request from 'pending' → 'paid'.
-   * Returns the row only if THIS call won the race (idempotency for callbacks).
-   */
-  markPaymentRequestPaid(id: string, iyzicoPaymentId: string | null): Promise<PaymentRequest | undefined>;
-  cancelPaymentRequest(id: string): Promise<PaymentRequest | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -586,22 +513,6 @@ export class DbStorage implements IStorage {
       conditions.push(lte(sql`cast(${products.basePrice} as decimal)`, filters.maxPrice));
     }
 
-    // Beden filtresi (JSONB string dizisi — herhangi biri eşleşsin)
-    if (filters?.sizes && filters.sizes.length > 0) {
-      const sizeParts = filters.sizes.map(size =>
-        sql`${products.availableSizes} @> ${JSON.stringify([size])}::jsonb`
-      );
-      conditions.push(sql`(${sql.join(sizeParts, sql` OR `)})`);
-    }
-
-    // Renk filtresi (JSONB nesne dizisi — name alanı eşleşsin)
-    if (filters?.colors && filters.colors.length > 0) {
-      const colorParts = filters.colors.map(colorName =>
-        sql`EXISTS (SELECT 1 FROM jsonb_array_elements(${products.availableColors}) c WHERE (c->>'name') = ${colorName})`
-      );
-      conditions.push(sql`(${sql.join(colorParts, sql` OR `)})`);
-    }
-
     // Kesim/fit filtresi (attributes->>'fit' alanı)
     if (filters?.fits && filters.fits.length > 0) {
       const fitParts = filters.fits.map(fit =>
@@ -625,7 +536,7 @@ export class DbStorage implements IStorage {
     const total = Number(countRow.count);
 
     // Sıralama
-    let dataQuery = db.select().from(products).where(whereClause);
+    let dataQuery: any = db.select().from(products).where(whereClause);
     switch (filters?.sort) {
       case 'price_asc':
         dataQuery = dataQuery.orderBy(asc(sql`cast(${products.basePrice} as decimal)`));
@@ -677,7 +588,7 @@ export class DbStorage implements IStorage {
     }
 
     const rows = await db
-      .select({ availableSizes: products.availableSizes, availableColors: products.availableColors, attributes: products.attributes })
+      .select({ attributes: products.attributes })
       .from(products)
       .where(and(...conditions));
 
@@ -686,16 +597,6 @@ export class DbStorage implements IStorage {
     const fitSet = new Set<string>();
 
     for (const row of rows) {
-      if (Array.isArray(row.availableSizes)) {
-        for (const s of row.availableSizes as string[]) {
-          if (s) sizeSet.add(s);
-        }
-      }
-      if (Array.isArray(row.availableColors)) {
-        for (const c of row.availableColors as { name: string; hex: string | null }[]) {
-          if (c?.name) colorMap.set(c.name, c.hex ?? null);
-        }
-      }
       const attrs = row.attributes as Record<string, string> | null;
       if (attrs?.fit) fitSet.add(attrs.fit);
     }
@@ -736,7 +637,7 @@ export class DbStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values(product).returning();
+    const [newProduct] = await db.insert(products).values(product as any).returning();
     return newProduct;
   }
 
@@ -860,9 +761,7 @@ export class DbStorage implements IStorage {
         slug: products.slug,
         basePrice: products.basePrice,
         images: products.images,
-        wholesaleEnabled: products.wholesaleEnabled,
-        wholesalePrice: products.wholesalePrice,
-      }).from(products).where(eq(products.id, item.productId));
+      }).from(products).where(eq(products.id, item.productId as string));
       
       let variant = null;
       if (item.variantId) {
@@ -875,17 +774,6 @@ export class DbStorage implements IStorage {
         variant = v || null;
       }
 
-      // Wholesale row: enrich with the series + per-series price + line total.
-      // wholesalePrice is per piece; one series = unitPrice × totalPieces.
-      if (item.itemType === "wholesale" && item.seriesId) {
-        const [series] = await db.select().from(wholesaleSeries).where(eq(wholesaleSeries.id, item.seriesId));
-        const totalPieces = (series?.sizeDistribution || []).reduce((s, d) => s + (Number(d.quantity) || 0), 0);
-        const unitPrice = parseFloat(product?.wholesalePrice || "0");
-        const seriesPrice = unitPrice * totalPieces;
-        const lineTotal = seriesPrice * (item.quantity || 1);
-        return { ...item, product, variant, series: series || null, totalPieces, unitPrice, seriesPrice, lineTotal };
-      }
-      
       return { ...item, product, variant };
     }));
     
@@ -901,7 +789,7 @@ export class DbStorage implements IStorage {
     const existing = await db.select().from(cartItems).where(
       and(
         eq(cartItems.sessionId, item.sessionId),
-        eq(cartItems.productId, item.productId),
+        item.productId ? eq(cartItems.productId, item.productId) : sql`${cartItems.productId} IS NULL`,
         item.variantId ? eq(cartItems.variantId, item.variantId) : sql`${cartItems.variantId} IS NULL`
       )
     );
@@ -968,7 +856,7 @@ export class DbStorage implements IStorage {
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db.insert(orders).values(order).returning();
+    const [newOrder] = await db.insert(orders).values(order as any).returning();
     return newOrder;
   }
 
@@ -1051,7 +939,8 @@ export class DbStorage implements IStorage {
     const userFavorites = await db.select().from(favorites).where(eq(favorites.userId, userId));
     if (userFavorites.length === 0) return [];
     
-    const productIds = userFavorites.map(f => f.productId);
+    const productIds = userFavorites.map(f => f.productId).filter((id): id is string => id !== null);
+    if (productIds.length === 0) return [];
     const result = await db.select().from(products).where(
       and(
         eq(products.isActive, true),
@@ -1070,7 +959,7 @@ export class DbStorage implements IStorage {
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
     const existing = await db.select().from(favorites).where(
-      and(eq(favorites.userId, favorite.userId), eq(favorites.productId, favorite.productId))
+      and(eq(favorites.userId, favorite.userId), eq(favorites.productId, favorite.productId as string))
     );
     if (existing.length > 0) {
       return existing[0];
@@ -1087,7 +976,7 @@ export class DbStorage implements IStorage {
 
   async getUserFavoriteProductIds(userId: string): Promise<string[]> {
     const userFavorites = await db.select({ productId: favorites.productId }).from(favorites).where(eq(favorites.userId, userId));
-    return userFavorites.map(f => f.productId);
+    return userFavorites.map(f => f.productId).filter((id): id is string => id !== null);
   }
 
   // Reviews methods
@@ -1682,12 +1571,12 @@ export class DbStorage implements IStorage {
   }
 
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
-    const [newCampaign] = await db.insert(campaigns).values(campaign).returning();
+    const [newCampaign] = await db.insert(campaigns).values(campaign as any).returning();
     return newCampaign;
   }
 
   async updateCampaign(id: string, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
-    const [updated] = await db.update(campaigns).set({ ...campaign, updatedAt: new Date() }).where(eq(campaigns.id, id)).returning();
+    const [updated] = await db.update(campaigns).set({ ...campaign, updatedAt: new Date() } as any).where(eq(campaigns.id, id)).returning();
     return updated;
   }
 
@@ -1965,123 +1854,6 @@ export class DbStorage implements IStorage {
     return count;
   }
 
-  // Dealers (Bayiler)
-  async getDealers(): Promise<Dealer[]> {
-    return db.select().from(dealers).orderBy(desc(dealers.createdAt));
-  }
-
-  async getDealer(id: string): Promise<Dealer | undefined> {
-    const [dealer] = await db.select().from(dealers).where(eq(dealers.id, id));
-    return dealer;
-  }
-
-  async createDealer(dealer: InsertDealer): Promise<Dealer> {
-    const [newDealer] = await db.insert(dealers).values(dealer).returning();
-    return newDealer;
-  }
-
-  async updateDealer(id: string, dealer: Partial<InsertDealer>): Promise<Dealer | undefined> {
-    const [updated] = await db.update(dealers).set({ ...dealer, updatedAt: new Date() }).where(eq(dealers.id, id)).returning();
-    return updated;
-  }
-
-  async deleteDealer(id: string): Promise<void> {
-    await db.delete(dealers).where(eq(dealers.id, id));
-  }
-
-  // Quotes (Teklifler)
-  async getQuotes(dealerId?: string): Promise<Quote[]> {
-    if (dealerId) {
-      return db.select().from(quotes).where(eq(quotes.dealerId, dealerId)).orderBy(desc(quotes.createdAt));
-    }
-    return db.select().from(quotes).orderBy(desc(quotes.createdAt));
-  }
-
-  async getQuote(id: string): Promise<Quote | undefined> {
-    const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
-    return quote;
-  }
-
-  async getQuoteByNumber(quoteNumber: string): Promise<Quote | undefined> {
-    const [quote] = await db.select().from(quotes).where(eq(quotes.quoteNumber, quoteNumber));
-    return quote;
-  }
-
-  async createQuote(quote: InsertQuote): Promise<Quote> {
-    const [newQuote] = await db.insert(quotes).values(quote).returning();
-    return newQuote;
-  }
-
-  async updateQuote(id: string, quote: Partial<InsertQuote>): Promise<Quote | undefined> {
-    const [updated] = await db.update(quotes).set({ ...quote, updatedAt: new Date() }).where(eq(quotes.id, id)).returning();
-    return updated;
-  }
-
-  async deleteQuote(id: string): Promise<void> {
-    await db.delete(quotes).where(eq(quotes.id, id));
-  }
-
-  async getNextQuoteNumber(): Promise<string> {
-    const year = new Date().getFullYear();
-    const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(quotes).where(sql`EXTRACT(YEAR FROM ${quotes.createdAt}) = ${year}`);
-    const count = (result?.count || 0) + 1;
-    return `TKL-${year}-${String(count).padStart(4, '0')}`;
-  }
-
-  // Quote Items (Teklif Kalemleri)
-  async getQuoteItems(quoteId: string): Promise<QuoteItem[]> {
-    return db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId));
-  }
-
-  async createQuoteItem(item: InsertQuoteItem): Promise<QuoteItem> {
-    const [newItem] = await db.insert(quoteItems).values(item).returning();
-    return newItem;
-  }
-
-  async updateQuoteItem(id: string, item: Partial<InsertQuoteItem>): Promise<QuoteItem | undefined> {
-    const [updated] = await db.update(quoteItems).set(item).where(eq(quoteItems.id, id)).returning();
-    return updated;
-  }
-
-  async deleteQuoteItem(id: string): Promise<void> {
-    await db.delete(quoteItems).where(eq(quoteItems.id, id));
-  }
-
-  async deleteQuoteItems(quoteId: string): Promise<void> {
-    await db.delete(quoteItems).where(eq(quoteItems.quoteId, quoteId));
-  }
-
-  // Size Charts (Beden Tabloları)
-  async getSizeCharts(): Promise<SizeChart[]> {
-    return db.select().from(sizeCharts).orderBy(asc(sizeCharts.createdAt));
-  }
-
-  async getSizeChart(id: string): Promise<SizeChart | undefined> {
-    const [chart] = await db.select().from(sizeCharts).where(eq(sizeCharts.id, id));
-    return chart;
-  }
-
-  async getSizeChartByCategory(categoryId: string): Promise<SizeChart | undefined> {
-    const [chart] = await db.select().from(sizeCharts).where(eq(sizeCharts.categoryId, categoryId));
-    return chart;
-  }
-
-  async createSizeChart(sizeChart: InsertSizeChart): Promise<SizeChart> {
-    const [created] = await db.insert(sizeCharts).values(sizeChart).returning();
-    return created;
-  }
-
-  async updateSizeChart(id: string, sizeChart: Partial<InsertSizeChart>): Promise<SizeChart | undefined> {
-    const [updated] = await db.update(sizeCharts)
-      .set({ ...sizeChart, updatedAt: new Date() })
-      .where(eq(sizeCharts.id, id))
-      .returning();
-    return updated;
-  }
-
-  async deleteSizeChart(id: string): Promise<void> {
-    await db.delete(sizeCharts).where(eq(sizeCharts.id, id));
-  }
 
   // Menu Items (Menü Öğeleri)
   async getMenuItems(): Promise<MenuItem[]> {
@@ -2360,7 +2132,7 @@ export class DbStorage implements IStorage {
         .set({
           externalProductCode: insert.externalProductCode ?? existing.externalProductCode,
           productId: insert.productId ?? existing.productId,
-          imageHashes: insert.imageHashes ?? existing.imageHashes,
+          imageHashes: (insert.imageHashes ?? existing.imageHashes) as any,
           contentHash: insert.contentHash ?? existing.contentHash,
           lastSyncedAt: new Date(),
         })
@@ -2368,12 +2140,12 @@ export class DbStorage implements IStorage {
         .returning();
       return row;
     }
-    const [row] = await db.insert(marketplaceProducts).values(insert).returning();
+    const [row] = await db.insert(marketplaceProducts).values(insert as any).returning();
     return row;
   }
 
   async createSyncRun(insert: InsertMarketplaceSyncRun): Promise<MarketplaceSyncRun> {
-    const [row] = await db.insert(marketplaceSyncRuns).values(insert).returning();
+    const [row] = await db.insert(marketplaceSyncRuns).values(insert as any).returning();
     return row;
   }
 
@@ -2432,120 +2204,6 @@ export class DbStorage implements IStorage {
       .limit(limit);
   }
 
-  // ===== Wholesale Series (Toptan Seriler) =====
-  async getWholesaleSeriesList(): Promise<WholesaleSeries[]> {
-    return db.select().from(wholesaleSeries).orderBy(desc(wholesaleSeries.createdAt));
-  }
-
-  async getWholesaleSeries(id: string): Promise<WholesaleSeries | undefined> {
-    const [row] = await db.select().from(wholesaleSeries).where(eq(wholesaleSeries.id, id));
-    return row;
-  }
-
-  async createWholesaleSeries(series: InsertWholesaleSeries): Promise<WholesaleSeries> {
-    const [row] = await db.insert(wholesaleSeries).values(series as any).returning();
-    return row;
-  }
-
-  async updateWholesaleSeries(id: string, series: Partial<InsertWholesaleSeries>): Promise<WholesaleSeries | undefined> {
-    const [row] = await db.update(wholesaleSeries)
-      .set({ ...series, updatedAt: new Date() } as any)
-      .where(eq(wholesaleSeries.id, id))
-      .returning();
-    return row;
-  }
-
-  async deleteWholesaleSeries(id: string): Promise<void> {
-    await db.delete(wholesaleSeries).where(eq(wholesaleSeries.id, id));
-  }
-
-  // ===== Payment Requests (Ödeme Talepleri) =====
-  async createPaymentRequest(request: InsertPaymentRequest): Promise<PaymentRequest> {
-    const [row] = await db.insert(paymentRequests).values(request).returning();
-    return row;
-  }
-
-  async getPaymentRequest(id: string): Promise<PaymentRequest | undefined> {
-    const [row] = await db.select().from(paymentRequests).where(eq(paymentRequests.id, id));
-    return row;
-  }
-
-  async getPaymentRequestByToken(token: string): Promise<PaymentRequest | undefined> {
-    const [row] = await db.select().from(paymentRequests).where(eq(paymentRequests.token, token));
-    return row;
-  }
-
-  async getPaymentRequestByPaymentToken(paymentToken: string): Promise<PaymentRequest | undefined> {
-    // Match the latest token or any historically-issued token (multi-tab / retry safety).
-    const [row] = await db.select().from(paymentRequests).where(
-      or(
-        eq(paymentRequests.paymentToken, paymentToken),
-        sql`${paymentToken} = ANY(${paymentRequests.paymentTokens})`,
-      ),
-    );
-    return row;
-  }
-
-  async addPaymentRequestToken(id: string, paymentToken: string, merchantOid: string): Promise<PaymentRequest | undefined> {
-    // Append every issued iyzico token to the history so a callback can resolve the
-    // request by any token, even after a later re-init overwrote the "latest" one.
-    const [row] = await db.update(paymentRequests)
-      .set({
-        paymentToken,
-        merchantOid,
-        paymentTokens: sql`array_append(${paymentRequests.paymentTokens}, ${paymentToken})`,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentRequests.id, id))
-      .returning();
-    return row;
-  }
-
-  async getPaymentRequestByMerchantOid(merchantOid: string): Promise<PaymentRequest | undefined> {
-    const [row] = await db.select().from(paymentRequests).where(eq(paymentRequests.merchantOid, merchantOid));
-    return row;
-  }
-
-  async getPaymentRequests(): Promise<PaymentRequest[]> {
-    return db.select().from(paymentRequests).orderBy(desc(paymentRequests.createdAt));
-  }
-
-  async getPaymentRequestsByUserId(userId: string): Promise<PaymentRequest[]> {
-    return db.select().from(paymentRequests)
-      .where(eq(paymentRequests.userId, userId))
-      .orderBy(desc(paymentRequests.createdAt));
-  }
-
-  async getPaymentRequestsByEmail(email: string): Promise<PaymentRequest[]> {
-    return db.select().from(paymentRequests)
-      .where(eq(paymentRequests.customerEmail, email))
-      .orderBy(desc(paymentRequests.createdAt));
-  }
-
-  async updatePaymentRequest(id: string, patch: Partial<PaymentRequest>): Promise<PaymentRequest | undefined> {
-    const [row] = await db.update(paymentRequests)
-      .set({ ...patch, updatedAt: new Date() })
-      .where(eq(paymentRequests.id, id))
-      .returning();
-    return row;
-  }
-
-  async markPaymentRequestPaid(id: string, iyzicoPaymentId: string | null): Promise<PaymentRequest | undefined> {
-    // Atomic pending → paid. Returns row only if this call won the race.
-    const [row] = await db.update(paymentRequests)
-      .set({ status: "paid", iyzicoPaymentId, paidAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(paymentRequests.id, id), eq(paymentRequests.status, "pending")))
-      .returning();
-    return row;
-  }
-
-  async cancelPaymentRequest(id: string): Promise<PaymentRequest | undefined> {
-    const [row] = await db.update(paymentRequests)
-      .set({ status: "cancelled", updatedAt: new Date() })
-      .where(and(eq(paymentRequests.id, id), eq(paymentRequests.status, "pending")))
-      .returning();
-    return row;
-  }
 }
 
 export const storage = new DbStorage();
