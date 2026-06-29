@@ -2,77 +2,84 @@ import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
-import { ProductCard } from '@/components/ProductCard';
-import { Link, useLocation, useSearch } from 'wouter';
-import { ChevronRight, ChevronLeft, X, SlidersHorizontal, Grid3X3, LayoutGrid, ArrowUpRight, Search } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useProducts, useCategories, useFacets, type ProductFilters } from '@/hooks/useProducts';
+import { CardCard } from '@/components/CardCard';
+import { useLocation, useSearch } from 'wouter';
+import {
+  SlidersHorizontal, X, Search, ChevronLeft, ChevronRight,
+  Layers, Loader2, Grid3X3, LayoutGrid,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCards, useCardSets, useCardGames, useRarities } from '@/hooks/useTcg';
 
 const LIMIT = 24;
 
-const sortOptions = [
+const SORT_OPTIONS = [
   { value: 'newest', label: 'En Yeni' },
   { value: 'price_asc', label: 'Fiyat: Düşükten Yükseğe' },
   { value: 'price_desc', label: 'Fiyat: Yüksekten Düşüğe' },
-  { value: 'popular', label: 'En Popüler' },
+  { value: 'name_asc', label: 'İsme Göre (A-Z)' },
 ];
 
+const CONDITIONS = [
+  { value: 'NM', label: 'Near Mint' },
+  { value: 'LP', label: 'Lightly Played' },
+  { value: 'MP', label: 'Moderately Played' },
+  { value: 'HP', label: 'Heavily Played' },
+  { value: 'DMG', label: 'Damaged' },
+  { value: 'PSA10', label: 'PSA 10' },
+  { value: 'PSA9', label: 'PSA 9' },
+  { value: 'PSA8', label: 'PSA 8' },
+  { value: 'PSA7', label: 'PSA 7' },
+];
+
+const MAX_PRICE = 5000;
+
 export default function Store() {
-  const { data: categories = [] } = useCategories();
   const searchStr = useSearch();
   const [, navigate] = useLocation();
 
   const urlParams = new URLSearchParams(searchStr);
-  const sort = (urlParams.get('sort') as ProductFilters['sort']) || 'newest';
+  const selectedGame = urlParams.get('game') || '';
+  const selectedSet = urlParams.get('set') || '';
+  const selectedRarity = urlParams.get('rarity') || '';
+  const selectedCondition = urlParams.get('condition') || '';
+  const searchQuery = urlParams.get('search') || '';
+  const sort = urlParams.get('sort') || 'newest';
   const page = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
   const urlMinPrice = parseInt(urlParams.get('minPrice') || '0', 10);
-  const urlMaxPrice = parseInt(urlParams.get('maxPrice') || '10000', 10);
-  const selectedSizes = urlParams.get('sizes')?.split(',').filter(Boolean) || [];
-  const selectedColors = urlParams.get('colors')?.split(',').filter(Boolean) || [];
-  const selectedFits = urlParams.get('fits')?.split(',').filter(Boolean) || [];
-  const showOnlyDiscounted = urlParams.get('discounted') === 'true';
-  const searchQuery = urlParams.get('search') || '';
-  const selectedCategory = urlParams.get('categoryId') || undefined;
+  const urlMaxPrice = parseInt(urlParams.get('maxPrice') || String(MAX_PRICE), 10);
 
+  const [localSearch, setLocalSearch] = useState(searchQuery);
   const [localPriceRange, setLocalPriceRange] = useState<[number, number]>([urlMinPrice, urlMaxPrice]);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [gridCols, setGridCols] = useState<2 | 3 | 4>(3);
+  const [gridCols, setGridCols] = useState<3 | 4>(4);
 
-  // Keep local price slider in sync when URL changes (e.g. back/forward)
-  useEffect(() => {
-    setLocalPriceRange([urlMinPrice, urlMaxPrice]);
-  }, [urlMinPrice, urlMaxPrice]);
+  useEffect(() => { setLocalPriceRange([urlMinPrice, urlMaxPrice]); }, [urlMinPrice, urlMaxPrice]);
+  useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
 
-  // Debounce price slider → URL
-  useEffect(() => {
-    if (localPriceRange[0] === urlMinPrice && localPriceRange[1] === urlMaxPrice) return;
-    const t = setTimeout(() => {
-      const p = new URLSearchParams(searchStr);
-      if (localPriceRange[0] > 0) p.set('minPrice', String(localPriceRange[0]));
-      else p.delete('minPrice');
-      if (localPriceRange[1] < 10000) p.set('maxPrice', String(localPriceRange[1]));
-      else p.delete('maxPrice');
-      p.delete('page');
-      const qs = p.toString();
-      navigate('/magaza' + (qs ? '?' + qs : ''), { replace: true });
-    }, 500);
-    return () => clearTimeout(t);
-  }, [localPriceRange]);
+  const { data: games = [] } = useCardGames();
+  const { data: sets = [] } = useCardSets(selectedGame || undefined);
+  const { data: rarities = [] } = useRarities(selectedGame || undefined);
+
+  const { data, isLoading } = useCards({
+    game: selectedGame || undefined,
+    set: selectedSet || undefined,
+    rarity: selectedRarity || undefined,
+    condition: selectedCondition || undefined,
+    search: searchQuery || undefined,
+    sort: sort as any,
+    page,
+    limit: LIMIT,
+    minPrice: urlMinPrice > 0 ? urlMinPrice : undefined,
+    maxPrice: urlMaxPrice < MAX_PRICE ? urlMaxPrice : undefined,
+  });
+
+  const cards = data?.cards ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.ceil(total / LIMIT);
 
   const setFilter = useCallback((updates: Record<string, string | null>, resetPage = true) => {
     const p = new URLSearchParams(searchStr);
@@ -81,571 +88,397 @@ export default function Store() {
       else p.set(key, value);
     }
     if (resetPage) p.delete('page');
-    const qs = p.toString();
-    navigate('/magaza' + (qs ? '?' + qs : ''), { replace: true });
+    navigate('/magaza' + (p.toString() ? '?' + p.toString() : ''), { replace: true });
   }, [searchStr, navigate]);
 
-  const toggleSize = (size: string) => {
-    const next = selectedSizes.includes(size)
-      ? selectedSizes.filter(s => s !== size)
-      : [...selectedSizes, size];
-    setFilter({ sizes: next.length ? next.join(',') : null });
-  };
+  useEffect(() => {
+    if (localPriceRange[0] === urlMinPrice && localPriceRange[1] === urlMaxPrice) return;
+    const t = setTimeout(() => {
+      setFilter({
+        minPrice: localPriceRange[0] > 0 ? String(localPriceRange[0]) : null,
+        maxPrice: localPriceRange[1] < MAX_PRICE ? String(localPriceRange[1]) : null,
+      });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [localPriceRange]);
 
-  const toggleColor = (colorName: string) => {
-    const next = selectedColors.includes(colorName)
-      ? selectedColors.filter(c => c !== colorName)
-      : [...selectedColors, colorName];
-    setFilter({ colors: next.length ? next.join(',') : null });
-  };
+  useEffect(() => {
+    if (localSearch === searchQuery) return;
+    const t = setTimeout(() => {
+      setFilter({ search: localSearch || null });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [localSearch]);
 
-  const toggleFit = (fit: string) => {
-    const next = selectedFits.includes(fit)
-      ? selectedFits.filter(f => f !== fit)
-      : [...selectedFits, fit];
-    setFilter({ fits: next.length ? next.join(',') : null });
-  };
+  const activeFilterCount = [selectedGame, selectedSet, selectedRarity, selectedCondition,
+    urlMinPrice > 0 || urlMaxPrice < MAX_PRICE ? 'price' : ''].filter(Boolean).length;
 
   const clearFilters = () => {
-    setLocalPriceRange([0, 10000]);
+    setLocalPriceRange([0, MAX_PRICE]);
+    setLocalSearch('');
     navigate('/magaza', { replace: true });
   };
 
-  const filters: ProductFilters = {
-    categoryId: selectedCategory,
-    sort,
-    minPrice: urlMinPrice > 0 ? urlMinPrice : undefined,
-    maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
-    sizes: selectedSizes.length ? selectedSizes : undefined,
-    colors: selectedColors.length ? selectedColors : undefined,
-    fits: selectedFits.length ? selectedFits : undefined,
-    discounted: showOnlyDiscounted || undefined,
-    search: searchQuery || undefined,
-    page,
-    limit: LIMIT,
-  };
-
-  const { data: result, isLoading } = useProducts(filters);
-  const products = result?.products ?? [];
-  const total = result?.total ?? 0;
-  const totalPages = result?.totalPages ?? 1;
-
-  const { data: facets } = useFacets({
-    categoryId: selectedCategory,
-    search: searchQuery || undefined,
-    minPrice: urlMinPrice > 0 ? urlMinPrice : undefined,
-    maxPrice: urlMaxPrice < 10000 ? urlMaxPrice : undefined,
-  });
-
-  const hasActiveFilters =
-    urlMinPrice > 0 || urlMaxPrice < 10000 || !!selectedCategory ||
-    selectedSizes.length > 0 || selectedColors.length > 0 || selectedFits.length > 0 ||
-    showOnlyDiscounted || !!searchQuery;
-
-  const FilterContent = () => (
-    <div className="space-y-8">
-      {searchQuery && (
+  const FiltersPanel = () => (
+    <div className="space-y-6">
+      {games.length > 0 && (
         <div>
-          <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">00</span>
-            <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Arama</h4>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 bg-stone-50 border border-black/8">
-            <Search className="w-3 h-3 text-black/40 shrink-0" />
-            <span className="text-[13px] text-black flex-1 truncate">{searchQuery}</span>
-            <button onClick={() => setFilter({ search: null })} className="text-black/40 hover:text-black transition-colors">
-              <X className="w-3 h-3" />
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Oyun</p>
+          <div className="space-y-1">
+            <button
+              onClick={() => setFilter({ game: null, set: null, rarity: null })}
+              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${!selectedGame ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              Tümü
             </button>
+            {games.map(g => (
+              <button
+                key={g.id}
+                data-testid={`filter-game-${g.slug}`}
+                onClick={() => setFilter({ game: g.slug, set: null, rarity: null })}
+                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${selectedGame === g.slug ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {sets.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Set / Expansion</p>
+          <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+            <button
+              onClick={() => setFilter({ set: null })}
+              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${!selectedSet ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              Tüm Setler
+            </button>
+            {sets.map(s => (
+              <button
+                key={s.id}
+                data-testid={`filter-set-${s.slug}`}
+                onClick={() => setFilter({ set: s.slug })}
+                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${selectedSet === s.slug ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+              >
+                {s.symbol_url && <img src={s.symbol_url} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                <span className="truncate">{s.name}</span>
+                {s.listed_cards > 0 && <span className="ml-auto text-xs text-zinc-400 flex-shrink-0">{s.listed_cards}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {rarities.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Rarity</p>
+          <div className="flex flex-wrap gap-1.5">
+            {rarities.map(r => (
+              <button
+                key={r}
+                data-testid={`filter-rarity-${r}`}
+                onClick={() => setFilter({ rarity: selectedRarity === r ? null : r })}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  selectedRarity === r
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-300'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
       <div>
-        <div className="flex items-baseline gap-3 mb-4">
-          <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">01</span>
-          <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Kategori</h4>
-        </div>
-        <div className="space-y-1">
-          <button
-            onClick={() => setFilter({ categoryId: null })}
-            className={`group block w-full text-left px-3 py-2.5 text-[13px] tracking-wide transition-all border-l-2 ${
-              !selectedCategory
-                ? 'border-polen-orange text-black font-semibold bg-polen-cream'
-                : 'border-transparent text-black/55 hover:text-black hover:border-black/20'
-            }`}
-            data-testid="filter-category-all"
-          >
-            Tüm Ürünler
-          </button>
-          {categories.map(cat => (
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Kondisyon</p>
+        <div className="flex flex-wrap gap-1.5">
+          {CONDITIONS.map(c => (
             <button
-              key={cat.id}
-              onClick={() => setFilter({ categoryId: cat.id })}
-              className={`group block w-full text-left px-3 py-2.5 text-[13px] tracking-wide transition-all border-l-2 ${
-                selectedCategory === cat.id
-                  ? 'border-polen-orange text-black font-semibold bg-polen-cream'
-                  : 'border-transparent text-black/55 hover:text-black hover:border-black/20'
+              key={c.value}
+              data-testid={`filter-condition-${c.value}`}
+              onClick={() => setFilter({ condition: selectedCondition === c.value ? null : c.value })}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                selectedCondition === c.value
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-300'
               }`}
-              data-testid={`filter-category-${cat.slug}`}
             >
-              {cat.name}
+              {c.value}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <div className="flex items-baseline gap-3 mb-4">
-          <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">02</span>
-          <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Fiyat Aralığı</h4>
-        </div>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Fiyat Aralığı</p>
         <Slider
-          value={localPriceRange}
           min={0}
-          max={10000}
-          step={100}
-          onValueChange={(value) => setLocalPriceRange(value as [number, number])}
-          className="mb-4"
-          data-testid="slider-price-range"
+          max={MAX_PRICE}
+          step={25}
+          value={localPriceRange}
+          onValueChange={v => setLocalPriceRange(v as [number, number])}
+          className="mb-3"
         />
-        <div className="flex justify-between text-xs text-black/45 font-mono tabular-nums">
-          <span>₺{localPriceRange[0].toLocaleString('tr-TR')}</span>
-          <span>₺{localPriceRange[1].toLocaleString('tr-TR')}</span>
+        <div className="flex items-center justify-between text-sm text-zinc-600">
+          <span>{localPriceRange[0].toLocaleString('tr-TR')} ₺</span>
+          <span>{localPriceRange[1].toLocaleString('tr-TR')} ₺</span>
         </div>
       </div>
 
-      {facets?.sizes && facets.sizes.length > 0 && (
-        <div>
-          <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">03</span>
-            <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Beden</h4>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {facets.sizes.map(size => (
-              <button
-                key={size}
-                onClick={() => toggleSize(size)}
-                className={`px-3 py-1.5 text-[11px] font-medium tracking-wide border transition-all ${
-                  selectedSizes.includes(size)
-                    ? 'bg-black text-white border-black'
-                    : 'border-black/15 text-black/65 hover:border-black hover:text-black'
-                }`}
-                data-testid={`filter-size-${size}`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {facets?.colors && facets.colors.length > 0 && (
-        <div>
-          <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">04</span>
-            <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Renk</h4>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {facets.colors.map(color => (
-              <button
-                key={color.name}
-                onClick={() => toggleColor(color.name)}
-                title={color.name}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] border transition-all ${
-                  selectedColors.includes(color.name)
-                    ? 'border-black bg-stone-50 font-medium text-black'
-                    : 'border-black/15 text-black/65 hover:border-black/40'
-                }`}
-                data-testid={`filter-color-${color.name}`}
-              >
-                {color.hex && (
-                  <span
-                    className="w-3 h-3 rounded-full border border-black/15 shrink-0"
-                    style={{ backgroundColor: color.hex }}
-                  />
-                )}
-                <span className="leading-none">{color.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {facets?.fits && facets.fits.length > 0 && (
-        <div>
-          <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">05</span>
-            <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Kesim</h4>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {facets.fits.map(fit => (
-              <button
-                key={fit}
-                onClick={() => toggleFit(fit)}
-                className={`px-3 py-1.5 text-[11px] font-medium tracking-wide border transition-all ${
-                  selectedFits.includes(fit)
-                    ? 'bg-black text-white border-black'
-                    : 'border-black/15 text-black/65 hover:border-black hover:text-black'
-                }`}
-                data-testid={`filter-fit-${fit}`}
-              >
-                {fit}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <div className="flex items-baseline gap-3 mb-4">
-          <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">06</span>
-          <h4 className="font-display text-sm tracking-[0.18em] uppercase text-black">Hızlı Filtre</h4>
-        </div>
+      {activeFilterCount > 0 && (
         <button
-          onClick={() => setFilter({ discounted: showOnlyDiscounted ? null : 'true' })}
-          className={`px-4 py-2.5 border text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${
-            showOnlyDiscounted
-              ? 'bg-polen-orange text-white border-polen-orange'
-              : 'border-black/20 text-black hover:border-polen-orange hover:text-polen-orange'
-          }`}
-          data-testid="button-filter-discounted"
+          onClick={() => { clearFilters(); setFilterOpen(false); }}
+          className="w-full text-sm text-indigo-600 hover:text-indigo-800 font-medium py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
         >
-          İndirimli Ürünler
-        </button>
-      </div>
-
-      {hasActiveFilters && (
-        <button
-          onClick={clearFilters}
-          className="w-full flex items-center justify-center gap-2 py-3 border border-black/12 text-black text-[11px] tracking-[0.18em] uppercase font-semibold hover:bg-black hover:text-white transition-colors"
-          data-testid="button-clear-filters"
-        >
-          <X className="w-3.5 h-3.5" />
-          Filtreleri Temizle
+          Filtreleri Temizle ({activeFilterCount})
         </button>
       )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-50">
       <SEO
-        title="Mağaza"
-        description="Ecarte Jeans güncel giyim koleksiyonu. Kadın, erkek ve çocuk giyiminde tüm ürünleri keşfedin."
-        url="/magaza"
-        breadcrumbs={[
-          { name: 'Ana Sayfa', url: '/' },
-          { name: 'Mağaza', url: '/magaza' }
-        ]}
+        title="TCG Kart Mağazası — Ecarte"
+        description="Pokemon TCG ve Riftbound single kartlar, booster box ve sealed ürünler. Türkiye'nin TCG marketplace'i."
       />
       <Header />
 
-      {/* Editorial hero */}
-      <section className="relative bg-polen-cream border-b border-black/8 pt-20 lg:pt-10 pb-12 lg:pb-16">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <motion.nav
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-black/45 mb-8"
-            data-testid="breadcrumb"
-          >
-            <Link href="/"><span className="hover:text-polen-orange transition-colors cursor-pointer">Ana Sayfa</span></Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-black font-semibold">Mağaza</span>
-          </motion.nav>
-
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex items-baseline gap-4 mb-4"
-              >
-                <span className="text-[11px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">01 / Koleksiyon</span>
-                <span className="h-px w-10 bg-polen-orange/40" />
-              </motion.div>
-              <motion.h1
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="font-display text-5xl sm:text-6xl lg:text-7xl tracking-[0.01em] text-black leading-[0.95]"
-                data-testid="text-store-title"
-              >
-                MAĞAZA
-              </motion.h1>
-              {searchQuery && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-black/55 mt-3 text-[14px]"
-                >
-                  "<span className="text-black font-medium">{searchQuery}</span>" araması
-                </motion.p>
-              )}
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-start gap-8">
+          <aside className="hidden lg:block w-56 flex-shrink-0 sticky top-24">
+            <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-5">
+              <div className="flex items-center gap-2 mb-5">
+                <Layers className="w-4 h-4 text-indigo-600" />
+                <span className="font-semibold text-zinc-900 text-sm">Filtreler</span>
+                {activeFilterCount > 0 && (
+                  <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </div>
+              <FiltersPanel />
             </div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-baseline gap-2"
-            >
-              <span
-                className="font-display text-4xl text-polen-orange tabular-nums"
-                data-testid="text-product-count"
-              >
-                {isLoading ? '—' : total.toString().padStart(2, '0')}
-              </span>
-              <span className="text-[11px] tracking-[0.22em] uppercase text-black/55">Ürün</span>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+          </aside>
 
-      <section className="py-10 lg:py-14 px-6">
-        <div className="max-w-[1400px] mx-auto">
-          {/* Toolbar */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-black/10"
-          >
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Mobile filter sheet */}
-              <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-                <SheetTrigger asChild>
-                  <button
-                    className="lg:hidden inline-flex items-center gap-2 px-4 py-2.5 border border-black/12 text-[11px] tracking-[0.18em] uppercase font-semibold text-black hover:bg-black hover:text-white transition-colors"
-                    data-testid="button-mobile-filter"
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                    Filtrele
-                    {hasActiveFilters && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-polen-orange" />
-                    )}
+          <main className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <input
+                  data-testid="input-card-search"
+                  type="text"
+                  placeholder="Kart ara..."
+                  value={localSearch}
+                  onChange={e => setLocalSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                {localSearch && (
+                  <button onClick={() => setLocalSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <X className="w-3 h-3 text-zinc-400" />
                   </button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[320px] bg-white border-r border-black/10 p-6 overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle className="font-display text-lg tracking-[0.18em] uppercase text-left text-black">Filtrele</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-8">
-                    <FilterContent />
-                  </div>
-                </SheetContent>
-              </Sheet>
-
-              {/* Grid toggle */}
-              <div className="hidden sm:flex items-center gap-1 border border-black/12 p-1">
-                <button
-                  onClick={() => setGridCols(2)}
-                  className={`p-2 transition-colors ${gridCols === 2 ? 'bg-black text-white' : 'text-black/55 hover:text-black'}`}
-                  aria-label="2 sütun"
-                  data-testid="button-grid-2"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setGridCols(3)}
-                  className={`p-2 transition-colors ${gridCols === 3 ? 'bg-black text-white' : 'text-black/55 hover:text-black'}`}
-                  aria-label="3 sütun"
-                  data-testid="button-grid-3"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
+                )}
               </div>
 
-              {/* Active filter chips */}
-              {selectedSizes.map(s => (
-                <button
-                  key={s}
-                  onClick={() => toggleSize(s)}
-                  className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] tracking-[0.1em] uppercase border border-black text-black hover:bg-black hover:text-white transition-colors"
-                >
-                  {s}<X className="w-2.5 h-2.5" />
-                </button>
-              ))}
-              {selectedColors.map(c => (
-                <button
-                  key={c}
-                  onClick={() => toggleColor(c)}
-                  className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] tracking-[0.1em] uppercase border border-polen-orange text-polen-orange hover:bg-polen-orange hover:text-white transition-colors"
-                >
-                  {c}<X className="w-2.5 h-2.5" />
-                </button>
-              ))}
-              {selectedFits.map(f => (
-                <button
-                  key={f}
-                  onClick={() => toggleFit(f)}
-                  className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] tracking-[0.1em] uppercase border border-black text-black hover:bg-black hover:text-white transition-colors"
-                >
-                  {f}<X className="w-2.5 h-2.5" />
-                </button>
-              ))}
-              {showOnlyDiscounted && (
-                <button
-                  onClick={() => setFilter({ discounted: null })}
-                  className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] tracking-[0.1em] uppercase border border-polen-orange text-polen-orange hover:bg-polen-orange hover:text-white transition-colors"
-                >
-                  İndirimli<X className="w-2.5 h-2.5" />
-                </button>
-              )}
-            </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                  <SheetTrigger asChild>
+                    <button
+                      data-testid="btn-mobile-filters"
+                      className="lg:hidden flex items-center gap-2 text-sm px-3 py-2 border border-zinc-200 rounded-xl bg-white hover:bg-zinc-50 transition-colors"
+                    >
+                      <SlidersHorizontal className="w-4 h-4" />
+                      Filtre
+                      {activeFilterCount > 0 && (
+                        <span className="bg-indigo-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-72 p-5 overflow-y-auto">
+                    <SheetHeader className="mb-5">
+                      <SheetTitle>Filtreler</SheetTitle>
+                    </SheetHeader>
+                    <FiltersPanel />
+                  </SheetContent>
+                </Sheet>
 
-            <div className="flex items-center gap-4">
-              {!isLoading && total > 0 && (
-                <span className="hidden md:block text-[11px] text-black/35 tabular-nums">
-                  {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)} / {total} ürün
-                </span>
-              )}
-              <Select value={sort} onValueChange={(v) => setFilter({ sort: v })}>
-                <SelectTrigger className="w-[220px] border-black/12 text-black bg-white rounded-none h-10 text-[12px] tracking-wide" data-testid="select-sort">
-                  <SelectValue placeholder="Sırala" />
-                </SelectTrigger>
-                <SelectContent className="rounded-none border-black/12">
-                  {sortOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value} className="text-[13px]">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </motion.div>
-
-          <div className="flex gap-12">
-            {/* Desktop sidebar */}
-            <aside className="hidden lg:block w-[260px] shrink-0">
-              <div className="sticky top-32">
-                <div className="flex items-baseline gap-3 mb-8 pb-5 border-b border-black/10">
-                  <span className="text-[10px] font-mono tracking-[0.32em] uppercase text-polen-orange tabular-nums">—</span>
-                  <h3 className="font-display text-base tracking-[0.18em] uppercase text-black">Filtrele</h3>
-                </div>
-                <FilterContent />
-              </div>
-            </aside>
-
-            <div className="flex-1 min-w-0">
-              {isLoading ? (
-                <div className={`grid gap-6 ${
-                  gridCols === 2 ? 'grid-cols-2' :
-                  gridCols === 3 ? 'grid-cols-2 lg:grid-cols-3' :
-                  'grid-cols-2 lg:grid-cols-4'
-                }`}>
-                  {[...Array(LIMIT)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="aspect-[3/4] bg-stone-100" />
-                      <div className="mt-4 h-3 bg-stone-100 w-3/4" />
-                      <div className="mt-2 h-3 bg-stone-100 w-1/2" />
-                    </div>
-                  ))}
-                </div>
-              ) : products.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-24 border border-black/8 bg-stone-50"
-                >
-                  <p className="text-black/55 text-[15px] mb-6">
-                    Bu kriterlere uygun ürün bulunamadı.
-                  </p>
-                  <button
-                    onClick={clearFilters}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white text-[11px] tracking-[0.18em] uppercase font-semibold hover:bg-polen-orange transition-colors"
-                    data-testid="button-clear-empty"
-                  >
-                    Filtreleri Temizle
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </motion.div>
-              ) : (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className={`grid gap-x-4 gap-y-10 sm:gap-x-6 ${
-                      gridCols === 2 ? 'grid-cols-2' :
-                      gridCols === 3 ? 'grid-cols-2 lg:grid-cols-3' :
-                      'grid-cols-2 lg:grid-cols-4'
-                    }`}
-                  >
-                    {products.map((product, index) => (
-                      <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: Math.min(index * 0.03, 0.3) }}
-                      >
-                        <ProductCard product={product} />
-                      </motion.div>
+                <Select value={sort} onValueChange={v => setFilter({ sort: v })}>
+                  <SelectTrigger data-testid="select-sort" className="w-44 text-sm bg-white border-zinc-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                     ))}
-                  </motion.div>
+                  </SelectContent>
+                </Select>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="mt-16 flex items-center justify-center gap-2" data-testid="pagination">
-                      <button
-                        onClick={() => setFilter({ page: String(page - 1) }, false)}
-                        disabled={page <= 1}
-                        className="flex items-center gap-1.5 px-4 py-2.5 border border-black/12 text-[11px] tracking-[0.15em] uppercase font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black hover:text-white hover:border-black transition-colors"
-                        data-testid="button-prev-page"
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                        Önceki
-                      </button>
-
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                          .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                          .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
-                            if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
-                            acc.push(p);
-                            return acc;
-                          }, [])
-                          .map((item, idx) =>
-                            item === 'ellipsis' ? (
-                              <span key={`e-${idx}`} className="px-2 text-black/30 text-sm">…</span>
-                            ) : (
-                              <button
-                                key={item}
-                                onClick={() => setFilter({ page: String(item) }, false)}
-                                className={`w-9 h-9 text-[12px] font-semibold transition-colors border ${
-                                  page === item
-                                    ? 'bg-black text-white border-black'
-                                    : 'border-black/12 text-black hover:border-black'
-                                }`}
-                                data-testid={`button-page-${item}`}
-                              >
-                                {item}
-                              </button>
-                            )
-                          )
-                        }
-                      </div>
-
-                      <button
-                        onClick={() => setFilter({ page: String(page + 1) }, false)}
-                        disabled={page >= totalPages}
-                        className="flex items-center gap-1.5 px-4 py-2.5 border border-black/12 text-[11px] tracking-[0.15em] uppercase font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black hover:text-white hover:border-black transition-colors"
-                        data-testid="button-next-page"
-                      >
-                        Sonraki
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+                <div className="hidden sm:flex items-center gap-1 bg-white border border-zinc-200 rounded-xl p-1">
+                  <button
+                    data-testid="btn-grid-3"
+                    onClick={() => setGridCols(3)}
+                    className={`p-1.5 rounded-lg transition-colors ${gridCols === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    data-testid="btn-grid-4"
+                    onClick={() => setGridCols(4)}
+                    className={`p-1.5 rounded-lg transition-colors ${gridCols === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {selectedGame && (
+                  <FilterChip label={games.find(g => g.slug === selectedGame)?.name ?? selectedGame} onRemove={() => setFilter({ game: null, set: null })} />
+                )}
+                {selectedSet && (
+                  <FilterChip label={sets.find(s => s.slug === selectedSet)?.name ?? selectedSet} onRemove={() => setFilter({ set: null })} />
+                )}
+                {selectedRarity && (
+                  <FilterChip label={selectedRarity} onRemove={() => setFilter({ rarity: null })} />
+                )}
+                {selectedCondition && (
+                  <FilterChip label={selectedCondition} onRemove={() => setFilter({ condition: null })} />
+                )}
+                {(urlMinPrice > 0 || urlMaxPrice < MAX_PRICE) && (
+                  <FilterChip
+                    label={`${urlMinPrice.toLocaleString('tr-TR')}-${urlMaxPrice.toLocaleString('tr-TR')} ₺`}
+                    onRemove={() => { setLocalPriceRange([0, MAX_PRICE]); setFilter({ minPrice: null, maxPrice: null }); }}
+                  />
+                )}
+                <button onClick={clearFilters} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2">
+                  Tümünü Temizle
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 mb-5">
+              <p className="text-sm text-zinc-500">
+                {isLoading ? 'Yükleniyor...' : (
+                  total > 0 ? <>{total.toLocaleString('tr-TR')} kart bulundu</> : 'Sonuç bulunamadı'
+                )}
+              </p>
+            </div>
+
+            {isLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: LIMIT }).map((_, i) => (
+                  <div key={i} className="rounded-xl bg-white border border-zinc-100 overflow-hidden animate-pulse">
+                    <div className="aspect-[63/88] bg-zinc-100" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-3 bg-zinc-100 rounded w-1/2" />
+                      <div className="h-4 bg-zinc-100 rounded" />
+                      <div className="h-3 bg-zinc-100 rounded w-3/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : cards.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+                  <Search className="w-7 h-7 text-zinc-300" />
+                </div>
+                <p className="text-lg font-semibold text-zinc-700 mb-2">Kart bulunamadı</p>
+                <p className="text-sm text-zinc-400 mb-6">Filtreleri değiştirerek tekrar deneyin</p>
+                <button
+                  onClick={clearFilters}
+                  className="text-sm px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${selectedGame}-${selectedSet}-${selectedRarity}-${page}-${sort}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`grid gap-4 ${
+                    gridCols === 3
+                      ? 'grid-cols-2 sm:grid-cols-3'
+                      : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4'
+                  }`}
+                >
+                  {cards.map(card => (
+                    <CardCard key={card.id} card={card} />
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10">
+                <button
+                  data-testid="btn-prev-page"
+                  onClick={() => setFilter({ page: String(page - 1) }, false)}
+                  disabled={page <= 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 disabled:opacity-40 transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let p: number;
+                  if (totalPages <= 7) p = i + 1;
+                  else if (page <= 4) p = i + 1;
+                  else if (page >= totalPages - 3) p = totalPages - 6 + i;
+                  else p = page - 3 + i;
+                  return (
+                    <button
+                      key={p}
+                      data-testid={`btn-page-${p}`}
+                      onClick={() => setFilter({ page: String(p) }, false)}
+                      className={`w-9 h-9 text-sm rounded-xl border transition-colors ${
+                        p === page
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+
+                <button
+                  data-testid="btn-next-page"
+                  onClick={() => setFilter({ page: String(page + 1) }, false)}
+                  disabled={page >= totalPages}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 disabled:opacity-40 transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </main>
         </div>
-      </section>
+      </div>
 
       <Footer />
     </div>
+  );
+}
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-full">
+      {label}
+      <button onClick={onRemove} className="hover:text-indigo-900">
+        <X className="w-3 h-3" />
+      </button>
+    </span>
   );
 }

@@ -2333,6 +2333,206 @@ export class DbStorage implements IStorage {
     return db.select().from(tcgSyncRuns).orderBy(desc(tcgSyncRuns.startedAt)).limit(limit);
   }
 
+  // ── TCG: public card browsing ─────────────────────────────────────────────
+  async getCardsPublic(filters: {
+    gameSlug?: string;
+    setSlug?: string;
+    rarity?: string;
+    cardType?: string;
+    condition?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    search?: string;
+    sort?: 'price_asc' | 'price_desc' | 'newest' | 'name_asc';
+    page?: number;
+    limit?: number;
+  }): Promise<{ cards: any[]; total: number }> {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(48, Math.max(1, filters.limit ?? 24));
+    const offset = (page - 1) * limit;
+
+    const gameFilter = filters.gameSlug ? sql`AND cg.slug = ${filters.gameSlug}` : sql``;
+    const setFilter = filters.setSlug ? sql`AND cs.slug = ${filters.setSlug}` : sql``;
+    const rarityFilter = filters.rarity ? sql`AND LOWER(c.rarity) = LOWER(${filters.rarity})` : sql``;
+    const cardTypeFilter = filters.cardType ? sql`AND c.card_types @> ${JSON.stringify([filters.cardType])}::jsonb` : sql``;
+    const searchFilter = filters.search ? sql`AND (c.name ILIKE ${'%' + filters.search + '%'} OR c.card_number ILIKE ${'%' + filters.search + '%'})` : sql``;
+    const conditionJoinFilter = filters.condition ? sql`AND cl.condition = ${filters.condition}` : sql``;
+
+    const minPriceHaving = filters.minPrice != null
+      ? sql`AND MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 ${conditionJoinFilter} THEN cl.price::numeric END) >= ${filters.minPrice}`
+      : sql``;
+    const maxPriceHaving = filters.maxPrice != null
+      ? sql`AND MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 ${conditionJoinFilter} THEN cl.price::numeric END) <= ${filters.maxPrice}`
+      : sql``;
+
+    let orderClause: ReturnType<typeof sql>;
+    if (filters.sort === 'price_asc') orderClause = sql`min_price ASC NULLS LAST`;
+    else if (filters.sort === 'price_desc') orderClause = sql`min_price DESC NULLS LAST`;
+    else if (filters.sort === 'name_asc') orderClause = sql`c.name ASC`;
+    else orderClause = sql`c.created_at DESC`;
+
+    const rowsResult = await db.execute(sql`
+      SELECT
+        c.id, c.name, c.slug, c.card_number, c.rarity, c.card_types,
+        c.image_url, c.is_featured, c.is_new, c.created_at,
+        cs.id AS set_id, cs.name AS set_name, cs.slug AS set_slug,
+        cs.logo_url AS set_logo_url, cs.symbol_url AS set_symbol_url,
+        cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug,
+        MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.price::numeric END) AS min_price,
+        COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END)::int AS listing_count,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.condition END), NULL) AS available_conditions
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      LEFT JOIN card_listings cl ON cl.card_id = c.id
+      WHERE c.is_active = true
+        ${gameFilter}
+        ${setFilter}
+        ${rarityFilter}
+        ${cardTypeFilter}
+        ${searchFilter}
+      GROUP BY c.id, cs.id, cg.id
+      HAVING COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END) > 0
+        ${minPriceHaving}
+        ${maxPriceHaving}
+      ORDER BY ${orderClause}
+      LIMIT ${limit} OFFSET ${offset}
+    `);
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS total FROM (
+        SELECT c.id
+        FROM cards c
+        JOIN card_sets cs ON cs.id = c.set_id
+        JOIN card_games cg ON cg.id = cs.game_id
+        LEFT JOIN card_listings cl ON cl.card_id = c.id
+        WHERE c.is_active = true
+          ${gameFilter}
+          ${setFilter}
+          ${rarityFilter}
+          ${cardTypeFilter}
+          ${searchFilter}
+        GROUP BY c.id
+        HAVING COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END) > 0
+          ${minPriceHaving}
+          ${maxPriceHaving}
+      ) sub
+    `);
+
+    return {
+      cards: rowsResult.rows as any[],
+      total: Number((countResult.rows[0] as any)?.total ?? 0),
+    };
+  }
+
+  async getCardPublicBySlug(slug: string): Promise<any | null> {
+    const result = await db.execute(sql`
+      SELECT
+        c.id, c.name, c.slug, c.card_number, c.rarity, c.card_types,
+        c.hp, c.artist, c.image_url, c.image_url_hi_res, c.description,
+        c.api_source, c.is_featured, c.is_new, c.created_at,
+        cs.id AS set_id, cs.name AS set_name, cs.slug AS set_slug,
+        cs.series AS set_series, cs.release_date AS set_release_date,
+        cs.total_cards AS set_total_cards,
+        cs.logo_url AS set_logo_url, cs.symbol_url AS set_symbol_url,
+        cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      WHERE c.slug = ${slug} AND c.is_active = true
+      LIMIT 1
+    `);
+    if (!result.rows.length) return null;
+    const card = result.rows[0] as any;
+
+    const listingsResult = await db.execute(sql`
+      SELECT id, condition, price::numeric AS price, stock
+      FROM card_listings
+      WHERE card_id = ${card.id} AND is_active = true
+      ORDER BY price::numeric ASC
+    `);
+    card.listings = listingsResult.rows;
+
+    const priceResult = await db.execute(sql`
+      SELECT price_market::numeric, price_low::numeric, price_high::numeric, currency, fetched_at
+      FROM card_prices
+      WHERE card_id = ${card.id}
+      ORDER BY fetched_at DESC
+      LIMIT 1
+    `);
+    card.marketPrice = priceResult.rows[0] ?? null;
+
+    return card;
+  }
+
+  async getSimilarCards(cardId: string, setId: string, limit = 8): Promise<any[]> {
+    const result = await db.execute(sql`
+      SELECT
+        c.id, c.name, c.slug, c.rarity, c.image_url,
+        cs.name AS set_name, cs.slug AS set_slug,
+        MIN(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.price::numeric END) AS min_price,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN cl.is_active = true AND cl.stock > 0 THEN cl.condition END), NULL) AS available_conditions
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      LEFT JOIN card_listings cl ON cl.card_id = c.id
+      WHERE c.set_id = ${setId} AND c.id != ${cardId} AND c.is_active = true
+      GROUP BY c.id, cs.id
+      HAVING COUNT(CASE WHEN cl.is_active = true AND cl.stock > 0 THEN 1 END) > 0
+      ORDER BY RANDOM()
+      LIMIT ${limit}
+    `);
+    return result.rows as any[];
+  }
+
+  async getCardSetsPublic(gameSlug?: string): Promise<any[]> {
+    const gameFilter = gameSlug ? sql`AND cg.slug = ${gameSlug}` : sql``;
+    const result = await db.execute(sql`
+      SELECT
+        cs.id, cs.name, cs.slug, cs.series, cs.release_date, cs.total_cards,
+        cs.logo_url, cs.symbol_url,
+        cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug,
+        COUNT(DISTINCT c.id) FILTER (
+          WHERE c.is_active = true AND EXISTS (
+            SELECT 1 FROM card_listings cl WHERE cl.card_id = c.id AND cl.is_active = true AND cl.stock > 0
+          )
+        )::int AS listed_cards
+      FROM card_sets cs
+      JOIN card_games cg ON cg.id = cs.game_id
+      LEFT JOIN cards c ON c.set_id = cs.id
+      WHERE cs.is_active = true ${gameFilter}
+      GROUP BY cs.id, cg.id
+      ORDER BY cs.release_date DESC NULLS LAST, cs.name ASC
+    `);
+    return result.rows as any[];
+  }
+
+  async getCardSetPublicBySlug(slug: string): Promise<any | null> {
+    const result = await db.execute(sql`
+      SELECT
+        cs.id, cs.name, cs.slug, cs.series, cs.release_date, cs.total_cards,
+        cs.logo_url, cs.symbol_url,
+        cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug
+      FROM card_sets cs
+      JOIN card_games cg ON cg.id = cs.game_id
+      WHERE cs.slug = ${slug} AND cs.is_active = true
+      LIMIT 1
+    `);
+    return (result.rows[0] as any) ?? null;
+  }
+
+  async getRaritiesByGame(gameSlug?: string): Promise<string[]> {
+    const gameFilter = gameSlug ? sql`AND cg.slug = ${gameSlug}` : sql``;
+    const result = await db.execute(sql`
+      SELECT DISTINCT c.rarity
+      FROM cards c
+      JOIN card_sets cs ON cs.id = c.set_id
+      JOIN card_games cg ON cg.id = cs.game_id
+      WHERE c.is_active = true AND c.rarity IS NOT NULL ${gameFilter}
+      ORDER BY c.rarity ASC
+    `);
+    return (result.rows as any[]).map(r => r.rarity).filter(Boolean);
+  }
+
 }
 
 export const storage = new DbStorage();

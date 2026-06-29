@@ -33,6 +33,9 @@ const DistanceSalesAgreement = lazy(() => import("@/pages/DistanceSalesAgreement
 const CancellationPolicy = lazy(() => import("@/pages/CancellationPolicy"));
 const KVKK = lazy(() => import("@/pages/KVKK"));
 const Store = lazy(() => import("@/pages/Store"));
+const CardDetail = lazy(() => import("@/pages/CardDetail"));
+const CardSet = lazy(() => import("@/pages/CardSet"));
+const GamePage = lazy(() => import("@/pages/GamePage"));
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 const PaymentFail = lazy(() => import("@/pages/PaymentFail"));
 const OrderTracking = lazy(() => import("@/pages/OrderTracking"));
@@ -53,6 +56,9 @@ function Router() {
         <Switch>
         <Route path="/" component={Home} />
         <Route path="/magaza" component={Store} />
+        <Route path="/kart/:slug" component={CardDetail} />
+        <Route path="/set/:slug" component={CardSet} />
+        <Route path="/oyun/:game" component={GamePage} />
         <Route path="/kategori/:slug" component={Category} />
         <Route path="/urun/:slug" component={ProductDetail} />
         <Route path="/giris" component={Login} />

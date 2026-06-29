@@ -5475,6 +5475,95 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // ── Public TCG routes ─────────────────────────────────────────────────────
+
+  app.get("/api/card-games", async (_req, res) => {
+    try {
+      const games = await storage.listCardGames();
+      res.json(games);
+    } catch (err) {
+      res.status(500).json({ error: "Oyunlar yüklenemedi" });
+    }
+  });
+
+  app.get("/api/card-sets", async (req, res) => {
+    try {
+      const gameSlug = req.query.game as string | undefined;
+      const sets = await storage.getCardSetsPublic(gameSlug);
+      res.json(sets);
+    } catch (err) {
+      res.status(500).json({ error: "Setler yüklenemedi" });
+    }
+  });
+
+  app.get("/api/card-sets/:slug", async (req, res) => {
+    try {
+      const cardSet = await storage.getCardSetPublicBySlug(req.params.slug);
+      if (!cardSet) return res.status(404).json({ error: "Set bulunamadı" });
+      res.json(cardSet);
+    } catch (err) {
+      res.status(500).json({ error: "Set yüklenemedi" });
+    }
+  });
+
+  app.get("/api/cards", async (req, res) => {
+    try {
+      const {
+        game, set, rarity, type, condition, search, sort, page, limit,
+        minPrice, maxPrice,
+      } = req.query as Record<string, string>;
+      const result = await storage.getCardsPublic({
+        gameSlug: game || undefined,
+        setSlug: set || undefined,
+        rarity: rarity || undefined,
+        cardType: type || undefined,
+        condition: condition || undefined,
+        search: search || undefined,
+        sort: (sort as any) || 'newest',
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 24,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      });
+      res.json(result);
+    } catch (err) {
+      console.error("[TCG] getCardsPublic error:", err);
+      res.status(500).json({ error: "Kartlar yüklenemedi" });
+    }
+  });
+
+  app.get("/api/cards/rarities", async (req, res) => {
+    try {
+      const game = req.query.game as string | undefined;
+      const rarities = await storage.getRaritiesByGame(game);
+      res.json(rarities);
+    } catch (err) {
+      res.status(500).json({ error: "Rarities yüklenemedi" });
+    }
+  });
+
+  app.get("/api/cards/:slug", async (req, res) => {
+    try {
+      const card = await storage.getCardPublicBySlug(req.params.slug);
+      if (!card) return res.status(404).json({ error: "Kart bulunamadı" });
+      res.json(card);
+    } catch (err) {
+      console.error("[TCG] getCardPublicBySlug error:", err);
+      res.status(500).json({ error: "Kart yüklenemedi" });
+    }
+  });
+
+  app.get("/api/cards/:slug/similar", async (req, res) => {
+    try {
+      const card = await storage.getCardPublicBySlug(req.params.slug);
+      if (!card) return res.status(404).json({ error: "Kart bulunamadı" });
+      const similar = await storage.getSimilarCards(card.id, card.set_id);
+      res.json(similar);
+    } catch (err) {
+      res.status(500).json({ error: "Benzer kartlar yüklenemedi" });
+    }
+  });
+
   return httpServer;
 }
 
