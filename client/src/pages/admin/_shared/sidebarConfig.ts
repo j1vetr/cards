@@ -45,22 +45,20 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
     ],
   },
   {
-    title: 'Ürün Yönetimi',
+    title: 'TCG Kataloğu',
     items: [
-      { id: 'products', icon: Package, label: 'Ürünler' },
-      { id: 'categories', icon: Grid3x3, label: 'Kategoriler' },
-      { id: 'inventory', icon: Warehouse, label: 'Stok Yönetimi' },
+      { id: 'cards', icon: Layers, label: 'Kartlar' },
+      { id: 'card-sets', icon: BookOpen, label: 'Kart Setleri' },
+      { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
     ],
   },
   {
     title: 'Satış & Siparişler',
     items: [
       { id: 'orders', icon: ShoppingCart, label: 'Siparişler' },
+      { id: 'inventory', icon: Warehouse, label: 'Stok Yönetimi' },
+      { id: 'coupons', icon: Ticket, label: 'Kuponlar' },
     ],
-  },
-  {
-    title: 'Pazarlama',
-    items: [{ id: 'coupons', icon: Ticket, label: 'Kuponlar' }],
   },
   {
     title: 'Müşteriler',
@@ -70,19 +68,18 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
     ],
   },
   {
-    title: 'TCG',
-    items: [
-      { id: 'cards', icon: Layers, label: 'Kartlar' },
-      { id: 'card-sets', icon: BookOpen, label: 'Kart Setleri' },
-      { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
-    ],
-  },
-  {
     title: 'Sistem',
     items: [
       { id: 'menu', icon: MenuIcon, label: 'Menü Yönetimi' },
       { id: 'settings', icon: Settings, label: 'Ayarlar' },
       { id: 'database', icon: Database, label: 'Veritabanı' },
+    ],
+  },
+  {
+    title: 'Miras (Legacy)',
+    items: [
+      { id: 'products', icon: Package, label: 'Ürünler (Eski)' },
+      { id: 'categories', icon: Grid3x3, label: 'Kategoriler (Eski)' },
     ],
   },
 ];

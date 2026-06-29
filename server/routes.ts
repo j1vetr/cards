@@ -5603,6 +5603,27 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  app.post("/api/admin/card-sets", requireAdmin, async (req, res) => {
+    try {
+      const { gameId, name, series, logoUrl, symbolUrl, releaseDate, isActive } = req.body;
+      if (!gameId || !name) return res.status(400).json({ error: "gameId ve name gerekli" });
+      const slug = name.toLowerCase()
+        .replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+      const set = await storage.createAdminCardSet({
+        gameId, name, slug: slug || `set-${Date.now()}`,
+        series: series || null,
+        logoUrl: logoUrl || null,
+        symbolUrl: symbolUrl || null,
+        releaseDate: releaseDate || null,
+        isActive: isActive !== false,
+      });
+      res.status(201).json(set);
+    } catch (err) {
+      console.error("[admin] createAdminCardSet:", err);
+      res.status(500).json({ error: "Set oluşturulamadı" });
+    }
+  });
+
   app.put("/api/admin/card-sets/:id", requireAdmin, async (req, res) => {
     try {
       const { isActive } = req.body;
@@ -5611,6 +5632,24 @@ Sitemap: ${baseUrl}/sitemap.xml
       res.json(updated);
     } catch (err) {
       res.status(500).json({ error: "Set güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/admin/card-sets/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteAdminCardSet(req.params.id);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Set silinemedi" });
+    }
+  });
+
+  app.get("/api/admin/cards/:id/price-reference", requireAdmin, async (req, res) => {
+    try {
+      const price = await storage.getCardPriceReference(req.params.id);
+      res.json(price);
+    } catch (err) {
+      res.status(500).json({ error: "Fiyat referansı yüklenemedi" });
     }
   });
 

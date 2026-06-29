@@ -2731,8 +2731,44 @@ export class DbStorage implements IStorage {
     return updated;
   }
 
+  async createAdminCardSet(data: {
+    gameId: string;
+    name: string;
+    slug: string;
+    series?: string | null;
+    logoUrl?: string | null;
+    symbolUrl?: string | null;
+    releaseDate?: string | null;
+    isActive: boolean;
+  }): Promise<any> {
+    let slug = data.slug;
+    const [collision] = await db.select({ id: cardSets.id }).from(cardSets).where(eq(cardSets.slug, slug));
+    if (collision) slug = `${slug}-${Date.now()}`;
+    const [inserted] = await db.insert(cardSets).values({
+      gameId: data.gameId,
+      name: data.name,
+      slug,
+      series: data.series ?? null,
+      logoUrl: data.logoUrl ?? null,
+      symbolUrl: data.symbolUrl ?? null,
+      releaseDate: data.releaseDate ?? null,
+      isActive: data.isActive,
+    }).returning();
+    return inserted;
+  }
+
+  async deleteAdminCardSet(id: string): Promise<void> {
+    await db.delete(cardSets).where(eq(cardSets.id, id));
+  }
+
   async getAdminCardGames(): Promise<any[]> {
     return db.select().from(cardGames).orderBy(cardGames.name);
+  }
+
+  async getCardPriceReference(cardId: string): Promise<any | null> {
+    const [row] = await db.select().from(cardPrices)
+      .where(and(eq(cardPrices.cardId, cardId), eq(cardPrices.source, 'pricecharting')));
+    return row ?? null;
   }
 
 }
