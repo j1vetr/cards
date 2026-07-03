@@ -51,6 +51,100 @@ const RIFTBOUND_TYPE_COLORS: Record<string, { bg: string; text: string; border: 
   Nexus:          { bg: 'rgba(20,184,166,0.15)',  text: '#5eead4', border: 'rgba(20,184,166,0.3)' },
 };
 
+/* ─── Energy cost dot colors ─────────────────────────────────────────── */
+const ENERGY_DOT_COLORS: Record<string, string> = {
+  Fire:       '#ef4444',
+  Water:      '#3b82f6',
+  Grass:      '#22c55e',
+  Lightning:  '#eab308',
+  Electric:   '#eab308',
+  Psychic:    '#a855f7',
+  Fighting:   '#f97316',
+  Darkness:   '#6b7280',
+  Dark:       '#6b7280',
+  Metal:      '#94a3b8',
+  Dragon:     '#6366f1',
+  Fairy:      '#ec4899',
+  Colorless:  '#71717a',
+  Normal:     '#71717a',
+};
+function energyDotColor(type: string): string {
+  return ENERGY_DOT_COLORS[type] ?? '#6366f1';
+}
+
+/* ─── Attacks section ────────────────────────────────────────────────── */
+function parseJsonField(raw: any): any[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return []; } }
+  return [];
+}
+
+function AttacksSection({ attacks, abilities }: { attacks: any[]; abilities: any[] }) {
+  if (!attacks.length && !abilities.length) return null;
+
+  return (
+    <div className="space-y-3">
+      {/* Abilities */}
+      {abilities.map((ab: any, i: number) => (
+        <div key={i} className="rounded-xl border border-purple-500/30 overflow-hidden"
+          style={{ background: 'rgba(168,85,247,0.07)' }}>
+          <div className="px-4 py-2 border-b border-purple-500/20 flex items-center gap-2">
+            <span className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">
+              {ab.type || 'Ability'}
+            </span>
+            <span className="text-sm font-bold text-purple-200">{ab.name}</span>
+          </div>
+          {ab.text && (
+            <p className="px-4 py-3 text-xs leading-relaxed text-zinc-300 italic">{ab.text}</p>
+          )}
+        </div>
+      ))}
+
+      {/* Attacks */}
+      {attacks.length > 0 && (
+        <div className="rounded-xl border border-white/[0.08] overflow-hidden">
+          <div className="px-4 py-2 border-b border-white/[0.06]">
+            <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest">Saldırılar</span>
+          </div>
+          <div className="divide-y divide-white/[0.05]">
+            {attacks.map((atk: any, i: number) => (
+              <div key={i} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {/* Energy cost dots */}
+                    {atk.cost?.length > 0 && (
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {(atk.cost as string[]).map((type, ci) => (
+                          <span key={ci}
+                            className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                            style={{ background: energyDotColor(type) }}
+                            title={type}>
+                            {type[0]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <span className="text-sm font-semibold text-white truncate">{atk.name}</span>
+                  </div>
+                  {atk.damage && (
+                    <span className="text-base font-black text-red-400 shrink-0 tabular-nums"
+                      style={{ fontFamily: 'var(--font-display)' }}>
+                      {atk.damage}
+                    </span>
+                  )}
+                </div>
+                {atk.text && (
+                  <p className="text-xs leading-relaxed text-zinc-400 italic">{atk.text}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Helpers ────────────────────────────────────────────────────────── */
 function fmtDate(raw?: string | null) {
   if (!raw) return null;
@@ -158,7 +252,7 @@ function PurchaseBox({
             <span key={d} className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-pulse" style={{ animationDelay: `${d}ms` }} />
           ))}
         </div>
-        <p className="text-sm text-zinc-500">Fiyat yakında güncelleniyor</p>
+        <p className="text-sm text-zinc-500">Fiyat Yakında Güncelleniyor..</p>
       </div>
     );
   }
@@ -207,7 +301,7 @@ function PurchaseBox({
               {[0, 150, 300].map((d) => (
                 <span key={d} className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-pulse" style={{ animationDelay: `${d}ms` }} />
               ))}
-              <span className="text-sm text-zinc-600 ml-1">Fiyat yakında</span>
+              <span className="text-sm text-zinc-600 ml-1">Fiyat Yakında Güncelleniyor..</span>
             </div>
           )}
 
@@ -255,9 +349,9 @@ function TrustRow() {
   return (
     <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/[0.07] p-3">
       {[
-        { Icon: Shield,  title: 'Güvenli Alışveriş', sub: '256-Bit SSL ile korunur' },
-        { Icon: Zap,     title: 'Hızlı Kargo',       sub: '1-2 iş günü içinde' },
-        { Icon: Package, title: 'İade Garantisi',     sub: '14 gün koşulsuz iade' },
+        { Icon: Shield,  title: 'Güvenli Alışveriş', sub: '256-Bit SSL İle Korunur' },
+        { Icon: Zap,     title: 'Hızlı Kargo',       sub: '1-2 İş Günü İçinde' },
+        { Icon: Package, title: 'İade Garantisi',     sub: '14 Gün Koşulsuz İade' },
       ].map(({ Icon, title, sub }) => (
         <div key={title} className="flex flex-col items-center text-center gap-1.5">
           <div className="w-7 h-7 rounded-full bg-indigo-500/10 flex items-center justify-center">
@@ -283,8 +377,8 @@ function InfoRow({ Icon, label, value }: { Icon: any; label: string; value: stri
 }
 
 /* ─── Pokémon Desktop Info Panel ─────────────────────────────────────── */
-function PokemonInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
-  card: any; cardTypes: string[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode;
+function PokemonInfoPanel({ card, cardTypes, attacks, abilities, purchaseBox, trustRow }: {
+  card: any; cardTypes: string[]; attacks: any[]; abilities: any[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode;
 }) {
   return (
     <div className="space-y-5 pt-2">
@@ -359,6 +453,9 @@ function PokemonInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
           <InfoRow Icon={Hash} label="Kart No." value={`${card.card_number} / ${card.set_total_cards}`} />
         )}
       </div>
+
+      {/* Attacks & Abilities */}
+      <AttacksSection attacks={attacks} abilities={abilities} />
 
       {/* Set logo */}
       {(card.set_logo_url || card.set_symbol_url) && (
@@ -571,8 +668,10 @@ export default function CardDetail() {
   const lowStock = stock !== null && stock <= 10 && stock > 0;
 
   const cardTypes = parseCardTypes(card?.card_types);
-  const imgSrc = card?.image_url_hi_res ?? card?.image_url ?? FALLBACK;
   const isPokemon = card?.game_slug === 'pokemon';
+  const attacks = isPokemon ? parseJsonField(card?.attacks) : [];
+  const abilities = isPokemon ? parseJsonField(card?.abilities) : [];
+  const imgSrc = card?.image_url_hi_res ?? card?.image_url ?? FALLBACK;
   const glowAccent = isPokemon ? 'amber' : 'indigo';
 
   const handleAddToCart = async () => {
@@ -692,7 +791,7 @@ export default function CardDetail() {
 
           {/* RIGHT — game-specific info panel */}
           {isPokemon ? (
-            <PokemonInfoPanel card={card} cardTypes={cardTypes} purchaseBox={purchaseBox} trustRow={trustRow} />
+            <PokemonInfoPanel card={card} cardTypes={cardTypes} attacks={attacks} abilities={abilities} purchaseBox={purchaseBox} trustRow={trustRow} />
           ) : (
             <RiftboundInfoPanel card={card} cardTypes={cardTypes} purchaseBox={purchaseBox} trustRow={trustRow} />
           )}
@@ -810,6 +909,11 @@ export default function CardDetail() {
                 );
               })}
             </div>
+          )}
+
+          {/* Mobile: Pokemon attacks & abilities */}
+          {isPokemon && (attacks.length > 0 || abilities.length > 0) && (
+            <AttacksSection attacks={attacks} abilities={abilities} />
           )}
 
           {/* Mobile purchase box */}

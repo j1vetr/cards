@@ -2254,6 +2254,8 @@ export class DbStorage implements IStorage {
     rarity?: string | null;
     cardTypes?: string[];
     hp?: number | null;
+    attacks?: Array<{ name: string; cost: string[]; convertedEnergyCost: number; damage: string; text: string }> | null;
+    abilities?: Array<{ name: string; text: string; type: string }> | null;
     artist?: string | null;
     imageUrl?: string | null;
     imageUrlHiRes?: string | null;
@@ -2453,7 +2455,7 @@ export class DbStorage implements IStorage {
     const result = await db.execute(sql`
       SELECT
         c.id, c.name, c.slug, c.card_number, c.rarity, c.card_types,
-        c.hp, c.artist, c.image_url, c.image_url_hi_res, c.description,
+        c.hp, c.attacks, c.abilities, c.artist, c.image_url, c.image_url_hi_res, c.description,
         c.api_source, c.is_featured, c.is_new, c.created_at,
         cs.id AS set_id, cs.name AS set_name, cs.slug AS set_slug,
         cs.series AS set_series, cs.release_date AS set_release_date,

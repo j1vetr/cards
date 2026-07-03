@@ -19,6 +19,20 @@ export interface PokemonSet {
   images: { symbol: string; logo: string };
 }
 
+export interface PokemonCardAttack {
+  name: string;
+  cost: string[];
+  convertedEnergyCost: number;
+  damage: string;
+  text: string;
+}
+
+export interface PokemonCardAbility {
+  name: string;
+  text: string;
+  type: string;
+}
+
 export interface PokemonCard {
   id: string;
   name: string;
@@ -29,6 +43,8 @@ export interface PokemonCard {
   artist?: string;
   images: { small: string; large: string };
   set: { id: string; name: string };
+  attacks?: PokemonCardAttack[];
+  abilities?: PokemonCardAbility[];
 }
 
 function pokemonHeaders(apiKey?: string): Record<string, string> {
@@ -104,6 +120,8 @@ export function mapPokemonCardToDb(
   rarity: string | null;
   cardTypes: string[];
   hp: number | null;
+  attacks: PokemonCardAttack[];
+  abilities: PokemonCardAbility[];
   artist: string | null;
   imageUrl: string | null;
   imageUrlHiRes: string | null;
@@ -119,6 +137,18 @@ export function mapPokemonCardToDb(
     rarity: card.rarity ?? null,
     cardTypes: card.types ?? [],
     hp: card.hp ? parseInt(card.hp, 10) || null : null,
+    attacks: (card.attacks ?? []).map((a) => ({
+      name: a.name ?? "",
+      cost: a.cost ?? [],
+      convertedEnergyCost: a.convertedEnergyCost ?? 0,
+      damage: a.damage ?? "",
+      text: a.text ?? "",
+    })),
+    abilities: (card.abilities ?? []).map((ab) => ({
+      name: ab.name ?? "",
+      text: ab.text ?? "",
+      type: ab.type ?? "Ability",
+    })),
     artist: card.artist ?? null,
     imageUrl: card.images?.small ?? null,
     imageUrlHiRes: card.images?.large ?? null,

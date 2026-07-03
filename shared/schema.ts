@@ -203,6 +203,18 @@ export const cards = pgTable("cards", {
   rarity: text("rarity"),                    // "Common" | "Rare" | "Ultra Rare" | etc.
   cardTypes: jsonb("card_types").$type<string[]>().default([]).notNull(), // ["Fire", "Fighting"]
   hp: integer("hp"),                         // Pokemon HP (null for non-Pokemon or Riftbound)
+  attacks: jsonb("attacks").$type<Array<{
+    name: string;
+    cost: string[];
+    convertedEnergyCost: number;
+    damage: string;
+    text: string;
+  }>>().default([]),
+  abilities: jsonb("abilities").$type<Array<{
+    name: string;
+    text: string;
+    type: string;
+  }>>().default([]),
   artist: text("artist"),
   imageUrl: text("image_url"),
   imageUrlHiRes: text("image_url_hi_res"),

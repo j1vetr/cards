@@ -57,6 +57,10 @@ CREATE TABLE IF NOT EXISTS cards (
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_card_api ON cards(api_source, api_id)
   WHERE api_source IS NOT NULL AND api_id IS NOT NULL;
 
+-- Attacks & abilities columns (added after initial schema)
+ALTER TABLE cards ADD COLUMN IF NOT EXISTS attacks  JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE cards ADD COLUMN IF NOT EXISTS abilities JSONB NOT NULL DEFAULT '[]';
+
 CREATE TABLE IF NOT EXISTS card_listings (
   id         VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
   card_id    VARCHAR NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
