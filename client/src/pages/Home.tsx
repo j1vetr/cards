@@ -48,18 +48,18 @@ const FAN_CFG = {
       { rotate: 28,  x: 152,  y: 28, delay: 0.38 },
     ],
     w: 118, h: 165,
-    containerW: 370, containerH: 270,
+    containerW: 370, containerH: 260,
   },
   desktop: {
     positions: [
-      { rotate: -22, x: -220, y: 40,  delay: 0.06 },
-      { rotate: -9,  x: -108, y: 12,  delay: 0.14 },
-      { rotate: 0,   x: 0,    y: -18, delay: 0.22 },
-      { rotate: 9,   x: 108,  y: 12,  delay: 0.30 },
-      { rotate: 22,  x: 220,  y: 40,  delay: 0.38 },
+      { rotate: -22, x: -234, y: 50,  delay: 0.06 },
+      { rotate: -9,  x: -115, y: 18,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -10, delay: 0.22 },
+      { rotate: 9,   x: 115,  y: 18,  delay: 0.30 },
+      { rotate: 22,  x: 234,  y: 50,  delay: 0.38 },
     ],
-    w: 240, h: 336,
-    containerW: 660, containerH: 420,
+    w: 265, h: 371,
+    containerW: 720, containerH: 480,
   },
 };
 
@@ -189,8 +189,8 @@ function HeroSection() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
 
         {/* Main content grid */}
-        <div className="flex-1 flex items-center py-6 lg:py-4">
-          <div className="flex flex-col lg:grid lg:gap-4 lg:items-center w-full"
+        <div className="flex-1 flex items-center pt-2 pb-0 lg:py-4">
+          <div className="flex flex-col lg:grid lg:gap-4 lg:items-start w-full"
             style={{ gridTemplateColumns: '44% 56%' }}
           >
             {/* Card fan — top on mobile, right col on desktop */}
@@ -251,10 +251,10 @@ function HeroSection() {
                 </Link>
               </motion.div>
 
-              {/* Trust badges row */}
+              {/* Trust badges row — desktop only */}
               <motion.div
                 variants={fadeUp}
-                className="flex items-center mt-6 justify-center lg:justify-start"
+                className="hidden lg:flex items-center mt-6 justify-center lg:justify-start"
               >
                 {HERO_TRUST_ITEMS.map((item, i) => (
                   <div key={i} className="flex items-center">
@@ -278,7 +278,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="pb-10 lg:pb-12 flex items-center justify-center gap-8 sm:gap-14 lg:gap-20"
+          className="pb-6 lg:pb-12 pt-2 lg:pt-0 flex items-center justify-center gap-8 sm:gap-14 lg:gap-20"
         >
           <Link href="/oyun/pokemon" data-testid="link-hero-pokemon-logo">
             <motion.div
