@@ -3,20 +3,33 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
-import { useCardSet } from '@/hooks/useTcg';
-import { useCards } from '@/hooks/useTcg';
+import { useCardSet, useCards } from '@/hooks/useTcg';
 import { useState, useCallback } from 'react';
 import { useSearch, useLocation } from 'wouter';
-import { ChevronRight, ChevronLeft, Loader2, Search, X, Calendar, Layers } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, Search, X, Calendar, Hash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const LIMIT = 24;
+
 const SORT_OPTIONS = [
-  { value: 'newest', label: 'En Yeni' },
-  { value: 'price_asc', label: 'Fiyat: Düşükten Yükseğe' },
+  { value: 'newest',     label: 'En Yeni' },
+  { value: 'price_asc',  label: 'Fiyat: Düşükten Yükseğe' },
   { value: 'price_desc', label: 'Fiyat: Yüksekten Düşüğe' },
-  { value: 'name_asc', label: 'İsme Göre (A-Z)' },
+  { value: 'name_asc',   label: 'İsme Göre (A–Z)' },
 ];
+
+const GAME_ACCENT: Record<string, { color: string; dim: string; glow: string }> = {
+  pokemon:   { color: '#f59e0b', dim: 'rgba(245,158,11,0.15)', glow: 'rgba(245,158,11,0.3)' },
+  riftbound: { color: '#818cf8', dim: 'rgba(129,140,248,0.15)', glow: 'rgba(129,140,248,0.3)' },
+};
+const DEFAULT_ACCENT = GAME_ACCENT.riftbound;
+
+function formatDate(raw?: string | null): string | null {
+  if (!raw) return null;
+  const d = new Date(raw.replace(/\//g, '-') + 'T00:00:00');
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 export default function CardSet() {
   const params = useParams<{ slug: string }>();
@@ -24,10 +37,10 @@ export default function CardSet() {
   const searchStr = useSearch();
   const [, navigate] = useLocation();
 
-  const urlParams = new URLSearchParams(searchStr);
-  const sort = urlParams.get('sort') || 'name_asc';
-  const page = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
-  const search = urlParams.get('search') || '';
+  const urlParams  = new URLSearchParams(searchStr);
+  const sort       = urlParams.get('sort') || 'name_asc';
+  const page       = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
+  const search     = urlParams.get('search') || '';
   const [localSearch, setLocalSearch] = useState(search);
 
   const { data: set, isLoading: setLoading } = useCardSet(slug);
@@ -39,9 +52,11 @@ export default function CardSet() {
     search: search || undefined,
   });
 
-  const cards = data?.cards ?? [];
-  const total = data?.total ?? 0;
+  const cards      = data?.cards ?? [];
+  const total      = data?.total ?? 0;
   const totalPages = Math.ceil(total / LIMIT);
+
+  const accent = set?.game_slug ? (GAME_ACCENT[set.game_slug] ?? DEFAULT_ACCENT) : DEFAULT_ACCENT;
 
   const setFilter = useCallback((updates: Record<string, string | null>, resetPage = true) => {
     const p = new URLSearchParams(searchStr);
@@ -53,12 +68,20 @@ export default function CardSet() {
     navigate(`/set/${slug}` + (p.toString() ? '?' + p.toString() : ''), { replace: true });
   }, [searchStr, navigate, slug]);
 
+  // Pagination page numbers with ellipsis
+  const pageNumbers: number[] = (() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, -1, totalPages];
+    if (page >= totalPages - 3) return [1, -1, totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, -1, page - 1, page, page + 1, -2, totalPages];
+  })();
+
   if (setLoading) {
     return (
       <div className="min-h-screen" style={{ background: '#09090f' }}>
         <Header />
         <div className="flex items-center justify-center py-32">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent.color }} />
         </div>
         <Footer />
       </div>
@@ -70,8 +93,12 @@ export default function CardSet() {
       <div className="min-h-screen" style={{ background: '#09090f' }}>
         <Header />
         <div className="max-w-2xl mx-auto px-6 py-32 text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Set bulunamadı</h1>
-          <Link href="/magaza"><button className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors">Mağazaya Dön</button></Link>
+          <h1 className="text-2xl font-bold text-white mb-4">Set Bulunamadı</h1>
+          <Link href="/magaza">
+            <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors">
+              Mağazaya Dön
+            </button>
+          </Link>
         </div>
         <Footer />
       </div>
@@ -80,106 +107,142 @@ export default function CardSet() {
 
   return (
     <div className="min-h-screen" style={{ background: '#09090f' }}>
-      <SEO title={`${set.name} — ${set.game_name} | Ecarte TCG`} description={`${set.name} setindeki kartları satın al. ${set.game_name} TCG.`} />
+      <SEO
+        title={`${set.name} — ${set.game_name} | Go|Cards`}
+        description={`${set.name} setindeki kartları satın al. ${set.game_name}.`}
+      />
       <Header />
 
       {/* ── Set Header ── */}
-      <div className="relative overflow-hidden border-b border-white/[0.07]"
-        style={{ background: 'linear-gradient(135deg, #0f1020 0%, #12122a 50%, #0d0d1a 100%)' }}>
+      <div
+        className="relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0c0c18 0%, #10101f 50%, #0a0a14 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 30% 60%, rgba(99,102,241,0.14) 0%, transparent 60%)' }} />
-        <div className="relative max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          style={{ background: `radial-gradient(ellipse at 30% 60%, ${accent.dim} 0%, transparent 60%)` }} />
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px"
+          style={{ background: `linear-gradient(to right, transparent, ${accent.color}50, transparent)` }} />
 
-          <nav className="flex items-center gap-1.5 text-xs text-zinc-600 mb-7 flex-wrap">
-            <Link href="/magaza" className="hover:text-zinc-400 transition-colors">Mağaza</Link>
+        <div className="relative max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-zinc-500 mb-8 flex-wrap">
+            <Link href="/" className="hover:text-zinc-300 transition-colors">Ana Sayfa</Link>
             <ChevronRight className="w-3 h-3" />
-            <Link href={`/oyun/${set.game_slug}`} className="hover:text-zinc-400 transition-colors">{set.game_name}</Link>
+            <Link href={`/oyun/${set.game_slug}`} className="hover:text-zinc-300 transition-colors">
+              {set.game_name}
+            </Link>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-zinc-400">{set.name}</span>
+            <span className="font-medium text-zinc-300">{set.name}</span>
           </nav>
 
-          <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
+          <div className="flex items-center gap-6 sm:gap-10 flex-wrap">
+            {/* Set logo */}
             {set.logo_url && (
-              <img src={set.logo_url} alt={set.name}
-                className="h-14 sm:h-16 object-contain shrink-0"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(99,102,241,0.4)) brightness(1.05)' }}
-              />
+              <div className="shrink-0">
+                <img
+                  src={set.logo_url}
+                  alt={set.name}
+                  className="h-16 sm:h-20 object-contain"
+                  style={{ filter: `drop-shadow(0 0 24px ${accent.glow}) brightness(1.05)` }}
+                />
+              </div>
             )}
+
+            {/* Set info */}
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight tracking-tight mb-2"
-                style={{ fontFamily: 'var(--font-display)' }}>
+              <h1
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight tracking-tight mb-3"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
                 {set.name}
               </h1>
               <div className="flex items-center gap-3 flex-wrap">
                 {set.series && (
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="w-3 h-3 text-zinc-600" />
-                    <span className="text-xs text-zinc-500">{set.series}</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+                    <Hash className="w-3 h-3 text-zinc-600" />
+                    {set.series}
+                  </span>
                 )}
                 {set.release_date && (
-                  <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">
                     <Calendar className="w-3 h-3 text-zinc-600" />
-                    <span className="text-xs text-zinc-500">{set.release_date}</span>
-                  </div>
+                    {formatDate(set.release_date)}
+                  </span>
                 )}
                 {set.total_cards && (
-                  <span className="text-xs text-zinc-500">{set.total_cards} kart</span>
+                  <span className="text-xs font-medium text-zinc-400">{set.total_cards} Kart</span>
                 )}
                 {total > 0 && (
-                  <span className="text-xs font-semibold text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30 bg-indigo-500/10">
-                    {total} satışta
+                  <span
+                    className="text-xs font-bold px-3 py-1 rounded-full"
+                    style={{ background: accent.dim, color: accent.color, border: `1px solid ${accent.color}40` }}
+                  >
+                    {total} Satışta
                   </span>
                 )}
               </div>
             </div>
+
+            {/* Set symbol */}
             {set.symbol_url && (
-              <img src={set.symbol_url} alt=""
-                className="h-10 object-contain shrink-0 opacity-60"
-              />
+              <img src={set.symbol_url} alt="" className="h-12 object-contain shrink-0 opacity-70" />
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div className="sticky top-0 z-10 border-b border-white/[0.06]"
-        style={{ background: 'rgba(9,9,15,0.92)', backdropFilter: 'blur(12px)' }}>
+      {/* ── Sticky Filter Bar ── */}
+      <div
+        className="sticky top-0 z-10 border-b"
+        style={{ background: 'rgba(9,9,15,0.94)', backdropFilter: 'blur(14px)', borderColor: 'rgba(255,255,255,0.07)' }}
+      >
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3 flex-wrap">
+            {/* Search */}
             <div className="relative flex-1 min-w-[180px] max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Kart ara..."
+                placeholder="Kart Ara..."
                 value={localSearch}
                 onChange={e => {
                   setLocalSearch(e.target.value);
                   clearTimeout((window as any).__searchTimeout);
                   (window as any).__searchTimeout = setTimeout(() => setFilter({ search: e.target.value || null }), 400);
                 }}
-                className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-zinc-200 placeholder-zinc-600 transition-colors"
-                style={{ background: 'rgba(255,255,255,0.05)' }}
+                className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border border-white/10 focus:outline-none text-zinc-200 placeholder-zinc-600 transition-colors"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
               />
               {localSearch && (
                 <button onClick={() => { setLocalSearch(''); setFilter({ search: null }); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <X className="w-3 h-3 text-zinc-500" />
+                  <X className="w-3 h-3 text-zinc-500 hover:text-zinc-300 transition-colors" />
                 </button>
               )}
             </div>
 
+            {/* Sort */}
             <Select value={sort} onValueChange={v => setFilter({ sort: v })}>
-              <SelectTrigger className="w-48 text-sm border-white/10 text-zinc-300" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <SelectTrigger
+                className="w-52 text-sm border-white/10 text-zinc-200"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SORT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                {SORT_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            <p className="text-xs text-zinc-600 ml-auto tabular-nums">
-              {total.toLocaleString('tr-TR')} kart
+            {/* Count */}
+            <p className="text-sm font-semibold text-zinc-300 ml-auto tabular-nums">
+              {total.toLocaleString('tr-TR')} Kart
             </p>
           </div>
         </div>
@@ -202,15 +265,18 @@ export default function CardSet() {
         ) : cards.length === 0 ? (
           <div className="text-center py-24">
             <div className="text-5xl mb-4">🃏</div>
-            <p className="text-base font-semibold text-zinc-400 mb-1">
-              {search ? 'Arama sonucu bulunamadı' : 'Bu sette satışta kart yok'}
+            <p className="text-base font-bold text-zinc-200 mb-1">
+              {search ? 'Arama Sonucu Bulunamadı' : 'Bu Sette Satışta Kart Yok'}
             </p>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-zinc-500">
               {search ? `"${search}" için eşleşen kart bulunamadı` : 'Henüz listeleme yapılmamış'}
             </p>
             {search && (
-              <button onClick={() => { setLocalSearch(''); setFilter({ search: null }); }}
-                className="mt-5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+              <button
+                onClick={() => { setLocalSearch(''); setFilter({ search: null }); }}
+                className="mt-5 text-sm font-semibold transition-colors hover:opacity-80"
+                style={{ color: accent.color }}
+              >
                 Aramayı Temizle
               </button>
             )}
@@ -221,26 +287,47 @@ export default function CardSet() {
           </div>
         )}
 
+        {/* ── Pagination ── */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-10">
-            <button onClick={() => setFilter({ page: String(page - 1) }, false)} disabled={page <= 1}
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 disabled:opacity-30 transition-colors"
-              style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <div className="flex items-center justify-center gap-2 mt-12">
+            <button
+              onClick={() => setFilter({ page: String(page - 1) }, false)}
+              disabled={page <= 1}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border transition-all disabled:opacity-25"
+              style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const p = totalPages <= 7 ? i + 1 : (page <= 4 ? i + 1 : (page >= totalPages - 3 ? totalPages - 6 + i : page - 3 + i));
-              return (
-                <button key={p} onClick={() => setFilter({ page: String(p) }, false)}
-                  className={`w-9 h-9 text-sm rounded-xl border transition-colors ${p === page ? 'bg-indigo-600 text-white border-indigo-600' : 'text-zinc-400 border-white/10 hover:text-white hover:border-white/20'}`}
-                  style={p !== page ? { background: 'rgba(255,255,255,0.04)' } : {}}>
+
+            {pageNumbers.map((p, idx) =>
+              p < 0 ? (
+                <span key={`dot-${idx}`} className="w-10 h-10 flex items-center justify-center text-zinc-500 text-sm select-none">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setFilter({ page: String(p) }, false)}
+                  className="w-10 h-10 text-sm font-bold rounded-xl border transition-all"
+                  style={p === page ? {
+                    background: accent.color,
+                    borderColor: accent.color,
+                    color: gameSlugIsDark(set.game_slug) ? '#fff' : '#000',
+                  } : {
+                    background: 'rgba(255,255,255,0.07)',
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    color: 'rgba(255,255,255,0.85)',
+                  }}
+                >
                   {p}
                 </button>
-              );
-            })}
-            <button onClick={() => setFilter({ page: String(page + 1) }, false)} disabled={page >= totalPages}
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 disabled:opacity-30 transition-colors"
-              style={{ background: 'rgba(255,255,255,0.04)' }}>
+              )
+            )}
+
+            <button
+              onClick={() => setFilter({ page: String(page + 1) }, false)}
+              disabled={page >= totalPages}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border transition-all disabled:opacity-25"
+              style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -250,4 +337,8 @@ export default function CardSet() {
       <Footer />
     </div>
   );
+}
+
+function gameSlugIsDark(slug?: string) {
+  return slug === 'riftbound';
 }
