@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, Search, X, User, LogOut, UserPlus, ArrowUpRight, ChevronDown, Layers, Zap } from 'lucide-react';
+import { ShoppingBag, Search, X, User, LogOut, UserPlus, ArrowUpRight, ChevronDown, ChevronRight, Layers, Zap, ShieldCheck, Lock, Gift } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
@@ -169,34 +169,47 @@ export function Header() {
       <AnimatePresence initial={false}>
         {!announceClosed && (
           <motion.div
-            initial={{ height: 36, opacity: 1 }}
+            initial={{ height: 40, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.4, 0, 1, 1] }}
-            className="relative overflow-hidden text-white h-9 sticky top-0 z-50"
-            style={{ background: ANNOUNCE_BG, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            className="relative overflow-hidden text-white sticky top-0 z-50"
+            style={{ height: 40, background: ANNOUNCE_BG, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
             data-testid="bar-announcement"
           >
-            <style>{`
-              @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-              .marquee-track { display: flex; width: max-content; animation: marquee-scroll 30s linear infinite; }
-              .marquee-track:hover { animation-play-state: paused; }
-            `}</style>
-            <div className="flex items-center h-9 overflow-hidden">
-              <div className="marquee-track text-[10px] tracking-[0.22em] uppercase font-medium whitespace-nowrap text-white/45">
-                {[0, 1].map(i => (
-                  <span key={i} className="flex items-center">
-                    <span className="px-8">Pokemon TCG &amp; Riftbound</span>
-                    <span className="text-white/20">✦</span>
-                    <span className="px-8">500 ₺ ve Üzeri Ücretsiz Kargo</span>
-                    <span className="text-white/20">✦</span>
-                    <span className="px-8">Türkiye'nin TCG Marketplace'i</span>
-                    <span className="text-white/20">✦</span>
-                    <span className="px-8">Yeni Setler Mevcut</span>
-                    <span className="text-white/20">✦</span>
-                    <span className="px-8">Hızlı Teslimat</span>
-                    <span className="text-white/20">✦</span>
-                  </span>
+            <div className="flex items-center h-full px-4 lg:px-10">
+              {/* Desktop: 4 items with dividers */}
+              <div className="hidden lg:flex items-center justify-center gap-0 flex-1">
+                {[
+                  { icon: Zap,         text: '500₺+ Siparişlerde Kargo Bedava', highlight: true },
+                  { icon: ShieldCheck, text: 'Orijinal Kart Garantisi',          highlight: false },
+                  { icon: Lock,        text: 'Hızlı ve Güvenli Alışveriş',       highlight: false },
+                  { icon: Gift,        text: 'Yeni Setler Stokta!',              highlight: false },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center">
+                    {i > 0 && <div className="w-px h-4 bg-white/12 mx-6" />}
+                    <div className="flex items-center gap-1.5">
+                      <item.icon
+                        className="w-3 h-3 shrink-0"
+                        style={{ color: item.highlight ? '#818cf8' : 'rgba(255,255,255,0.3)' }}
+                      />
+                      <span
+                        className="text-[11px] font-medium tracking-wide whitespace-nowrap"
+                        style={{ color: item.highlight ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.42)' }}
+                      >
+                        {item.text}
+                      </span>
+                    </div>
+                  </div>
                 ))}
+              </div>
+              {/* Mobile: single item */}
+              <div className="lg:hidden flex items-center justify-center gap-2 flex-1">
+                <Zap className="w-3 h-3 text-indigo-400 shrink-0" />
+                <span className="text-[11px] font-medium text-white/55 tracking-wide">
+                  500₺ ve üzeri siparişlerde{' '}
+                  <span className="text-indigo-400 font-semibold">KARGO BEDAVA</span>
+                </span>
+                <ChevronRight className="w-3 h-3 text-white/30 shrink-0" />
               </div>
             </div>
             <button
@@ -277,7 +290,7 @@ export function Header() {
               <img
                 src="/gocards-logo-white.png"
                 alt="Go|Cards"
-                className="h-10 w-auto object-contain"
+                className="h-12 w-auto object-contain"
                 data-testid="img-logo"
               />
             </Link>

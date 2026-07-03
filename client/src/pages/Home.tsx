@@ -18,7 +18,6 @@ import {
   Layers,
   Zap,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
 // ── Animations ─────────────────────────────────────────────────────────────
 
@@ -42,29 +41,32 @@ const staggerFast = {
 const FAN_CFG = {
   mobile: {
     positions: [
-      { rotate: -26, x: -115, y: 20, delay: 0.08 },
-      { rotate: -9,  x: -38,  y: -8, delay: 0.16 },
-      { rotate: 9,   x: 38,   y: -8, delay: 0.24 },
-      { rotate: 26,  x: 115,  y: 20, delay: 0.32 },
+      { rotate: -28, x: -152, y: 28, delay: 0.06 },
+      { rotate: -12, x: -68,  y: 4,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -18, delay: 0.22 },
+      { rotate: 12,  x: 68,   y: 4,  delay: 0.30 },
+      { rotate: 28,  x: 152,  y: 28, delay: 0.38 },
     ],
-    w: 105, h: 147,
-    containerW: 310, containerH: 230,
+    w: 118, h: 165,
+    containerW: 370, containerH: 270,
   },
   desktop: {
     positions: [
-      { rotate: -26, x: -195, y: 36, delay: 0.08 },
-      { rotate: -9,  x: -65,  y: -14, delay: 0.18 },
-      { rotate: 9,   x: 65,   y: -14, delay: 0.28 },
-      { rotate: 26,  x: 195,  y: 36, delay: 0.38 },
+      { rotate: -28, x: -268, y: 38, delay: 0.06 },
+      { rotate: -13, x: -122, y: 8,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -28, delay: 0.22 },
+      { rotate: 13,  x: 122,  y: 8,  delay: 0.30 },
+      { rotate: 28,  x: 268,  y: 38, delay: 0.38 },
     ],
-    w: 175, h: 245,
-    containerW: 540, containerH: 400,
+    w: 188, h: 263,
+    containerW: 650, containerH: 440,
   },
 };
 
 const CARD_BG_FALLBACK = [
   'from-violet-700 to-indigo-800',
   'from-indigo-700 to-blue-800',
+  'from-indigo-600 to-violet-700',
   'from-sky-600 to-indigo-700',
   'from-blue-700 to-violet-800',
 ];
@@ -79,125 +81,166 @@ function CardFan() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const { data } = useQuery<{ cards: CardPublic[]; total: number }>({
-    queryKey: ['/api/cards', 'fan'],
-    queryFn: async () => {
-      const r = await fetch('/api/cards?limit=40&sort=newest');
-      if (!r.ok) throw new Error();
-      return r.json();
-    },
-    staleTime: 300_000,
-  });
+  const { data: riftData } = useCards({ game: 'riftbound', limit: 12, sort: 'newest' });
+  const { data: pokeData } = useCards({ game: 'pokemon', limit: 12, sort: 'newest' });
 
   const fanImages = useMemo(() => {
-    const all = (data?.cards ?? []).filter(c => c.image_url);
-    const pokemon   = [...all.filter(c => c.game_slug === 'pokemon')].sort(() => Math.random() - 0.5);
-    const riftbound = [...all.filter(c => c.game_slug === 'riftbound')].sort(() => Math.random() - 0.5);
-    const picks = [pokemon[0], pokemon[1], riftbound[0], riftbound[1]];
-    const anyFallback = [...all].sort(() => Math.random() - 0.5);
-    return picks.map((c, i) => c?.image_url ?? anyFallback[i]?.image_url ?? null);
-  }, [data]);
+    const rift = [...(riftData?.cards ?? []).filter(c => c.image_url)].sort(() => Math.random() - 0.5);
+    const poke = [...(pokeData?.cards ?? []).filter(c => c.image_url)].sort(() => Math.random() - 0.5);
+    // 3 Riftbound (center + flanks) + 2 Pokemon (outer positions)
+    return [rift[0], rift[1], rift[2], poke[0], poke[1]].map(c => c?.image_url ?? null);
+  }, [riftData, pokeData]);
 
   const cfg = isDesktop ? FAN_CFG.desktop : FAN_CFG.mobile;
   const { positions, w, h, containerW, containerH } = cfg;
+  const centerIdx = Math.floor(positions.length / 2);
 
   return (
     <div
       className="relative flex items-end justify-center select-none pointer-events-none"
       style={{ width: containerW, height: containerH }}
     >
-      {positions.map((pos, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 60, rotate: pos.rotate }}
-          animate={{ opacity: 1, y: pos.y, x: pos.x, rotate: pos.rotate }}
-          transition={{ duration: 0.7, delay: pos.delay, ease: 'easeOut' }}
-          style={{ position: 'absolute', bottom: 0 }}
-        >
+      {/* Platform glow ring */}
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{
+          width: '130%',
+          height: '52%',
+          background: 'radial-gradient(ellipse 100% 65% at 50% 100%, rgba(99,102,241,0.6) 0%, rgba(124,58,237,0.32) 38%, rgba(79,70,229,0.1) 68%, transparent 82%)',
+          filter: 'blur(26px)',
+        }}
+      />
+      {/* Ambient outer glow */}
+      <div
+        className="absolute -inset-10 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 85%, rgba(79,70,229,0.22), transparent 68%)',
+          filter: 'blur(48px)',
+        }}
+      />
+
+      {positions.map((pos, i) => {
+        const isCenter = i === centerIdx;
+        const depthZ = 10 - Math.abs(i - centerIdx) * 2;
+        return (
           <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 3.6 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.35 }}
-            className="overflow-hidden shadow-2xl"
-            style={{ width: w, height: h, borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)' }}
+            key={i}
+            initial={{ opacity: 0, y: 80, rotate: pos.rotate }}
+            animate={{ opacity: 1, y: pos.y, x: pos.x, rotate: pos.rotate }}
+            transition={{ duration: 0.75, delay: pos.delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] }}
+            style={{ position: 'absolute', bottom: 0, zIndex: depthZ }}
           >
-            {fanImages[i] ? (
-              <img src={fanImages[i]!} alt="" className="w-full h-full object-contain" style={{ background: '#1a1a3e' }} />
-            ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[i]}`} />
-            )}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 3.8 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
+              className="overflow-hidden"
+              style={{
+                width: w,
+                height: h,
+                borderRadius: 12,
+                border: isCenter
+                  ? '1.5px solid rgba(129,140,248,0.55)'
+                  : '1px solid rgba(255,255,255,0.15)',
+                boxShadow: isCenter
+                  ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
+                  : '0 14px 44px rgba(0,0,0,0.55)',
+              }}
+            >
+              {fanImages[i] ? (
+                <img
+                  src={fanImages[i]!}
+                  alt=""
+                  className="w-full h-full object-contain"
+                  style={{ background: '#1a1a3e' }}
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[i % CARD_BG_FALLBACK.length]}`} />
+              )}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 // ── Hero ────────────────────────────────────────────────────────────────────
 
+const HERO_TRUST_ITEMS = [
+  { icon: ShieldCheck, title: '%100 Orijinal', sub: 'Kart Garantisi' },
+  { icon: Truck,       title: 'Hızlı Kargo',   sub: '1–2 İş Günü' },
+  { icon: Package,     title: 'Güvenli Ödeme', sub: '256-bit SSL' },
+];
+
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden bg-[#0d1427] min-h-[620px] flex flex-col items-center"
+      className="relative overflow-hidden bg-[#0d1427] flex flex-col items-center"
       data-testid="section-hero"
     >
-      {/* background gradient orbs */}
+      {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-indigo-700/20 blur-[120px]" />
-        <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-violet-700/15 blur-[100px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.12),transparent_60%)]" />
+        <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full bg-indigo-700/18 blur-[130px]" />
+        <div className="absolute top-1/2 -left-32 w-[500px] h-[500px] rounded-full bg-violet-800/12 blur-[110px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.14),transparent_58%)]" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-20 lg:py-24 w-full flex-1 flex items-center">
-        <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center w-full">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-16 lg:py-20 w-full flex-1 flex items-center">
+        <div className="flex flex-col lg:grid lg:gap-8 lg:items-center w-full"
+          style={{ gridTemplateColumns: '45% 55%' }}
+        >
 
-          {/* card fan — top on mobile, right on desktop */}
+          {/* Card fan — top on mobile, right col on desktop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="flex justify-center lg:justify-end order-1 lg:order-2 mb-6 lg:mb-0"
+            transition={{ duration: 0.5, delay: 0.04 }}
+            className="flex justify-center lg:justify-end order-1 lg:order-2 mb-4 lg:mb-0 overflow-visible"
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-indigo-600/15 blur-[100px] rounded-full scale-125" />
-              <CardFan />
-            </div>
+            <CardFan />
           </motion.div>
 
-          {/* text — below on mobile, left on desktop */}
+          {/* Text — below on mobile, left col on desktop */}
           <motion.div
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="text-center lg:text-left order-2 lg:order-1"
+            className="text-center lg:text-left order-2 lg:order-1 flex flex-col items-center lg:items-start"
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/25 rounded-full px-3 py-1 mb-5">
-              <Sparkles className="w-3 h-3 text-indigo-400" />
-              <span className="text-xs text-indigo-300 font-medium tracking-wide">Türkiye'nin TCG Pazaryeri</span>
+            {/* Filled badge */}
+            <motion.div
+              variants={fadeUp}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+              style={{ background: 'rgba(79,70,229,0.85)', backdropFilter: 'blur(4px)' }}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-indigo-200" />
+              <span className="text-[11px] text-indigo-100 font-semibold tracking-wider uppercase">Güvenle Alışveriş Yap</span>
             </motion.div>
 
             <motion.h1
               variants={fadeUp}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-5"
+              className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold text-white leading-[1.08] mb-5"
               style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
             >
               Pokemon TCG &amp;
               <br />
-              <span className="text-indigo-400">Riftbound</span>
+              <span style={{ color: '#818cf8' }}>Riftbound</span>
             </motion.h1>
 
-            <motion.p variants={fadeUp} className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+            <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
               Aradığın kartı bul, güvenle sipariş ver.
               <br />
-              Hızlı kargo, orijinal kart garantisi.
+              Hızlı kargo, orijinal kart garantisi ve en iyi fiyatlar.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+            {/* CTA buttons */}
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto">
               <Link href="/magaza">
                 <motion.button
                   data-testid="btn-hero-magaza"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40"
+                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40 w-full sm:w-auto justify-center"
                 >
                   Kartlara Bak
                   <ChevronRight className="w-4 h-4" />
@@ -208,36 +251,96 @@ function HeroSection() {
                   data-testid="btn-hero-pokemon"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors"
+                  className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto justify-center"
                 >
-                  Pokemon TCG
+                  Pokémon TCG
+                  <ChevronRight className="w-4 h-4 opacity-50" />
                 </motion.button>
               </Link>
+            </motion.div>
+
+            {/* Trust badges row */}
+            <motion.div
+              variants={fadeUp}
+              className="flex items-start gap-5 sm:gap-7 mt-7 justify-center lg:justify-start flex-wrap"
+            >
+              {HERO_TRUST_ITEMS.map((item, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(99,102,241,0.15)' }}>
+                    <item.icon className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[12px] font-semibold text-white/85 leading-tight">{item.title}</div>
+                    <div className="text-[10px] text-white/38 leading-tight">{item.sub}</div>
+                  </div>
+                </div>
+              ))}
             </motion.div>
           </motion.div>
 
         </div>
       </div>
 
-      {/* scroll indicator */}
+      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+        transition={{ delay: 1.6, duration: 0.6 }}
+        className="absolute bottom-5 left-1/2 -translate-x-1/2"
       >
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <ChevronDown className="w-5 h-5 text-white/25" strokeWidth={1.5} />
+        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>
+          <ChevronDown className="w-5 h-5 text-white/20" strokeWidth={1.5} />
         </motion.div>
       </motion.div>
 
-      {/* bottom fade into next section */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
+      {/* Bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, transparent, #080e1c)' }} />
     </section>
+  );
+}
+
+// ── Stats bar ────────────────────────────────────────────────────────────────
+
+const STATS = [
+  { value: '50.000+', label: 'Mutlu Müşteri' },
+  { value: '100.000+', label: 'Kart Çeşidi' },
+  { value: '4.9/5', label: 'Müşteri Puanı' },
+  { value: '7/24', label: 'Destek' },
+];
+
+function StatsBar() {
+  return (
+    <div
+      className="border-y border-white/[0.05]"
+      style={{ background: '#060b14' }}
+      data-testid="section-stats"
+    >
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x divide-white/[0.05]">
+          {STATS.map((s, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07, duration: 0.4 }}
+              className="flex flex-col items-center justify-center py-6 lg:py-7 px-4 gap-0.5"
+              data-testid={`stat-item-${i}`}
+            >
+              <span
+                className="text-2xl lg:text-[1.75rem] font-bold text-white tracking-tight"
+                style={{ fontFamily: "'Oswald', sans-serif" }}
+              >
+                {s.value}
+              </span>
+              <span className="text-[11px] text-white/38">{s.label}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -618,6 +721,7 @@ export default function Home() {
       <MotionConfig reducedMotion="user">
         <main style={{ background: '#080e1c' }}>
           <HeroSection />
+          <StatsBar />
 
           <GameSection
             game="pokemon"
