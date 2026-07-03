@@ -544,8 +544,8 @@ export function Header() {
                   {/* Ana Sayfa */}
                   <motion.li variants={drawerStagger.item} className="border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                     <Link href="/" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-home">
-                      <span className="text-[14px] font-semibold text-white/75 group-hover:text-white transition-colors">Ana Sayfa</span>
-                      <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-indigo-400 transition-colors" />
+                      <span className="text-[14px] font-semibold text-white transition-colors">Ana Sayfa</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors" />
                     </Link>
                   </motion.li>
 
@@ -556,13 +556,21 @@ export function Header() {
                       className="group w-full flex items-center justify-between py-4"
                       data-testid="button-mobile-pokemon"
                     >
-                      <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'pokemon' ? 'text-yellow-400' : 'text-white/75 group-hover:text-white'}`}>
-                        Pokémon
+                      <span className="flex items-center gap-2.5">
+                        <img
+                          src="/icon-pokemon.svg"
+                          alt=""
+                          className="w-5 h-5 object-contain shrink-0"
+                          style={{ opacity: mobileAccordion === 'pokemon' ? 1 : 0.85 }}
+                        />
+                        <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'pokemon' ? 'text-[#CC0000]' : 'text-white'}`}>
+                          Pokémon
+                        </span>
                       </span>
                       <motion.div
                         animate={{ rotate: mobileAccordion === 'pokemon' ? 180 : 0 }}
                         transition={{ duration: 0.22 }}
-                        className="text-white/20"
+                        className="text-white/40"
                       >
                         <ChevronDown className="w-4 h-4" />
                       </motion.div>
@@ -576,23 +584,23 @@ export function Header() {
                           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                           className="overflow-hidden"
                         >
-                          <div className="pl-3 pb-3 border-l border-yellow-500/20 ml-1">
+                          <div className="pl-3 pb-3 border-l border-red-800/30 ml-1">
                             <Link
                               href="/oyun/pokemon"
                               onClick={() => setMobileOpen(false)}
-                              className="flex items-center py-2 text-[12px] font-semibold text-yellow-400/80 hover:text-yellow-400 transition-colors"
+                              className="flex items-center py-2 text-[12px] font-semibold text-[#CC0000] hover:text-red-400 transition-colors"
                             >
                               Tümünü Gör →
                             </Link>
                             {pokemonSets.slice(0, 12).map(set => (
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
-                                className="flex items-center py-2 text-[12px] text-white/45 hover:text-white/80 transition-colors">
+                                className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">
                                 {set.name}
                               </Link>
                             ))}
                             {pokemonSets.length > 12 && (
                               <Link href="/oyun/pokemon" onClick={() => setMobileOpen(false)}
-                                className="flex items-center py-2 text-[11px] text-white/25 hover:text-white/50 transition-colors">
+                                className="flex items-center py-2 text-[11px] text-white/35 hover:text-white/60 transition-colors">
                                 +{pokemonSets.length - 12} set daha
                               </Link>
                             )}
@@ -609,13 +617,21 @@ export function Header() {
                       className="group w-full flex items-center justify-between py-4"
                       data-testid="button-mobile-riftbound"
                     >
-                      <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'riftbound' ? 'text-indigo-400' : 'text-white/75 group-hover:text-white'}`}>
-                        Riftbound
+                      <span className="flex items-center gap-2.5">
+                        <img
+                          src="/icon-riftbound.svg"
+                          alt=""
+                          className="w-5 h-5 object-contain shrink-0"
+                          style={{ opacity: mobileAccordion === 'riftbound' ? 1 : 0.85 }}
+                        />
+                        <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'riftbound' ? 'text-[#EF7D00]' : 'text-white'}`}>
+                          Riftbound
+                        </span>
                       </span>
                       <motion.div
                         animate={{ rotate: mobileAccordion === 'riftbound' ? 180 : 0 }}
                         transition={{ duration: 0.22 }}
-                        className="text-white/20"
+                        className="text-white/40"
                       >
                         <ChevronDown className="w-4 h-4" />
                       </motion.div>
@@ -629,17 +645,17 @@ export function Header() {
                           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                           className="overflow-hidden"
                         >
-                          <div className="pl-3 pb-3 border-l border-indigo-500/20 ml-1">
+                          <div className="pl-3 pb-3 border-l border-orange-700/30 ml-1">
                             <Link
                               href="/oyun/riftbound"
                               onClick={() => setMobileOpen(false)}
-                              className="flex items-center py-2 text-[12px] font-semibold text-indigo-400/80 hover:text-indigo-400 transition-colors"
+                              className="flex items-center py-2 text-[12px] font-semibold text-[#EF7D00] hover:text-orange-400 transition-colors"
                             >
                               Tümünü Gör →
                             </Link>
                             {riftboundSets.map(set => (
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
-                                className="flex items-center py-2 text-[12px] text-white/45 hover:text-white/80 transition-colors">
+                                className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">
                                 {set.name}
                               </Link>
                             ))}
@@ -652,8 +668,8 @@ export function Header() {
                   {/* İletişim */}
                   <motion.li variants={drawerStagger.item} className="border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                     <Link href="/iletisim" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-iletisim">
-                      <span className="text-[14px] font-semibold text-white/75 group-hover:text-white transition-colors">İletişim</span>
-                      <ArrowUpRight className="w-4 h-4 text-white/20 group-hover:text-indigo-400 transition-colors" />
+                      <span className="text-[14px] font-semibold text-white transition-colors">İletişim</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors" />
                     </Link>
                   </motion.li>
 
