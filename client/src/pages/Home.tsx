@@ -79,21 +79,12 @@ function CardFan() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const { data: riftData } = useCards({ game: 'riftbound', limit: 20, sort: 'newest' });
-  const { data: pokeData } = useCards({ game: 'pokemon', limit: 20, sort: 'newest' });
+  const { data: riftData } = useCards({ game: 'riftbound', limit: 30, sort: 'newest' });
 
-  // Build interleaved pool of all card images
+  // Only Riftbound cards in the fan
   const imagePool = useMemo<string[]>(() => {
-    const rift = (riftData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
-    const poke = (pokeData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
-    const pool: string[] = [];
-    const max = Math.max(rift.length, poke.length);
-    for (let i = 0; i < max; i++) {
-      if (i < rift.length) pool.push(rift[i]);
-      if (i < poke.length) pool.push(poke[i]);
-    }
-    return pool;
-  }, [riftData, pokeData]);
+    return (riftData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
+  }, [riftData]);
 
   // 5 slots — one per fan position
   const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null]);
@@ -329,15 +320,15 @@ function HeroSection() {
                 variants={fadeUp}
                 className="flex lg:hidden items-center justify-center gap-6 mt-5"
               >
-                <Link href="/oyun/pokemon">
-                  <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG"
-                    className="h-10 w-auto object-contain select-none" draggable={false} />
-                </Link>
-                <div className="w-px h-8 bg-white/12 shrink-0" />
                 <Link href="/oyun/riftbound">
                   <img src="/logo-riftbound.png" alt="Riftbound"
                     className="h-7 w-auto object-contain select-none"
                     style={{ mixBlendMode: 'screen' }} draggable={false} />
+                </Link>
+                <div className="w-px h-8 bg-white/12 shrink-0" />
+                <Link href="/oyun/pokemon">
+                  <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG"
+                    className="h-10 w-auto object-contain select-none" draggable={false} />
                 </Link>
               </motion.div>
 
@@ -370,24 +361,6 @@ function HeroSection() {
           transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="hidden lg:flex pb-12 items-center justify-center gap-20"
         >
-          <Link href="/oyun/pokemon" data-testid="link-hero-pokemon-logo">
-            <motion.div
-              whileHover={{ scale: 1.06, y: -3 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.18 }}
-              className="cursor-pointer"
-            >
-              <img
-                src="/logo-pokemon-tcg.webp"
-                alt="Pokémon TCG"
-                className="h-14 sm:h-16 lg:h-20 w-auto object-contain select-none"
-                draggable={false}
-              />
-            </motion.div>
-          </Link>
-
-          <div className="w-px h-12 lg:h-16 bg-white/10 shrink-0" />
-
           <Link href="/oyun/riftbound" data-testid="link-hero-riftbound-logo">
             <motion.div
               whileHover={{ scale: 1.06, y: -3 }}
@@ -400,6 +373,24 @@ function HeroSection() {
                 alt="Riftbound"
                 className="h-10 sm:h-12 lg:h-14 w-auto object-contain select-none"
                 style={{ mixBlendMode: 'screen' }}
+                draggable={false}
+              />
+            </motion.div>
+          </Link>
+
+          <div className="w-px h-12 lg:h-16 bg-white/10 shrink-0" />
+
+          <Link href="/oyun/pokemon" data-testid="link-hero-pokemon-logo">
+            <motion.div
+              whileHover={{ scale: 1.06, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.18 }}
+              className="cursor-pointer"
+            >
+              <img
+                src="/logo-pokemon-tcg.webp"
+                alt="Pokémon TCG"
+                className="h-14 sm:h-16 lg:h-20 w-auto object-contain select-none"
                 draggable={false}
               />
             </motion.div>
