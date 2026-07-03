@@ -58,8 +58,8 @@ const FAN_CFG = {
       { rotate: 13,  x: 122,  y: 8,  delay: 0.30 },
       { rotate: 28,  x: 268,  y: 38, delay: 0.38 },
     ],
-    w: 188, h: 263,
-    containerW: 650, containerH: 440,
+    w: 200, h: 280,
+    containerW: 660, containerH: 460,
   },
 };
 
@@ -81,8 +81,8 @@ function CardFan() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const { data: riftData } = useCards({ game: 'riftbound', limit: 12, sort: 'newest' });
-  const { data: pokeData } = useCards({ game: 'pokemon', limit: 12, sort: 'newest' });
+  const { data: riftData } = useCards({ game: 'riftbound', limit: 20, sort: 'newest' });
+  const { data: pokeData } = useCards({ game: 'pokemon', limit: 20, sort: 'newest' });
 
   const fanImages = useMemo(() => {
     const rift = [...(riftData?.cards ?? []).filter(c => c.image_url)].sort(() => Math.random() - 0.5);
@@ -262,17 +262,17 @@ function HeroSection() {
             {/* Trust badges row */}
             <motion.div
               variants={fadeUp}
-              className="flex items-start gap-5 sm:gap-7 mt-7 justify-center lg:justify-start flex-wrap"
+              className="flex items-center mt-7 justify-center lg:justify-start"
             >
               {HERO_TRUST_ITEMS.map((item, i) => (
-                <div key={i} className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: 'rgba(99,102,241,0.15)' }}>
-                    <item.icon className="w-4 h-4 text-indigo-400" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[12px] font-semibold text-white/85 leading-tight">{item.title}</div>
-                    <div className="text-[10px] text-white/38 leading-tight">{item.sub}</div>
+                <div key={i} className="flex items-center">
+                  {i > 0 && <div className="w-px h-8 bg-white/10 mx-4 sm:mx-5 shrink-0" />}
+                  <div className="flex items-center gap-2">
+                    <item.icon className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <div className="text-left">
+                      <div className="text-[11px] font-semibold text-white/80 leading-tight whitespace-nowrap">{item.title}</div>
+                      <div className="text-[10px] text-white/36 leading-tight whitespace-nowrap">{item.sub}</div>
+                    </div>
                   </div>
                 </div>
               ))}
