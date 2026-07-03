@@ -1,6 +1,6 @@
 import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { ShoppingCart } from 'lucide-react';
 import { CardQuickViewModal } from './CardQuickViewModal';
 
@@ -69,6 +69,7 @@ interface CardCardProps {
 export const CardCard = memo(function CardCard({ card }: CardCardProps) {
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(card.image_url || FALLBACK_IMG);
+  const [, navigate] = useLocation();
   const price = card.min_price ? parseFloat(card.min_price) : null;
 
   const sortedConditions = card.available_conditions
@@ -149,6 +150,29 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
                   {card.card_number && ` · ${card.card_number}`}
                 </p>
               </div>
+
+              {card.card_types && card.card_types.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {card.card_types.slice(0, 2).map(t => (
+                    <button
+                      key={t}
+                      data-testid={`badge-type-${card.id}-${t}`}
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate(`/oyun/${card.game_slug}?type=${encodeURIComponent(t)}`);
+                      }}
+                      className="text-[10px] font-medium bg-indigo-50 border border-indigo-200 text-indigo-600 px-1.5 py-0.5 rounded-full cursor-pointer hover:bg-indigo-100 transition-colors"
+                      title={`${t} tipindeki tüm kartları gör`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                  {card.card_types.length > 2 && (
+                    <span className="text-[10px] text-zinc-400">+{card.card_types.length - 2}</span>
+                  )}
+                </div>
+              )}
 
               {sortedConditions.length > 0 && (
                 <div className="flex flex-wrap gap-1">

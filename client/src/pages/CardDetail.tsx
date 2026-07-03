@@ -337,10 +337,15 @@ function PokemonInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
           {cardTypes.map((t) => {
             const c = POKEMON_TYPE_COLORS[t] ?? DEFAULT_TYPE_COLOR;
             return (
-              <span key={t} className="px-3 py-1 rounded-full text-xs font-semibold border"
-                style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-                {t}
-              </span>
+              <Link key={t} href={`/oyun/${card.game_slug}?type=${encodeURIComponent(t)}`}>
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-opacity hover:opacity-75"
+                  style={{ background: c.bg, color: c.text, borderColor: c.border }}
+                  title={`${t} tipindeki tüm kartları gör`}
+                >
+                  {t}
+                </span>
+              </Link>
             );
           })}
         </div>
@@ -381,10 +386,15 @@ function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
           {cardTypes.map((t) => {
             const c = RIFTBOUND_TYPE_COLORS[t] ?? DEFAULT_TYPE_COLOR;
             return (
-              <span key={t} className="px-3 py-1 rounded-full text-xs font-semibold border tracking-wide"
-                style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-                {t}
-              </span>
+              <Link key={t} href={`/oyun/${card.game_slug}?type=${encodeURIComponent(t)}`}>
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-semibold border tracking-wide cursor-pointer transition-opacity hover:opacity-75"
+                  style={{ background: c.bg, color: c.text, borderColor: c.border }}
+                  title={`${t} tipindeki tüm kartları gör`}
+                >
+                  {t}
+                </span>
+              </Link>
             );
           })}
         </div>
@@ -729,10 +739,15 @@ export default function CardDetail() {
               {cardTypes.map((t) => {
                 const c = RIFTBOUND_TYPE_COLORS[t] ?? DEFAULT_TYPE_COLOR;
                 return (
-                  <span key={t} className="px-3 py-1 rounded-full text-xs font-semibold border"
-                    style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-                    {t}
-                  </span>
+                  <Link key={t} href={`/oyun/${card.game_slug}?type=${encodeURIComponent(t)}`}>
+                    <span
+                      className="px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-opacity hover:opacity-75"
+                      style={{ background: c.bg, color: c.text, borderColor: c.border }}
+                      title={`${t} tipindeki tüm kartları gör`}
+                    >
+                      {t}
+                    </span>
+                  </Link>
                 );
               })}
             </div>
@@ -783,10 +798,15 @@ export default function CardDetail() {
               {cardTypes.map((t) => {
                 const c = POKEMON_TYPE_COLORS[t] ?? DEFAULT_TYPE_COLOR;
                 return (
-                  <span key={t} className="px-3 py-1 rounded-full text-xs font-semibold border"
-                    style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-                    {t}
-                  </span>
+                  <Link key={t} href={`/oyun/${card.game_slug}?type=${encodeURIComponent(t)}`}>
+                    <span
+                      className="px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-opacity hover:opacity-75"
+                      style={{ background: c.bg, color: c.text, borderColor: c.border }}
+                      title={`${t} tipindeki tüm kartları gör`}
+                    >
+                      {t}
+                    </span>
+                  </Link>
                 );
               })}
             </div>

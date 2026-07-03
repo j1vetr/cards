@@ -41,6 +41,7 @@ export default function CardSet() {
   const sort       = urlParams.get('sort') || 'name_asc';
   const page       = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
   const search     = urlParams.get('search') || '';
+  const typeFilter = urlParams.get('type') || '';
   const [localSearch, setLocalSearch] = useState(search);
 
   const { data: set, isLoading: setLoading } = useCardSet(slug);
@@ -50,6 +51,7 @@ export default function CardSet() {
     page,
     limit: LIMIT,
     search: search || undefined,
+    type: typeFilter || undefined,
   });
 
   const cards      = data?.cards ?? [];
@@ -245,6 +247,22 @@ export default function CardSet() {
               {total.toLocaleString('tr-TR')} Kart
             </p>
           </div>
+
+          {/* Active type filter chip */}
+          {typeFilter && (
+            <div className="flex items-center gap-2 pt-2">
+              <span className="text-xs text-zinc-500">Tip:</span>
+              <button
+                data-testid="btn-clear-type-filter"
+                onClick={() => setFilter({ type: null })}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-opacity hover:opacity-75"
+                style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', borderColor: 'rgba(99,102,241,0.35)' }}
+              >
+                {typeFilter}
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

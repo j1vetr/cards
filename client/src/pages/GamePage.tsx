@@ -1,4 +1,4 @@
-import { useParams, Link } from 'wouter';
+import { useParams, Link, useSearch, useLocation } from 'wouter';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
@@ -63,6 +63,11 @@ function formatReleaseDate(raw?: string | null): string | null {
 export default function GamePage() {
   const params = useParams<{ game: string }>();
   const gameSlug = params.game;
+  const searchStr = useSearch();
+  const [, navigate] = useLocation();
+
+  const urlParams = useMemo(() => new URLSearchParams(searchStr), [searchStr]);
+  const typeFilter = urlParams.get('type') || '';
 
   const [cardPage, setCardPage]     = useState(1);
   const [cardSort, setCardSort]     = useState('newest');
@@ -77,7 +82,13 @@ export default function GamePage() {
     page: cardPage,
     limit: CARD_LIMIT,
     search: cardSearch || undefined,
+    type: typeFilter || undefined,
   });
+
+  const clearTypeFilter = useCallback(() => {
+    navigate(`/oyun/${gameSlug}`, { replace: true });
+    setCardPage(1);
+  }, [navigate, gameSlug]);
 
   const game = useMemo(() => games.find(g => g.slug === gameSlug), [games, gameSlug]);
   const featuredCards = cardsData?.cards ?? [];
@@ -253,7 +264,7 @@ export default function GamePage() {
           </div>
 
           {/* Filter bar */}
-          <div className="flex items-center gap-3 flex-wrap mb-6">
+          <div className="flex items-center gap-3 flex-wrap mb-4">
             <div className="relative flex-1 min-w-[180px] max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
               <input
@@ -291,6 +302,22 @@ export default function GamePage() {
               </span>
             )}
           </div>
+
+          {/* Active type filter chip */}
+          {typeFilter && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs text-zinc-500">Tip:</span>
+              <button
+                data-testid="btn-clear-type-filter"
+                onClick={clearTypeFilter}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-opacity hover:opacity-75"
+                style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', borderColor: 'rgba(99,102,241,0.35)' }}
+              >
+                {typeFilter}
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
 
           {/* Grid */}
           {cardsLoading ? (
