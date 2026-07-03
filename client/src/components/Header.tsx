@@ -312,20 +312,20 @@ export function Header() {
           </div>
 
           {/* ── Desktop layout ── */}
-          <div className="hidden lg:flex items-center h-[72px] gap-10 xl:gap-14">
+          <div className="hidden lg:flex items-center h-[80px] relative">
 
-            {/* Logo */}
-            <Link href="/" data-testid="link-logo" className="shrink-0">
+            {/* Logo — left */}
+            <Link href="/" data-testid="link-logo" className="shrink-0 z-10">
               <img
                 src="/gocards-logo-white.png"
                 alt="Go|Cards"
-                className="h-12 w-auto object-contain"
+                className="h-14 w-auto object-contain"
                 data-testid="img-logo"
               />
             </Link>
 
-            {/* Nav */}
-            <nav className="flex-1 flex items-center gap-7 xl:gap-9">
+            {/* Nav — absolutely centered */}
+            <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 xl:gap-10">
               <Link href="/" className={navCls(isActive('/'))} data-testid="link-nav-home">
                 Ana Sayfa
               </Link>
@@ -365,8 +365,8 @@ export function Header() {
               </Link>
             </nav>
 
-            {/* Right icons */}
-            <div className="shrink-0 flex items-center gap-1">
+            {/* Right icons — pushed to far right */}
+            <div className="ml-auto shrink-0 flex items-center gap-1 z-10">
               <button
                 onClick={() => setSearchOpen(true)}
                 className="p-2.5 text-white/55 hover:text-white transition-colors"

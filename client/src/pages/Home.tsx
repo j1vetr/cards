@@ -52,14 +52,14 @@ const FAN_CFG = {
   },
   desktop: {
     positions: [
-      { rotate: -28, x: -268, y: 38, delay: 0.06 },
-      { rotate: -13, x: -122, y: 8,  delay: 0.14 },
-      { rotate: 0,   x: 0,    y: -28, delay: 0.22 },
-      { rotate: 13,  x: 122,  y: 8,  delay: 0.30 },
-      { rotate: 28,  x: 268,  y: 38, delay: 0.38 },
+      { rotate: -22, x: -220, y: 40,  delay: 0.06 },
+      { rotate: -9,  x: -108, y: 12,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -18, delay: 0.22 },
+      { rotate: 9,   x: 108,  y: 12,  delay: 0.30 },
+      { rotate: 22,  x: 220,  y: 40,  delay: 0.38 },
     ],
-    w: 200, h: 280,
-    containerW: 660, containerH: 460,
+    w: 240, h: 336,
+    containerW: 660, containerH: 420,
   },
 };
 
@@ -97,7 +97,7 @@ function CardFan() {
 
   return (
     <div
-      className="relative flex items-end justify-center select-none pointer-events-none"
+      className="relative flex items-center justify-center select-none pointer-events-none"
       style={{ width: containerW, height: containerH }}
     >
       {/* Platform glow ring */}
@@ -175,7 +175,8 @@ const HERO_TRUST_ITEMS = [
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden bg-[#0d1427] flex flex-col items-center"
+      className="relative overflow-hidden bg-[#0d1427] flex flex-col"
+      style={{ minHeight: 'calc(100vh - 120px)' }}
       data-testid="section-hero"
     >
       {/* Background orbs */}
@@ -185,9 +186,9 @@ function HeroSection() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.14),transparent_58%)]" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-16 lg:py-20 w-full flex-1 flex items-center">
-        <div className="flex flex-col lg:grid lg:gap-8 lg:items-center w-full"
-          style={{ gridTemplateColumns: '45% 55%' }}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex items-center py-10 lg:py-0">
+        <div className="flex flex-col lg:grid lg:gap-4 lg:items-center w-full"
+          style={{ gridTemplateColumns: '44% 56%' }}
         >
 
           {/* Card fan — top on mobile, right col on desktop */}
