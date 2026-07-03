@@ -13,6 +13,7 @@ import {
   Zap,
   BarChart3,
   Tag,
+  Swords,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
 
@@ -107,6 +108,7 @@ export default function CardApiSyncTab() {
   const [selectedMode, setSelectedMode] = useState<"sets" | "cards" | "prices">("sets");
   const [selectedSetId, setSelectedSetId] = useState<string>("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [backfillSetId, setBackfillSetId] = useState<string>("");
 
   // Auto-list state
   const [autoListMultiplier, setAutoListMultiplier] = useState<string>("1.9");
@@ -126,6 +128,7 @@ export default function CardApiSyncTab() {
   });
 
   const gameId = games.find((g) => g.slug === (selectedGame === "pokemon_tcg" ? "pokemon" : "riftbound"))?.id;
+  const pokemonGameId = games.find((g) => g.slug === "pokemon")?.id;
 
   const { data: sets = [] } = useQuery<CardSet[]>({
     queryKey: ["/api/admin/tcg/sets", gameId],
@@ -136,6 +139,18 @@ export default function CardApiSyncTab() {
       return res.json();
     },
     enabled: !!gameId,
+    refetchInterval: false,
+  });
+
+  const { data: pokemonSets = [] } = useQuery<CardSet[]>({
+    queryKey: ["/api/admin/tcg/sets", pokemonGameId],
+    queryFn: async () => {
+      if (!pokemonGameId) return [];
+      const res = await fetch(`/api/admin/tcg/sets?gameId=${pokemonGameId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Pokemon setleri alınamadı");
+      return res.json();
+    },
+    enabled: !!pokemonGameId,
     refetchInterval: false,
   });
 
@@ -187,6 +202,31 @@ export default function CardApiSyncTab() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Bilinmeyen hata" }));
         throw new Error(err.error ?? "Sync başlatılamadı");
+      }
+      return res.json() as Promise<{ runId: string; message: string }>;
+    },
+    onSuccess: (data) => {
+      setActiveRunId(data.runId);
+      qc.invalidateQueries({ queryKey: ["/api/admin/tcg/sync-runs"] });
+    },
+  });
+
+  const backfillMutation = useMutation({
+    mutationFn: async () => {
+      const body: Record<string, string> = {
+        game: "pokemon_tcg",
+        mode: "cards",
+      };
+      if (backfillSetId) body.setApiId = backfillSetId;
+      const res = await fetch("/api/admin/tcg/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Bilinmeyen hata" }));
+        throw new Error(err.error ?? "Backfill başlatılamadı");
       }
       return res.json() as Promise<{ runId: string; message: string }>;
     },
@@ -409,6 +449,81 @@ export default function CardApiSyncTab() {
           </div>
         </Card>
       )}
+
+      {/* Backfill Attacks & Abilities */}
+      <Card className="p-5">
+        <h3 className="text-[13px] font-semibold text-neutral-800 mb-1 flex items-center gap-2">
+          <Swords className="w-4 h-4 text-rose-500" />
+          Saldırı &amp; Yetenek Doldur (Pokémon)
+        </h3>
+        <p className="text-[12px] text-neutral-500 mb-4">
+          Daha önce senkronize edilmiş Pokémon kartlarında saldırı ve yetenek bilgileri boş kalabilir.
+          Bu işlem, seçili set (veya tüm setler) için Pokémon kartlarını API'den yeniden çekerek
+          saldırı/yetenek alanlarını günceller.
+        </p>
+
+        <div className="mb-4">
+          <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
+            Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel — boş bırakılırsa tüm setler)</span>
+          </label>
+          <select
+            data-testid="select-backfill-set"
+            value={backfillSetId}
+            onChange={(e) => setBackfillSetId(e.target.value)}
+            className="w-full sm:w-64 text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50"
+            disabled={isRunning || backfillMutation.isPending}
+          >
+            <option value="">— Tüm Pokémon setleri —</option>
+            {pokemonSets.map((s) => (
+              <option key={s.id} value={s.apiId}>
+                {s.name} {s.totalCards ? `(${s.totalCards})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bg-rose-50 border border-rose-100 rounded-md p-3 flex gap-2 text-[12px] text-rose-800 mb-4">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <span>
+            Mevcut kartlar güncellenir, yeni kart oluşturulmaz.
+            {backfillSetId
+              ? " Sadece seçili set için çalışır."
+              : ` Tüm Pokémon setleri için çalışır (${pokemonSets.length} set). Uzun sürebilir.`}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            {backfillMutation.isError && (
+              <p className="text-[12px] text-red-600 flex items-center gap-1">
+                <XCircle className="w-3.5 h-3.5" />
+                {backfillMutation.error instanceof Error ? backfillMutation.error.message : "Hata oluştu"}
+              </p>
+            )}
+            {backfillMutation.isSuccess && !isRunning && (
+              <p className="text-[12px] text-emerald-600 flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5" /> Backfill tamamlandı.
+              </p>
+            )}
+          </div>
+          <PrimaryButton
+            data-testid="button-backfill-attacks"
+            onClick={() => {
+              setSelectedGame("pokemon_tcg");
+              backfillMutation.mutate();
+            }}
+            disabled={isRunning || backfillMutation.isPending}
+            className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500"
+          >
+            {backfillMutation.isPending || (isRunning && activeRun?.game === "pokemon_tcg" && activeRun?.mode === "cards") ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Swords className="w-4 h-4" />
+            )}
+            {backfillMutation.isPending ? "Başlatılıyor…" : "Saldırıları Doldur"}
+          </PrimaryButton>
+        </div>
+      </Card>
 
       {/* Auto-listing from PriceCharting */}
       <Card className="p-5">
