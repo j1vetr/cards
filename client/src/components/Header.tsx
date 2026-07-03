@@ -79,24 +79,31 @@ function MegaMenuPanel({
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
               >
-                {set.logo_url ? (
-                  <div className="h-10 w-full flex items-center justify-center">
+                <div className="h-10 w-full flex items-center justify-center">
+                  {set.logo_url ? (
                     <img
                       src={set.logo_url}
                       alt={set.name}
                       className="max-h-10 max-w-[110px] object-contain"
-                      style={{ filter: 'brightness(0) invert(1)', opacity: 0.7 }}
-                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      onError={e => {
+                        const el = e.currentTarget as HTMLImageElement;
+                        el.style.display = 'none';
+                        const fallback = el.nextElementSibling as HTMLElement | null;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
-                  </div>
-                ) : (
-                  <div className="h-10 w-full flex items-center justify-center">
+                  ) : null}
+                  {/* Fallback icon — shown when no logo or on img error */}
+                  <div
+                    className="items-center justify-center w-full h-full"
+                    style={{ display: set.logo_url ? 'none' : 'flex' }}
+                  >
                     {game === 'pokemon'
-                      ? <Zap className="w-6 h-6" style={{ color: accent, opacity: 0.7 }} />
-                      : <Layers className="w-6 h-6" style={{ color: accent, opacity: 0.7 }} />
+                      ? <img src="/icon-pokemon.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
+                      : <img src="/icon-riftbound.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
                     }
                   </div>
-                )}
+                </div>
                 <span className="text-[10px] text-white/55 text-center leading-tight line-clamp-2 group-hover:text-white/80 transition-colors">
                   {set.name}
                 </span>
@@ -112,8 +119,12 @@ function MegaMenuPanel({
 
         {game === 'pokemon' && sets.length > 18 && (
           <div className="mt-4 pt-4 border-t border-white/[0.06] text-center">
-            <Link href="/oyun/pokemon" className="text-xs text-white/40 hover:text-white/70 transition-colors">
-              +{sets.length - 18} set daha — Tümünü Gör
+            <Link
+              href="/oyun/pokemon"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
+              style={{ color: accent }}
+            >
+              +{sets.length - 18} Set Daha VAR! &nbsp;Tümü Gör <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         )}
