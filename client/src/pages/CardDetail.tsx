@@ -75,7 +75,7 @@ function HoloCard({ src, alt }: { src: string; alt: string }) {
         <img src={imgSrc} alt={alt} onError={() => setImgSrc(FALLBACK)} draggable={false}
           className="h-auto w-full"
           style={{
-            maxWidth: 'clamp(180px, 48vw, 280px)',
+            maxWidth: 'clamp(280px, 90%, 420px)',
             borderRadius: '4.5% / 3.3%',
             filter: 'drop-shadow(0 20px 44px rgba(79,70,229,0.65)) drop-shadow(0 4px 10px rgba(0,0,0,0.95))',
           }}
@@ -281,16 +281,16 @@ export default function CardDetail() {
               <li><Link href={`/set/${card.set_slug}`} className="hover:text-zinc-300 transition-colors">{card.set_name}</Link></li>
             </>)}
             <ChevronRight className="w-2.5 h-2.5 shrink-0" />
-            <li className="text-zinc-400 truncate max-w-[160px] sm:max-w-[260px]">{card.name}</li>
+            <li className="text-zinc-400 truncate max-w-[160px] sm:max-w-[260px] lg:max-w-none">{card.name}</li>
           </ol>
         </nav>
 
         {/* ── Desktop: viewport-height flex container ─── Mobile: normal flow ── */}
         <div className="max-w-screen-xl mx-auto px-4 sm:px-8 pt-3
-          lg:flex lg:gap-10 lg:items-start lg:overflow-hidden lg:h-[calc(100vh-132px)]">
+          lg:flex lg:gap-10 lg:items-start lg:overflow-hidden lg:h-[calc(100vh-108px)]">
 
           {/* ── LEFT: card (sticky on desktop) ── */}
-          <div className="lg:w-[340px] xl:w-[380px] lg:shrink-0 lg:sticky lg:top-0 lg:self-start flex flex-col items-center">
+          <div className="lg:w-[420px] xl:w-[480px] lg:shrink-0 lg:sticky lg:top-0 lg:self-start flex flex-col items-center">
 
             {/* Mobile: card + name in 2-col */}
             <div className="grid grid-cols-[auto_1fr] gap-3 w-full lg:block">
