@@ -56,40 +56,69 @@ const stagger = {
 // ── Card fan decoration ─────────────────────────────────────────────────────
 
 const FAN_CARDS = [
-  { rotate: -20, x: -110, y: 10, delay: 0.1 },
-  { rotate: -10, x: -55, y: -6, delay: 0.18 },
-  { rotate: 0,   x: 0,   y: -12, delay: 0.26 },
-  { rotate: 10,  x: 55,  y: -6, delay: 0.34 },
-  { rotate: 20,  x: 110, y: 10, delay: 0.42 },
+  { rotate: -22, x: -120, y: 18, delay: 0.1 },
+  { rotate: -11, x: -60,  y: -4, delay: 0.18 },
+  { rotate: 0,   x: 0,    y: -14, delay: 0.26 },
+  { rotate: 11,  x: 60,   y: -4, delay: 0.34 },
+  { rotate: 22,  x: 120,  y: 18, delay: 0.42 },
 ];
 
-const CARD_GRADIENTS = [
-  'from-violet-600 to-indigo-700',
-  'from-indigo-600 to-blue-700',
-  'from-sky-500 to-indigo-600',
-  'from-blue-600 to-violet-700',
-  'from-indigo-500 to-purple-700',
+const CARD_BG = [
+  'from-violet-700 to-indigo-800',
+  'from-indigo-700 to-blue-800',
+  'from-sky-600 to-indigo-700',
+  'from-blue-700 to-violet-800',
+  'from-indigo-600 to-purple-800',
 ];
 
 function CardFan() {
+  const { data } = useQuery<{ cards: CardPublic[]; total: number }>({
+    queryKey: ['/api/cards', 'fan'],
+    queryFn: async () => {
+      const r = await fetch('/api/cards?limit=24&sort=newest');
+      if (!r.ok) throw new Error();
+      return r.json();
+    },
+    staleTime: 300_000,
+  });
+
+  const fanImages = (() => {
+    const pool = (data?.cards ?? []).filter(c => c.image_url);
+    if (pool.length === 0) return Array(5).fill(null);
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    return Array.from({ length: 5 }, (_, i) => shuffled[i % shuffled.length]?.image_url ?? null);
+  })();
+
   return (
-    <div className="relative w-[260px] h-[200px] flex items-end justify-center select-none pointer-events-none">
+    <div className="relative w-[300px] h-[240px] flex items-end justify-center select-none pointer-events-none">
       {FAN_CARDS.map((cfg, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, y: 40, rotate: cfg.rotate }}
+          initial={{ opacity: 0, y: 50, rotate: cfg.rotate }}
           animate={{ opacity: 1, y: cfg.y, x: cfg.x, rotate: cfg.rotate }}
-          transition={{ duration: 0.6, delay: cfg.delay, ease: 'easeOut' }}
+          transition={{ duration: 0.65, delay: cfg.delay, ease: 'easeOut' }}
           style={{ position: 'absolute', bottom: 0 }}
         >
           <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 3.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.2 }}
-            className={`w-[68px] h-[96px] rounded-xl bg-gradient-to-br ${CARD_GRADIENTS[i]} shadow-2xl border border-white/20 overflow-hidden`}
+            animate={{ y: [0, -7, 0] }}
+            transition={{ duration: 3.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
+            className="relative overflow-hidden shadow-2xl"
+            style={{
+              width: 78, height: 109,
+              borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.18)',
+            }}
           >
-            <div className="w-full h-full flex items-center justify-center opacity-30">
-              <div className="w-8 h-8 rounded-full border-2 border-white/60" />
-            </div>
+            {fanImages[i] ? (
+              <img
+                src={fanImages[i]!}
+                alt=""
+                className="w-full h-full object-contain"
+                style={{ background: '#1e1b4b' }}
+              />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${CARD_BG[i]}`} />
+            )}
           </motion.div>
         </motion.div>
       ))}
@@ -121,27 +150,20 @@ function HeroSection() {
             animate="show"
             className="text-center lg:text-left"
           >
-            <motion.div variants={fadeUp}>
-              <span className="inline-flex items-center gap-1.5 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full mb-5">
-                <Sparkles className="w-3.5 h-3.5" />
-                Türkiye'nin TCG Pazaryeri
-              </span>
-            </motion.div>
-
             <motion.h1
               variants={fadeUp}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6"
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-5"
               style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600 }}
             >
               Pokemon TCG &amp;
               <br />
               <span className="text-indigo-400">Riftbound</span>
-              <br />
-              <span className="text-zinc-300 text-3xl sm:text-4xl lg:text-5xl">Kart Koleksiyonu</span>
             </motion.h1>
 
             <motion.p variants={fadeUp} className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
-              Türkiye'nin en geniş TCG single kart seçkisi. NM, LP, PSA gradlenmiş kartlar — güvenli alışveriş, hızlı teslimat.
+              Aradığın kartı bul, güvenle sipariş ver.
+              <br />
+              Hızlı kargo, orijinal kart garantisi.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -152,7 +174,7 @@ function HeroSection() {
                   whileTap={{ scale: 0.97 }}
                   className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40"
                 >
-                  Mağazayı Keşfet
+                  Kartlara Bak
                   <ChevronRight className="w-4 h-4" />
                 </motion.button>
               </Link>
@@ -166,25 +188,6 @@ function HeroSection() {
                   Pokemon TCG
                 </motion.button>
               </Link>
-            </motion.div>
-
-            {/* stats bar */}
-            <motion.div
-              variants={fadeUp}
-              className="mt-10 grid grid-cols-3 gap-4 max-w-sm mx-auto lg:mx-0"
-            >
-              {[
-                { label: 'Kart', value: '10.000+' },
-                { label: 'Set', value: '50+' },
-                { label: 'Koşul', value: '9' },
-              ].map(stat => (
-                <div key={stat.label} className="text-center lg:text-left">
-                  <p className="text-2xl font-bold text-white" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-zinc-500 uppercase tracking-widest mt-0.5">{stat.label}</p>
-                </div>
-              ))}
             </motion.div>
           </motion.div>
 
