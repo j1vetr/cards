@@ -415,12 +415,14 @@ function SetScrollRow({
   PlaceholderIcon,
   placeholderSrc,
   bgColor = '#0a0f1e',
+  game,
 }: {
   sets: CardSetPublic[];
   accentColor: string;
   PlaceholderIcon: ElementType;
   placeholderSrc?: string;
   bgColor?: string;
+  game?: 'pokemon' | 'riftbound';
 }) {
   // Duplicate for seamless marquee loop
   const doubled = [...sets, ...sets];
@@ -450,7 +452,7 @@ function SetScrollRow({
           )}
         </div>
         {/* Name — fixed 2-line slot */}
-        <p className="text-[10px] text-white/50 text-center leading-tight line-clamp-2 w-full mt-2 flex-1">
+        <p className={`text-center leading-tight line-clamp-2 w-full mt-2 flex-1 ${game === 'riftbound' ? 'text-[11px] font-bold text-white/80' : 'text-[10px] font-normal text-white/50'}`}>
           {set.name}
         </p>
         {/* Stock badge — always takes space, invisible when 0 */}
@@ -582,7 +584,7 @@ function GameSection({ game, title, accentColor, accentClass, bgColor, Placehold
               ))}
             </div>
           ) : sets.length > 0 ? (
-            <SetScrollRow sets={sets} accentColor={accentColor} PlaceholderIcon={PlaceholderIcon} placeholderSrc={game === 'riftbound' ? '/icon-riftbound.svg' : undefined} bgColor={bgColor} />
+            <SetScrollRow sets={sets} accentColor={accentColor} PlaceholderIcon={PlaceholderIcon} placeholderSrc={game === 'riftbound' ? '/icon-riftbound.svg' : undefined} bgColor={bgColor} game={game} />
           ) : null}
         </motion.div>
 
@@ -658,16 +660,6 @@ export default function Home() {
           <HeroSection />
 
           <GameSection
-            game="pokemon"
-            title="Pokémon TCG"
-            accentColor="#f59e0b"
-            accentClass="text-amber-400"
-            bgColor="#0a0f1e"
-            PlaceholderIcon={Zap}
-            testId="section-pokemon"
-          />
-
-          <GameSection
             game="riftbound"
             title="Riftbound"
             accentColor="#818cf8"
@@ -675,6 +667,16 @@ export default function Home() {
             bgColor="#060d1f"
             PlaceholderIcon={Layers}
             testId="section-riftbound"
+          />
+
+          <GameSection
+            game="pokemon"
+            title="Pokémon TCG"
+            accentColor="#f59e0b"
+            accentClass="text-amber-400"
+            bgColor="#0a0f1e"
+            PlaceholderIcon={Zap}
+            testId="section-pokemon"
           />
 
         </main>
