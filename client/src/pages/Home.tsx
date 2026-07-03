@@ -289,9 +289,9 @@ function HeroSection() {
                 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold text-white leading-[1.08] mb-5"
                 style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
               >
-                Pokemon TCG &amp;
+                Türkiye'de
                 <br />
-                <span style={{ color: '#818cf8' }}>Riftbound</span>
+                <span className="riftbound-shimmer">Riftbound</span>
               </motion.h1>
 
               <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
