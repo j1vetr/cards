@@ -52,14 +52,14 @@ const FAN_CFG = {
   },
   desktop: {
     positions: [
-      { rotate: -22, x: -234, y: 50,  delay: 0.06 },
-      { rotate: -9,  x: -115, y: 18,  delay: 0.14 },
-      { rotate: 0,   x: 0,    y: -10, delay: 0.22 },
-      { rotate: 9,   x: 115,  y: 18,  delay: 0.30 },
-      { rotate: 22,  x: 234,  y: 50,  delay: 0.38 },
+      { rotate: -22, x: -242, y: -20,  delay: 0.06 },
+      { rotate: -9,  x: -119, y: -50,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -75,  delay: 0.22 },
+      { rotate: 9,   x: 119,  y: -50,  delay: 0.30 },
+      { rotate: 22,  x: 242,  y: -20,  delay: 0.38 },
     ],
-    w: 265, h: 371,
-    containerW: 720, containerH: 480,
+    w: 285, h: 399,
+    containerW: 740, containerH: 520,
   },
 };
 
