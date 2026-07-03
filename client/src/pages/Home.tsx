@@ -349,10 +349,12 @@ function SetScrollRow({
   sets,
   accentColor,
   PlaceholderIcon,
+  placeholderSrc,
 }: {
   sets: CardSetPublic[];
   accentColor: string;
   PlaceholderIcon: ElementType;
+  placeholderSrc?: string;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -371,15 +373,16 @@ function SetScrollRow({
             style={{ width: 128, minHeight: 88, background: 'rgba(255,255,255,0.03)' }}
             data-testid={`set-card-${set.slug}`}
           >
-            <div className="h-9 w-full flex items-center justify-center">
+            <div className="h-9 w-full flex items-center justify-center shrink-0">
               {set.logo_url ? (
                 <img
                   src={set.logo_url}
                   alt={set.name}
                   className="max-h-9 max-w-[100px] object-contain"
-                  style={{ filter: 'brightness(0) invert(1)', opacity: 0.65 }}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
+              ) : placeholderSrc ? (
+                <img src={placeholderSrc} alt="" className="w-7 h-7 object-contain" style={{ opacity: 0.5 }} />
               ) : (
                 <PlaceholderIcon className="w-6 h-6 opacity-40" style={{ color: accentColor }} />
               )}
@@ -500,7 +503,7 @@ function GameSection({ game, title, accentColor, accentClass, bgColor, Placehold
               ))}
             </div>
           ) : sets.length > 0 ? (
-            <SetScrollRow sets={sets} accentColor={accentColor} PlaceholderIcon={PlaceholderIcon} />
+            <SetScrollRow sets={sets} accentColor={accentColor} PlaceholderIcon={PlaceholderIcon} placeholderSrc={game === 'riftbound' ? '/icon-riftbound.svg' : undefined} />
           ) : null}
         </motion.div>
 

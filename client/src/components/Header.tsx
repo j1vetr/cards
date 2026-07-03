@@ -72,10 +72,10 @@ function MegaMenuPanel({
 
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
           {displaySets.map(set => (
-            <Link key={set.id} href={`/set/${set.slug}`}>
+            <Link key={set.id} href={`/set/${set.slug}`} className="flex">
               <div
-                className="group flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-all duration-150"
-                style={{ background: 'rgba(255,255,255,0.03)' }}
+                className="group flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-all duration-150 w-full"
+                style={{ background: 'rgba(255,255,255,0.03)', minHeight: 100 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
               >
@@ -104,14 +104,12 @@ function MegaMenuPanel({
                     }
                   </div>
                 </div>
-                <span className="text-[10px] text-white/55 text-center leading-tight line-clamp-2 group-hover:text-white/80 transition-colors">
+                <span className="text-[10px] text-white/55 text-center leading-tight line-clamp-2 group-hover:text-white/80 transition-colors w-full" style={{ minHeight: '2.4em' }}>
                   {set.name}
                 </span>
-                {set.listed_cards > 0 && (
-                  <span className="text-[9px] font-medium" style={{ color: accent, opacity: 0.8 }}>
-                    {set.listed_cards} stokta
-                  </span>
-                )}
+                <span className="text-[9px] font-medium" style={{ color: accent, opacity: set.listed_cards > 0 ? 0.8 : 0, minHeight: '1em' }}>
+                  {set.listed_cards > 0 ? `${set.listed_cards} stokta` : ''}
+                </span>
               </div>
             </Link>
           ))}
