@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'wouter';
-import { ShoppingCart, Eye } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { CardQuickViewModal } from './CardQuickViewModal';
 
 export interface CardPublic {
@@ -114,15 +114,7 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                <button
-                  data-testid={`btn-quickview-${card.id}`}
-                  onClick={e => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
-                  className="bg-white rounded-full p-2.5 shadow-lg hover:bg-indigo-50 transition-colors"
-                  title="Hızlı Görüntüle"
-                >
-                  <Eye className="w-4 h-4 text-indigo-700" />
-                </button>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <button
                   data-testid={`btn-addtocart-${card.id}`}
                   onClick={e => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}

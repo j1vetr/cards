@@ -292,32 +292,32 @@ export default function CardDetail() {
           {/* ── LEFT: card (sticky on desktop) ── */}
           <div className="lg:w-[420px] xl:w-[480px] lg:shrink-0 lg:sticky lg:top-0 lg:self-start flex flex-col items-center">
 
-            {/* Mobile: card + name in 2-col */}
-            <div className="grid grid-cols-[auto_1fr] gap-3 w-full lg:block">
-              <div className="lg:w-full">
-                <HoloCard src={imgSrc} alt={card.name} />
+            {/* Mobile: header info above card */}
+            <div className="lg:hidden w-full mb-2 space-y-1.5">
+              <div className="flex flex-wrap gap-1">
+                {card.rarity && (
+                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
+                    {card.rarity}
+                  </span>
+                )}
+                {card.card_number && (
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
+                    #{card.card_number}
+                  </span>
+                )}
               </div>
-              <div className="lg:hidden flex flex-col justify-center gap-2 min-w-0">
-                <div className="flex flex-wrap gap-1">
-                  {card.rarity && (
-                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 tracking-wide">
-                      {card.rarity}
-                    </span>
-                  )}
-                  {card.card_number && (
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-400 border border-white/10">
-                      #{card.card_number}
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-[22px] font-bold text-white leading-[1.08] tracking-tight"
-                  style={{ fontFamily: 'var(--font-display)' }}>
-                  {card.name}
-                </h1>
-                <p className="text-xs text-zinc-500 leading-tight">
-                  {card.set_name}{card.set_series ? ` · ${card.set_series}` : ''}
-                </p>
-              </div>
+              <h1 className="text-[26px] font-bold text-white leading-[1.08] tracking-tight"
+                style={{ fontFamily: 'var(--font-display)' }}>
+                {card.name}
+              </h1>
+              <p className="text-xs text-zinc-500 leading-tight">
+                {card.set_name}{card.set_series ? ` · ${card.set_series}` : ''}
+              </p>
+            </div>
+
+            {/* Card image */}
+            <div className="w-full">
+              <HoloCard src={imgSrc} alt={card.name} />
             </div>
 
             {/* Set logo */}
