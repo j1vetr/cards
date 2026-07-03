@@ -166,6 +166,7 @@ export function Header() {
 
   return (
     <>
+      <div className="sticky top-0 z-50">
       {/* ── Announcement bar ── */}
       <AnimatePresence initial={false}>
         {!announceClosed && (
@@ -173,7 +174,7 @@ export function Header() {
             initial={{ height: 40, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.4, 0, 1, 1] }}
-            className="relative overflow-hidden text-white sticky top-0 z-50"
+            className="relative overflow-hidden text-white"
             style={{ height: 40, background: ANNOUNCE_BG, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
             data-testid="bar-announcement"
           >
@@ -255,7 +256,7 @@ export function Header() {
 
       {/* ── Main header ── */}
       <header
-        className="sticky top-0 z-40 relative"
+        className="relative z-40"
         style={{ background: HEADER_BG, borderBottom: '1px solid rgba(255,255,255,0.07)' }}
         data-testid="header"
       >
@@ -278,7 +279,7 @@ export function Header() {
               <img
                 src="/gocards-logo-white.png"
                 alt="Go|Cards"
-                className="h-9 w-auto object-contain"
+                className="h-11 w-auto object-contain"
                 data-testid="img-logo-mobile"
               />
             </Link>
@@ -494,6 +495,7 @@ export function Header() {
           )}
         </AnimatePresence>
       </header>
+      </div>
 
       {/* ── Mobile drawer ── */}
       <AnimatePresence>
@@ -520,7 +522,7 @@ export function Header() {
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                 <Link href="/" onClick={() => setMobileOpen(false)} data-testid="link-mobile-logo">
-                  <img src="/gocards-logo-white.png" alt="Go|Cards" className="h-8 w-auto object-contain" />
+                  <img src="/gocards-logo-white.png" alt="Go|Cards" className="h-10 w-auto object-contain" />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
