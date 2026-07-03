@@ -413,10 +413,11 @@ function SetScrollRow({
       <motion.div
         whileHover={{ scale: 1.04, y: -2 }}
         transition={{ duration: 0.18 }}
-        className="shrink-0 flex flex-col items-center gap-2 px-4 py-3 rounded-xl cursor-pointer border border-white/[0.07] hover:border-white/[0.16] transition-colors"
-        style={{ width: 128, minHeight: 88, background: 'rgba(255,255,255,0.03)' }}
+        className="shrink-0 flex flex-col items-center px-4 py-3 rounded-xl cursor-pointer border border-white/[0.07] hover:border-white/[0.16] transition-colors"
+        style={{ width: 128, height: 104, background: 'rgba(255,255,255,0.03)' }}
         data-testid={`set-card-${set.slug}`}
       >
+        {/* Logo — fixed slot */}
         <div className="h-9 w-full flex items-center justify-center shrink-0">
           {set.logo_url ? (
             <img
@@ -431,12 +432,17 @@ function SetScrollRow({
             <PlaceholderIcon className="w-6 h-6 opacity-40" style={{ color: accentColor }} />
           )}
         </div>
-        <p className="text-[10px] text-white/50 text-center leading-tight line-clamp-2 w-full">{set.name}</p>
-        {set.listed_cards > 0 && (
-          <span className="text-[9px] font-semibold" style={{ color: accentColor, opacity: 0.85 }}>
-            {set.listed_cards} stokta
-          </span>
-        )}
+        {/* Name — fixed 2-line slot */}
+        <p className="text-[10px] text-white/50 text-center leading-tight line-clamp-2 w-full mt-2 flex-1">
+          {set.name}
+        </p>
+        {/* Stock badge — always takes space, invisible when 0 */}
+        <span
+          className="text-[9px] font-semibold mt-1 h-4 flex items-center"
+          style={{ color: accentColor, opacity: set.listed_cards > 0 ? 0.85 : 0 }}
+        >
+          {set.listed_cards > 0 ? `${set.listed_cards} stokta` : '·'}
+        </span>
       </motion.div>
     </Link>
   );
