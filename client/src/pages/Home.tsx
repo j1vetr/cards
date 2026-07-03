@@ -222,15 +222,41 @@ const HERO_TRUST_ITEMS = [
 function HeroSection() {
   return (
     <section
-      className="relative bg-[#0d1427] flex flex-col"
+      className="relative bg-[#0d1427] flex flex-col overflow-hidden"
       style={{ minHeight: 'calc(100vh - 120px)' }}
       data-testid="section-hero"
     >
-      {/* Background orbs */}
+      {/* YouTube video background — desktop only */}
+      <div className="absolute inset-0 pointer-events-none hidden lg:block">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocards.toov.com.tr"
+          allow="autoplay; encrypted-media"
+          allowFullScreen={false}
+          title=""
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '100vw',
+            height: '56.25vw',
+            minHeight: '100%',
+            minWidth: '177.78vh',
+            transform: 'translate(-50%, -50%)',
+            border: 'none',
+            opacity: 0.45,
+          }}
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(13,20,39,0.82) 0%, rgba(13,20,39,0.55) 50%, rgba(13,20,39,0.75) 100%)' }} />
+        {/* Bottom fade to next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to bottom, transparent, #0d1427)' }} />
+      </div>
+
+      {/* Background orbs (mobile + subtle desktop accent) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full bg-indigo-700/18 blur-[130px]" />
-        <div className="absolute top-1/2 -left-32 w-[500px] h-[500px] rounded-full bg-violet-800/12 blur-[110px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.14),transparent_58%)]" />
+        <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full bg-indigo-700/18 blur-[130px] lg:opacity-40" />
+        <div className="absolute top-1/2 -left-32 w-[500px] h-[500px] rounded-full bg-violet-800/12 blur-[110px] lg:opacity-40" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.14),transparent_58%)] lg:opacity-50" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
