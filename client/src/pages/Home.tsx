@@ -186,114 +186,137 @@ function HeroSection() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.14),transparent_58%)]" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex items-center py-10 lg:py-0">
-        <div className="flex flex-col lg:grid lg:gap-4 lg:items-center w-full"
-          style={{ gridTemplateColumns: '44% 56%' }}
-        >
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
 
-          {/* Card fan — top on mobile, right col on desktop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.04 }}
-            className="flex justify-center lg:justify-end order-1 lg:order-2 mb-4 lg:mb-0 overflow-visible"
+        {/* Main content grid */}
+        <div className="flex-1 flex items-center py-6 lg:py-4">
+          <div className="flex flex-col lg:grid lg:gap-4 lg:items-center w-full"
+            style={{ gridTemplateColumns: '44% 56%' }}
           >
-            <CardFan />
-          </motion.div>
-
-          {/* Text — below on mobile, left col on desktop */}
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="text-center lg:text-left order-2 lg:order-1 flex flex-col items-center lg:items-start"
-          >
-            {/* Filled badge */}
+            {/* Card fan — top on mobile, right col on desktop */}
             <motion.div
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
-              style={{ background: 'rgba(79,70,229,0.85)', backdropFilter: 'blur(4px)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.04 }}
+              className="flex justify-center lg:justify-end order-1 lg:order-2 mb-4 lg:mb-0 overflow-visible"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-200" />
-              <span className="text-[11px] text-indigo-100 font-semibold tracking-wider uppercase">Güvenle Alışveriş Yap</span>
+              <CardFan />
             </motion.div>
 
-            <motion.h1
-              variants={fadeUp}
-              className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold text-white leading-[1.08] mb-5"
-              style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
-            >
-              Pokemon TCG &amp;
-              <br />
-              <span style={{ color: '#818cf8' }}>Riftbound</span>
-            </motion.h1>
-
-            <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
-              Aradığın kartı bul, güvenle sipariş ver.
-              <br />
-              Hızlı kargo, orijinal kart garantisi ve en iyi fiyatlar.
-            </motion.p>
-
-            {/* CTA buttons */}
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto">
-              <Link href="/magaza">
-                <motion.button
-                  data-testid="btn-hero-magaza"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40 w-full sm:w-auto justify-center"
-                >
-                  Kartlara Bak
-                  <ChevronRight className="w-4 h-4" />
-                </motion.button>
-              </Link>
-              <Link href="/oyun/pokemon">
-                <motion.button
-                  data-testid="btn-hero-pokemon"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto justify-center"
-                >
-                  Pokémon TCG
-                  <ChevronRight className="w-4 h-4 opacity-50" />
-                </motion.button>
-              </Link>
-            </motion.div>
-
-            {/* Trust badges row */}
+            {/* Text — below on mobile, left col on desktop */}
             <motion.div
-              variants={fadeUp}
-              className="flex items-center mt-7 justify-center lg:justify-start"
+              variants={stagger}
+              initial="hidden"
+              animate="show"
+              className="text-center lg:text-left order-2 lg:order-1 flex flex-col items-center lg:items-start"
             >
-              {HERO_TRUST_ITEMS.map((item, i) => (
-                <div key={i} className="flex items-center">
-                  {i > 0 && <div className="w-px h-8 bg-white/10 mx-4 sm:mx-5 shrink-0" />}
-                  <div className="flex items-center gap-2">
-                    <item.icon className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <div className="text-left">
-                      <div className="text-[11px] font-semibold text-white/80 leading-tight whitespace-nowrap">{item.title}</div>
-                      <div className="text-[10px] text-white/36 leading-tight whitespace-nowrap">{item.sub}</div>
+              {/* Filled badge */}
+              <motion.div
+                variants={fadeUp}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+                style={{ background: 'rgba(79,70,229,0.85)', backdropFilter: 'blur(4px)' }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-200" />
+                <span className="text-[11px] text-indigo-100 font-semibold tracking-wider uppercase">Güvenle Alışveriş Yap</span>
+              </motion.div>
+
+              <motion.h1
+                variants={fadeUp}
+                className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold text-white leading-[1.08] mb-5"
+                style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
+              >
+                Pokemon TCG &amp;
+                <br />
+                <span style={{ color: '#818cf8' }}>Riftbound</span>
+              </motion.h1>
+
+              <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
+                Aradığın kartı bul, güvenle sipariş ver.
+                <br />
+                Hızlı kargo, orijinal kart garantisi ve en iyi fiyatlar.
+              </motion.p>
+
+              {/* CTA buttons */}
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto">
+                <Link href="/magaza">
+                  <motion.button
+                    data-testid="btn-hero-magaza"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40 w-full sm:w-auto justify-center"
+                  >
+                    Kartlara Bak
+                    <ChevronRight className="w-4 h-4" />
+                  </motion.button>
+                </Link>
+              </motion.div>
+
+              {/* Trust badges row */}
+              <motion.div
+                variants={fadeUp}
+                className="flex items-center mt-6 justify-center lg:justify-start"
+              >
+                {HERO_TRUST_ITEMS.map((item, i) => (
+                  <div key={i} className="flex items-center">
+                    {i > 0 && <div className="w-px h-8 bg-white/10 mx-4 sm:mx-5 shrink-0" />}
+                    <div className="flex items-center gap-2">
+                      <item.icon className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <div className="text-left">
+                        <div className="text-[11px] font-semibold text-white/80 leading-tight whitespace-nowrap">{item.title}</div>
+                        <div className="text-[10px] text-white/36 leading-tight whitespace-nowrap">{item.sub}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </motion.div>
             </motion.div>
-          </motion.div>
-
+          </div>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.6, duration: 0.6 }}
-        className="absolute bottom-5 left-1/2 -translate-x-1/2"
-      >
-        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>
-          <ChevronDown className="w-5 h-5 text-white/20" strokeWidth={1.5} />
+        {/* Game logo row — replaces StatsBar, anchored to bottom of hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="pb-10 lg:pb-12 flex items-center justify-center gap-8 sm:gap-14 lg:gap-20"
+        >
+          <Link href="/oyun/pokemon" data-testid="link-hero-pokemon-logo">
+            <motion.div
+              whileHover={{ scale: 1.06, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.18 }}
+              className="cursor-pointer"
+            >
+              <img
+                src="/logo-pokemon-tcg.webp"
+                alt="Pokémon TCG"
+                className="h-14 sm:h-16 lg:h-20 w-auto object-contain select-none"
+                draggable={false}
+              />
+            </motion.div>
+          </Link>
+
+          <div className="w-px h-12 lg:h-16 bg-white/10 shrink-0" />
+
+          <Link href="/oyun/riftbound" data-testid="link-hero-riftbound-logo">
+            <motion.div
+              whileHover={{ scale: 1.06, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.18 }}
+              className="cursor-pointer"
+            >
+              <img
+                src="/logo-riftbound.png"
+                alt="Riftbound"
+                className="h-10 sm:h-12 lg:h-14 w-auto object-contain select-none"
+                style={{ mixBlendMode: 'screen' }}
+                draggable={false}
+              />
+            </motion.div>
+          </Link>
         </motion.div>
-      </motion.div>
+
+      </div>
 
       {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
@@ -302,48 +325,6 @@ function HeroSection() {
   );
 }
 
-// ── Stats bar ────────────────────────────────────────────────────────────────
-
-const STATS = [
-  { value: '50.000+', label: 'Mutlu Müşteri' },
-  { value: '100.000+', label: 'Kart Çeşidi' },
-  { value: '4.9/5', label: 'Müşteri Puanı' },
-  { value: '7/24', label: 'Destek' },
-];
-
-function StatsBar() {
-  return (
-    <div
-      className="border-y border-white/[0.05]"
-      style={{ background: '#060b14' }}
-      data-testid="section-stats"
-    >
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x divide-white/[0.05]">
-          {STATS.map((s, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.07, duration: 0.4 }}
-              className="flex flex-col items-center justify-center py-6 lg:py-7 px-4 gap-0.5"
-              data-testid={`stat-item-${i}`}
-            >
-              <span
-                className="text-2xl lg:text-[1.75rem] font-bold text-white tracking-tight"
-                style={{ fontFamily: "'Oswald', sans-serif" }}
-              >
-                {s.value}
-              </span>
-              <span className="text-[11px] text-white/38">{s.label}</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Set scroll row ──────────────────────────────────────────────────────────
 
@@ -722,7 +703,6 @@ export default function Home() {
       <MotionConfig reducedMotion="user">
         <main style={{ background: '#080e1c' }}>
           <HeroSection />
-          <StatsBar />
 
           <GameSection
             game="pokemon"
