@@ -277,7 +277,7 @@ export default function Store() {
         <div className="flex items-start gap-8">
 
           {/* Sidebar */}
-          <aside className="hidden lg:block w-56 flex-shrink-0 sticky top-24">
+          <aside className="hidden lg:block w-56 flex-shrink-0 sticky top-24" style={{ maxHeight: 'calc(100vh - 7rem)', overflowY: 'auto' }}>
             <div
               className="rounded-2xl p-5 border"
               style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
