@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, type ElementType } from 'react';
 import { Link } from 'wouter';
-import { motion, MotionConfig } from 'framer-motion';
+import { motion, MotionConfig, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
@@ -52,11 +52,11 @@ const FAN_CFG = {
   },
   desktop: {
     positions: [
-      { rotate: -22, x: -242, y: -20,  delay: 0.06 },
-      { rotate: -9,  x: -119, y: -50,  delay: 0.14 },
-      { rotate: 0,   x: 0,    y: -75,  delay: 0.22 },
-      { rotate: 9,   x: 119,  y: -50,  delay: 0.30 },
-      { rotate: 22,  x: 242,  y: -20,  delay: 0.38 },
+      { rotate: -22, x: -242, y: -65,  delay: 0.06 },
+      { rotate: -9,  x: -119, y: -95,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -120, delay: 0.22 },
+      { rotate: 9,   x: 119,  y: -95,  delay: 0.30 },
+      { rotate: 22,  x: 242,  y: -65,  delay: 0.38 },
     ],
     w: 285, h: 399,
     containerW: 740, containerH: 520,
@@ -84,12 +84,49 @@ function CardFan() {
   const { data: riftData } = useCards({ game: 'riftbound', limit: 20, sort: 'newest' });
   const { data: pokeData } = useCards({ game: 'pokemon', limit: 20, sort: 'newest' });
 
-  const fanImages = useMemo(() => {
-    const rift = [...(riftData?.cards ?? []).filter(c => c.image_url)].sort(() => Math.random() - 0.5);
-    const poke = [...(pokeData?.cards ?? []).filter(c => c.image_url)].sort(() => Math.random() - 0.5);
-    // 3 Riftbound (center + flanks) + 2 Pokemon (outer positions)
-    return [rift[0], rift[1], rift[2], poke[0], poke[1]].map(c => c?.image_url ?? null);
+  // Build interleaved pool of all card images
+  const imagePool = useMemo<string[]>(() => {
+    const rift = (riftData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
+    const poke = (pokeData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
+    const pool: string[] = [];
+    const max = Math.max(rift.length, poke.length);
+    for (let i = 0; i < max; i++) {
+      if (i < rift.length) pool.push(rift[i]);
+      if (i < poke.length) pool.push(poke[i]);
+    }
+    return pool;
   }, [riftData, pokeData]);
+
+  // 5 slots — one per fan position
+  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null]);
+  const poolIdxRef = useRef(5);
+  const slotIdxRef = useRef(0);   // which slot to replace next (0→4→0…)
+  const initializedRef = useRef(false);
+
+  // Seed slots on first load
+  useEffect(() => {
+    if (imagePool.length >= 5 && !initializedRef.current) {
+      initializedRef.current = true;
+      setSlots(imagePool.slice(0, 5));
+      poolIdxRef.current = 5;
+    }
+  }, [imagePool]);
+
+  // Cycle one card every 3 s — leftmost first, then moving right
+  useEffect(() => {
+    if (imagePool.length === 0) return;
+    const id = setInterval(() => {
+      setSlots(prev => {
+        const next = [...prev];
+        const slot = slotIdxRef.current % 5;
+        next[slot] = imagePool[poolIdxRef.current % imagePool.length];
+        slotIdxRef.current++;
+        poolIdxRef.current++;
+        return next;
+      });
+    }, 3000);
+    return () => clearInterval(id);
+  }, [imagePool]);
 
   const cfg = isDesktop ? FAN_CFG.desktop : FAN_CFG.mobile;
   const { positions, w, h, containerW, containerH } = cfg;
@@ -122,10 +159,12 @@ function CardFan() {
       {positions.map((pos, i) => {
         const isCenter = i === centerIdx;
         const depthZ = 10 - Math.abs(i - centerIdx) * 2;
+        const imgSrc = slots[i];
+
         return (
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 80, rotate: pos.rotate }}
+            initial={{ opacity: 0, y: pos.y + 80, rotate: pos.rotate }}
             animate={{ opacity: 1, y: pos.y, x: pos.x, rotate: pos.rotate }}
             transition={{ duration: 0.75, delay: pos.delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] }}
             style={{ position: 'absolute', bottom: 0, zIndex: depthZ }}
@@ -133,11 +172,11 @@ function CardFan() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3.8 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
-              className="overflow-hidden"
               style={{
                 width: w,
                 height: h,
                 borderRadius: 12,
+                overflow: 'hidden',
                 border: isCenter
                   ? '1.5px solid rgba(129,140,248,0.55)'
                   : '1px solid rgba(255,255,255,0.15)',
@@ -146,16 +185,26 @@ function CardFan() {
                   : '0 14px 44px rgba(0,0,0,0.55)',
               }}
             >
-              {fanImages[i] ? (
-                <img
-                  src={fanImages[i]!}
-                  alt=""
-                  className="w-full h-full object-contain"
-                  style={{ background: '#1a1a3e' }}
-                />
-              ) : (
-                <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[i % CARD_BG_FALLBACK.length]}`} />
-              )}
+              <AnimatePresence mode="sync" initial={false}>
+                <motion.div
+                  key={imgSrc ?? `empty-${i}`}
+                  initial={{ opacity: 0, x: -28 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 28 }}
+                  transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  {imgSrc ? (
+                    <img
+                      src={imgSrc}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[i % CARD_BG_FALLBACK.length]}`} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
           </motion.div>
         );
