@@ -217,8 +217,8 @@ function HeroSection() {
       style={{ minHeight: 'calc(100vh - 120px)' }}
       data-testid="section-hero"
     >
-      {/* YouTube video background — desktop only */}
-      <div className="absolute inset-0 pointer-events-none hidden lg:block">
+      {/* YouTube video background — all screens */}
+      <div className="absolute inset-0 pointer-events-none">
         <iframe
           src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocards.toov.com.tr"
           allow="autoplay; encrypted-media"
@@ -322,10 +322,10 @@ function HeroSection() {
               >
                 <Link href="/oyun/riftbound">
                   <img src="/logo-riftbound.png" alt="Riftbound"
-                    className="h-7 w-auto object-contain select-none"
+                    className="h-10 w-auto object-contain select-none"
                     style={{ mixBlendMode: 'screen' }} draggable={false} />
                 </Link>
-                <div className="w-px h-8 bg-white/12 shrink-0" />
+                <div className="w-px h-10 bg-white/12 shrink-0" />
                 <Link href="/oyun/pokemon">
                   <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG"
                     className="h-10 w-auto object-contain select-none" draggable={false} />
