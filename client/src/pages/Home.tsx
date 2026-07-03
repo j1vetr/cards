@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { motion, MotionConfig } from 'framer-motion';
@@ -55,58 +56,90 @@ const stagger = {
 
 // ── Card fan decoration ─────────────────────────────────────────────────────
 
-const FAN_CARDS = [
-  { rotate: -22, x: -120, y: 18, delay: 0.1 },
-  { rotate: -11, x: -60,  y: -4, delay: 0.18 },
-  { rotate: 0,   x: 0,    y: -14, delay: 0.26 },
-  { rotate: 11,  x: 60,   y: -4, delay: 0.34 },
-  { rotate: 22,  x: 120,  y: 18, delay: 0.42 },
-];
+const FAN_CFG = {
+  mobile: {
+    positions: [
+      { rotate: -26, x: -115, y: 20, delay: 0.08 },
+      { rotate: -9,  x: -38,  y: -8, delay: 0.16 },
+      { rotate: 9,   x: 38,   y: -8, delay: 0.24 },
+      { rotate: 26,  x: 115,  y: 20, delay: 0.32 },
+    ],
+    w: 105, h: 147,
+    containerW: 310, containerH: 230,
+  },
+  desktop: {
+    positions: [
+      { rotate: -26, x: -195, y: 36, delay: 0.08 },
+      { rotate: -9,  x: -65,  y: -14, delay: 0.18 },
+      { rotate: 9,   x: 65,   y: -14, delay: 0.28 },
+      { rotate: 26,  x: 195,  y: 36, delay: 0.38 },
+    ],
+    w: 175, h: 245,
+    containerW: 540, containerH: 400,
+  },
+};
 
-const CARD_BG = [
+const CARD_BG_FALLBACK = [
   'from-violet-700 to-indigo-800',
   'from-indigo-700 to-blue-800',
   'from-sky-600 to-indigo-700',
   'from-blue-700 to-violet-800',
-  'from-indigo-600 to-purple-800',
 ];
 
 function CardFan() {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const { data } = useQuery<{ cards: CardPublic[]; total: number }>({
     queryKey: ['/api/cards', 'fan'],
     queryFn: async () => {
-      const r = await fetch('/api/cards?limit=24&sort=newest');
+      const r = await fetch('/api/cards?limit=40&sort=newest');
       if (!r.ok) throw new Error();
       return r.json();
     },
     staleTime: 300_000,
   });
 
-  const fanImages = (() => {
-    const pool = (data?.cards ?? []).filter(c => c.image_url);
-    if (pool.length === 0) return Array(5).fill(null);
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    return Array.from({ length: 5 }, (_, i) => shuffled[i % shuffled.length]?.image_url ?? null);
-  })();
+  const fanImages = useMemo(() => {
+    const all = (data?.cards ?? []).filter(c => c.image_url);
+    const pokemon   = [...all.filter(c => c.game_slug === 'pokemon')].sort(() => Math.random() - 0.5);
+    const riftbound = [...all.filter(c => c.game_slug === 'riftbound')].sort(() => Math.random() - 0.5);
+    // 2 pokemon + 2 riftbound; fallback to any card if one game is empty
+    const picks = [pokemon[0], pokemon[1], riftbound[0], riftbound[1]];
+    const anyFallback = [...all].sort(() => Math.random() - 0.5);
+    return picks.map((c, i) => c?.image_url ?? anyFallback[i]?.image_url ?? null);
+  }, [data]);
+
+  const cfg = isDesktop ? FAN_CFG.desktop : FAN_CFG.mobile;
+  const { positions, w, h, containerW, containerH } = cfg;
 
   return (
-    <div className="relative w-[300px] h-[240px] flex items-end justify-center select-none pointer-events-none">
-      {FAN_CARDS.map((cfg, i) => (
+    <div
+      className="relative flex items-end justify-center select-none pointer-events-none"
+      style={{ width: containerW, height: containerH }}
+    >
+      {positions.map((pos, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, y: 50, rotate: cfg.rotate }}
-          animate={{ opacity: 1, y: cfg.y, x: cfg.x, rotate: cfg.rotate }}
-          transition={{ duration: 0.65, delay: cfg.delay, ease: 'easeOut' }}
+          initial={{ opacity: 0, y: 60, rotate: pos.rotate }}
+          animate={{ opacity: 1, y: pos.y, x: pos.x, rotate: pos.rotate }}
+          transition={{ duration: 0.7, delay: pos.delay, ease: 'easeOut' }}
           style={{ position: 'absolute', bottom: 0 }}
         >
           <motion.div
-            animate={{ y: [0, -7, 0] }}
-            transition={{ duration: 3.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
-            className="relative overflow-hidden shadow-2xl"
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 3.6 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.35 }}
+            className="overflow-hidden shadow-2xl"
             style={{
-              width: 78, height: 109,
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.18)',
+              width: w, height: h,
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.2)',
             }}
           >
             {fanImages[i] ? (
@@ -114,10 +147,10 @@ function CardFan() {
                 src={fanImages[i]!}
                 alt=""
                 className="w-full h-full object-contain"
-                style={{ background: '#1e1b4b' }}
+                style={{ background: '#1a1a3e' }}
               />
             ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${CARD_BG[i]}`} />
+              <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[i]}`} />
             )}
           </motion.div>
         </motion.div>
@@ -141,14 +174,28 @@ function HeroSection() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.12),transparent_60%)]" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* left: text */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 lg:py-24 w-full">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center">
+
+          {/* card fan — top on mobile, right on desktop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="flex justify-center lg:justify-end order-1 lg:order-2 mb-6 lg:mb-0"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-indigo-600/15 blur-[100px] rounded-full scale-125" />
+              <CardFan />
+            </div>
+          </motion.div>
+
+          {/* text — below on mobile, left on desktop */}
           <motion.div
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="text-center lg:text-left"
+            className="text-center lg:text-left order-2 lg:order-1"
           >
             <motion.h1
               variants={fadeUp}
@@ -191,18 +238,6 @@ function HeroSection() {
             </motion.div>
           </motion.div>
 
-          {/* right: card fan */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex justify-center lg:justify-end"
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-indigo-600/10 blur-[80px] rounded-full scale-150" />
-              <CardFan />
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
