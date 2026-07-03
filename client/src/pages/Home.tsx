@@ -251,6 +251,23 @@ function HeroSection() {
                 </Link>
               </motion.div>
 
+              {/* Game logos — mobile only, inline after CTA */}
+              <motion.div
+                variants={fadeUp}
+                className="flex lg:hidden items-center justify-center gap-6 mt-5"
+              >
+                <Link href="/oyun/pokemon">
+                  <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG"
+                    className="h-10 w-auto object-contain select-none" draggable={false} />
+                </Link>
+                <div className="w-px h-8 bg-white/12 shrink-0" />
+                <Link href="/oyun/riftbound">
+                  <img src="/logo-riftbound.png" alt="Riftbound"
+                    className="h-7 w-auto object-contain select-none"
+                    style={{ mixBlendMode: 'screen' }} draggable={false} />
+                </Link>
+              </motion.div>
+
               {/* Trust badges row — desktop only */}
               <motion.div
                 variants={fadeUp}
@@ -273,12 +290,12 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Game logo row — replaces StatsBar, anchored to bottom of hero */}
+        {/* Game logo row — desktop only, anchored to bottom */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="pb-6 lg:pb-12 pt-2 lg:pt-0 flex items-center justify-center gap-8 sm:gap-14 lg:gap-20"
+          className="hidden lg:flex pb-12 items-center justify-center gap-20"
         >
           <Link href="/oyun/pokemon" data-testid="link-hero-pokemon-logo">
             <motion.div
