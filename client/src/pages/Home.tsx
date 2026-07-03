@@ -302,7 +302,7 @@ function HeroSection() {
 
               {/* CTA buttons */}
               <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto">
-                <Link href="/magaza">
+                <Link href="/magaza?game=riftbound">
                   <motion.button
                     data-testid="btn-hero-magaza"
                     whileHover={{ scale: 1.03 }}

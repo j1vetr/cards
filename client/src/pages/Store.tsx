@@ -6,7 +6,7 @@ import { CardCard } from '@/components/CardCard';
 import { useLocation, useSearch } from 'wouter';
 import {
   SlidersHorizontal, X, Search, ChevronLeft, ChevronRight,
-  Layers, Loader2, Grid3X3, LayoutGrid,
+  Layers, Grid3X3, LayoutGrid,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
@@ -122,17 +122,15 @@ export default function Store() {
     navigate('/magaza', { replace: true });
   };
 
-  // Expose selectedType to FiltersPanel (it's in scope as a closure variable)
-
   const FiltersPanel = () => (
     <div className="space-y-6">
       {games.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Oyun</p>
-          <div className="space-y-1">
+          <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Oyun</p>
+          <div className="space-y-0.5">
             <button
               onClick={() => setFilter({ game: null, set: null, rarity: null })}
-              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${!selectedGame ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${!selectedGame ? 'bg-indigo-600/20 text-indigo-300 font-medium' : 'text-white/55 hover:bg-white/[0.06] hover:text-white/80'}`}
             >
               Tümü
             </button>
@@ -141,7 +139,7 @@ export default function Store() {
                 key={g.id}
                 data-testid={`filter-game-${g.slug}`}
                 onClick={() => setFilter({ game: g.slug, set: null, rarity: null })}
-                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${selectedGame === g.slug ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${selectedGame === g.slug ? 'bg-indigo-600/20 text-indigo-300 font-medium' : 'text-white/55 hover:bg-white/[0.06] hover:text-white/80'}`}
               >
                 {g.name}
               </button>
@@ -152,11 +150,11 @@ export default function Store() {
 
       {sets.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Set / Expansion</p>
-          <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+          <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Set / Expansion</p>
+          <div className="space-y-0.5 max-h-52 overflow-y-auto pr-1 scrollbar-thin">
             <button
               onClick={() => setFilter({ set: null })}
-              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${!selectedSet ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${!selectedSet ? 'bg-indigo-600/20 text-indigo-300 font-medium' : 'text-white/55 hover:bg-white/[0.06] hover:text-white/80'}`}
             >
               Tüm Setler
             </button>
@@ -165,11 +163,11 @@ export default function Store() {
                 key={s.id}
                 data-testid={`filter-set-${s.slug}`}
                 onClick={() => setFilter({ set: s.slug })}
-                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${selectedSet === s.slug ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-zinc-600 hover:bg-zinc-50'}`}
+                className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${selectedSet === s.slug ? 'bg-indigo-600/20 text-indigo-300 font-medium' : 'text-white/55 hover:bg-white/[0.06] hover:text-white/80'}`}
               >
-                {s.symbol_url && <img src={s.symbol_url} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                {s.symbol_url && <img src={s.symbol_url} alt="" className="w-4 h-4 object-contain flex-shrink-0 opacity-70" />}
                 <span className="truncate">{s.name}</span>
-                {s.listed_cards > 0 && <span className="ml-auto text-xs text-zinc-400 flex-shrink-0">{s.listed_cards}</span>}
+                {s.listed_cards > 0 && <span className="ml-auto text-xs text-white/25 flex-shrink-0">{s.listed_cards}</span>}
               </button>
             ))}
           </div>
@@ -178,7 +176,7 @@ export default function Store() {
 
       {rarities.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Rarity</p>
+          <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Rarity</p>
           <div className="flex flex-wrap gap-1.5">
             {rarities.map(r => (
               <button
@@ -187,8 +185,8 @@ export default function Store() {
                 onClick={() => setFilter({ rarity: selectedRarity === r ? null : r })}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                   selectedRarity === r
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-300'
+                    ? 'bg-indigo-600/30 text-indigo-300 border-indigo-500/50'
+                    : 'bg-white/[0.04] text-white/50 border-white/10 hover:border-indigo-500/40 hover:text-white/70'
                 }`}
               >
                 {r}
@@ -200,7 +198,7 @@ export default function Store() {
 
       {cardTypes.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Tip</p>
+          <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Tip</p>
           <div className="flex flex-wrap gap-1.5">
             {cardTypes.map(t => (
               <button
@@ -209,8 +207,8 @@ export default function Store() {
                 onClick={() => setFilter({ type: selectedType === t ? null : t })}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                   selectedType === t
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-300'
+                    ? 'bg-indigo-600/30 text-indigo-300 border-indigo-500/50'
+                    : 'bg-white/[0.04] text-white/50 border-white/10 hover:border-indigo-500/40 hover:text-white/70'
                 }`}
               >
                 {t}
@@ -221,7 +219,7 @@ export default function Store() {
       )}
 
       <div>
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Kondisyon</p>
+        <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Kondisyon</p>
         <div className="flex flex-wrap gap-1.5">
           {CONDITIONS.map(c => (
             <button
@@ -230,8 +228,8 @@ export default function Store() {
               onClick={() => setFilter({ condition: selectedCondition === c.value ? null : c.value })}
               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                 selectedCondition === c.value
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-300'
+                  ? 'bg-indigo-600/30 text-indigo-300 border-indigo-500/50'
+                  : 'bg-white/[0.04] text-white/50 border-white/10 hover:border-indigo-500/40 hover:text-white/70'
               }`}
             >
               {c.value}
@@ -241,7 +239,7 @@ export default function Store() {
       </div>
 
       <div>
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Fiyat Aralığı</p>
+        <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Fiyat Aralığı</p>
         <Slider
           min={0}
           max={MAX_PRICE}
@@ -250,7 +248,7 @@ export default function Store() {
           onValueChange={v => setLocalPriceRange(v as [number, number])}
           className="mb-3"
         />
-        <div className="flex items-center justify-between text-sm text-zinc-600">
+        <div className="flex items-center justify-between text-sm text-white/45">
           <span>{localPriceRange[0].toLocaleString('tr-TR')} ₺</span>
           <span>{localPriceRange[1].toLocaleString('tr-TR')} ₺</span>
         </div>
@@ -259,7 +257,7 @@ export default function Store() {
       {activeFilterCount > 0 && (
         <button
           onClick={() => { clearFilters(); setFilterOpen(false); }}
-          className="w-full text-sm text-indigo-600 hover:text-indigo-800 font-medium py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+          className="w-full text-sm text-indigo-400 hover:text-indigo-300 font-medium py-2 border border-indigo-500/25 rounded-lg hover:bg-indigo-600/10 transition-colors"
         >
           Filtreleri Temizle ({activeFilterCount})
         </button>
@@ -268,22 +266,27 @@ export default function Store() {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen" style={{ background: '#080e1c' }}>
       <SEO
-        title="TCG Kart Mağazası — Ecarte"
+        title="TCG Kart Mağazası — Go|Cards"
         description="Pokemon TCG ve Riftbound single kartlar, booster box ve sealed ürünler. Türkiye'nin TCG marketplace'i."
       />
       <Header />
 
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-start gap-8">
+
+          {/* Sidebar */}
           <aside className="hidden lg:block w-56 flex-shrink-0 sticky top-24">
-            <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-5">
+            <div
+              className="rounded-2xl p-5 border"
+              style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
+            >
               <div className="flex items-center gap-2 mb-5">
-                <Layers className="w-4 h-4 text-indigo-600" />
-                <span className="font-semibold text-zinc-900 text-sm">Filtreler</span>
+                <Layers className="w-4 h-4 text-indigo-400" />
+                <span className="font-semibold text-white/80 text-sm">Filtreler</span>
                 {activeFilterCount > 0 && (
-                  <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
+                  <span className="ml-auto text-xs bg-indigo-600/30 text-indigo-300 font-semibold px-2 py-0.5 rounded-full">
                     {activeFilterCount}
                   </span>
                 )}
@@ -293,30 +296,34 @@ export default function Store() {
           </aside>
 
           <main className="flex-1 min-w-0">
+            {/* Toolbar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
               <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
                   data-testid="input-card-search"
                   type="text"
                   placeholder="Kart ara..."
                   value={localSearch}
                   onChange={e => setLocalSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white/80 placeholder:text-white/25"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
                 />
                 {localSearch && (
                   <button onClick={() => setLocalSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <X className="w-3 h-3 text-zinc-400" />
+                    <X className="w-3 h-3 text-white/30 hover:text-white/60" />
                   </button>
                 )}
               </div>
 
               <div className="flex items-center gap-2 ml-auto">
+                {/* Mobile filter sheet */}
                 <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                   <SheetTrigger asChild>
                     <button
                       data-testid="btn-mobile-filters"
-                      className="lg:hidden flex items-center gap-2 text-sm px-3 py-2 border border-zinc-200 rounded-xl bg-white hover:bg-zinc-50 transition-colors"
+                      className="lg:hidden flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white/60 hover:text-white/80 transition-colors"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
                     >
                       <SlidersHorizontal className="w-4 h-4" />
                       Filtre
@@ -327,37 +334,50 @@ export default function Store() {
                       )}
                     </button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-72 p-5 overflow-y-auto">
+                  <SheetContent
+                    side="left"
+                    className="w-72 p-5 overflow-y-auto border-r"
+                    style={{ background: '#0d1427', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
                     <SheetHeader className="mb-5">
-                      <SheetTitle>Filtreler</SheetTitle>
+                      <SheetTitle className="text-white/80">Filtreler</SheetTitle>
                     </SheetHeader>
                     <FiltersPanel />
                   </SheetContent>
                 </Sheet>
 
                 <Select value={sort} onValueChange={v => setFilter({ sort: v })}>
-                  <SelectTrigger data-testid="select-sort" className="w-44 text-sm bg-white border-zinc-200">
+                  <SelectTrigger
+                    data-testid="select-sort"
+                    className="w-44 text-sm text-white/70 border-white/10 focus:ring-indigo-500"
+                    style={{ background: 'rgba(255,255,255,0.06)' }}
+                  >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent style={{ background: '#0d1427', borderColor: 'rgba(255,255,255,0.12)' }}>
                     {SORT_OPTIONS.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      <SelectItem key={o.value} value={o.value} className="text-white/70 focus:bg-indigo-600/20 focus:text-indigo-300">
+                        {o.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <div className="hidden sm:flex items-center gap-1 bg-white border border-zinc-200 rounded-xl p-1">
+                <div
+                  className="hidden sm:flex items-center gap-1 rounded-xl p-1"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
+                >
                   <button
                     data-testid="btn-grid-3"
                     onClick={() => setGridCols(3)}
-                    className={`p-1.5 rounded-lg transition-colors ${gridCols === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    className={`p-1.5 rounded-lg transition-colors ${gridCols === 3 ? 'bg-indigo-600/30 text-indigo-300' : 'text-white/30 hover:text-white/60'}`}
                   >
                     <Grid3X3 className="w-4 h-4" />
                   </button>
                   <button
                     data-testid="btn-grid-4"
                     onClick={() => setGridCols(4)}
-                    className={`p-1.5 rounded-lg transition-colors ${gridCols === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    className={`p-1.5 rounded-lg transition-colors ${gridCols === 4 ? 'bg-indigo-600/30 text-indigo-300' : 'text-white/30 hover:text-white/60'}`}
                   >
                     <LayoutGrid className="w-4 h-4" />
                   </button>
@@ -365,6 +385,7 @@ export default function Store() {
               </div>
             </div>
 
+            {/* Active filter chips */}
             {activeFilterCount > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {selectedGame && (
@@ -385,43 +406,45 @@ export default function Store() {
                     onRemove={() => { setLocalPriceRange([0, MAX_PRICE]); setFilter({ minPrice: null, maxPrice: null }); }}
                   />
                 )}
-                <button onClick={clearFilters} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2">
+                <button onClick={clearFilters} className="text-xs text-indigo-400 hover:text-indigo-300 font-medium px-2">
                   Tümünü Temizle
                 </button>
               </div>
             )}
 
+            {/* Result count */}
             <div className="flex items-center gap-3 mb-5">
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-white/35">
                 {isLoading ? 'Yükleniyor...' : (
                   total > 0 ? <>{total.toLocaleString('tr-TR')} kart bulundu</> : 'Sonuç bulunamadı'
                 )}
               </p>
             </div>
 
+            {/* Grid */}
             {isLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {Array.from({ length: LIMIT }).map((_, i) => (
-                  <div key={i} className="rounded-xl bg-white border border-zinc-100 overflow-hidden animate-pulse">
-                    <div className="aspect-[63/88] bg-zinc-100" />
+                  <div key={i} className="rounded-xl overflow-hidden animate-pulse" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="aspect-[63/88]" style={{ background: 'rgba(255,255,255,0.05)' }} />
                     <div className="p-3 space-y-2">
-                      <div className="h-3 bg-zinc-100 rounded w-1/2" />
-                      <div className="h-4 bg-zinc-100 rounded" />
-                      <div className="h-3 bg-zinc-100 rounded w-3/4" />
+                      <div className="h-3 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                      <div className="h-4 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                      <div className="h-3 rounded w-3/4" style={{ background: 'rgba(255,255,255,0.06)' }} />
                     </div>
                   </div>
                 ))}
               </div>
             ) : cards.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-7 h-7 text-zinc-300" />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <Search className="w-7 h-7 text-white/20" />
                 </div>
-                <p className="text-lg font-semibold text-zinc-700 mb-2">Kart bulunamadı</p>
-                <p className="text-sm text-zinc-400 mb-6">Filtreleri değiştirerek tekrar deneyin</p>
+                <p className="text-lg font-semibold text-white/60 mb-2">Kart bulunamadı</p>
+                <p className="text-sm text-white/30 mb-6">Filtreleri değiştirerek tekrar deneyin</p>
                 <button
                   onClick={clearFilters}
-                  className="text-sm px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                  className="text-sm px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-colors"
                 >
                   Filtreleri Temizle
                 </button>
@@ -447,13 +470,15 @@ export default function Store() {
               </AnimatePresence>
             )}
 
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
                 <button
                   data-testid="btn-prev-page"
                   onClick={() => setFilter({ page: String(page - 1) }, false)}
                   disabled={page <= 1}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 disabled:opacity-40 transition-colors"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors disabled:opacity-30 text-white/50 hover:text-white/80"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -472,8 +497,9 @@ export default function Store() {
                       className={`w-9 h-9 text-sm rounded-xl border transition-colors ${
                         p === page
                           ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                          : 'text-white/50 hover:text-white/80'
                       }`}
+                      style={p !== page ? { background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.09)' } : undefined}
                     >
                       {p}
                     </button>
@@ -484,7 +510,8 @@ export default function Store() {
                   data-testid="btn-next-page"
                   onClick={() => setFilter({ page: String(page + 1) }, false)}
                   disabled={page >= totalPages}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 disabled:opacity-40 transition-colors"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors disabled:opacity-30 text-white/50 hover:text-white/80"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -501,9 +528,12 @@ export default function Store() {
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-full">
+    <span
+      className="inline-flex items-center gap-1 text-xs text-indigo-300 border px-2.5 py-1 rounded-full"
+      style={{ background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.25)' }}
+    >
       {label}
-      <button onClick={onRemove} className="hover:text-indigo-900">
+      <button onClick={onRemove} className="hover:text-indigo-100 transition-colors">
         <X className="w-3 h-3" />
       </button>
     </span>
