@@ -11,10 +11,8 @@ import {
   ShieldCheck,
   Truck,
   Package,
-  RotateCcw,
   ChevronRight,
   ChevronDown,
-  Sparkles,
   Layers,
   Zap,
 } from 'lucide-react';
@@ -621,152 +619,6 @@ function GameSection({ game, title, accentColor, accentClass, bgColor, Placehold
   );
 }
 
-// ── Trust ───────────────────────────────────────────────────────────────────
-
-const TRUST_ITEMS = [
-  {
-    icon: ShieldCheck,
-    title: 'Koşul Garantisi',
-    desc: 'Her kart listede belirtilen koşulda gönderilir. NM, LP, PSA — tam şeffaflık.',
-    color: '#818cf8',
-  },
-  {
-    icon: Package,
-    title: 'Güvenli Paketleme',
-    desc: 'Kartlar sleeve, top loader ve baloncuklu naylon ile çift korumalı paketlenir.',
-    color: '#34d399',
-  },
-  {
-    icon: Truck,
-    title: 'Hızlı Kargo',
-    desc: 'Siparişler 1-2 iş günü içinde kargoya verilir, takip numarası anında iletilir.',
-    color: '#60a5fa',
-  },
-  {
-    icon: RotateCcw,
-    title: '30 Günlük İade',
-    desc: 'Koşul uyuşmazlığında 30 gün içinde ücretsiz iade veya tam para iadesi.',
-    color: '#f472b6',
-  },
-];
-
-function TrustSection() {
-  return (
-    <section
-      className="py-20 relative"
-      style={{ background: '#060a14', borderTop: '1px solid rgba(255,255,255,0.05)' }}
-      data-testid="section-trust"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-60px' }}
-          className="mb-12 text-center"
-        >
-          <motion.span variants={fadeUp} className="inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-            <Sparkles className="w-3 h-3" />
-            Neden Biz?
-          </motion.span>
-          <motion.h2 variants={fadeUp} className="text-3xl font-bold text-white" style={{ fontFamily: "'Oswald', sans-serif" }}>
-            Güvenle Alışveriş
-          </motion.h2>
-        </motion.div>
-
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-40px' }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          {TRUST_ITEMS.map(item => (
-            <motion.div
-              key={item.title}
-              variants={fadeUp}
-              className="flex flex-col p-6 rounded-2xl border border-white/[0.07]"
-              style={{ background: 'rgba(255,255,255,0.03)' }}
-            >
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 shrink-0"
-                style={{ background: `${item.color}18` }}
-              >
-                <item.icon className="w-5 h-5" style={{ color: item.color }} />
-              </div>
-              <h3 className="text-sm font-bold text-white mb-1.5">{item.title}</h3>
-              <p className="text-xs text-white/40 leading-relaxed">{item.desc}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// ── Final CTA ───────────────────────────────────────────────────────────────
-
-function FinalCTASection() {
-  return (
-    <section className="py-24 bg-[#0d1427] relative overflow-hidden" data-testid="section-final-cta">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-indigo-700/20 blur-[120px] rounded-full" />
-      </div>
-      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-80px' }}
-        >
-          <motion.span variants={fadeUp} className="inline-flex items-center gap-1.5 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full mb-6">
-            <Sparkles className="w-3.5 h-3.5" />
-            Koleksiyonunu Büyüt
-          </motion.span>
-
-          <motion.h2
-            variants={fadeUp}
-            className="text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight"
-            style={{ fontFamily: "'Oswald', sans-serif" }}
-          >
-            Bir Sonraki Favori Kartın
-            <br />
-            <span className="text-indigo-400">Seni Bekliyor</span>
-          </motion.h2>
-
-          <motion.p variants={fadeUp} className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
-            10.000'den fazla single kart, PSA gradlenmiş özel koleksiyonlar ve sürekli güncellenen stok.
-          </motion.p>
-
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/magaza">
-              <motion.button
-                data-testid="btn-cta-magaza"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-4 rounded-xl transition-colors shadow-lg shadow-indigo-900/50"
-              >
-                Mağazaya Git
-                <ChevronRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
-            <Link href="/hakkimizda">
-              <motion.button
-                data-testid="btn-cta-hakkimizda"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
-              >
-                Biz Kimiz?
-              </motion.button>
-            </Link>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
 // ── Home ────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -802,8 +654,6 @@ export default function Home() {
             testId="section-riftbound"
           />
 
-          <TrustSection />
-          <FinalCTASection />
         </main>
       </MotionConfig>
       <Footer />
