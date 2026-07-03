@@ -1,0 +1,32 @@
+31|gocards |     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+31|gocards | Error: DATABASE_URL environment variable is not set
+31|gocards |     at /var/www/gocards/dist/index.cjs:70:128223
+31|gocards |     at /var/www/gocards/dist/index.cjs:1:225
+31|gocards |     at /var/www/gocards/dist/index.cjs:70:128391
+31|gocards |     at /var/www/gocards/dist/index.cjs:1:225
+31|gocards |     at Object.<anonymous> (/var/www/gocards/dist/index.cjs:665:25174)
+31|gocards |     at Module._compile (node:internal/modules/cjs/loader:1705:14)
+31|gocards |     at Object..js (node:internal/modules/cjs/loader:1838:10)
+31|gocards |     at Module.load (node:internal/modules/cjs/loader:1441:32)
+31|gocards |     at Function._load (node:internal/modules/cjs/loader:1263:12)
+31|gocards |     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+31|gocards | [http-retry] network error for https://api.riftcodex.com/sets?limit=50&page=1 — retry 1/3 in 1000ms
+31|gocards | [http-retry] network error for https://api.riftcodex.com/sets?limit=50&page=1 — retry 2/3 in 2000ms
+31|gocards | [http-retry] network error for https://api.riftcodex.com/sets?limit=50&page=1 — retry 3/3 in 4000ms
+
+/root/.pm2/logs/gocards-out.log last 15 lines:
+31|gocards | ]
+31|gocards | 8:38:41 PM [express] GET /api/admin/cards 304 in 6ms :: {"cards":[],"total":0}
+31|gocards | 8:38:41 PM [express] GET /api/admin/inventory 304 in 1ms :: []
+31|gocards | 8:38:41 PM [express] GET /api/admin/products 304 in 8ms :: []
+31|gocards | 8:38:41 PM [express] GET /api/categories 304 in 6ms :: []
+31|gocards | 8:38:41 PM [express] GET /api/admin/orders 304 in 7ms :: []
+31|gocards | 8:38:41 PM [express] GET /api/admin/users 304 in 7ms :: []
+31|gocards | 8:38:41 PM [express] GET /api/admin/reviews/pending-count 304 in 4ms :: {"count":0}
+31|gocards | 8:38:41 PM [express] GET /api/admin/stats 304 in 28ms :: {"totalProducts":0,"totalCategories":0,"totalOrders":0,"totalUsers":0,"totalRevenue":0,"pendingOrders":0,"totalCards":0,"activeListings":0,"priceSyncedAt":null}
+31|gocards | 8:38:41 PM [express] GET /api/admin/tcg/games 304 in 8ms :: [{"id":"61dd2529-9bb7-4d06-bf02-7f02735d8a90","name":"Pokemon TCG","slug":"pokemon","logoUrl":null,"isActive":true,"createdAt":"2026-07-03T20:37:18.889Z"},{"id":"b8011ee8-dede-42dd-a341-db533f9525b6","name":"Riftbound","slug":"riftbound","logoUrl":null,"isActive":true,"createdAt":"2026-07-03T20:37:18.889Z"}]
+31|gocards | 8:38:41 PM [express] GET /api/admin/tcg/sync-runs 304 in 5ms :: [{"id":"44feffda-e003-4656-92b0-f58c66ccfb82","game":"riftbound","mode":"sets","status":"failed","setApiId":null,"stats":{"errors":1,"cardsUpdated":0,"cardsInserted":0,"pricesUpdated":0,"setsProcessed":0,"cardsProcessed":0},"errors":[{"context":"sync-engine","message":"HTTP 403 (Forbidden): https://api.riftcodex.com/sets?limit=50&page=1"}],"startedAt":"2026-07-03T20:37:42.482Z","completedAt":"2026-07-03T17:37:49.751Z"},{"id":"9d13adc1-b9de-46e0-862e-a9ae96d3479b","game":"riftbound","mode":"sets","status":"failed","setApiId":null,"stats":{"errors":1,"cardsUpdated":0,"cardsInserted":0,"pricesUpdated":0,"setsProcessed":0,"cardsProcessed":0},"errors":[{"context":"sync-engine","message":"Oyun bulunamadı: slug=\"riftbound\". Veritabanında card_games seeded mi?"}],"startedAt":"2026-07-03T20:35:26.195Z","completedAt":"2026-07-03T17:35:26.201Z"},{"id":"f70c3794-09de-427d-a70b-3525c8d5ebd7","game":"pokemon_tcg","mode":"sets","status":"failed","setApiId":null,"stats":{"errors":1,"cardsUpdated":0,"cardsInserted":0,"pricesUpdated":0,"setsProcessed":0,"cardsProcessed":0},"errors":[{"context":"sync-engine","message":"Oyun bulunamadı: slug=\"pokemon\". Veritabanında card_games seeded mi?"}],"startedAt":"2026-07-03T20:34:52.704Z","completedAt":"2026-07-03T17:34:52.712Z"},{"id":"c9d12fe0-c5fc-4b29-b03a-0fdc292ab5ca","game":"riftbound","mode":"sets","status":"failed","setApiId":null,"stats":{"errors":1,"cardsUpdated":0,"cardsInserted":0,"pricesUpdated":0,"setsProcessed":0,"cardsProcessed":0},"errors":[{"context":"sync-engine","message":"Oyun bulunamadı: slug=\"riftbound\". Veritabanında card_games seeded mi?"}],"startedAt":"2026-07-03T20:34:42.654Z","completedAt":"2026-07-03T17:34:42.665Z"}]
+31|gocards | 8:38:41 PM [express] GET /api/admin/tcg/stats 304 in 3ms :: {"totalCards":0,"totalListings":0,"totalPrices":0}
+31|gocards | 8:38:41 PM [express] GET /api/admin/tcg/sets 304 in 4ms :: []
+
+

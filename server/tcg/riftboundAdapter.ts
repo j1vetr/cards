@@ -75,9 +75,14 @@ interface PagedResponse<T> {
 
 // ── Fetchers ─────────────────────────────────────────────────────────────────
 
+const RIFT_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (compatible; GoCards-Sync/1.0; +https://gocards.toov.com.tr)",
+  "Accept": "application/json",
+};
+
 async function riftFetch<T>(path: string): Promise<PagedResponse<T>> {
   const url = `${BASE_URL}${path}`;
-  const data = await httpFetchWithRetry(url, {});
+  const data = await httpFetchWithRetry(url, { headers: RIFT_HEADERS });
   if (!data || !Array.isArray(data.items)) {
     throw new Error(`RiftCodex API beklenmeyen yanıt: ${JSON.stringify(data).slice(0, 200)}`);
   }
