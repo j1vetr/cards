@@ -371,7 +371,7 @@ function HeroSection() {
               <img
                 src="/logo-riftbound.png"
                 alt="Riftbound"
-                className="h-10 sm:h-12 lg:h-14 w-auto object-contain select-none"
+                className="h-10 sm:h-12 lg:h-24 w-auto object-contain select-none"
                 style={{ mixBlendMode: 'screen' }}
                 draggable={false}
               />
