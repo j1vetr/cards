@@ -41,14 +41,14 @@ const staggerFast = {
 const FAN_CFG = {
   mobile: {
     positions: [
-      { rotate: -28, x: -152, y: 28, delay: 0.06 },
-      { rotate: -12, x: -68,  y: 4,  delay: 0.14 },
-      { rotate: 0,   x: 0,    y: -18, delay: 0.22 },
-      { rotate: 12,  x: 68,   y: 4,  delay: 0.30 },
-      { rotate: 28,  x: 152,  y: 28, delay: 0.38 },
+      { rotate: -28, x: -152, y: -5,  delay: 0.06 },
+      { rotate: -12, x: -68,  y: -22, delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -42, delay: 0.22 },
+      { rotate: 12,  x: 68,   y: -22, delay: 0.30 },
+      { rotate: 28,  x: 152,  y: -5,  delay: 0.38 },
     ],
     w: 118, h: 165,
-    containerW: 370, containerH: 260,
+    containerW: 370, containerH: 230,
   },
   desktop: {
     positions: [
@@ -175,7 +175,7 @@ const HERO_TRUST_ITEMS = [
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden bg-[#0d1427] flex flex-col"
+      className="relative bg-[#0d1427] flex flex-col"
       style={{ minHeight: 'calc(100vh - 120px)' }}
       data-testid="section-hero"
     >
@@ -198,7 +198,7 @@ function HeroSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.04 }}
-              className="flex justify-center lg:justify-end order-1 lg:order-2 mb-4 lg:mb-0 overflow-visible"
+              className="flex justify-center lg:justify-end order-1 lg:order-2 mb-1 lg:mb-0 overflow-visible"
             >
               <CardFan />
             </motion.div>
