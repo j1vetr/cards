@@ -1,112 +1,148 @@
 import { Link } from 'wouter';
 import { Header } from '@/components/Header';
-import { Home, ArrowLeft, Search, ShoppingBag } from 'lucide-react';
+import { Footer } from '@/components/Footer';
+import { Home, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SEO } from '@/components/SEO';
 
+const QUICK_LINKS = [
+  { href: '/oyun/pokemon',    label: 'Pokémon TCG' },
+  { href: '/oyun/riftbound',  label: 'Riftbound' },
+  { href: '/kartlar',         label: 'Tüm Kartlar' },
+];
+
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background">
-      <SEO title="Sayfa Bulunamadı" description="Aradığınız sayfa mevcut değil." noIndex />
+    <div className="min-h-screen flex flex-col" style={{ background: '#09090f' }}>
+      <SEO title="Sayfa Bulunamadı | Go|Cards TCG" description="Aradığınız sayfa mevcut değil." noIndex />
       <Header />
-      
-      <main className="pt-20 lg:pt-6 pb-12 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="relative mb-8">
-              <h1 className="text-[150px] sm:text-[200px] lg:text-[280px] font-bold text-white/5 leading-none select-none">
-                404
-              </h1>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
-                    className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center"
-                  >
-                    <Search className="w-8 h-8 text-white/50" />
-                  </motion.div>
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
-                    Sayfa Bulunamadı
-                  </h2>
-                  <p className="text-zinc-400 text-sm sm:text-base max-w-md mx-auto">
-                    Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.
-                  </p>
-                </div>
-              </div>
+
+      <main className="flex-1 flex items-center justify-center px-4 py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-lg w-full"
+        >
+          {/* Big ghost number */}
+          <div className="relative select-none mb-2">
+            <p
+              className="text-[180px] sm:text-[220px] font-black leading-none"
+              style={{
+                background: 'linear-gradient(180deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.04) 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              404
+            </p>
+
+            {/* Icon centered over number */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.4, type: 'spring' }}
+                className="rounded-2xl flex items-center justify-center"
+                style={{
+                  width: 72, height: 72,
+                  background: 'rgba(99,102,241,0.1)',
+                  border: '1px solid rgba(99,102,241,0.25)',
+                }}
+              >
+                <Search className="w-8 h-8" style={{ color: '#818cf8' }} />
+              </motion.div>
             </div>
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12"
-            >
-              <Link href="/">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-8 py-4 bg-white text-black rounded-xl font-semibold text-sm uppercase tracking-wider hover:bg-zinc-200 transition-colors"
-                  data-testid="button-go-home"
-                >
-                  <Home className="w-4 h-4" />
-                  Ana Sayfaya Dön
-                </motion.button>
-              </Link>
-              
-              <Link href="/magaza">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-8 py-4 bg-zinc-800 text-white rounded-xl font-semibold text-sm uppercase tracking-wider hover:bg-zinc-700 transition-colors border border-zinc-700"
-                  data-testid="button-go-store"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  Mağazaya Git
-                </motion.button>
-              </Link>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              className="mt-16 pt-8 border-t border-zinc-800 px-4"
-            >
-              <p className="text-zinc-500 text-sm mb-4">Popüler Sayfalar</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 max-w-2xl mx-auto">
-                {[
-                  { href: '/kategori/mermer', label: 'Mermer' },
-                  { href: '/kategori/granit', label: 'Granit' },
-                  { href: '/kategori/traverten', label: 'Traverten' },
-                  { href: '/hakkimizda', label: 'Hakkımızda' },
-                  { href: '/siparis-takip', label: 'Sipariş Takip' },
-                ].map((link) => (
-                  <Link key={link.href} href={link.href}>
-                    <span className="block text-center px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs sm:text-sm rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer whitespace-nowrap">
-                      {link.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </motion.div>
+          {/* Heading */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
+          >
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+              Kart Bulunamadı
+            </h1>
+            <p className="text-[15px] text-white/40 leading-relaxed mb-10">
+              Aradığın sayfa taşınmış, silinmiş ya da hiç var olmamış olabilir.
+            </p>
           </motion.div>
-        </div>
+
+          {/* CTA buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.4 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12"
+          >
+            <Link href="/">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                data-testid="button-go-home"
+                className="flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm text-white transition-colors"
+                style={{ background: 'rgba(99,102,241,0.85)', border: '1px solid rgba(99,102,241,0.5)' }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,1)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.85)')}
+              >
+                <Home className="w-4 h-4" />
+                Ana Sayfaya Dön
+              </motion.button>
+            </Link>
+
+            <Link href="/kartlar">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                data-testid="button-browse-cards"
+                className="flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'rgba(255,255,255,0.7)',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+              >
+                <Search className="w-4 h-4" />
+                Kartlara Göz At
+              </motion.button>
+            </Link>
+          </motion.div>
+
+          {/* Quick links */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.4 }}
+          >
+            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/20 mb-3">
+              Hızlı Erişim
+            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {QUICK_LINKS.map(link => (
+                <Link key={link.href} href={link.href}>
+                  <span
+                    className="inline-block text-[12px] px-4 py-1.5 rounded-full transition-colors cursor-pointer"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: 'rgba(255,255,255,0.45)',
+                    }}
+                    data-testid={`link-404-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
       </main>
 
-      <footer className="py-8 text-center border-t border-zinc-800">
-        <Link href="/">
-          <span className="text-zinc-500 hover:text-white text-sm transition-colors cursor-pointer flex items-center justify-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Geri Dön
-          </span>
-        </Link>
-      </footer>
+      <Footer />
     </div>
   );
 }
