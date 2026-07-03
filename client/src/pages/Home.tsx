@@ -399,65 +399,74 @@ function SetScrollRow({
   accentColor,
   PlaceholderIcon,
   placeholderSrc,
+  bgColor = '#0a0f1e',
 }: {
   sets: CardSetPublic[];
   accentColor: string;
   PlaceholderIcon: ElementType;
   placeholderSrc?: string;
+  bgColor?: string;
 }) {
-  const rowRef = useRef<HTMLDivElement>(null);
+  // Duplicate for seamless marquee loop
+  const doubled = [...sets, ...sets];
+
+  const SetCard = ({ set, idx }: { set: CardSetPublic; idx: number }) => (
+    <Link key={`${set.id}-${idx}`} href={`/set/${set.slug}`}>
+      <motion.div
+        whileHover={{ scale: 1.04, y: -2 }}
+        transition={{ duration: 0.18 }}
+        className="shrink-0 flex flex-col items-center gap-2 px-4 py-3 rounded-xl cursor-pointer border border-white/[0.07] hover:border-white/[0.16] transition-colors"
+        style={{ width: 128, minHeight: 88, background: 'rgba(255,255,255,0.03)' }}
+        data-testid={`set-card-${set.slug}`}
+      >
+        <div className="h-9 w-full flex items-center justify-center shrink-0">
+          {set.logo_url ? (
+            <img
+              src={set.logo_url}
+              alt={set.name}
+              className="max-h-9 max-w-[100px] object-contain"
+              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          ) : placeholderSrc ? (
+            <img src={placeholderSrc} alt="" className="w-7 h-7 object-contain" style={{ opacity: 0.5 }} />
+          ) : (
+            <PlaceholderIcon className="w-6 h-6 opacity-40" style={{ color: accentColor }} />
+          )}
+        </div>
+        <p className="text-[10px] text-white/50 text-center leading-tight line-clamp-2 w-full">{set.name}</p>
+        {set.listed_cards > 0 && (
+          <span className="text-[9px] font-semibold" style={{ color: accentColor, opacity: 0.85 }}>
+            {set.listed_cards} stokta
+          </span>
+        )}
+      </motion.div>
+    </Link>
+  );
 
   return (
-    <div
-      ref={rowRef}
-      className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
-      {sets.map(set => (
-        <Link key={set.id} href={`/set/${set.slug}`}>
-          <motion.div
-            whileHover={{ scale: 1.04, y: -2 }}
-            transition={{ duration: 0.18 }}
-            className="snap-start shrink-0 flex flex-col items-center gap-2 px-4 py-3 rounded-xl cursor-pointer border border-white/[0.07] hover:border-white/[0.16] transition-colors"
-            style={{ width: 128, minHeight: 88, background: 'rgba(255,255,255,0.03)' }}
-            data-testid={`set-card-${set.slug}`}
-          >
-            <div className="h-9 w-full flex items-center justify-center shrink-0">
-              {set.logo_url ? (
-                <img
-                  src={set.logo_url}
-                  alt={set.name}
-                  className="max-h-9 max-w-[100px] object-contain"
-                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              ) : placeholderSrc ? (
-                <img src={placeholderSrc} alt="" className="w-7 h-7 object-contain" style={{ opacity: 0.5 }} />
-              ) : (
-                <PlaceholderIcon className="w-6 h-6 opacity-40" style={{ color: accentColor }} />
-              )}
-            </div>
-            <p className="text-[10px] text-white/50 text-center leading-tight line-clamp-2 w-full">{set.name}</p>
-            {set.listed_cards > 0 && (
-              <span className="text-[9px] font-semibold" style={{ color: accentColor, opacity: 0.85 }}>
-                {set.listed_cards} stokta
-              </span>
-            )}
-          </motion.div>
-        </Link>
-      ))}
+    <div className="relative overflow-hidden">
+      {/* Left fade */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-14 z-10 pointer-events-none"
+        style={{ background: `linear-gradient(to right, ${bgColor}, transparent)` }}
+      />
+      {/* Right fade */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-14 z-10 pointer-events-none"
+        style={{ background: `linear-gradient(to left, ${bgColor}, transparent)` }}
+      />
 
-      {/* "Tümü" tile */}
-      <Link href={`/oyun/${sets[0]?.game_slug ?? ''}`}>
-        <motion.div
-          whileHover={{ scale: 1.04, y: -2 }}
-          transition={{ duration: 0.18 }}
-          className="snap-start shrink-0 flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-xl cursor-pointer border border-dashed border-white/[0.12] hover:border-white/25 transition-colors"
-          style={{ width: 100, minHeight: 88, background: 'rgba(255,255,255,0.02)' }}
-        >
-          <ChevronRight className="w-5 h-5 text-white/25" />
-          <p className="text-[10px] text-white/30 text-center">Tümünü<br/>Gör</p>
-        </motion.div>
-      </Link>
+      {/* Marquee track */}
+      <div
+        className="flex gap-3 pb-2 w-max"
+        style={{ animation: 'marquee 55s linear infinite' }}
+        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.animationPlayState = 'paused')}
+        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.animationPlayState = 'running')}
+      >
+        {doubled.map((set, idx) => (
+          <SetCard key={`${set.id}-${idx}`} set={set} idx={idx} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -552,7 +561,7 @@ function GameSection({ game, title, accentColor, accentClass, bgColor, Placehold
               ))}
             </div>
           ) : sets.length > 0 ? (
-            <SetScrollRow sets={sets} accentColor={accentColor} PlaceholderIcon={PlaceholderIcon} placeholderSrc={game === 'riftbound' ? '/icon-riftbound.svg' : undefined} />
+            <SetScrollRow sets={sets} accentColor={accentColor} PlaceholderIcon={PlaceholderIcon} placeholderSrc={game === 'riftbound' ? '/icon-riftbound.svg' : undefined} bgColor={bgColor} />
           ) : null}
         </motion.div>
 
