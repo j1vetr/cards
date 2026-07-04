@@ -1,7 +1,7 @@
 import { useState, type ReactNode, type ComponentType } from 'react';
 import { ExternalLink, LogOut, Menu, X } from 'lucide-react';
 import type { TabType } from '../_shared/types';
-const toovLogo = '/toov-logo-dark.png';
+const toovLogo = '/toov-logo-black.png';
 
 export type SidebarItem = {
   id: TabType;
@@ -65,8 +65,7 @@ export default function AdminLayout({
           <img
             src={toovLogo}
             alt="TOOV"
-            className="h-7 w-auto object-contain select-none"
-            style={{ filter: 'invert(1) hue-rotate(180deg)' }}
+            className="h-8 w-auto object-contain select-none"
             draggable={false}
             data-testid="text-admin-brand"
           />
