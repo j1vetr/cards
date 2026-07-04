@@ -5421,7 +5421,7 @@ Sitemap: ${baseUrl}/sitemap.xml
     try {
       const { game, mode, setApiId } = req.body as {
         game: "pokemon_tcg" | "riftbound";
-        mode: "sets" | "cards" | "prices";
+        mode: "sets" | "cards" | "prices" | "full";
         setApiId?: string;
       };
 

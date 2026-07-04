@@ -2,6 +2,12 @@
  * TCG Sync Engine
  * Orchestrates set/card import from Pokemon TCG API and Riftbound (RiftCodex).
  * Creates and manages exactly ONE tcg_sync_run record per call.
+ *
+ * Modes:
+ *   full   — sets + cards + local image download (recommended, used by admin UI)
+ *   sets   — set metadata only
+ *   cards  — card data + local image download (sets must already exist)
+ *   prices — PriceCharting price sync only
  */
 
 import { storage } from "../storage";
@@ -23,9 +29,10 @@ import {
   sleep,
   RATE_DELAY_MS,
 } from "./priceChartingService";
+import { downloadCardImage, downloadSetImage } from "./imageDownloader";
 
 export type SyncGame = "pokemon_tcg" | "riftbound";
-export type SyncMode = "sets" | "cards" | "prices";
+export type SyncMode = "sets" | "cards" | "prices" | "full";
 
 export interface SyncOptions {
   game: SyncGame;
@@ -46,6 +53,8 @@ export interface SyncResult {
     cardsProcessed: number;
     cardsInserted: number;
     cardsUpdated: number;
+    imagesDownloaded: number;
+    imagesSkipped: number;
     pricesUpdated: number;
     errors: number;
   };
@@ -81,6 +90,8 @@ export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
     cardsProcessed: 0,
     cardsInserted: 0,
     cardsUpdated: 0,
+    imagesDownloaded: 0,
+    imagesSkipped: 0,
     pricesUpdated: 0,
     errors: 0,
   };
@@ -92,10 +103,14 @@ export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
   };
 
   try {
-    if (opts.mode === "sets") {
+    if (opts.mode === "full") {
+      // Full sync: sets → cards (with image download)
+      await syncSets(opts, stats, errors, log);
+      await syncCards(opts, stats, errors, log, true);
+    } else if (opts.mode === "sets") {
       await syncSets(opts, stats, errors, log);
     } else if (opts.mode === "cards") {
-      await syncCards(opts, stats, errors, log);
+      await syncCards(opts, stats, errors, log, true);
     } else if (opts.mode === "prices") {
       await syncPrices(opts, stats, errors, log);
     }
@@ -125,7 +140,22 @@ async function syncSets(
 
     for (const set of sets) {
       try {
-        await storage.upsertCardSet(mapPokemonSetToDb(set, gameId));
+        const dbSet = await storage.upsertCardSet(mapPokemonSetToDb(set, gameId));
+
+        // Download set logo + symbol locally
+        if (set.images?.logo) {
+          const { localUrl } = await downloadSetImage(set.images.logo, `${dbSet.slug}-logo`, "pokemon");
+          if (localUrl !== set.images.logo) {
+            await storage.upsertCardSet({ ...mapPokemonSetToDb(set, gameId), logoUrl: localUrl });
+          }
+        }
+        if (set.images?.symbol) {
+          const { localUrl } = await downloadSetImage(set.images.symbol, `${dbSet.slug}-symbol`, "pokemon");
+          if (localUrl !== set.images.symbol) {
+            await storage.upsertCardSet({ ...mapPokemonSetToDb(set, gameId), symbolUrl: localUrl });
+          }
+        }
+
         stats.setsProcessed++;
       } catch (err) {
         errors.push({ context: `set:${set.id}`, message: String(err) });
@@ -156,6 +186,7 @@ async function syncCards(
   stats: SyncResult["stats"],
   errors: SyncResult["errors"],
   log: (m: string) => void,
+  downloadImages = true,
 ) {
   const gameSlug = opts.game === "pokemon_tcg" ? "pokemon" : "riftbound";
   const gameId = await getGameId(gameSlug);
@@ -167,7 +198,7 @@ async function syncCards(
 
   if (setsToProcess.length === 0) {
     throw new Error(
-      "İşlenecek set bulunamadı. Önce 'Set Import' modunu çalıştırın.",
+      "İşlenecek set bulunamadı. Önce set sync'i çalıştırın veya 'full' modunu kullanın.",
     );
   }
 
@@ -196,12 +227,41 @@ async function syncCards(
           if (result.inserted) stats.cardsInserted++;
           else stats.cardsUpdated++;
           stats.cardsProcessed++;
+
+          // ── Download card image locally ──────────────────────────────────
+          if (downloadImages && dbData.imageUrl) {
+            const { localUrl, skipped } = await downloadCardImage(
+              dbData.imageUrl,
+              result.card.slug,
+              gameSlug,
+            );
+            if (!skipped) {
+              await storage.updateCardImageUrl(result.card.id, localUrl);
+              stats.imagesDownloaded++;
+            } else {
+              stats.imagesSkipped++;
+            }
+
+            // Also download hi-res if different from main image
+            if (dbData.imageUrlHiRes && dbData.imageUrlHiRes !== dbData.imageUrl) {
+              await downloadCardImage(
+                dbData.imageUrlHiRes,
+                `${result.card.slug}-hires`,
+                gameSlug,
+              );
+            }
+          }
         } catch (err) {
           errors.push({ context: `card:${(raw as any).id}`, message: String(err) });
           stats.errors++;
         }
       }
       stats.setsProcessed++;
+
+      // Log image progress every set
+      if (downloadImages) {
+        log(`  Resimler: ${stats.imagesDownloaded} indirildi, ${stats.imagesSkipped} atlandı`);
+      }
     } catch (err) {
       errors.push({ context: `set:${set.name}`, message: String(err) });
       stats.errors++;
@@ -209,6 +269,9 @@ async function syncCards(
   }
 
   log(`Kart sync tamamlandı: ${stats.cardsInserted} eklendi, ${stats.cardsUpdated} güncellendi`);
+  if (downloadImages) {
+    log(`Resim indirme: ${stats.imagesDownloaded} indirildi, ${stats.imagesSkipped} atlandı`);
+  }
 }
 
 async function syncPrices(

@@ -331,6 +331,8 @@ export interface IStorage {
   getRunningSyncRun(marketplaceId: string): Promise<MarketplaceSyncRun | undefined>;
   getRecentSyncRuns(marketplaceId: string, limit?: number): Promise<MarketplaceSyncRun[]>;
 
+  // TCG image URL update (called after local image download during sync)
+  updateCardImageUrl(cardId: string, imageUrl: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -2282,6 +2284,10 @@ export class DbStorage implements IStorage {
 
     const [inserted] = await db.insert(cards).values({ ...data, slug }).returning();
     return { card: inserted, inserted: true };
+  }
+
+  async updateCardImageUrl(cardId: string, imageUrl: string): Promise<void> {
+    await db.update(cards).set({ imageUrl, updatedAt: new Date() }).where(eq(cards.id, cardId));
   }
 
   // ── TCG: card prices ──────────────────────────────────────────────────────

@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   RefreshCw,
   Download,
-  DollarSign,
   CheckCircle,
   XCircle,
   Loader2,
@@ -46,6 +45,8 @@ interface SyncRun {
     cardsProcessed?: number;
     cardsInserted?: number;
     cardsUpdated?: number;
+    imagesDownloaded?: number;
+    imagesSkipped?: number;
     pricesUpdated?: number;
     errors?: number;
   };
@@ -67,6 +68,7 @@ const GAME_LABELS: Record<string, string> = {
 };
 
 const MODE_LABELS: Record<string, string> = {
+  full: "Tam Sync (Set + Kart + Resim)",
   sets: "Set Import",
   cards: "Kart Import",
   prices: "Fiyat Güncelleme",
@@ -107,7 +109,6 @@ export default function CardApiSyncTab() {
   const qc = useQueryClient();
 
   const [selectedGame, setSelectedGame] = useState<"pokemon_tcg" | "riftbound">("pokemon_tcg");
-  const [selectedMode, setSelectedMode] = useState<"sets" | "cards" | "prices">("sets");
   const [selectedSetId, setSelectedSetId] = useState<string>("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [backfillSetId, setBackfillSetId] = useState<string>("");
@@ -210,9 +211,9 @@ export default function CardApiSyncTab() {
     mutationFn: async () => {
       const body: Record<string, string> = {
         game: selectedGame,
-        mode: selectedMode,
+        mode: "full",
       };
-      if (selectedMode === "cards" && selectedSetId) {
+      if (selectedSetId) {
         body.setApiId = selectedSetId;
       }
       const res = await fetch("/api/admin/tcg/sync", {
@@ -338,7 +339,7 @@ export default function CardApiSyncTab() {
           API Senkronizasyonu
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Game selector */}
           <div>
             <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
@@ -359,35 +360,17 @@ export default function CardApiSyncTab() {
             </select>
           </div>
 
-          {/* Mode selector */}
+          {/* Optional set filter */}
           <div>
             <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
-              Mod
-            </label>
-            <select
-              data-testid="select-tcg-mode"
-              value={selectedMode}
-              onChange={(e) => setSelectedMode(e.target.value as any)}
-              className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-              disabled={isRunning}
-            >
-              <option value="sets">Set Import (tüm setleri çek)</option>
-              <option value="cards">Kart Import (kart verilerini çek)</option>
-              <option value="prices">Fiyat Güncelleme (PriceCharting)</option>
-            </select>
-          </div>
-
-          {/* Optional set filter (only for cards mode) */}
-          <div>
-            <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
-              Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel)</span>
+              Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel — boş = tüm setler)</span>
             </label>
             <select
               data-testid="select-tcg-set"
               value={selectedSetId}
               onChange={(e) => setSelectedSetId(e.target.value)}
               className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50"
-              disabled={selectedMode !== "cards" || isRunning}
+              disabled={isRunning}
             >
               <option value="">— Tüm setler —</option>
               {sets.map((s) => (
@@ -403,12 +386,8 @@ export default function CardApiSyncTab() {
         <div className="mt-4 bg-indigo-50 border border-indigo-100 rounded-md p-3 flex gap-2 text-[12px] text-indigo-800">
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-indigo-500" />
           <span>
-            {selectedMode === "sets" &&
-              "Seçili oyunun tüm setleri API'den çekilip veritabanına kaydedilir. Mevcut setler güncellenir."}
-            {selectedMode === "cards" &&
-              "Seçili set (veya tüm setler) için kartlar API'den çekilip upsert edilir. Önce set import yapılmış olmalı."}
-            {selectedMode === "prices" &&
-              "Tüm aktif kartlar için PriceCharting'den market/low/high fiyatlar çekilir. API key gereklidir (Ayarlar → pricecharting_api_key). 8.000+ kart için 40+ dakika sürebilir."}
+            Seçili oyunun tüm setleri ve kartları API'den çekilir, kart resimleri sunucuya indirilip WebP'ye dönüştürülür.
+            {selectedSetId ? " Sadece seçili set işlenir." : " Tüm setler işlenir — büyük koleksiyonlarda uzun sürebilir."}
           </span>
         </div>
 
@@ -434,14 +413,10 @@ export default function CardApiSyncTab() {
           >
             {isRunning || syncMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
-            ) : selectedMode === "sets" ? (
-              <Download className="w-4 h-4" />
-            ) : selectedMode === "prices" ? (
-              <DollarSign className="w-4 h-4" />
             ) : (
-              <RefreshCw className="w-4 h-4" />
+              <Download className="w-4 h-4" />
             )}
-            {isRunning ? "Sync çalışıyor…" : "Sync Başlat"}
+            {isRunning ? "Sync çalışıyor…" : "Senkronize Et"}
           </PrimaryButton>
         </div>
       </Card>
@@ -463,6 +438,12 @@ export default function CardApiSyncTab() {
               <p>
                 Kartlar: {activeRun.stats.cardsInserted ?? 0} eklendi,{" "}
                 {activeRun.stats.cardsUpdated ?? 0} güncellendi
+              </p>
+            )}
+            {(activeRun.stats.imagesDownloaded !== undefined || activeRun.stats.imagesSkipped !== undefined) && (
+              <p>
+                Resimler: {activeRun.stats.imagesDownloaded ?? 0} indirildi,{" "}
+                {activeRun.stats.imagesSkipped ?? 0} atlandı
               </p>
             )}
             {activeRun.stats.pricesUpdated !== undefined && (
@@ -747,6 +728,11 @@ export default function CardApiSyncTab() {
                         {run.stats.cardsProcessed !== undefined && (
                           <span>
                             {run.stats.cardsInserted ?? 0}+{run.stats.cardsUpdated ?? 0} kart
+                          </span>
+                        )}
+                        {(run.stats.imagesDownloaded !== undefined) && (
+                          <span className="text-indigo-600">
+                            {run.stats.imagesDownloaded ?? 0} resim
                           </span>
                         )}
                         {run.stats.pricesUpdated !== undefined && (
