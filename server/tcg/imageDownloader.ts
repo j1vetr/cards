@@ -25,10 +25,10 @@ function localCardPath(game: string, slug: string): { abs: string; rel: string }
   return { abs, rel };
 }
 
-function localSetPath(game: string, slug: string): { abs: string; rel: string } {
-  const dir = path.join(PUBLIC_DIR, "cards", "sets", game);
+function localSetPath(slug: string): { abs: string; rel: string } {
+  const dir = path.join(PUBLIC_DIR, "cards", "sets");
   const abs = path.join(dir, `${slug}.webp`);
-  const rel = `/cards/sets/${game}/${slug}.webp`;
+  const rel = `/cards/sets/${slug}.webp`;
   return { abs, rel };
 }
 
@@ -96,12 +96,11 @@ export async function downloadCardImage(
 export async function downloadSetImage(
   externalUrl: string | null | undefined,
   slug: string,
-  game: string,
 ): Promise<{ localUrl: string; skipped: boolean }> {
   if (!externalUrl) return { localUrl: externalUrl ?? "", skipped: true };
   if (externalUrl.startsWith("/cards/")) return { localUrl: externalUrl, skipped: true };
 
-  const { abs, rel } = localSetPath(game, slug);
+  const { abs, rel } = localSetPath(slug);
 
   if (fs.existsSync(abs)) return { localUrl: rel, skipped: true };
 

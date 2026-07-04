@@ -140,22 +140,21 @@ async function syncSets(
 
     for (const set of sets) {
       try {
-        const dbSet = await storage.upsertCardSet(mapPokemonSetToDb(set, gameId));
+        // Download logo + symbol first, then single upsert with both local URLs
+        const baseData = mapPokemonSetToDb(set, gameId);
+        let logoUrl = baseData.logoUrl;
+        let symbolUrl = baseData.symbolUrl;
 
-        // Download set logo + symbol locally
         if (set.images?.logo) {
-          const { localUrl } = await downloadSetImage(set.images.logo, `${dbSet.slug}-logo`, "pokemon");
-          if (localUrl !== set.images.logo) {
-            await storage.upsertCardSet({ ...mapPokemonSetToDb(set, gameId), logoUrl: localUrl });
-          }
+          const { localUrl } = await downloadSetImage(set.images.logo, `${baseData.slug}-logo`);
+          logoUrl = localUrl || logoUrl;
         }
         if (set.images?.symbol) {
-          const { localUrl } = await downloadSetImage(set.images.symbol, `${dbSet.slug}-symbol`, "pokemon");
-          if (localUrl !== set.images.symbol) {
-            await storage.upsertCardSet({ ...mapPokemonSetToDb(set, gameId), symbolUrl: localUrl });
-          }
+          const { localUrl } = await downloadSetImage(set.images.symbol, `${baseData.slug}-symbol`);
+          symbolUrl = localUrl || symbolUrl;
         }
 
+        await storage.upsertCardSet({ ...baseData, logoUrl, symbolUrl });
         stats.setsProcessed++;
       } catch (err) {
         errors.push({ context: `set:${set.id}`, message: String(err) });
@@ -235,10 +234,15 @@ async function syncCards(
               result.card.slug,
               gameSlug,
             );
-            if (!skipped) {
+            // Always persist local URL when it's a local path — covers both
+            // new downloads AND re-syncs where the file already existed on disk
+            // but the DB was overwritten by upsertCard with an external URL.
+            if (localUrl.startsWith("/cards/")) {
               await storage.updateCardImageUrl(result.card.id, localUrl);
-              stats.imagesDownloaded++;
+              if (!skipped) stats.imagesDownloaded++;
+              else stats.imagesSkipped++;
             } else {
+              // Download failed — kept external URL, count as skipped
               stats.imagesSkipped++;
             }
 
