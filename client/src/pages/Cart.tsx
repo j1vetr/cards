@@ -34,8 +34,6 @@ export default function Cart() {
     return { ...item, product };
   });
 
-  const hasWholesale = false;
-
   const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 200;
   const total = subtotal + shippingCost;
   const remainingForFreeShipping = FREE_SHIPPING_THRESHOLD - subtotal;
@@ -43,124 +41,121 @@ export default function Cart() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[hsl(var(--polen-stone))]">
         <Header />
-        <main className="pt-20 lg:pt-8 pb-12 px-6">
-          <div className="max-w-5xl mx-auto text-center">
-            <motion.div
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="font-display text-xl text-black/40"
-            >
-              Yükleniyor...
-            </motion.div>
-          </div>
+        <main className="pt-20 pb-12 px-6 flex items-center justify-center min-h-[calc(100vh-72px)]">
+          <motion.div
+            animate={{ opacity: [0.3, 0.7, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="text-white/40 text-sm"
+          >
+            Yükleniyor…
+          </motion.div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden w-full">
+    <div className="min-h-screen bg-[hsl(var(--polen-stone))] overflow-x-hidden w-full">
       <SEO title="Sepetim" description="GoCards alışveriş sepetiniz." url="/sepet" noIndex />
       <Header />
 
-      <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6 w-full box-border">
+      <main className="pt-20 lg:pt-8 pb-16 px-4 sm:px-6 w-full box-border">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-6"
+            className="mb-8"
           >
-            <h1 className="font-display text-3xl sm:text-4xl tracking-wider mb-1.5 text-black" data-testid="text-page-title">
-              SEPETİM
+            <h1 className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-page-title">
+              Sepetim
             </h1>
-            <p className="text-black/40 text-sm">
-              {totalItems > 0 ? `${totalItems} ürün sepetinizde` : 'Sepetiniz boş'}
+            <p className="text-white/40 text-sm mt-1">
+              {totalItems > 0 ? `${totalItems} ürün` : 'Sepetiniz boş'}
             </p>
           </motion.div>
 
           {items.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-20"
+              className="flex flex-col items-center justify-center py-24 text-center"
             >
-              <div className="w-24 h-24 mx-auto mb-6 bg-stone-100 flex items-center justify-center">
-                <ShoppingBag className="w-10 h-10 text-black/25" />
+              <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
+                <ShoppingBag className="w-9 h-9 text-white/20" />
               </div>
-              <h2 className="font-display text-2xl tracking-wide mb-4 text-black">Sepetiniz Boş</h2>
-              <p className="text-black/40 mb-8 max-w-md mx-auto">
-                Henüz sepetinize ürün eklemediniz. Koleksiyonumuzu keşfedin ve favori ürünlerinizi ekleyin.
+              <h2 className="text-xl font-bold text-white mb-2">Sepetiniz Boş</h2>
+              <p className="text-white/40 text-sm mb-8 max-w-xs">
+                Henüz sepetinize ürün eklemediniz. Koleksiyonumuzu keşfedin.
               </p>
               <Link href="/">
-                <Button className="h-12 px-8 bg-black text-white hover:bg-black/85 font-bold tracking-wide group rounded-none" data-testid="button-continue-shopping">
-                  ALIŞVERİŞE BAŞLA
-                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                <Button
+                  className="h-11 px-8 bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] text-white font-semibold rounded-lg gap-2"
+                  data-testid="button-continue-shopping"
+                >
+                  Kartlara Bak <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
             </motion.div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 overflow-hidden">
-              <div className="lg:col-span-2 space-y-4 overflow-hidden">
+            <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+              {/* Sol — ürünler */}
+              <div className="lg:col-span-2 space-y-3">
 
-                {remainingForFreeShipping > 0 && (
+                {/* Ücretsiz kargo banner */}
+                {remainingForFreeShipping > 0 ? (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-[hsl(var(--polen-stone))] p-4"
+                    className="bg-white/5 border border-white/8 rounded-xl p-4"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 bg-white/10 flex items-center justify-center shrink-0">
-                        <Truck className="w-4.5 h-4.5 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-[hsl(var(--polen-orange))]/15 flex items-center justify-center shrink-0">
+                        <Truck className="w-4 h-4 text-[hsl(var(--polen-orange))]" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm">Ücretsiz Kargoya Az Kaldı!</p>
-                        <p className="text-xs text-white/60 mt-0.5">
+                      <div>
+                        <p className="text-white text-sm font-semibold">Ücretsiz Kargoya Az Kaldı</p>
+                        <p className="text-white/40 text-xs mt-0.5">
                           <span className="font-bold text-[hsl(var(--polen-orange))]">{remainingForFreeShipping.toFixed(0)} ₺</span> daha ekleyin
                         </p>
                       </div>
                     </div>
-                    <div className="h-1.5 bg-white/10 overflow-hidden">
+                    <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${shippingProgress}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="h-full bg-[hsl(var(--polen-orange))]"
+                        className="h-full rounded-full bg-[hsl(var(--polen-orange))]"
                       />
                     </div>
                   </motion.div>
-                )}
-
-                {remainingForFreeShipping <= 0 && (
+                ) : (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-[hsl(var(--polen-stone))] p-4 flex items-center gap-3"
+                    className="bg-[hsl(var(--polen-orange))]/10 border border-[hsl(var(--polen-orange))]/20 rounded-xl p-4 flex items-center gap-3"
                   >
-                    <div className="w-9 h-9 bg-[hsl(var(--polen-orange))]/20 flex items-center justify-center shrink-0">
-                      <Truck className="w-4.5 h-4.5 text-[hsl(var(--polen-orange))]" />
+                    <div className="w-8 h-8 rounded-lg bg-[hsl(var(--polen-orange))]/20 flex items-center justify-center shrink-0">
+                      <Truck className="w-4 h-4 text-[hsl(var(--polen-orange))]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">Ücretsiz Kargo Kazandınız!</p>
-                      <p className="text-xs text-white/50 mt-0.5">Siparişiniz ücretsiz kargo ile gönderilecek</p>
+                      <p className="text-white text-sm font-semibold">Ücretsiz Kargo Kazandınız!</p>
+                      <p className="text-white/40 text-xs mt-0.5">Siparişiniz ücretsiz kargo ile gönderilecek</p>
                     </div>
                   </motion.div>
                 )}
 
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-stone-50 border border-black/6 p-4 space-y-1"
-                >
-                  <p className="text-xs text-black/45 text-center">
-                    <strong className="text-black/60">Türkiye içi kargo:</strong> 500 ₺ üzeri ücretsiz, altı 200 ₺
+                {/* Kargo bilgi satırı */}
+                <div className="bg-white/3 border border-white/6 rounded-xl px-4 py-3">
+                  <p className="text-xs text-white/35 text-center">
+                    <span className="text-white/50 font-medium">Türkiye içi:</span> 500 ₺ üzeri ücretsiz, altı 200 ₺
+                    {'  ·  '}
+                    <span className="text-white/50 font-medium">Uluslararası:</span> 2.500 ₺ (ödeme adımında)
                   </p>
-                  <p className="text-xs text-black/45 text-center">
-                    <strong className="text-black/60">Uluslararası kargo:</strong> Sabit 2.500 ₺ (ödeme adımında hesaplanır)
-                  </p>
-                </motion.div>
+                </div>
 
+                {/* Ürün listesi */}
                 <AnimatePresence mode="popLayout">
                   {cartItemsWithProducts.map((item, index) => {
                     const isCard = !!item.cardListingId;
@@ -174,168 +169,158 @@ export default function Cart() {
                       : parseFloat(item.variant?.price || item.product?.basePrice || '0') * item.quantity;
 
                     return (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="group bg-white border border-black/8 hover:border-black/15 transition-colors overflow-hidden rounded-lg"
-                      data-testid={`cart-item-${item.id}`}
-                    >
-                      <div className="flex gap-4 p-4">
-                        <Link href={href}>
-                          <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className={`shrink-0 bg-stone-100 overflow-hidden relative rounded-lg ${isCard ? 'w-20 h-28' : 'w-28 h-32'}`}
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ delay: index * 0.04 }}
+                        className="bg-white/5 border border-white/8 hover:border-white/15 rounded-xl transition-colors overflow-hidden"
+                        data-testid={`cart-item-${item.id}`}
+                      >
+                        <div className="flex gap-4 p-4">
+                          <Link href={href}>
+                            <motion.div
+                              whileHover={{ scale: 1.03 }}
+                              className={`shrink-0 bg-white/5 overflow-hidden relative rounded-lg ${isCard ? 'w-[52px] h-[74px]' : 'w-20 h-24'}`}
+                            >
+                              {displayImage && (
+                                <img
+                                  src={displayImage}
+                                  alt={displayName}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                            </motion.div>
+                          </Link>
+
+                          <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                            <div>
+                              <Link href={href}>
+                                <h3 className="font-semibold text-sm text-white leading-snug line-clamp-2 hover:text-white/70 transition-colors" data-testid={`text-product-name-${item.id}`}>
+                                  {displayName}
+                                </h3>
+                              </Link>
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                {isCard && item.listing?.condition && (
+                                  <span className="text-[11px] px-2 py-0.5 bg-[hsl(var(--polen-orange))]/15 text-[hsl(var(--polen-orange))] rounded-md font-medium border border-[hsl(var(--polen-orange))]/20" data-testid={`badge-condition-${item.id}`}>
+                                    {item.listing.condition}
+                                  </span>
+                                )}
+                                {!isCard && item.variant?.condition && (
+                                  <span className="text-[11px] px-2 py-0.5 bg-white/8 text-white/60 rounded-md font-medium" data-testid={`badge-condition-${item.id}`}>
+                                    {item.variant.condition}
+                                  </span>
+                                )}
+                                {!isCard && item.variant?.size && (
+                                  <span className="text-[11px] px-2 py-0.5 bg-white/5 text-white/40 rounded-md">
+                                    Beden: {item.variant.size}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 mt-3">
+                              <div className="flex items-center bg-white/6 rounded-lg p-0.5 shrink-0">
+                                <motion.button
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                                  className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                                  data-testid={`button-decrease-${item.id}`}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </motion.button>
+                                <span className="w-7 text-center text-sm font-semibold text-white" data-testid={`text-quantity-${item.id}`}>
+                                  {item.quantity}
+                                </span>
+                                <motion.button
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                                  data-testid={`button-increase-${item.id}`}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </motion.button>
+                              </div>
+                              <p className="font-bold text-base text-white shrink-0" data-testid={`text-price-${item.id}`}>
+                                {itemPrice.toLocaleString('tr-TR')} ₺
+                              </p>
+                            </div>
+                          </div>
+
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => removeItem(item.id)}
+                            className="w-8 h-8 flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors self-start shrink-0"
+                            data-testid={`button-remove-${item.id}`}
                           >
-                            {displayImage && (
-                              <img
-                                src={displayImage}
-                                alt={displayName}
-                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                              />
-                            )}
-                          </motion.div>
-                        </Link>
-
-                        <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-                          <div>
-                            <Link href={href}>
-                              <h3 className="font-medium text-sm leading-snug line-clamp-2 hover:text-black/70 transition-colors text-black" data-testid={`text-product-name-${item.id}`}>
-                                {displayName}
-                              </h3>
-                            </Link>
-                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {isCard && item.listing?.condition && (
-                                <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-medium border border-indigo-100" data-testid={`badge-condition-${item.id}`}>
-                                  {item.listing.condition}
-                                </span>
-                              )}
-                              {!isCard && item.variant?.condition && (
-                                <span className="text-xs px-2 py-0.5 bg-polen-orange/10 text-polen-orange rounded font-medium" data-testid={`badge-condition-${item.id}`}>
-                                  {item.variant.condition}
-                                </span>
-                              )}
-                              {!isCard && item.variant?.size && (
-                                <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                  Beden: {item.variant.size}
-                                </span>
-                              )}
-                              {!isCard && item.variant?.color && (
-                                <span className="text-xs px-2 py-0.5 bg-black/5 rounded text-black/60">
-                                  {item.variant.color}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2 mt-3">
-                            <div className="flex items-center bg-black/4 rounded-lg p-0.5 shrink-0">
-                              <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                                className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded hover:bg-black/8 transition-colors text-black"
-                                data-testid={`button-decrease-${item.id}`}
-                              >
-                                <Minus className="w-3 h-3" />
-                              </motion.button>
-                              <span className="w-6 sm:w-7 text-center text-xs sm:text-sm font-medium text-black" data-testid={`text-quantity-${item.id}`}>
-                                {item.quantity}
-                              </span>
-                              <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded hover:bg-black/8 transition-colors text-black"
-                                data-testid={`button-increase-${item.id}`}
-                              >
-                                <Plus className="w-3 h-3" />
-                              </motion.button>
-                            </div>
-
-                            <p className="font-bold text-base sm:text-lg shrink-0 text-black" data-testid={`text-price-${item.id}`}>
-                              {itemPrice.toLocaleString('tr-TR')} ₺
-                            </p>
-                          </div>
+                            <Trash2 className="w-4 h-4" />
+                          </motion.button>
                         </div>
-
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => removeItem(item.id)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-red-50 text-black/25 hover:text-red-500 transition-colors self-start rounded-full"
-                          data-testid={`button-remove-${item.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </motion.button>
-                      </div>
-                    </motion.div>
+                      </motion.div>
                     );
                   })}
                 </AnimatePresence>
               </div>
 
+              {/* Sağ — sipariş özeti */}
               <div className="lg:col-span-1">
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-stone-50 border border-black/8 p-4 sm:p-6 sticky top-24 overflow-hidden"
+                  className="bg-white/5 border border-white/8 rounded-xl p-5 sticky top-24"
                 >
-                  <h2 className="font-display text-xl tracking-wide mb-6 text-black">
-                    SİPARİŞ ÖZETİ
-                  </h2>
+                  <h2 className="text-base font-bold text-white mb-5">Sipariş Özeti</h2>
 
-                  <div className="space-y-4 text-sm">
+                  <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-black/45">Ara Toplam ({totalItems} ürün)</span>
-                      <span className="font-medium text-black" data-testid="text-subtotal">{subtotal.toLocaleString('tr-TR')} ₺</span>
+                      <span className="text-white/45">Ara Toplam ({totalItems} ürün)</span>
+                      <span className="font-semibold text-white" data-testid="text-subtotal">{subtotal.toLocaleString('tr-TR')} ₺</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-black/45">Kargo</span>
-                      <span data-testid="text-shipping" className={shippingCost === 0 ? 'text-green-600 font-medium' : 'text-black'}>
-                        {shippingCost === 0 ? 'ÜCRETSİZ' : `${shippingCost.toFixed(2)} ₺`}
+                      <span className="text-white/45">Kargo</span>
+                      <span data-testid="text-shipping" className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : 'text-white font-semibold'}>
+                        {shippingCost === 0 ? 'ÜCRETSİZ' : `${shippingCost.toLocaleString('tr-TR')} ₺`}
                       </span>
                     </div>
-                    <div className="h-px bg-black/8 my-4" />
-                    <div className="flex justify-between text-base">
-                      <span className="font-bold text-black">Toplam</span>
-                      <span className="font-bold text-xl text-black" data-testid="text-total">{total.toLocaleString('tr-TR')} ₺</span>
+                    <div className="h-px bg-white/8 my-1" />
+                    <div className="flex justify-between">
+                      <span className="font-bold text-white">Toplam</span>
+                      <span className="font-bold text-xl text-white" data-testid="text-total">{total.toLocaleString('tr-TR')} ₺</span>
                     </div>
                   </div>
 
                   <Link href="/odeme">
-                    <motion.div
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
+                    <Button
+                      className="w-full h-12 mt-6 bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] text-white font-bold text-sm rounded-lg gap-2 transition-colors"
+                      data-testid="button-checkout"
                     >
-                      <Button className="w-full h-14 mt-6 bg-black text-white hover:bg-black/85 font-bold text-sm tracking-wider group rounded-none" data-testid="button-checkout">
-                        ÖDEMEYE GEÇ
-                        <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                      </Button>
-                    </motion.div>
+                      Ödemeye Geç <ArrowRight className="w-4 h-4" />
+                    </Button>
                   </Link>
 
-
                   <Link href="/">
-                    <Button variant="ghost" className="w-full mt-3 text-sm text-black/35 hover:text-black hover:bg-transparent" data-testid="button-continue">
+                    <Button
+                      variant="ghost"
+                      className="w-full mt-2 text-sm text-white/30 hover:text-white/60 hover:bg-white/5 rounded-lg"
+                      data-testid="button-continue"
+                    >
                       Alışverişe Devam Et
                     </Button>
                   </Link>
 
-                  <div className="mt-6 pt-6 border-t border-black/6 space-y-3">
-                    <div className="flex items-center gap-3 text-xs text-black/40">
-                      <Shield className="w-4 h-4 shrink-0" />
-                      <span>Güvenli Ödeme — 256-bit SSL</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-black/40">
-                      <RotateCcw className="w-4 h-4 shrink-0" />
-                      <span>Orijinal Kart Garantisi</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-black/40">
-                      <Package className="w-4 h-4 shrink-0" />
-                      <span>Hızlı Kargo — 1–2 İş Günü</span>
-                    </div>
+                  <div className="mt-5 pt-5 border-t border-white/8 space-y-2.5">
+                    {[
+                      { icon: Shield, text: 'Güvenli Ödeme — 256-bit SSL' },
+                      { icon: RotateCcw, text: 'Orijinal Kart Garantisi' },
+                      { icon: Package, text: 'Hızlı Kargo — 1–2 İş Günü' },
+                    ].map(({ icon: Icon, text }) => (
+                      <div key={text} className="flex items-center gap-2.5 text-xs text-white/30">
+                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                        <span>{text}</span>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               </div>
