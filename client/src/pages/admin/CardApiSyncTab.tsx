@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   RefreshCw,
@@ -16,6 +16,9 @@ import {
   Swords,
   Trash2,
   AlertTriangle,
+  Clock,
+  Image,
+  Gauge,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
 
@@ -113,6 +116,8 @@ export default function CardApiSyncTab() {
   const [selectedSetId, setSelectedSetId] = useState<string>("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [backfillSetId, setBackfillSetId] = useState<string>("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Auto-list state
   const [autoListMultiplier, setAutoListMultiplier] = useState<string>("1.9");
@@ -207,6 +212,20 @@ export default function CardApiSyncTab() {
       refetchStats();
     }
   }, [activeRun?.status]);
+
+  // Live elapsed-seconds counter — ticks every second while a run is active
+  useEffect(() => {
+    if (activeRun?.status === "running" && activeRun.startedAt) {
+      const base = new Date(activeRun.startedAt).getTime();
+      const tick = () => setElapsedSeconds(Math.floor((Date.now() - base) / 1000));
+      tick();
+      elapsedRef.current = setInterval(tick, 1000);
+    } else {
+      if (elapsedRef.current) clearInterval(elapsedRef.current);
+      setElapsedSeconds(0);
+    }
+    return () => { if (elapsedRef.current) clearInterval(elapsedRef.current); };
+  }, [activeRun?.status, activeRun?.startedAt]);
 
   const syncMutation = useMutation({
     mutationFn: async () => {
@@ -443,36 +462,131 @@ export default function CardApiSyncTab() {
       </Card>
 
       {/* Active run progress */}
-      {activeRun && activeRun.status === "running" && (
-        <Card className="p-4 border-blue-200 bg-blue-50/40">
-          <div className="flex items-center gap-2 mb-2">
-            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-            <span className="text-[13px] font-medium text-blue-800">
-              {GAME_LABELS[activeRun.game] ?? activeRun.game} — {MODE_LABELS[activeRun.mode] ?? activeRun.mode} çalışıyor…
-            </span>
-          </div>
-          <div className="text-[12px] text-blue-700 space-y-0.5">
-            {activeRun.stats.setsProcessed !== undefined && (
-              <p>Setler: {activeRun.stats.setsProcessed}</p>
-            )}
-            {activeRun.stats.cardsProcessed !== undefined && (
-              <p>
-                Kartlar: {activeRun.stats.cardsInserted ?? 0} eklendi,{" "}
-                {activeRun.stats.cardsUpdated ?? 0} güncellendi
-              </p>
-            )}
-            {(activeRun.stats.imagesDownloaded !== undefined || activeRun.stats.imagesSkipped !== undefined) && (
-              <p>
-                Resimler: {activeRun.stats.imagesDownloaded ?? 0} indirildi,{" "}
-                {activeRun.stats.imagesSkipped ?? 0} atlandı
-              </p>
-            )}
-            {activeRun.stats.pricesUpdated !== undefined && (
-              <p>Fiyatlar: {activeRun.stats.pricesUpdated}</p>
-            )}
-          </div>
-        </Card>
-      )}
+      {activeRun && activeRun.status === "running" && (() => {
+        const cards = activeRun.stats.cardsProcessed ?? 0;
+        const imagesTotal = (activeRun.stats.imagesDownloaded ?? 0) + (activeRun.stats.imagesSkipped ?? 0);
+
+        // Total cards expected — use selected set's totalCards if available
+        const selectedSetData = sets.find((s) => s.apiId === activeRun.setApiId);
+        const totalExpected = selectedSetData?.totalCards ?? null;
+
+        // Progress % — only when we know the total
+        const progressPct = totalExpected && totalExpected > 0
+          ? Math.min(100, Math.round((imagesTotal / totalExpected) * 100))
+          : null;
+
+        // Speed & ETA
+        const cardsPerSec = elapsedSeconds > 5 ? cards / elapsedSeconds : 0;
+        const cardsPerMin = Math.round(cardsPerSec * 60);
+        const etaSecs = cardsPerSec > 0 && totalExpected
+          ? Math.max(0, Math.round((totalExpected - cards) / cardsPerSec))
+          : null;
+
+        const fmtTime = (s: number) => {
+          if (s < 60) return `${s}s`;
+          const m = Math.floor(s / 60);
+          const rem = s % 60;
+          return rem > 0 ? `${m}d ${rem}s` : `${m}d`;
+        };
+
+        return (
+          <Card className="p-5 border-blue-200 bg-gradient-to-br from-blue-50/60 to-indigo-50/40">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
+                <span className="text-[13px] font-semibold text-blue-900">
+                  {GAME_LABELS[activeRun.game] ?? activeRun.game} — {MODE_LABELS[activeRun.mode] ?? activeRun.mode}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[12px] text-blue-600 font-medium">
+                <Clock className="w-3.5 h-3.5" />
+                {fmtTime(elapsedSeconds)}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-4">
+              {progressPct !== null ? (
+                /* Determinate — known total */
+                <div>
+                  <div className="flex justify-between text-[11px] text-blue-700 mb-1.5">
+                    <span>{imagesTotal.toLocaleString("tr-TR")} / {totalExpected!.toLocaleString("tr-TR")} kart</span>
+                    <span className="font-semibold">{progressPct}%</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-blue-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  {etaSecs !== null && etaSecs > 5 && (
+                    <p className="text-[11px] text-blue-500 mt-1.5 text-right">
+                      Tahmini kalan: ~{fmtTime(etaSecs)}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Indeterminate — unknown total */
+                <div>
+                  <div className="w-full h-2.5 rounded-full bg-blue-100 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-400 animate-[shimmer_1.8s_ease-in-out_infinite]"
+                      style={{
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer 1.8s ease-in-out infinite",
+                      }}
+                    />
+                  </div>
+                  <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+                </div>
+              )}
+            </div>
+
+            {/* Stat chips */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {activeRun.stats.setsProcessed !== undefined && (
+                <div className="bg-white/70 rounded-lg px-3 py-2 border border-blue-100">
+                  <p className="text-[10px] font-medium text-blue-500 uppercase tracking-wide mb-0.5">Setler</p>
+                  <p className="text-[16px] font-bold text-blue-800">{activeRun.stats.setsProcessed}</p>
+                </div>
+              )}
+              {activeRun.stats.cardsProcessed !== undefined && (
+                <div className="bg-white/70 rounded-lg px-3 py-2 border border-blue-100">
+                  <p className="text-[10px] font-medium text-blue-500 uppercase tracking-wide mb-0.5">Kartlar</p>
+                  <p className="text-[16px] font-bold text-blue-800">{cards.toLocaleString("tr-TR")}</p>
+                  <p className="text-[10px] text-blue-400">+{activeRun.stats.cardsInserted ?? 0} / ~{activeRun.stats.cardsUpdated ?? 0}</p>
+                </div>
+              )}
+              {activeRun.stats.imagesDownloaded !== undefined && (
+                <div className="bg-white/70 rounded-lg px-3 py-2 border border-blue-100">
+                  <p className="text-[10px] font-medium text-blue-500 uppercase tracking-wide mb-0.5 flex items-center gap-1"><Image className="w-3 h-3" />Resimler</p>
+                  <p className="text-[16px] font-bold text-indigo-700">{(activeRun.stats.imagesDownloaded ?? 0).toLocaleString("tr-TR")}</p>
+                  <p className="text-[10px] text-blue-400">{(activeRun.stats.imagesSkipped ?? 0).toLocaleString("tr-TR")} atlandı</p>
+                </div>
+              )}
+              {activeRun.stats.pricesUpdated !== undefined && (
+                <div className="bg-white/70 rounded-lg px-3 py-2 border border-blue-100">
+                  <p className="text-[10px] font-medium text-blue-500 uppercase tracking-wide mb-0.5">Fiyatlar</p>
+                  <p className="text-[16px] font-bold text-emerald-700">{(activeRun.stats.pricesUpdated).toLocaleString("tr-TR")}</p>
+                </div>
+              )}
+              {cardsPerMin > 0 && (
+                <div className="bg-white/70 rounded-lg px-3 py-2 border border-blue-100">
+                  <p className="text-[10px] font-medium text-blue-500 uppercase tracking-wide mb-0.5 flex items-center gap-1"><Gauge className="w-3 h-3" />Hız</p>
+                  <p className="text-[16px] font-bold text-blue-800">{cardsPerMin}</p>
+                  <p className="text-[10px] text-blue-400">kart/dk</p>
+                </div>
+              )}
+              {(activeRun.stats.errors ?? 0) > 0 && (
+                <div className="bg-red-50 rounded-lg px-3 py-2 border border-red-100">
+                  <p className="text-[10px] font-medium text-red-400 uppercase tracking-wide mb-0.5">Hata</p>
+                  <p className="text-[16px] font-bold text-red-600">{activeRun.stats.errors}</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        );
+      })()}
 
       {/* PriceCharting Fiyat Güncelleme */}
       <Card className="p-5">
