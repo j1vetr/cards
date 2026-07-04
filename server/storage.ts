@@ -2853,6 +2853,39 @@ export class DbStorage implements IStorage {
     return { created, updated, noPrice };
   }
 
+  async deleteAllTcgData(game?: string): Promise<{ deletedCards: number; deletedSets: number; deletedListings: number; deletedPrices: number }> {
+    if (game) {
+      const gameRow = await db.execute(sql`SELECT id FROM card_games WHERE slug = ${game} LIMIT 1`);
+      const gameId = (gameRow.rows[0] as any)?.id;
+      if (!gameId) return { deletedCards: 0, deletedSets: 0, deletedListings: 0, deletedPrices: 0 };
+
+      const sets = await db.execute(sql`SELECT id FROM card_sets WHERE game_id = ${gameId}`);
+      const setIds = (sets.rows as any[]).map(r => r.id);
+
+      let deletedListings = 0, deletedPrices = 0, deletedCards = 0;
+      if (setIds.length > 0) {
+        const cardRows = await db.execute(sql`SELECT id FROM cards WHERE set_id = ANY(${setIds}::text[])`);
+        const cardIds = (cardRows.rows as any[]).map(r => r.id);
+        if (cardIds.length > 0) {
+          const dl = await db.execute(sql`DELETE FROM card_listings WHERE card_id = ANY(${cardIds}::text[]) RETURNING id`);
+          deletedListings = dl.rows.length;
+          const dp = await db.execute(sql`DELETE FROM card_prices WHERE card_id = ANY(${cardIds}::text[]) RETURNING id`);
+          deletedPrices = dp.rows.length;
+          const dc = await db.execute(sql`DELETE FROM cards WHERE id = ANY(${cardIds}::text[]) RETURNING id`);
+          deletedCards = dc.rows.length;
+        }
+      }
+      const ds = await db.execute(sql`DELETE FROM card_sets WHERE game_id = ${gameId} RETURNING id`);
+      return { deletedCards, deletedSets: ds.rows.length, deletedListings, deletedPrices };
+    } else {
+      const dl = await db.execute(sql`DELETE FROM card_listings WHERE card_id IN (SELECT id FROM cards) RETURNING id`);
+      const dp = await db.execute(sql`DELETE FROM card_prices WHERE card_id IN (SELECT id FROM cards) RETURNING id`);
+      const dc = await db.execute(sql`DELETE FROM cards RETURNING id`);
+      const ds = await db.execute(sql`DELETE FROM card_sets RETURNING id`);
+      return { deletedCards: dc.rows.length, deletedSets: ds.rows.length, deletedListings: dl.rows.length, deletedPrices: dp.rows.length };
+    }
+  }
+
   async getTcgStats(): Promise<{ totalCards: number; totalListings: number; totalPrices: number }> {
     const result = await db.execute(sql`
       SELECT

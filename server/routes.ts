@@ -5519,6 +5519,18 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // Delete all TCG data (cards + sets, optionally filtered by game slug)
+  app.delete("/api/admin/tcg/data", requireAdmin, async (req, res) => {
+    try {
+      const { game } = req.query as { game?: string };
+      const result = await storage.deleteAllTcgData(game || undefined);
+      res.json({ success: true, ...result });
+    } catch (err) {
+      console.error("[tcg-delete]", err);
+      res.status(500).json({ error: "Silme işlemi başarısız" });
+    }
+  });
+
   // Get a single sync run (for polling)
   app.get("/api/admin/tcg/sync-runs/:id", requireAdmin, async (req, res) => {
     try {

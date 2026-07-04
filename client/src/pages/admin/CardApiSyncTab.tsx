@@ -14,6 +14,8 @@ import {
   BarChart3,
   Tag,
   Swords,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
 
@@ -121,6 +123,26 @@ export default function CardApiSyncTab() {
     noPrice: number;
     message: string;
   } | null>(null);
+
+  // Danger zone — delete all TCG data
+  const [deleteTarget, setDeleteTarget] = useState<"" | "pokemon" | "riftbound" | "all">("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteResult, setDeleteResult] = useState<{ deletedCards: number; deletedSets: number; deletedListings: number } | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (game: string) => {
+      const url = game === "all" ? "/api/admin/tcg/data" : `/api/admin/tcg/data?game=${game}`;
+      const res = await fetch(url, { method: "DELETE", credentials: "include" });
+      if (!res.ok) throw new Error("Silme başarısız");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setDeleteResult(data);
+      setDeleteConfirmText("");
+      setDeleteTarget("");
+      qc.invalidateQueries({ queryKey: ["/api/admin/tcg/stats"] });
+    },
+  });
 
   const { data: games = [] } = useQuery<CardGame[]>({
     queryKey: ["/api/admin/tcg/games"],
@@ -762,6 +784,81 @@ export default function CardApiSyncTab() {
           <code className="bg-neutral-100 rounded px-1 py-0.5">pricecharting_api_key</code>
         </span>
       </div>
+
+      {/* ── Danger Zone ───────────────────────────────────────────────────────── */}
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <AlertTriangle className="w-4 h-4 text-red-500" />
+          <h3 className="font-semibold text-red-600 text-sm">Tehlike Bölgesi — Veri Silme</h3>
+        </div>
+        <p className="text-xs text-neutral-500 mb-4">
+          Seçili oyuna ait tüm kartlar, setler, listinglar ve fiyatlar <strong>kalıcı olarak silinir</strong>. Geri alınamaz.
+        </p>
+
+        {deleteResult && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
+            ✓ Silindi — {deleteResult.deletedCards} kart, {deleteResult.deletedSets} set, {deleteResult.deletedListings} listing kaldırıldı.
+          </div>
+        )}
+
+        {deleteMutation.isError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+            Hata: {(deleteMutation.error as Error)?.message}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[
+            { key: "riftbound", label: "Riftbound Verisini Sil" },
+            { key: "pokemon",   label: "Pokemon TCG Verisini Sil" },
+            { key: "all",       label: "Tüm TCG Verisini Sil" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => { setDeleteTarget(key as any); setDeleteConfirmText(""); setDeleteResult(null); }}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
+                deleteTarget === key
+                  ? key === "all" ? "bg-red-600 text-white border-red-600" : "bg-red-50 text-red-700 border-red-300"
+                  : "bg-white text-neutral-600 border-neutral-200 hover:border-red-300 hover:text-red-600"
+              }`}
+            >
+              <Trash2 className="w-3 h-3 inline mr-1" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {deleteTarget && (
+          <div className="border border-red-200 rounded-lg p-4 bg-red-50/50">
+            <p className="text-xs text-red-600 mb-2 font-medium">
+              Onaylamak için aşağıya <strong>SİL</strong> yazın:
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="SİL"
+                className="flex-1 text-sm px-3 py-1.5 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
+              />
+              <button
+                disabled={deleteConfirmText !== "SİL" || deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(deleteTarget)}
+                className="text-sm px-4 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-1.5"
+              >
+                {deleteMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Sil
+              </button>
+              <button
+                onClick={() => { setDeleteTarget(""); setDeleteConfirmText(""); }}
+                className="text-sm px-3 py-1.5 border border-neutral-200 rounded-lg hover:bg-neutral-50 text-neutral-600"
+              >
+                İptal
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
