@@ -20,6 +20,15 @@ export function serveStatic(app: Express) {
     }));
   }
 
+  // Serve card images downloaded at runtime (not in build output)
+  const cardsPath = path.resolve(process.cwd(), "client/public/cards");
+  if (fs.existsSync(cardsPath)) {
+    app.use("/cards", express.static(cardsPath, {
+      maxAge: '7d',
+      etag: true,
+    }));
+  }
+
   // Serve static assets with aggressive caching
   app.use(express.static(distPath, {
     maxAge: '1y',
