@@ -81,8 +81,10 @@ export async function downloadCardImage(
   try {
     ensureDirSync(abs);
     const buffer = await fetchImageBuffer(externalUrl);
-    await optimizeImageBuffer(buffer, abs, { maxWidth: 600, maxHeight: 840, quality: 82 });
-    return { localUrl: rel, skipped: false };
+    const savedPath = await optimizeImageBuffer(buffer, abs, { maxWidth: 600, maxHeight: 840, quality: 82 });
+    // Use actual saved path (may be .jpg fallback if WebP optimization failed)
+    const localUrl = "/" + path.relative(PUBLIC_DIR, savedPath).replace(/\\/g, "/");
+    return { localUrl, skipped: false };
   } catch (err) {
     console.error(`[img-dl] Failed to download card image for ${slug}: ${(err as Error).message}`);
     return { localUrl: externalUrl, skipped: true };

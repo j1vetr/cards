@@ -139,6 +139,8 @@ async function syncSets(
     log(`${sets.length} set bulundu`);
 
     for (const set of sets) {
+      // When a set filter is requested, skip all non-matching sets
+      if (opts.setApiId && set.id !== opts.setApiId) continue;
       try {
         // Download logo + symbol first, then single upsert with both local URLs
         const baseData = mapPokemonSetToDb(set, gameId);

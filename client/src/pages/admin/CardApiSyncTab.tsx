@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   RefreshCw,
   Download,
+  DollarSign,
   CheckCircle,
   XCircle,
   Loader2,
@@ -234,6 +235,26 @@ export default function CardApiSyncTab() {
     },
   });
 
+  const priceSyncMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/tcg/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ game: selectedGame, mode: "prices" }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Bilinmeyen hata" }));
+        throw new Error(err.error ?? "Fiyat sync başlatılamadı");
+      }
+      return res.json() as Promise<{ runId: string; message: string }>;
+    },
+    onSuccess: (data) => {
+      setActiveRunId(data.runId);
+      qc.invalidateQueries({ queryKey: ["/api/admin/tcg/sync-runs"] });
+    },
+  });
+
   const backfillMutation = useMutation({
     mutationFn: async () => {
       const body: Record<string, string> = {
@@ -452,6 +473,52 @@ export default function CardApiSyncTab() {
           </div>
         </Card>
       )}
+
+      {/* PriceCharting Fiyat Güncelleme */}
+      <Card className="p-5">
+        <h3 className="text-[13px] font-semibold text-neutral-800 mb-4 flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-emerald-600" />
+          PriceCharting Fiyat Güncelleme
+        </h3>
+
+        <div className="bg-emerald-50 border border-emerald-100 rounded-md p-3 flex gap-2 text-[12px] text-emerald-800 mb-4">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
+          <span>
+            Tüm aktif kartlar için PriceCharting'den market/low/high fiyatlar çekilir.
+            API key gereklidir (Ayarlar → <code className="bg-emerald-100 rounded px-1 py-0.5">pricecharting_api_key</code>).
+            8.000+ kart için 40+ dakika sürebilir.
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          {priceSyncMutation.isError && (
+            <p className="text-[12px] text-red-600 flex items-center gap-1">
+              <XCircle className="w-3.5 h-3.5" />
+              {priceSyncMutation.error instanceof Error ? priceSyncMutation.error.message : "Hata oluştu"}
+            </p>
+          )}
+          {priceSyncMutation.isSuccess && !isRunning && (
+            <p className="text-[12px] text-emerald-600 flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5" /> Fiyat sync başlatıldı.
+            </p>
+          )}
+          {!priceSyncMutation.isError && !priceSyncMutation.isSuccess && <span />}
+
+          <PrimaryButton
+            data-testid="button-start-price-sync"
+            onClick={() => priceSyncMutation.mutate()}
+            disabled={isRunning || priceSyncMutation.isPending}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500"
+          >
+            {priceSyncMutation.isPending || (isRunning && activeRun?.mode === "prices") ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <DollarSign className="w-4 h-4" />
+            )}
+            {priceSyncMutation.isPending ? "Başlatılıyor…" : "Fiyatları Güncelle"}
+          </PrimaryButton>
+        </div>
+      </Card>
 
       {/* Backfill Attacks & Abilities */}
       <Card className="p-5">
