@@ -54,9 +54,9 @@ export default function AdminLogin() {
       <div className="relative w-full max-w-[400px] flex flex-col items-center">
 
         {/* TOOV Logo */}
-        <div className="mb-8 w-full max-w-[220px]">
+        <div className="mb-8 w-full max-w-[240px]">
           <img
-            src="/toov-logo.png"
+            src="/toov-logo-white.png"
             alt="TOOV"
             className="w-full h-auto select-none"
             draggable={false}
@@ -65,12 +65,6 @@ export default function AdminLogin() {
 
         {/* Brand label */}
         <div className="flex flex-col items-center gap-1 mb-8 text-center">
-          <p
-            className="text-[11px] font-semibold tracking-[0.30em] uppercase"
-            style={{ color: 'hsl(195 100% 55%)' }}
-          >
-            Ecarte Jeans
-          </p>
           <h1
             className="text-white text-[22px] font-semibold tracking-tight"
             data-testid="text-brand"
@@ -204,7 +198,7 @@ export default function AdminLogin() {
           className="mt-6 text-[11px] text-center"
           style={{ color: 'hsl(220 15% 28%)' }}
         >
-          TOOV · Ecarte Jeans © {new Date().getFullYear()}
+          TOOV © {new Date().getFullYear()}
         </p>
       </div>
     </div>
