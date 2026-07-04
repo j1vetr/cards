@@ -62,7 +62,7 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden w-full">
-      <SEO title="Sepetim" description="Marka alışveriş sepetiniz." url="/sepet" noIndex />
+      <SEO title="Sepetim" description="GoCards alışveriş sepetiniz." url="/sepet" noIndex />
       <Header />
 
       <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6 w-full box-border">
@@ -326,15 +326,15 @@ export default function Cart() {
                   <div className="mt-6 pt-6 border-t border-black/6 space-y-3">
                     <div className="flex items-center gap-3 text-xs text-black/40">
                       <Shield className="w-4 h-4 shrink-0" />
-                      <span>Güvenli Ödeme</span>
+                      <span>Güvenli Ödeme — 256-bit SSL</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-black/40">
                       <RotateCcw className="w-4 h-4 shrink-0" />
-                      <span>14 Gün Ücretsiz İade</span>
+                      <span>Orijinal Kart Garantisi</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-black/40">
                       <Package className="w-4 h-4 shrink-0" />
-                      <span>Hızlı Teslimat (1 İş Günü)</span>
+                      <span>Hızlı Kargo — 1–2 İş Günü</span>
                     </div>
                   </div>
                 </motion.div>
