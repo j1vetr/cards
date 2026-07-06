@@ -123,7 +123,7 @@ export default function Contact() {
               <h2 className="text-[10px] font-semibold tracking-[0.22em] uppercase text-white/25 mb-4">Şirket Bilgileri</h2>
               <div className="space-y-1.5">
                 <p className="text-[15px] font-semibold text-white">GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.</p>
-                <p className="text-[13px] text-white/40">Beykoz V.D. — Vergi No: 396 175 96 05</p>
+                <p className="text-[13px] text-white/40">Beykoz V.D. | Vergi No: 396 175 96 05</p>
               </div>
             </motion.div>
           </div>
