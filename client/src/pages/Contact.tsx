@@ -20,6 +20,7 @@ const contactItems = [
     value: '0538 921 67 80',
     href: 'tel:+905389216780',
     testId: 'link-contact-phone',
+    whatsapp: false,
   },
   {
     icon: WhatsAppIcon,
@@ -35,12 +36,13 @@ const contactItems = [
     value: 'gocardshub@gmail.com',
     href: 'mailto:gocardshub@gmail.com',
     testId: 'link-contact-email',
+    whatsapp: false,
   },
 ];
 
 export default function Contact() {
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen" style={{ background: '#0c1220' }}>
       <SEO
         title="İletişim"
         description="Go Cards TCG ile iletişime geçin. Telefon, WhatsApp ve e-posta ile bize ulaşabilirsiniz."
@@ -49,23 +51,23 @@ export default function Contact() {
 
       <main className="pt-20 lg:pt-6 pb-16">
         {/* Hero */}
-        <section className="px-4 sm:px-6 py-12 lg:py-16 bg-white border-b border-black/[0.06]">
+        <section className="px-4 sm:px-6 py-12 lg:py-16" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="max-w-3xl mx-auto">
             <motion.nav
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 text-xs text-black/55 mb-8"
+              className="flex items-center gap-2 text-xs text-white/35 mb-8"
             >
               <Link href="/" data-testid="link-home" className="hover:text-[hsl(var(--polen-orange))] transition-colors">
                 Ana Sayfa
               </Link>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-black">İletişim</span>
+              <span className="text-white/60">İletişim</span>
             </motion.nav>
 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-              <h1 className="text-3xl sm:text-4xl font-bold text-black tracking-tight mb-3">İletişim</h1>
-              <p className="text-black/55 text-base leading-relaxed">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">İletişim</h1>
+              <p className="text-white/40 text-base leading-relaxed">
                 Sorularınız için bize aşağıdaki kanallardan ulaşabilirsiniz.
               </p>
             </motion.div>
@@ -86,13 +88,14 @@ export default function Contact() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.08 + i * 0.07 }}
-                  className="group flex flex-col items-center text-center gap-4 bg-white rounded-2xl border border-black/[0.07] p-8 shadow-sm hover:shadow-md hover:border-black/[0.14] transition-all"
+                  className="group flex flex-col items-center text-center gap-4 rounded-2xl p-8 transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.border = '1px solid rgba(255,255,255,0.18)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)')}
                 >
                   <div
                     className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                      item.whatsapp
-                        ? 'bg-[#25D366]/10'
-                        : 'bg-[hsl(var(--polen-orange))]/10'
+                      item.whatsapp ? 'bg-[#25D366]/10' : 'bg-[hsl(var(--polen-orange))]/10'
                     }`}
                   >
                     <item.icon
@@ -100,8 +103,8 @@ export default function Contact() {
                     />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold tracking-widest uppercase text-black/35 mb-1">{item.label}</p>
-                    <p className="text-[15px] font-semibold text-black group-hover:text-[hsl(var(--polen-orange))] transition-colors">
+                    <p className="text-[11px] font-semibold tracking-widest uppercase text-white/30 mb-1">{item.label}</p>
+                    <p className="text-[15px] font-semibold text-white group-hover:text-[hsl(var(--polen-orange))] transition-colors">
                       {item.value}
                     </p>
                   </div>
@@ -114,12 +117,13 @@ export default function Contact() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="mt-8 bg-white rounded-2xl border border-black/[0.07] p-8 shadow-sm"
+              className="mt-6 rounded-2xl p-8"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <h2 className="text-[11px] font-semibold tracking-widest uppercase text-black/35 mb-4">Şirket Bilgileri</h2>
+              <h2 className="text-[10px] font-semibold tracking-[0.22em] uppercase text-white/25 mb-4">Şirket Bilgileri</h2>
               <div className="space-y-1.5">
-                <p className="text-[15px] font-semibold text-black">GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.</p>
-                <p className="text-[13px] text-black/50">Beykoz V.D. — Vergi No: 396 175 96 05</p>
+                <p className="text-[15px] font-semibold text-white">GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.</p>
+                <p className="text-[13px] text-white/40">Beykoz V.D. — Vergi No: 396 175 96 05</p>
               </div>
             </motion.div>
           </div>
