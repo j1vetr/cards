@@ -53,7 +53,7 @@ export default function Login() {
             <p className="text-white/40 text-[13px] mb-8">
               Hesabınız yok mu?{' '}
               <Link href="/kayit" className="text-[hsl(var(--polen-orange))] hover:opacity-80 transition-opacity font-medium">
-                Ücretsiz kaydol
+                Ücretsiz Kaydol
               </Link>
             </p>
 
@@ -87,7 +87,7 @@ export default function Login() {
                     href="/sifremi-unuttum"
                     className="text-[11px] text-white/30 hover:text-[hsl(var(--polen-orange))] transition-colors"
                   >
-                    Şifremi unuttum
+                    Şifremi Unuttum
                   </Link>
                 </div>
                 <div className="relative">

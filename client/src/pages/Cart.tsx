@@ -41,7 +41,7 @@ export default function Cart() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[hsl(var(--polen-stone))]">
+      <div style={{ minHeight: '100vh', background: '#0c1220' }}>
         <Header />
         <main className="pt-20 pb-12 px-6 flex items-center justify-center min-h-[calc(100vh-72px)]">
           <motion.div
@@ -57,11 +57,11 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--polen-stone))] overflow-x-hidden w-full">
+    <div style={{ minHeight: '100vh', background: '#0c1220' }} className="overflow-x-hidden w-full">
       <SEO title="Sepetim" description="GoCards alışveriş sepetiniz." url="/sepet" noIndex />
       <Header />
 
-      <main className="pt-20 lg:pt-8 pb-16 px-4 sm:px-6 w-full box-border">
+      <main className="pt-20 pb-16 px-4 sm:px-6 w-full box-border">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}

@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Loader2, ArrowRight, Zap, Sparkles } from 'lucide-react';
+import { Search, X, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 
@@ -24,10 +24,10 @@ interface SearchOverlayProps {
 
 const rarityColor = (rarity: string) => {
   const r = rarity?.toLowerCase() ?? '';
-  if (r.includes('secret') || r.includes('rainbow') || r.includes('full art')) return 'text-amber-500';
-  if (r.includes('ultra') || r.includes('rare holo') || r.includes('legend')) return 'text-indigo-500';
-  if (r.includes('rare')) return 'text-blue-500';
-  return 'text-neutral-400';
+  if (r.includes('secret') || r.includes('rainbow') || r.includes('full art')) return 'text-amber-400';
+  if (r.includes('ultra') || r.includes('rare holo') || r.includes('legend')) return 'text-indigo-400';
+  if (r.includes('rare')) return 'text-blue-400';
+  return 'text-white/35';
 };
 
 const QUICK_LINKS = [
@@ -111,28 +111,31 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Arka plan overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             onClick={onClose}
-            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-[6px]"
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-[6px]"
             data-testid="overlay-search"
           />
 
+          {/* Panel */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 left-0 right-0 z-[101] bg-white shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] flex flex-col max-h-[92vh]"
+            style={{ background: '#0c1220', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+            className="fixed top-0 left-0 right-0 z-[101] flex flex-col max-h-[92vh] shadow-[0_24px_60px_-10px_rgba(0,0,0,0.6)]"
             data-testid="panel-search"
           >
             {/* Arama input satırı */}
-            <div className="border-b border-black/[0.08]">
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-4 lg:py-6 flex items-center gap-3">
-                <Search className="w-5 h-5 text-black/40 shrink-0" strokeWidth={1.6} />
+                <Search className="w-5 h-5 text-white/35 shrink-0" strokeWidth={1.6} />
                 <input
                   ref={inputRef}
                   type="text"
@@ -140,7 +143,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
                   placeholder="Kart adı, set, nadir ara… (örn: Charizard, Pikachu)"
-                  className="flex-1 bg-transparent outline-none border-none text-[16px] lg:text-[19px] font-light text-black placeholder:text-black/25 tracking-tight"
+                  className="flex-1 bg-transparent outline-none border-none text-[16px] lg:text-[19px] font-light text-white placeholder:text-white/25 tracking-tight"
                   data-testid="input-search"
                   autoComplete="off"
                   spellCheck={false}
@@ -148,7 +151,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 {query.length > 0 && (
                   <button
                     onClick={() => { setQuery(''); setDebouncedQuery(''); inputRef.current?.focus(); }}
-                    className="text-[10px] tracking-[0.18em] uppercase text-black/40 hover:text-[hsl(var(--polen-orange))] transition-colors px-2 shrink-0"
+                    className="text-[10px] tracking-[0.18em] uppercase text-white/30 hover:text-[hsl(var(--polen-orange))] transition-colors px-2 shrink-0"
                     data-testid="button-clear-search"
                   >
                     Temizle
@@ -156,11 +159,12 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 )}
                 <button
                   onClick={onClose}
-                  className="group flex items-center justify-center w-9 h-9 rounded-full border border-black/10 hover:border-[hsl(var(--polen-orange))] transition-colors shrink-0"
+                  className="group flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
+                  style={{ border: '1px solid rgba(255,255,255,0.10)' }}
                   data-testid="button-close-search"
                   aria-label="Kapat"
                 >
-                  <X className="w-4 h-4 text-black/50 group-hover:text-[hsl(var(--polen-orange))] transition-colors" strokeWidth={1.75} />
+                  <X className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" strokeWidth={1.75} />
                 </button>
               </div>
             </div>
@@ -176,7 +180,8 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                       key={link.href}
                       href={link.href}
                       onClick={onClose}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[11px] tracking-[0.12em] uppercase font-medium text-black/65 border border-black/10 hover:border-[hsl(var(--polen-orange))] hover:text-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange))]/5 transition-colors rounded-sm"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[11px] tracking-[0.12em] uppercase font-medium text-white/45 hover:border-[hsl(var(--polen-orange))] hover:text-[hsl(var(--polen-orange))] transition-colors rounded-sm"
+                      style={{ border: '1px solid rgba(255,255,255,0.10)' }}
                       data-testid={`link-search-quick-${link.label}`}
                     >
                       {link.label}
@@ -186,7 +191,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
                 {/* Yükleniyor */}
                 {hasQuery && searching && (
-                  <div className="flex items-center justify-center py-14 text-black/30">
+                  <div className="flex items-center justify-center py-14 text-white/25">
                     <Loader2 className="w-5 h-5 animate-spin" />
                   </div>
                 )}
@@ -194,15 +199,16 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 {/* Sonuç yok */}
                 {hasQuery && !searching && searchResults.length === 0 && (
                   <div className="text-center py-12 px-4">
-                    <div className="text-[11px] tracking-[0.2em] uppercase text-black/35 mb-2">Kart Bulunamadı</div>
-                    <p className="text-[15px] text-black/65">
-                      "<span className="font-semibold text-black">{debouncedQuery}</span>" ile eşleşen kart yok.
+                    <div className="text-[11px] tracking-[0.2em] uppercase text-white/30 mb-2">Kart Bulunamadı</div>
+                    <p className="text-[15px] text-white/55">
+                      "<span className="font-semibold text-white">{debouncedQuery}</span>" ile eşleşen kart yok.
                     </p>
-                    <p className="text-[13px] text-black/40 mt-1.5">Farklı bir isim veya set adı deneyin.</p>
+                    <p className="text-[13px] text-white/35 mt-1.5">Farklı bir isim veya set adı deneyin.</p>
                     <Link
                       href="/magaza"
                       onClick={onClose}
-                      className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-[11px] tracking-[0.18em] uppercase font-semibold bg-[hsl(var(--polen-stone))] text-white hover:bg-[hsl(var(--polen-orange))] transition-colors"
+                      className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-[11px] tracking-[0.18em] uppercase font-semibold text-white hover:bg-[hsl(var(--polen-orange))] transition-colors rounded-lg"
+                      style={{ background: 'rgba(255,255,255,0.07)' }}
                     >
                       Tüm Kartlara Bak <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -213,7 +219,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 {!searching && displayedCards.length > 0 && (
                   <div>
                     <div className="flex items-end justify-between mb-4">
-                      <div className="text-[10px] tracking-[0.22em] uppercase text-black/35 font-mono">
+                      <div className="text-[10px] tracking-[0.22em] uppercase text-white/30 font-mono">
                         {hasQuery ? `${searchResults.length} Kart Bulundu` : 'Son Eklenen Kartlar'}
                       </div>
                       {hasQuery && searchResults.length > 0 && (
@@ -240,7 +246,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                             data-testid={`link-search-card-${card.id}`}
                             className="group block"
                           >
-                            <div className="relative aspect-[5/7] bg-neutral-100 overflow-hidden rounded-lg mb-2 shadow-sm group-hover:shadow-md transition-shadow">
+                            <div
+                              className="relative aspect-[5/7] overflow-hidden rounded-lg mb-2 shadow-sm group-hover:shadow-md transition-shadow"
+                              style={{ background: 'rgba(255,255,255,0.07)' }}
+                            >
                               {card.image_url ? (
                                 <img
                                   src={card.image_url}
@@ -249,13 +258,13 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                                   loading="lazy"
                                 />
                               ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-black/15">
+                                <div className="absolute inset-0 flex items-center justify-center text-white/15">
                                   <Sparkles className="w-5 h-5" />
                                 </div>
                               )}
                             </div>
                             <h4
-                              className="text-[11px] font-medium text-black leading-tight line-clamp-2 group-hover:text-[hsl(var(--polen-orange))] transition-colors"
+                              className="text-[11px] font-medium text-white leading-tight line-clamp-2 group-hover:text-[hsl(var(--polen-orange))] transition-colors"
                               data-testid={`text-search-name-${card.id}`}
                             >
                               {card.name}
@@ -264,7 +273,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                               {card.rarity}
                             </p>
                             {card.min_price && (
-                              <p className="text-[11px] font-semibold text-black mt-0.5" data-testid={`text-search-price-${card.id}`}>
+                              <p className="text-[11px] font-semibold text-white mt-0.5" data-testid={`text-search-price-${card.id}`}>
                                 {parseFloat(card.min_price).toLocaleString('tr-TR')} ₺
                               </p>
                             )}
@@ -277,7 +286,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
                 {/* Boş — sorgu yok, kart yok */}
                 {!hasQuery && latestCards.length === 0 && (
-                  <div className="text-center py-14 text-[13px] text-black/35">
+                  <div className="text-center py-14 text-[13px] text-white/30">
                     Aramaya başlamak için kart adı veya set yazın.
                   </div>
                 )}

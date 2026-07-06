@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { Header } from '@/components/Header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Mail, ArrowRight, CheckCircle2, KeyRound, Loader2 } from 'lucide-react';
+import { Mail, ArrowRight, CheckCircle2, KeyRound, Loader2, ArrowLeft } from 'lucide-react';
 import { SEO } from '@/components/SEO';
-import { AuthCrossLinkCTA } from '@/components/AuthCrossLinkCTA';
+import { Link } from 'wouter';
 
 export default function ForgotPassword() {
   const { toast } = useToast();
@@ -17,12 +14,12 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email.trim()) {
-      toast({ 
-        title: 'Hata', 
+      toast({
+        title: 'Hata',
         description: 'Lütfen e-posta adresinizi girin',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -41,10 +38,10 @@ export default function ForgotPassword() {
       }
 
       setSubmitted(true);
-    } catch (error: any) {
-      toast({ 
-        title: 'Bilgi', 
-        description: 'Eğer bu e-posta adresi sistemimizde kayıtlıysa, şifre sıfırlama bağlantısı gönderilecektir.'
+    } catch {
+      toast({
+        title: 'Bilgi',
+        description: 'Eğer bu e-posta adresi sistemimizde kayıtlıysa, şifre sıfırlama bağlantısı gönderilecektir.',
       });
       setSubmitted(true);
     } finally {
@@ -54,114 +51,135 @@ export default function ForgotPassword() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white">
-        <SEO title="Şifremi Unuttum" description="Marka şifre sıfırlama bağlantısı." url="/sifremi-unuttum" noIndex />
+      <div style={{ minHeight: '100vh', background: '#0c1220' }}>
+        <SEO title="Şifremi Unuttum" description="Şifre sıfırlama bağlantısı gönderildi." url="/sifremi-unuttum" noIndex />
         <Header />
-        
-        <main className="pt-20 min-h-screen flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="w-full max-w-md text-center"
+
+        <main className="pt-20 min-h-[calc(100vh-72px)] flex items-center justify-center px-4 py-12">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.45 }}
+            className="w-full max-w-md"
+          >
+            {/* Kart paneli */}
+            <div
+              className="rounded-2xl p-8 text-center"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-polen-orange to-[hsl(var(--polen-orange-deep))] flex items-center justify-center"
+                className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, hsl(var(--polen-orange)), hsl(var(--polen-orange-deep)))' }}
               >
                 <CheckCircle2 className="w-10 h-10 text-white" />
               </motion.div>
-              
-              <h1 className="font-display text-3xl tracking-wide mb-4 text-black" data-testid="text-email-sent">
+
+              <h1 className="text-2xl font-bold text-white mb-3" data-testid="text-email-sent">
                 E-posta Gönderildi
               </h1>
-              <p className="text-black/45 mb-8 leading-relaxed">
-                Eğer <strong className="text-black">{email}</strong> adresi sistemimizde kayıtlıysa, 
+              <p className="text-white/45 mb-7 leading-relaxed text-sm">
+                Eğer <strong className="text-white">{email}</strong> adresi sistemimizde kayıtlıysa,
                 şifre sıfırlama bağlantısı içeren bir e-posta gönderdik.
               </p>
-              
-              <div className="bg-stone-50 border border-black/8 rounded-xl p-5 mb-8 text-left">
-                <h3 className="font-medium text-black mb-3">Sonraki Adımlar:</h3>
-                <ul className="space-y-2 text-sm text-black/45">
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-polen-orange text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                    <span>E-posta kutunuzu kontrol edin</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-polen-orange text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                    <span>Spam/gereksiz klasörünü de kontrol etmeyi unutmayın</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-polen-orange text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
-                    <span>E-postadaki bağlantıya tıklayarak yeni şifrenizi oluşturun</span>
-                  </li>
-                </ul>
+
+              {/* Sonraki adımlar */}
+              <div
+                className="rounded-xl p-5 mb-7 text-left space-y-3"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <h3 className="font-semibold text-white text-sm mb-1">Sonraki Adımlar</h3>
+                {[
+                  'E-posta kutunuzu kontrol edin',
+                  'Spam / gereksiz klasörünü de kontrol etmeyi unutmayın',
+                  'E-postadaki bağlantıya tıklayarak yeni şifrenizi oluşturun',
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span
+                      className="w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
+                      style={{ background: 'hsl(var(--polen-orange))' }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="text-white/45 text-sm">{step}</span>
+                  </div>
+                ))}
               </div>
-              
+
               <button
                 onClick={() => setSubmitted(false)}
-                className="text-sm text-black/45 hover:text-polen-orange transition-colors"
+                className="text-sm text-white/30 hover:text-[hsl(var(--polen-orange))] transition-colors"
               >
                 Farklı bir e-posta adresi dene
               </button>
-            </motion.div>
+            </div>
+
+            {/* Giriş linki */}
+            <div className="mt-6 text-center">
+              <Link
+                href="/giris"
+                className="inline-flex items-center gap-2 text-sm text-white/35 hover:text-white/70 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Giriş Sayfasına Dön
+              </Link>
+            </div>
+          </motion.div>
         </main>
-        <AuthCrossLinkCTA
-          href="/giris"
-          index="01"
-          eyebrow="Şifrenizi Hatırladınız mı?"
-          headline="GİRİŞ SAYFASINA DÖN"
-          ctaLabel="Giriş Yap"
-          testId="link-login-bottom"
-          containerClassName="px-6 lg:px-16 py-7 max-w-3xl mx-auto"
-        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: '100vh', background: '#0c1220' }}>
+      <SEO title="Şifremi Unuttum" description="Şifre sıfırlama bağlantısı talep edin." url="/sifremi-unuttum" noIndex />
       <Header />
-      
-      <main className="pt-20 min-h-screen flex items-center justify-center p-6">
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-md"
+
+      <main className="pt-20 min-h-[calc(100vh-72px)] flex items-center justify-center px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="w-full max-w-md"
+        >
+          {/* Kart paneli */}
+          <div
+            className="rounded-2xl p-8"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
-            <div className="text-center mb-10">
+            {/* İkon + başlık */}
+            <div className="text-center mb-8">
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.15 }}
+                className="w-14 h-14 mx-auto mb-5 rounded-xl flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
               >
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-stone-50 to-white border border-black/10 flex items-center justify-center">
-                  <KeyRound className="w-7 h-7 text-polen-orange" />
-                </div>
-                <h1 className="font-display text-4xl tracking-wide mb-3 text-black" data-testid="text-page-title">
-                  Şifremi Unuttum
-                </h1>
-                <p className="text-black/45">
-                  E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
-                </p>
+                <KeyRound className="w-7 h-7 text-[hsl(var(--polen-orange))]" strokeWidth={1.75} />
               </motion.div>
+              <h1 className="text-2xl font-bold text-white mb-2" data-testid="text-page-title">
+                Şifremi Unuttum
+              </h1>
+              <p className="text-white/40 text-sm leading-relaxed">
+                E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
+              </p>
             </div>
-            
-            <motion.form 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              onSubmit={handleSubmit} 
-              className="space-y-5"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">E-posta Adresi</Label>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="text-xs font-semibold tracking-[0.10em] uppercase text-white/40">
+                  E-posta Adresi
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/45" />
-                  <Input
+                  <Mail
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25"
+                    strokeWidth={1.75}
+                  />
+                  <input
                     id="email"
                     type="email"
                     value={email}
@@ -169,55 +187,65 @@ export default function ForgotPassword() {
                     placeholder="ornek@email.com"
                     required
                     data-testid="input-email"
-                    className="h-12 pl-11 bg-stone-50 border-black/12 focus:border-polen-orange rounded-lg"
+                    className="w-full h-12 pl-11 pr-4 rounded-xl text-sm text-white placeholder:text-white/20 outline-none transition-colors"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.10)',
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = 'hsl(var(--polen-orange))')}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)')}
+                    autoComplete="email"
                   />
                 </div>
               </div>
 
-              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                <Button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full h-12 bg-black text-white hover:bg-polen-orange font-bold tracking-[0.12em] text-xs uppercase rounded-none group"
-                  data-testid="button-submit"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Gönderiliyor...
-                    </>
-                  ) : (
-                    <>
-                      Sıfırlama Bağlantısı Gönder
-                      <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            </motion.form>
+              <motion.button
+                type="submit"
+                disabled={loading}
+                whileHover={{ scale: loading ? 1 : 1.01 }}
+                whileTap={{ scale: loading ? 1 : 0.99 }}
+                className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                style={{ background: 'hsl(var(--polen-orange))' }}
+                data-testid="button-submit"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Gönderiliyor...
+                  </>
+                ) : (
+                  <>
+                    Sıfırlama Bağlantısı Gönder
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </motion.button>
+            </form>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="mt-10 p-4 bg-stone-50 border border-black/8 rounded-none"
+            {/* Güvenlik notu */}
+            <div
+              className="mt-5 rounded-xl p-4"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
-              <p className="text-xs text-black/45 text-center leading-relaxed">
-                Güvenliğiniz için şifre sıfırlama bağlantısı yalnızca <strong>15 dakika</strong> geçerlidir. 
-                Bağlantı süresi dolarsa tekrar talep edebilirsiniz.
+              <p className="text-[11px] text-white/30 text-center leading-relaxed">
+                Güvenliğiniz için bağlantı yalnızca <strong className="text-white/50">15 dakika</strong> geçerlidir.
+                Süresi dolarsa tekrar talep edebilirsiniz.
               </p>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
+
+          {/* Giriş linki */}
+          <div className="mt-6 text-center">
+            <Link
+              href="/giris"
+              className="inline-flex items-center gap-2 text-sm text-white/35 hover:text-white/70 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Giriş Sayfasına Dön
+            </Link>
+          </div>
+        </motion.div>
       </main>
-      <AuthCrossLinkCTA
-        href="/giris"
-        index="01"
-        eyebrow="Şifrenizi Hatırladınız mı?"
-        headline="GİRİŞ SAYFASINA DÖN"
-        ctaLabel="Giriş Yap"
-        testId="link-login"
-        containerClassName="px-6 lg:px-16 py-7 max-w-3xl mx-auto"
-      />
     </div>
   );
 }
