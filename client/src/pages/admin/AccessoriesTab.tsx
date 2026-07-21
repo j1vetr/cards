@@ -14,13 +14,12 @@ import {
 } from './_ui/AdminUI';
 import ProductModal from './modals/ProductModal';
 
-const ACCESSORY_SLUGS = ['binder', 'sleeve', 'playmat', 'aksesuarlar'];
+const ACCESSORY_SLUGS = ['binder', 'sleeve', 'playmat'];
 
 const CATEGORY_LABELS: Record<string, string> = {
   binder: 'Binder',
   sleeve: 'Sleeve',
   playmat: 'Playmat',
-  aksesuarlar: 'Aksesuarlar',
 };
 
 function formatPrice(val: string | number): string {
@@ -70,7 +69,7 @@ export default function AccessoriesTab() {
     mutationFn: async (product: Partial<Product>) => {
       if (product.id) {
         return adminFetch(`/api/admin/products/${product.id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(product),
         });

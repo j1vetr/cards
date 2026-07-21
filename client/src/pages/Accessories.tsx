@@ -167,19 +167,6 @@ export default function Accessories() {
     return null;
   };
 
-  const filteredProducts = activeFilter
-    ? allProducts.filter((p) => getCategorySlug(p) === activeFilter)
-    : allProducts;
-
-  const groupedByCategory = ACCESSORY_SLUGS.map((slug) => {
-    const cat = accessoryCategories.find((c) => c.slug === slug);
-    const info = CATEGORY_INFO[slug];
-    const products = activeFilter
-      ? filteredProducts.filter((p) => getCategorySlug(p) === slug)
-      : allProducts.filter((p) => getCategorySlug(p) === slug);
-    return { slug, cat, info, products };
-  }).filter((g) => g.cat);
-
   return (
     <div className="min-h-screen" style={{ background: '#0c1220' }}>
       <Header />
@@ -232,38 +219,35 @@ export default function Accessories() {
           <div className="flex items-center justify-center py-24">
             <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : allProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <ShoppingBag className="w-12 h-12 mb-4" style={{ color: 'rgba(255,255,255,0.15)' }} />
-            <p className="text-[15px] font-semibold text-white/60 mb-1">Henüz ürün yok</p>
-            <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Yakında aksesuar ürünleri eklenecek.
-            </p>
-          </div>
         ) : (
           <div className="space-y-12">
-            {groupedByCategory.map(({ slug, info, products }) => {
+            {ACCESSORY_SLUGS.map((slug) => {
               if (activeFilter && activeFilter !== slug) return null;
-              if (products.length === 0 && !activeFilter) return null;
-              if (products.length === 0) return (
-                <div key={slug} className="text-center py-10">
-                  <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }}>Bu kategoride ürün bulunamadı.</p>
-                </div>
-              );
+              const info = CATEGORY_INFO[slug];
+              const sectionProducts = allProducts.filter((p) => getCategorySlug(p) === slug);
               return (
                 <section key={slug} data-testid={`section-${slug}`}>
                   <div className="flex items-start gap-3 mb-5">
-                    <div className="w-1 h-8 rounded-full shrink-0 mt-1" style={{ background: info?.color || '#4f46e5' }} />
+                    <div className="w-1 h-8 rounded-full shrink-0 mt-1" style={{ background: info.color }} />
                     <div>
-                      <h2 className="text-[17px] font-bold text-white">{info?.label}</h2>
-                      <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{info?.description}</p>
+                      <h2 className="text-[17px] font-bold text-white">{info.label}</h2>
+                      <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{info.description}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {products.map((product) => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                  </div>
+                  {sectionProducts.length === 0 ? (
+                    <div className="flex items-center gap-3 py-8 px-4 rounded-xl border border-dashed" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <ShoppingBag className="w-5 h-5 shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />
+                      <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        Bu kategoride henüz ürün yok. Yakında eklenecek.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {sectionProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  )}
                 </section>
               );
             })}
