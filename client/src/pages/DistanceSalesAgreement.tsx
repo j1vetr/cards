@@ -14,35 +14,38 @@ const highlights = [
 
 export default function DistanceSalesAgreement() {
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen" style={{ background: '#0b1120' }}>
       <SEO
-        title="Mesafeli Satış Sözleşmesi - Marka Giyim & Moda"
-        description="Marka Giyim & Moda mesafeli satış sözleşmesi ve alışveriş koşulları."
+        title="Mesafeli Satış Sözleşmesi - GoCards TCG"
+        description="GoCards TCG mesafeli satış sözleşmesi ve alışveriş koşulları."
       />
       <Header />
 
-      <main className="pt-20 lg:pt-6 pb-12">
-        <section className="px-4 sm:px-6 py-12 lg:py-16 bg-white border-b border-black/[0.06]">
+      <main className="pt-20 lg:pt-6 pb-16">
+        <section
+          className="px-4 sm:px-6 py-12 lg:py-16"
+          style={{ background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <div className="max-w-4xl mx-auto">
             <motion.nav
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 text-xs text-black/55 mb-8"
+              className="flex items-center gap-2 text-xs text-white/35 mb-8"
             >
-              <Link href="/" data-testid="link-home" className="hover:text-polen-orange transition-colors">Ana Sayfa</Link>
+              <Link href="/" className="hover:text-white/70 transition-colors">Ana Sayfa</Link>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-black">Mesafeli Satış Sözleşmesi</span>
+              <span className="text-white/60">Mesafeli Satış Sözleşmesi</span>
             </motion.nav>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <span className="text-xs tracking-[0.3em] uppercase text-polen-orange mb-4 block font-semibold">
+              <span className="text-xs tracking-[0.3em] uppercase text-indigo-400 mb-4 block font-semibold">
                 Yasal Bilgiler
               </span>
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-wider mb-6 text-black">
-                MESAFELİ SATIŞ<br />
-                <span className="text-black/45">SÖZLEŞMESİ</span>
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                Mesafeli Satış<br />
+                <span className="text-white/35">Sözleşmesi</span>
               </h1>
-              <p className="text-lg text-black/65 max-w-2xl mb-10 leading-relaxed">
+              <p className="text-base text-white/55 max-w-2xl mb-10 leading-relaxed">
                 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği
                 kapsamında hazırlanmış resmi sözleşme metnidir.
               </p>
@@ -54,12 +57,13 @@ export default function DistanceSalesAgreement() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.08 }}
-                    className="bg-stone-50 border border-black/[0.08] rounded-xl p-4 text-center hover:border-polen-orange/40 transition-colors"
+                    className="rounded-xl p-4 text-center transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                   >
-                    <div className="w-10 h-10 bg-polen-orange/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <item.icon className="w-5 h-5 text-polen-orange" strokeWidth={1.75} />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                      <item.icon className="w-5 h-5 text-indigo-400" strokeWidth={1.75} />
                     </div>
-                    <p className="text-xs font-medium text-black">{item.label}</p>
+                    <p className="text-xs font-medium text-white/70">{item.label}</p>
                   </motion.div>
                 ))}
               </div>
@@ -69,24 +73,27 @@ export default function DistanceSalesAgreement() {
 
         <section className="py-12 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white border border-black/[0.08] rounded-2xl p-6 sm:p-8 lg:p-10 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]">
-              <div className="prose prose-zinc max-w-none prose-headings:font-display prose-headings:tracking-wide prose-headings:text-black prose-h2:text-xl prose-h2:border-b prose-h2:border-black/10 prose-h2:pb-3 prose-h2:mb-4 prose-p:text-black/70 prose-li:text-black/70 prose-strong:text-black prose-a:text-polen-orange hover:prose-a:underline">
+            <div
+              className="rounded-2xl p-6 sm:p-8 lg:p-10"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <div className="prose max-w-none prose-headings:text-white prose-h2:text-base prose-h2:font-semibold prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-3 prose-h2:mb-4 prose-p:text-white/60 prose-li:text-white/60 prose-strong:text-white/90 prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline prose-ol:text-white/60 prose-ul:text-white/60">
                 <h2>1) Taraflar</h2>
-                <p><strong>Satıcı:</strong> Marka Giyim & Moda</p>
-                <p><strong>Adres:</strong> Şeker Ahmet Paşa Sk. Maşallah Han No: 7 Mercan Fatih / İstanbul</p>
-                <p><strong>Telefon:</strong> <a href="tel:+905312171130">0531 217 11 30</a></p>
-                <p><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></p>
-                <p><strong>Web Sitesi:</strong> <a href="https://www.ecartejeans.com">www.ecartejeans.com</a></p>
-                <p><strong>Alıcı:</strong> Polenstone.com.tr üzerinden sipariş veren müşteridir. Alıcının adı, soyadı, adresi ve iletişim bilgileri sipariş formunda yer alır.</p>
+                <p><strong>Satıcı:</strong> GoCards TCG (Go Cards TCG İç ve Dış Tic. Ltd. Şti.)</p>
+                <p><strong>Vergi Dairesi:</strong> Beykoz V.D. — Vergi No: 396 175 96 05</p>
+                <p><strong>Telefon:</strong> <a href="tel:+905389216780">0538 921 67 80</a></p>
+                <p><strong>E-posta:</strong> <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a></p>
+                <p><strong>Web Sitesi:</strong> <a href="https://gocards.toov.com.tr">gocards.toov.com.tr</a></p>
+                <p><strong>Alıcı:</strong> gocards.toov.com.tr üzerinden sipariş veren müşteridir. Alıcının adı, soyadı, adresi ve iletişim bilgileri sipariş formunda yer alır.</p>
 
                 <h2>2) Sözleşmenin Konusu</h2>
                 <p>
-                  Bu sözleşmenin konusu, alıcının <strong>www.ecartejeans.com</strong> web sitesinden elektronik ortamda sipariş verdiği ürünün satışı, teslimatı, ödemesi ve tarafların 6502 sayılı Kanun ile Mesafeli Satışlar Yönetmeliği hükümleri doğrultusunda hak ve yükümlülüklerinin belirlenmesidir.
+                  Bu sözleşmenin konusu, alıcının <strong>gocards.toov.com.tr</strong> web sitesinden elektronik ortamda sipariş verdiği Pokémon TCG, Riftbound ve diğer TCG ürünlerinin (tekli kart, booster box, sealed ürün, aksesuar) satışı, teslimatı, ödemesi ve tarafların 6502 sayılı Kanun ile Mesafeli Satışlar Yönetmeliği hükümleri doğrultusunda hak ve yükümlülüklerinin belirlenmesidir.
                 </p>
 
                 <h2>3) Ürün/Hizmet Bilgileri</h2>
                 <p>
-                  Ürünlerin türü, miktarı, marka/model, renk, satış fiyatı, ödeme şekli ve teslimat bilgileri, alıcı tarafından sistemde onaylanmadan önce görüntülenir. Bu bilgiler sipariş özet ekranında yer alır ve elektronik olarak onaylanır.
+                  Ürünlerin türü, miktarı, marka/model, kondisyon (NM/LP/MP vb.), satış fiyatı, ödeme şekli ve teslimat bilgileri, alıcı tarafından sistemde onaylanmadan önce görüntülenir. Bu bilgiler sipariş özet ekranında yer alır ve elektronik olarak onaylanır.
                 </p>
 
                 <h2>4) Teslimat Şartları</h2>
@@ -101,28 +108,31 @@ export default function DistanceSalesAgreement() {
 
                 <h2>6) Cayma Hakkı</h2>
                 <p>
-                  <strong>Alıcı, ürünü teslim aldığı tarihten itibaren 14 gün içinde</strong> herhangi bir gerekçe göstermeksizin cayma hakkını kullanabilir. Bu hakkın kullanılabilmesi için ürünün kullanılmamış, orijinal ambalajında ve yeniden satılabilir durumda olması gerekir.
+                  <strong>Alıcı, ürünü teslim aldığı tarihten itibaren 14 gün içinde</strong> herhangi bir gerekçe göstermeksizin cayma hakkını kullanabilir.
                 </p>
                 <p>
-                  Cayma hakkını kullanmak isteyen alıcılar bu süre içinde <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazılı olarak bildirmelidir.
+                  Sealed (açılmamış) ürünlerde cayma hakkı, ürün orijinal ambalajında ve açılmamış halde olduğu sürece geçerlidir. Açılmış booster paketler ve sealed ürünler cayma hakkı kapsamına girmez.
+                </p>
+                <p>
+                  Cayma hakkını kullanmak isteyen alıcılar bu süre içinde <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a> adresine yazılı olarak bildirmelidir.
                 </p>
 
                 <h2>7) Cayma Hakkının Kullanılamayacağı Durumlar</h2>
                 <ul>
-                  <li>Alıcının isteği üzerine kişiye özel dikilmiş, işlenmiş veya üzerine baskı/nakış uygulanmış ürünlerde,</li>
-                  <li>Kullanılmış, yıkanmış veya ambalajı açılmış iç giyim, çorap ve mayo gibi hijyenik ürünlerde,</li>
-                  <li>Ambalajı açılmış, kullanılmış veya yeniden satılamayacak duruma gelmiş ürünlerde,</li>
-                  <li>Kumaşın yapısından kaynaklanan renk tonu ve doku farklılıkları cayma hakkı gerekçesi olarak kabul edilmez.</li>
+                  <li>Açılmış booster paket, booster box veya sealed set ürünlerinde,</li>
+                  <li>Oynanmış veya sleeve'den çıkarılmış tekli kartlarda,</li>
+                  <li>Kart kondisyonuna ilişkin kişisel yorum farklılıklarında (NM/LP arası subjektif değerlendirme cayma gerekçesi sayılmaz),</li>
+                  <li>Piyasa fiyat değişiminden kaynaklanan taleplerde.</li>
                 </ul>
 
                 <h2>8) İade Süreci</h2>
                 <p>
-                  Alıcı cayma hakkını kullandığında, ürün fatura ve aksesuarlarıyla birlikte eksiksiz olarak Marka'ya iade edilmesi gerekir. Ürün tarafımıza ulaştıktan sonra <strong>en geç 7 iş günü</strong> içinde, alıcının ödeme yaptığı yönteme ücret iadesi yapılır.
+                  Alıcı cayma hakkını kullandığında, ürün fatura ve aksesuarlarıyla birlikte eksiksiz olarak GoCards TCG'ye iade edilmesi gerekir. Ürün tarafımıza ulaştıktan sonra <strong>en geç 7 iş günü</strong> içinde, alıcının ödeme yaptığı yönteme ücret iadesi yapılır.
                 </p>
 
                 <h2>9) Garanti ve Ürün Sorumluluğu</h2>
                 <p>
-                  Satıcı, satılan giyim ürünlerindeki üretim kaynaklı hatalardan sorumludur. Kullanıcı hatası (yanlış yıkama, renk akması, uygunsuz kullanım vb.) ile kumaşın yapısından kaynaklanan renk tonu ve doku farklılıkları garanti kapsamı dışındadır. Garanti süreleri ve koşulları ürüne göre değişebilir.
+                  Satıcı, ürün sayfasında belirtilen kondisyon bilgilerinin doğruluğundan sorumludur. Teslimat sırasında oluşan hasar veya yanlış ürün gönderimi durumunda kargo ücreti dahil tüm masraflar satıcıya aittir. Piyasa fiyat dalgalanmaları ve koleksiyon değer değişimleri garanti kapsamı dışındadır.
                 </p>
 
                 <h2>10) Gizlilik ve Kişisel Verilerin Korunması</h2>
@@ -142,7 +152,7 @@ export default function DistanceSalesAgreement() {
 
                 <h2>13) Yürürlük</h2>
                 <p>
-                  Alıcı, <strong>www.ecartejeans.com</strong> üzerinden sipariş vererek bu sözleşmenin tüm şartlarını elektronik olarak kabul etmiş sayılır. Bu sözleşme, siparişin tamamlanmasıyla yürürlüğe girer.
+                  Alıcı, <strong>gocards.toov.com.tr</strong> üzerinden sipariş vererek bu sözleşmenin tüm şartlarını elektronik olarak kabul etmiş sayılır. Bu sözleşme, siparişin tamamlanmasıyla yürürlüğe girer.
                 </p>
               </div>
             </div>

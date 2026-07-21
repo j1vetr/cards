@@ -6,44 +6,47 @@ import { motion } from 'framer-motion';
 import { ChevronRight, RotateCcw, Clock, Package, CheckCircle, XCircle } from 'lucide-react';
 
 const highlights = [
-  { icon: RotateCcw, label: '14 Gün Cayma Hakkı', desc: 'Hiçbir gerekçe göstermeden iade' },
+  { icon: RotateCcw, label: '14 Gün Cayma Hakkı', desc: 'Açılmamış ürünlerde geçerli' },
   { icon: Clock, label: '7 İş Günü', desc: 'Ücret iadesi süresi' },
-  { icon: Package, label: 'Kolay Değişim', desc: 'Renk ve ölçü değişimi' },
+  { icon: Package, label: 'Kolay İade', desc: 'Sealed & açılmamış ürünler' },
 ];
 
 export default function CancellationPolicy() {
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen" style={{ background: '#0b1120' }}>
       <SEO
-        title="İptal ve İade Politikası - Marka Giyim & Moda"
-        description="Marka Giyim & Moda ürün iade, değişim ve iptal koşulları."
+        title="İptal ve İade Politikası - GoCards TCG"
+        description="GoCards TCG ürün iade, değişim ve iptal koşulları."
       />
       <Header />
 
-      <main className="pt-20 lg:pt-6 pb-12">
-        <section className="px-4 sm:px-6 py-12 lg:py-16 bg-white border-b border-black/[0.06]">
+      <main className="pt-20 lg:pt-6 pb-16">
+        <section
+          className="px-4 sm:px-6 py-12 lg:py-16"
+          style={{ background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <div className="max-w-4xl mx-auto">
             <motion.nav
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 text-xs text-black/55 mb-8"
+              className="flex items-center gap-2 text-xs text-white/35 mb-8"
             >
-              <Link href="/" data-testid="link-home" className="hover:text-polen-orange transition-colors">Ana Sayfa</Link>
+              <Link href="/" className="hover:text-white/70 transition-colors">Ana Sayfa</Link>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-black">İptal ve İade Politikası</span>
+              <span className="text-white/60">İptal ve İade Politikası</span>
             </motion.nav>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <span className="text-xs tracking-[0.3em] uppercase text-polen-orange mb-4 block font-semibold">
-                İade & Değişim
+              <span className="text-xs tracking-[0.3em] uppercase text-indigo-400 mb-4 block font-semibold">
+                İade & İptal
               </span>
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-wider mb-6 text-black">
-                İPTAL VE İADE<br />
-                <span className="text-black/45">POLİTİKASI</span>
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                İptal ve İade<br />
+                <span className="text-white/35">Politikası</span>
               </h1>
-              <p className="text-lg text-black/65 max-w-2xl mb-10 leading-relaxed">
-                Müşteri memnuniyeti önceliğimizdir. Kolay iade ve değişim süreçleriyle alışverişlerinizi
-                güvence altına alıyoruz.
+              <p className="text-base text-white/55 max-w-2xl mb-10 leading-relaxed">
+                Müşteri memnuniyeti önceliğimizdir. TCG ürünlerimize yönelik iade ve iptal
+                süreçleri aşağıda açıklanmıştır.
               </p>
 
               <div className="grid sm:grid-cols-3 gap-4">
@@ -53,13 +56,14 @@ export default function CancellationPolicy() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.08 }}
-                    className="bg-stone-50 border border-black/[0.08] rounded-xl p-6 text-center hover:border-polen-orange/40 transition-colors"
+                    className="rounded-xl p-6 text-center transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                   >
-                    <div className="w-14 h-14 bg-polen-orange/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                      <item.icon className="w-7 h-7 text-polen-orange" strokeWidth={1.75} />
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                      <item.icon className="w-6 h-6 text-indigo-400" strokeWidth={1.75} />
                     </div>
-                    <h3 className="font-semibold mb-1 text-black">{item.label}</h3>
-                    <p className="text-sm text-black/60">{item.desc}</p>
+                    <h3 className="font-semibold mb-1 text-white text-sm">{item.label}</h3>
+                    <p className="text-xs text-white/50">{item.desc}</p>
                   </motion.div>
                 ))}
               </div>
@@ -75,65 +79,82 @@ export default function CancellationPolicy() {
               viewport={{ once: true }}
               className="grid md:grid-cols-2 gap-4"
             >
-              <div className="bg-white border border-emerald-200 rounded-xl p-6 shadow-[0_2px_18px_-12px_rgba(0,0,0,0.06)]">
+              <div
+                className="rounded-xl p-6"
+                style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}
+              >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <h3 className="font-display text-lg tracking-wide text-black">İade Edilebilir</h3>
+                  <h3 className="font-semibold text-white">İade Edilebilir</h3>
                 </div>
-                <ul className="space-y-2 text-sm text-black/70">
+                <ul className="space-y-2 text-sm text-white/60">
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-600 mt-1">•</span>
-                    Kullanılmamış, orijinal ambalajında ürünler
+                    <span className="text-emerald-400 mt-1">•</span>
+                    Açılmamış, orijinal ambalajında sealed ürünler (booster box, ETB, sealed paket)
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-600 mt-1">•</span>
-                    Etiketleri sökülmemiş ürünler
+                    <span className="text-emerald-400 mt-1">•</span>
+                    Shrink/wrapper'ı bozulmamış ürünler
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-600 mt-1">•</span>
+                    <span className="text-emerald-400 mt-1">•</span>
+                    Near Mint (NM) koşulunda, kullanılmamış tekli kartlar (teslimat hasarı durumunda)
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-1">•</span>
                     Fatura ile birlikte gönderilen ürünler
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-white border border-rose-200 rounded-xl p-6 shadow-[0_2px_18px_-12px_rgba(0,0,0,0.06)]">
+              <div
+                className="rounded-xl p-6"
+                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
+              >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-rose-50 rounded-lg flex items-center justify-center">
-                    <XCircle className="w-5 h-5 text-rose-600" />
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)' }}>
+                    <XCircle className="w-5 h-5 text-red-400" />
                   </div>
-                  <h3 className="font-display text-lg tracking-wide text-black">İade Edilemez</h3>
+                  <h3 className="font-semibold text-white">İade Edilemez</h3>
                 </div>
-                <ul className="space-y-2 text-sm text-black/70">
+                <ul className="space-y-2 text-sm text-white/60">
                   <li className="flex items-start gap-2">
-                    <span className="text-rose-600 mt-1">•</span>
-                    Kişiye özel dikilmiş, işlenmiş veya üzerine isim/baskı uygulanmış ürünler
+                    <span className="text-red-400 mt-1">•</span>
+                    Açılmış booster paket, booster box veya set ürünleri
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-rose-600 mt-1">•</span>
-                    Kullanılmış, yıkanmış veya ambalajı açılmış iç giyim ve mayo ürünleri
+                    <span className="text-red-400 mt-1">•</span>
+                    Oynanmış, sleeve'den çıkarılmış tekli kartlar
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-rose-600 mt-1">•</span>
-                    Kumaşın yapısından kaynaklanan renk tonu ve doku farklılıkları (kusur sayılmaz)
+                    <span className="text-red-400 mt-1">•</span>
+                    Kart kondisyonuna ilişkin kişisel yorum farklılıkları (NM/LP arası subjektif değerlendirme)
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 mt-1">•</span>
+                    Fiyat değişimi gerekçesiyle yapılan iade talepleri
                   </li>
                 </ul>
               </div>
             </motion.div>
 
-            <div className="bg-white border border-black/[0.08] rounded-2xl p-6 sm:p-8 lg:p-10 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]">
-              <div className="prose prose-zinc max-w-none prose-headings:font-display prose-headings:tracking-wide prose-headings:text-black prose-h2:text-xl prose-h2:border-b prose-h2:border-black/10 prose-h2:pb-3 prose-h2:mb-4 prose-p:text-black/70 prose-li:text-black/70 prose-strong:text-black prose-a:text-polen-orange hover:prose-a:underline">
+            <div
+              className="rounded-2xl p-6 sm:p-8 lg:p-10"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <div className="prose max-w-none prose-headings:text-white prose-h2:text-base prose-h2:font-semibold prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-3 prose-h2:mb-4 prose-p:text-white/60 prose-li:text-white/60 prose-strong:text-white/90 prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline prose-ol:text-white/60 prose-ul:text-white/60">
                 <h2>1) Genel İlkeler</h2>
                 <ul>
                   <li>İade/iptal işlemleri 6502 sayılı Kanun ve Mesafeli Satış Sözleşmeleri Yönetmeliği'ne uygun şekilde yürütülür.</li>
                   <li>İşlem için sipariş numaranızı hazır bulundurunuz.</li>
-                  <li>Tüm başvurular <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazılı olarak yapılmalıdır.</li>
+                  <li>Tüm başvurular <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a> adresine yazılı olarak yapılmalıdır.</li>
                 </ul>
 
                 <h2>2) Sipariş İptali</h2>
                 <ul>
-                  <li><strong>Kargo çıkışından önce:</strong> Sipariş numaranızla birlikte <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazarak iptal talebinde bulunabilirsiniz. Mümkünse aynı gün işleme alınır.</li>
+                  <li><strong>Kargo çıkışından önce:</strong> Sipariş numaranızla birlikte <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a> adresine yazarak iptal talebinde bulunabilirsiniz. Mümkünse aynı gün işleme alınır.</li>
                   <li><strong>Kargo çıkışından sonra:</strong> İptal yapılamaz. Bu durumda <strong>iade</strong> süreci uygulanır.</li>
                 </ul>
 
@@ -142,16 +163,17 @@ export default function CancellationPolicy() {
                   <strong>Ürünü teslim aldığınız tarihten itibaren 14 gün içinde</strong> herhangi bir gerekçe göstermeksizin cayma hakkınızı kullanabilirsiniz.
                 </p>
                 <ul>
-                  <li>Ürün kullanılmamış, orijinal ambalajında, etiketleri tam ve yeniden satılabilir durumda olmalıdır.</li>
-                  <li>Fatura, aksesuar, hediye/promosyon ürünleri ve tüm parçalar eksiksiz gönderilmelidir.</li>
-                  <li>Cayma hakkı bildirimi <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine yazılı olarak yapılmalıdır.</li>
+                  <li>Sealed ürünler açılmamış ve orijinal ambalajında olmalıdır.</li>
+                  <li>Tekli kartlar oynanmamış, NM (Near Mint) koşulunda ve sleeve içinde teslim edildiği haliyle iade edilmelidir.</li>
+                  <li>Fatura ve varsa promosyon ürünleri eksiksiz gönderilmelidir.</li>
+                  <li>Cayma hakkı bildirimi <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a> adresine yazılı olarak yapılmalıdır.</li>
                 </ul>
 
                 <h2>4) İade Süreci</h2>
                 <p>İade süreci şu şekilde işler:</p>
                 <ol>
-                  <li>İade talebinizi <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine iletin ve <strong>sipariş numaranızı</strong> belirtin.</li>
-                  <li>Onay sonrası ürünü <strong>orijinal ambalajında</strong>, fatura ve aksesuarlarıyla birlikte paketleyin.</li>
+                  <li>İade talebinizi <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a> adresine iletin ve <strong>sipariş numaranızı</strong> belirtin.</li>
+                  <li>Onay sonrası ürünü <strong>güvenli ambalajla</strong>, fatura ve aksesuarlarıyla birlikte paketleyin.</li>
                   <li>Belirtilen adrese kargo ile gönderin.</li>
                   <li>Ürün tarafımıza ulaştığında kontrol edilir.</li>
                   <li>Kontrol sonrası <strong>en geç 7 iş günü</strong> içinde ücret iadesi yapılır.</li>
@@ -160,31 +182,25 @@ export default function CancellationPolicy() {
                 <h2>5) Ücret İadesi</h2>
                 <ul>
                   <li>Ücret, ödeme yapılan yönteme (kredi kartı, banka kartı, havale) iade edilir.</li>
-                  <li>İade, banka işlem sürelerine bağlı olarak hesabınıza 5-10 iş günü içinde yansıyabilir.</li>
-                  <li>Kapıda ödeme ile alınan siparişlerde iade, IBAN bilgilerinize yapılır.</li>
+                  <li>İade, banka işlem sürelerine bağlı olarak hesabınıza 5–10 iş günü içinde yansıyabilir.</li>
                 </ul>
 
-                <h2>6) Ürün Değişimi</h2>
+                <h2>6) Hasarlı veya Hatalı Ürün</h2>
                 <p>
-                  Renk, ton veya ölçü değişikliği için <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresinden bilgi verebilirsiniz. Değişim için ürünün orijinal ambalajında ve işlem görmemiş halde olması, ayrıca iade koşullarını karşılaması gerekir.
+                  Teslimat sırasında veya açılışta fark edilen hasar ya da yanlış ürün gönderimi durumunu <strong>24 saat</strong> içinde <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a> adresine bildirin. Fotoğraflı belge gönderilmesi süreci hızlandırır. Bu durumlarda kargo ücreti tarafımızca karşılanır.
                 </p>
 
-                <h2>7) Hasarlı veya Hatalı Ürün</h2>
-                <p>
-                  Teslimat sırasında veya açılışta fark edilen hasar ya da üretim hatasını <strong>24 saat</strong> içinde <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a> adresine bildirin. Fotoğraflı belge gönderilmesi süreci hızlandırır.
-                </p>
-
-                <h2>8) Kargo Ücreti</h2>
+                <h2>7) Kargo Ücreti</h2>
                 <ul>
                   <li><strong>Cayma hakkı kullanımında:</strong> Kargo ücreti alıcıya aittir.</li>
                   <li><strong>Hatalı/hasarlı ürün iadesi:</strong> Kargo ücreti tarafımızca karşılanır.</li>
                 </ul>
 
-                <h2>9) İletişim</h2>
+                <h2>8) İletişim</h2>
                 <p>İade ve iptal işlemleri için destek ekibimize ulaşabilirsiniz:</p>
                 <ul>
-                  <li><strong>E-posta:</strong> <a href="mailto:info@ecartejeans.com">info@ecartejeans.com</a></li>
-                  <li><strong>Telefon:</strong> <a href="tel:+905312171130">0531 217 11 30</a></li>
+                  <li><strong>E-posta:</strong> <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a></li>
+                  <li><strong>Telefon / WhatsApp:</strong> <a href="tel:+905389216780">0538 921 67 80</a></li>
                 </ul>
               </div>
             </div>
