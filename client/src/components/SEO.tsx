@@ -92,7 +92,7 @@ export function SEO({
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Go|Cards',
+      name: 'GoCards TCG',
       legalName: 'GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.',
       url: CANONICAL_SITE_URL,
       logo: `${CANONICAL_SITE_URL}/gocards-logo-white.png`,
@@ -129,7 +129,7 @@ export function SEO({
         image: productImages,
         brand: {
           '@type': 'Brand',
-          name: product.brand || 'Go|Cards'
+          name: product.brand || 'GoCards TCG'
         },
         offers: {
           '@type': 'Offer',
@@ -139,7 +139,7 @@ export function SEO({
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
-            name: 'Go|Cards',
+            name: 'GoCards TCG',
             url: CANONICAL_SITE_URL
           },
           ...(schemaCondition ? { itemCondition: schemaCondition } : {}),

@@ -603,7 +603,7 @@ export default function ProductDetail() {
           currency: 'TRY',
           availability: isOutOfStock ? 'OutOfStock' : 'InStock',
           sku: product.sku || undefined,
-          brand: 'Go|Cards',
+          brand: 'GoCards TCG',
           category: category?.name,
           images,
         }}
