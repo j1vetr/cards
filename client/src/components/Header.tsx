@@ -376,13 +376,14 @@ export function Header() {
                 onMouseEnter={() => openMega('accessories')}
                 onMouseLeave={delayClose}
               >
-                <button
+                <Link
+                  href="/aksesuarlar"
                   className={`${navCls(isActive('/aksesuarlar'))} flex items-center gap-1`}
-                  data-testid="button-nav-aksesuarlar"
+                  data-testid="link-nav-aksesuarlar"
                 >
                   Aksesuarlar
                   <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${megaMenu === 'accessories' ? 'rotate-180' : ''}`} />
-                </button>
+                </Link>
               </div>
 
               <Link href="/iletisim" className={navCls(isActive('/iletisim'))} data-testid="link-nav-iletisim">

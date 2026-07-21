@@ -90,6 +90,28 @@ app.use((req, res, next) => {
     console.error("[index] WhatsApp default-template upgrade failed:", err);
   }
 
+  // Aksesuar kategorilerini idempotent olarak seed et
+  try {
+    const { db } = await import("./db");
+    const { categories } = await import("../shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const accessorySeeds = [
+      { name: "Aksesuarlar", slug: "aksesuarlar", displayOrder: 50 },
+      { name: "Binder",      slug: "binder",      displayOrder: 51 },
+      { name: "Sleeve",      slug: "sleeve",      displayOrder: 52 },
+      { name: "Playmat",     slug: "playmat",     displayOrder: 53 },
+    ];
+    for (const cat of accessorySeeds) {
+      const existing = await db.select().from(categories).where(eq(categories.slug, cat.slug)).limit(1);
+      if (existing.length === 0) {
+        await db.insert(categories).values(cat);
+        console.log(`[seed] category created: ${cat.slug}`);
+      }
+    }
+  } catch (err) {
+    console.error("[index] accessory category seed failed:", err);
+  }
+
   // Pazaryeri senkron zamanlayıcısı (Trendyol delta saatlik / full 03:00)
   try {
     const { startScheduler } = await import("./scheduler");

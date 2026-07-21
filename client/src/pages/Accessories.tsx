@@ -109,19 +109,31 @@ function ProductCard({ product }: { product: AccessoryProduct }) {
   );
 }
 
-export default function Accessories() {
-  const [activeFilter, setActiveFilter] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('cat');
-    }
-    return null;
-  });
+function getFilterFromSearch(): string | null {
+  const cat = new URLSearchParams(window.location.search).get('cat');
+  return cat && ACCESSORY_SLUGS.includes(cat) ? cat : null;
+}
 
+export default function Accessories() {
+  const [activeFilter, setActiveFilterState] = useState<string | null>(getFilterFromSearch);
+
+  // Sync filter state whenever the URL changes (popstate = back/forward + our own pushState)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const cat = params.get('cat');
-    if (cat && ACCESSORY_SLUGS.includes(cat)) setActiveFilter(cat);
+    const onPop = () => setActiveFilterState(getFilterFromSearch());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  const setActiveFilter = (slug: string | null) => {
+    const url = new URL(window.location.href);
+    if (slug) {
+      url.searchParams.set('cat', slug);
+    } else {
+      url.searchParams.delete('cat');
+    }
+    window.history.pushState({}, '', url.toString());
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['categories'],

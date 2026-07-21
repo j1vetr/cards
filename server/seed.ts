@@ -35,6 +35,10 @@ async function seed() {
       { name: "Granit", slug: "granit", displayOrder: 1 },
       { name: "Traverten", slug: "traverten", displayOrder: 2 },
       { name: "Oniks", slug: "oniks", displayOrder: 3 },
+      { name: "Aksesuarlar", slug: "aksesuarlar", displayOrder: 50 },
+      { name: "Binder", slug: "binder", displayOrder: 51 },
+      { name: "Sleeve", slug: "sleeve", displayOrder: 52 },
+      { name: "Playmat", slug: "playmat", displayOrder: 53 },
     ];
 
     const createdCategoryIds: Record<string, string> = {};
