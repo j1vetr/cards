@@ -746,7 +746,26 @@ export default function CardDetail() {
     <div style={{ background: '#09090f' }} className="min-h-screen">
       <SEO
         title={`${card.name} — ${card.set_name} | Go|Cards`}
-        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name}. Go|Cards'da satın al.`}
+        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name}. Go|Cards Türkiye'nin TCG mağazasında satın al.`}
+        image={imgSrc}
+        url={`/kart/${card.slug}`}
+        type="product"
+        product={{
+          name: card.name,
+          price: price ?? 0,
+          currency: 'TRY',
+          availability: (stock !== null && stock > 0) ? 'InStock' : 'OutOfStock',
+          sku: card.api_id || undefined,
+          brand: card.game_name || 'Go|Cards',
+          category: card.rarity || undefined,
+          images: imgSrc ? [imgSrc] : [],
+        }}
+        breadcrumbs={[
+          { name: 'Ana Sayfa', url: '/' },
+          ...(card.game_slug ? [{ name: card.game_name || card.game_slug, url: `/${card.game_slug === 'pokemon' ? 'pokemon' : card.game_slug}` }] : []),
+          ...(card.set_slug ? [{ name: card.set_name, url: `/set/${card.set_slug}` }] : []),
+          { name: card.name, url: `/kart/${card.slug}` },
+        ]}
       />
       <Header />
 

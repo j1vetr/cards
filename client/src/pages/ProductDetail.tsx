@@ -603,7 +603,7 @@ export default function ProductDetail() {
           currency: 'TRY',
           availability: isOutOfStock ? 'OutOfStock' : 'InStock',
           sku: product.sku || undefined,
-          brand: 'Marka',
+          brand: 'Go|Cards',
           category: category?.name,
           images,
         }}

@@ -11,7 +11,7 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings, cards as cardsTable, cardSets, cardGames } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
 import {
   validateBody, firstZodMessage,
@@ -235,14 +235,16 @@ export async function registerRoutes(
   });
 
   // Dynamic sitemap.xml — categories + products + static pages
-  app.get(["/sitemap.xml", "/sitemap_index.xml"], async (_req, res) => {
+  app.get(["/sitemap.xml", "/sitemap_index.xml"], async (req, res) => {
     try {
-      const baseUrl = "https://ecartejeans.com";
+      const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
       const today = new Date().toISOString().split("T")[0];
 
       const staticPages: Array<{ loc: string; priority: string; changefreq: string }> = [
         { loc: "/", priority: "1.0", changefreq: "daily" },
         { loc: "/magaza", priority: "0.9", changefreq: "daily" },
+        { loc: "/pokemon", priority: "0.9", changefreq: "weekly" },
+        { loc: "/riftbound", priority: "0.9", changefreq: "weekly" },
         { loc: "/hakkimizda", priority: "0.6", changefreq: "monthly" },
         { loc: "/teslimat-kosullari", priority: "0.4", changefreq: "yearly" },
         { loc: "/mesafeli-satis-sozlesmesi", priority: "0.4", changefreq: "yearly" },
@@ -296,6 +298,145 @@ export async function registerRoutes(
     } catch (error) {
       console.error("[sitemap] generation failed:", error);
       res.status(500).type("text/plain").send("Sitemap generation failed");
+    }
+  });
+
+  // ── Google Merchant Center Feed ──────────────────────────────────────────
+  app.get("/api/merchant-feed.xml", async (req, res) => {
+    try {
+      const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+
+      const escXml = (s: string) =>
+        String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+
+      const stripHtmlFeed = (s: string) =>
+        s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+      const conditionGoogleMap = (cond: string): 'new' | 'used' => {
+        const c = (cond || '').toUpperCase();
+        return c === 'NM' || c === 'LP' ? 'new' : 'used';
+      };
+
+      const conditionLabel: Record<string, string> = {
+        NM: 'Near Mint', LP: 'Lightly Played', MP: 'Moderately Played',
+        HP: 'Heavily Played', DMG: 'Damaged',
+        PSA10: 'PSA 10', PSA9: 'PSA 9', PSA8: 'PSA 8', PSA7: 'PSA 7',
+      };
+
+      // ── Query active card listings with card + set + game info ────────────
+      const listingRows = await db
+        .select({
+          listingId: cardListings.id,
+          condition: cardListings.condition,
+          price: cardListings.price,
+          stock: cardListings.stock,
+          cardSlug: cardsTable.slug,
+          cardName: cardsTable.name,
+          cardRarity: cardsTable.rarity,
+          cardApiId: cardsTable.apiId,
+          cardImageUrl: cardsTable.imageUrl,
+          cardImageHiRes: cardsTable.imageUrlHiRes,
+          setName: cardSets.name,
+          gameName: cardGames.name,
+        })
+        .from(cardListings)
+        .innerJoin(cardsTable, eq(cardListings.cardId, cardsTable.id))
+        .innerJoin(cardSets, eq(cardsTable.setId, cardSets.id))
+        .innerJoin(cardGames, eq(cardSets.gameId, cardGames.id))
+        .where(
+          and(
+            eq(cardListings.isActive, true),
+            eq(cardsTable.isActive, true),
+            gte(cardListings.stock, 1)
+          )
+        )
+        .orderBy(desc(cardListings.updatedAt))
+        .limit(5000);
+
+      // ── Query active box/sealed products ─────────────────────────────────
+      const boxRows = await db
+        .select()
+        .from(products)
+        .where(and(eq(products.isActive, true), gte(sql`CAST(${products.basePrice} AS DECIMAL)`, 1)))
+        .orderBy(desc(products.updatedAt))
+        .limit(1000);
+
+      const items: string[] = [];
+
+      for (const row of listingRows) {
+        const condLabel = conditionLabel[row.condition] || row.condition;
+        const title = escXml(`${row.cardName} — ${condLabel} — ${row.setName}`);
+        const desc = escXml(
+          `${row.cardName}${row.cardRarity ? ' (' + row.cardRarity + ')' : ''} — ${condLabel} koşulunda ${row.setName} seti kartı. Go|Cards'da satın al.`
+        );
+        const link = `${baseUrl}/kart/${escXml(row.cardSlug)}`;
+        const image = row.cardImageHiRes || row.cardImageUrl || '';
+        const price = parseFloat(row.price as string).toFixed(2);
+        const availability = 'in_stock';
+        const googleCondition = conditionGoogleMap(row.condition);
+        const brand = escXml(row.gameName);
+        const productType = escXml(`${row.gameName} > ${row.setName}`);
+
+        items.push(`    <item>
+      <g:id>${escXml(row.listingId)}</g:id>
+      <g:title>${title}</g:title>
+      <g:description>${desc}</g:description>
+      <g:link>${link}</g:link>${image ? `\n      <g:image_link>${escXml(image)}</g:image_link>` : ''}
+      <g:availability>${availability}</g:availability>
+      <g:price>${price} TRY</g:price>
+      <g:brand>${brand}</g:brand>
+      <g:condition>${googleCondition}</g:condition>
+      <g:google_product_category>5710</g:google_product_category>
+      <g:product_type>${productType}</g:product_type>${row.cardApiId ? `\n      <g:mpn>${escXml(row.cardApiId)}</g:mpn>` : ''}
+    </item>`);
+      }
+
+      for (const prod of boxRows) {
+        const title = escXml(prod.name);
+        const rawDesc = prod.description ? stripHtmlFeed(prod.description).substring(0, 500) : prod.name;
+        const desc = escXml(rawDesc);
+        const link = `${baseUrl}/urun/${escXml(prod.slug)}`;
+        const images = (prod.images as string[]) || [];
+        const image = images[0] || '';
+        const normalizedImage = image
+          ? (image.startsWith('http') ? image : `${baseUrl}${image.startsWith('/') ? image : '/' + image}`)
+          : '';
+        const price = parseFloat(prod.basePrice).toFixed(2);
+
+        items.push(`    <item>
+      <g:id>${escXml('prod_' + prod.id)}</g:id>
+      <g:title>${title}</g:title>
+      <g:description>${desc}</g:description>
+      <g:link>${link}</g:link>${normalizedImage ? `\n      <g:image_link>${escXml(normalizedImage)}</g:image_link>` : ''}
+      <g:availability>in_stock</g:availability>
+      <g:price>${price} TRY</g:price>
+      <g:brand>Go|Cards</g:brand>
+      <g:condition>new</g:condition>
+      <g:google_product_category>5710</g:google_product_category>
+    </item>`);
+      }
+
+      const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Go|Cards — Pokémon TCG &amp; Riftbound</title>
+    <link>${baseUrl}</link>
+    <description>Go|Cards Türkiye TCG mağazası — Pokémon TCG ve Riftbound tekli kart ve sealed ürünler</description>
+${items.join('\n')}
+  </channel>
+</rss>`;
+
+      res.set('Content-Type', 'application/xml; charset=utf-8');
+      res.set('Cache-Control', 'public, max-age=3600');
+      res.send(feed);
+    } catch (error) {
+      console.error('[merchant-feed] generation failed:', error);
+      res.status(500).type('text/plain').send('Merchant feed generation failed');
     }
   });
 
@@ -361,14 +502,14 @@ export async function registerRoutes(
       const price = parseFloat(product.basePrice || '0');
       const description = product.description 
         ? escapeHtml(stripHtml(product.description).substring(0, 200))
-        : `${escapeHtml(product.name)} - Ecarte Jeans premium denim koleksiyonu`;
+        : `${escapeHtml(product.name)} — Go|Cards TCG mağazasında satın al.`;
 
       const html = `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(product.name)} | Ecarte Jeans</title>
+  <title>${escapeHtml(product.name)} | Go|Cards</title>
   <meta name="description" content="${description}">
   
   <!-- Open Graph -->
@@ -379,14 +520,14 @@ export async function registerRoutes(
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="${pageUrl}">
-  <meta property="og:site_name" content="Ecarte Jeans">
+  <meta property="og:site_name" content="Go|Cards">
   <meta property="og:locale" content="tr_TR">
   <meta property="product:price:amount" content="${price}">
   <meta property="product:price:currency" content="TRY">
   
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${escapeHtml(product.name)}">
+  <meta name="twitter:title" content="${escapeHtml(product.name)} | Go|Cards">
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="${mainImage}">
   
@@ -428,30 +569,30 @@ export async function registerRoutes(
       const mainImage = category.image 
         ? normalizeImageUrl(baseUrl, category.image)
         : `${baseUrl}/logo.png`;
-      const description = `${escapeHtml(category.name)} koleksiyonu - Ecarte Jeans premium denim`;
+      const description = `${escapeHtml(category.name)} — Go|Cards TCG mağazasında satın al.`;
 
       const html = `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(category.name)} | Ecarte Jeans</title>
+  <title>${escapeHtml(category.name)} | Go|Cards</title>
   <meta name="description" content="${description}">
   
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="${escapeHtml(category.name)} | Ecarte Jeans">
+  <meta property="og:title" content="${escapeHtml(category.name)} | Go|Cards">
   <meta property="og:description" content="${description}">
   <meta property="og:image" content="${mainImage}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="${pageUrl}">
-  <meta property="og:site_name" content="Ecarte Jeans">
+  <meta property="og:site_name" content="Go|Cards">
   <meta property="og:locale" content="tr_TR">
   
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${escapeHtml(category.name)} | Ecarte Jeans">
+  <meta name="twitter:title" content="${escapeHtml(category.name)} | Go|Cards">
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="${mainImage}">
   
@@ -461,7 +602,7 @@ export async function registerRoutes(
   <h1>${escapeHtml(category.name)}</h1>
   <p>${description}</p>
   <img src="${mainImage}" alt="${escapeHtml(category.name)}">
-  <a href="${pageUrl}">Koleksiyonu Görüntüle</a>
+  <a href="${pageUrl}">Ürünleri Görüntüle</a>
 </body>
 </html>`;
 
@@ -2057,7 +2198,7 @@ export async function registerRoutes(
 
       // Get base URL for callback - use production domain in prod
       const baseUrl = process.env.NODE_ENV === 'production' 
-        ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
+        ? (process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr')
         : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
       // Add shipping as a basket line so sum(basketItems.price) === priceTry
@@ -2355,7 +2496,7 @@ export async function registerRoutes(
   // The legacy /api/payment/callback path is kept as an alias for older webhooks.
   const iyzicoCallbackHandler = async (req: Request, res: Response) => {
     const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com')
+      ? (process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr')
       : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
     const sendRedirect = (path: string) => {
@@ -2699,7 +2840,7 @@ export async function registerRoutes(
     try {
       const apiKey = (await storage.getSiteSetting('iyzico_api_key')) || '';
       const secretKey = (await storage.getSiteSetting('iyzico_secret_key')) || '';
-      const baseUrl = process.env.PUBLIC_BASE_URL || 'https://ecartejeans.com';
+      const baseUrl = process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr';
       res.json({
         configured: Boolean(apiKey && secretKey),
         apiKeyMasked: maskSecret(apiKey),
@@ -4996,10 +5137,7 @@ export async function registerRoutes(
   // Robots.txt
   app.get("/robots.txt", (req, res) => {
     const host = req.get('host') || '';
-    const isProd = host.includes('ecartejeans.com');
-    const baseUrl = isProd
-      ? 'https://ecartejeans.com'
-      : `${req.protocol}://${host}`;
+    const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${host}`;
     const robotsTxt = `User-agent: *
 Allow: /
 
