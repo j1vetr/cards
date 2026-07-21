@@ -759,6 +759,7 @@ export default function CardDetail() {
           brand: card.game_name || 'Go|Cards',
           category: card.rarity || undefined,
           images: imgSrc ? [imgSrc] : [],
+          condition: selectedListing?.condition || undefined,
         }}
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },

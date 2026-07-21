@@ -362,7 +362,7 @@ export async function registerRoutes(
       const boxRows = await db
         .select()
         .from(products)
-        .where(and(eq(products.isActive, true), gte(sql`CAST(${products.basePrice} AS DECIMAL)`, 1)))
+        .where(eq(products.isActive, true))
         .orderBy(desc(products.updatedAt))
         .limit(1000);
 

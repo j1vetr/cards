@@ -16,6 +16,8 @@ interface SEOProps {
     brand?: string;
     category?: string;
     images?: string[];
+    /** TCG card condition, e.g. 'NM' | 'LP' | 'MP' | 'HP' | 'DMG' | 'PSA10' */
+    condition?: string;
   };
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
@@ -24,6 +26,16 @@ const DEFAULT_TITLE = 'Go|Cards — Pokémon TCG & Riftbound Kart Oyunları';
 const DEFAULT_DESCRIPTION = 'Go|Cards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
 const SITE_NAME = 'Go|Cards';
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
+const CANONICAL_SITE_URL = 'https://gocards.toov.com.tr';
+
+/** Map TCG condition codes to schema.org itemCondition values */
+function toSchemaCondition(condition?: string): string | undefined {
+  if (!condition) return undefined;
+  const c = condition.toUpperCase();
+  if (c === 'NM' || c === 'LP') return 'https://schema.org/NewCondition';
+  if (c === 'DMG') return 'https://schema.org/DamagedCondition';
+  return 'https://schema.org/UsedCondition';
+}
 
 export function SEO({ 
   title, 
@@ -81,15 +93,19 @@ export function SEO({
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Go|Cards',
-      url: BASE_URL,
-      logo: `${BASE_URL}/gocards-logo-white.png`,
+      legalName: 'GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.',
+      url: CANONICAL_SITE_URL,
+      logo: `${CANONICAL_SITE_URL}/gocards-logo-white.png`,
       sameAs: [
         'https://instagram.com/gocardstcg',
       ],
       contactPoint: {
         '@type': 'ContactPoint',
         email: 'gocardshub@gmail.com',
-        contactType: 'customer service'
+        telephone: '+905389216780',
+        contactType: 'customer service',
+        areaServed: 'TR',
+        availableLanguage: 'Turkish'
       }
     });
 
@@ -104,18 +120,17 @@ export function SEO({
         ? product.images.map(normalizeImageUrl) 
         : [imageUrl];
       
-      schemas.push({
+      const schemaCondition = toSchemaCondition(product.condition);
+      const productSchema: any = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
         description: description,
         image: productImages,
-        sku: product.sku,
         brand: {
           '@type': 'Brand',
           name: product.brand || 'Go|Cards'
         },
-        category: product.category,
         offers: {
           '@type': 'Offer',
           url: fullUrl,
@@ -124,10 +139,15 @@ export function SEO({
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
-            name: 'Go|Cards'
-          }
+            name: 'Go|Cards',
+            url: CANONICAL_SITE_URL
+          },
+          ...(schemaCondition ? { itemCondition: schemaCondition } : {}),
         }
-      });
+      };
+      if (product.sku) productSchema.sku = product.sku;
+      if (product.category) productSchema.category = product.category;
+      schemas.push(productSchema);
     }
 
     if (breadcrumbs && breadcrumbs.length > 0) {
