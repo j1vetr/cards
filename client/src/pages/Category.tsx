@@ -172,7 +172,7 @@ export default function Category() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       <SEO
         title={category?.name || 'Kategori'}
-        description={`${category?.name || 'Ürünler'} — Ecarte Jeans güncel giyim koleksiyonu`}
+        description={`${category?.name || 'Ürünler'} — GoCards TCG kart koleksiyonu`}
         url={`/kategori/${slug}`}
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },

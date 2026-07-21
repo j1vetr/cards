@@ -212,7 +212,7 @@ export default function About() {
                   Instagram'da bizi takip edin.
                 </p>
                 <a
-                  href="https://www.instagram.com/ecartejeans"
+                  href="https://www.instagram.com/ecarte"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 bg-polen-orange text-white font-bold py-4 px-8 rounded-full hover:bg-[hsl(var(--polen-orange-deep))] transition-colors"

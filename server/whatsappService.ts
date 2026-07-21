@@ -221,7 +221,7 @@ async function resolveSiteUrl(): Promise<string> {
   } catch (err) {
     console.error('[WhatsApp] site_url lookup failed:', err);
   }
-  return (process.env.SITE_URL || 'https://ecartejeans.com').replace(/\/+$/, '');
+  return (process.env.SITE_URL || 'https://gocards.toov.com.tr').replace(/\/+$/, '');
 }
 
 async function orderVars(order: Order, config: WhatsAppConfig): Promise<Record<string, string>> {

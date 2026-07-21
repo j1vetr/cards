@@ -183,7 +183,7 @@ export default function PaymentRequest() {
 
   const Shell = ({ children }: { children: React.ReactNode }) => (
     <div className="min-h-screen bg-[#faf7f1] flex flex-col overflow-x-hidden">
-      <SEO title="Ödeme" description="Ecarte Jeans güvenli ödeme sayfası." url={`/odeme/${token}`} noIndex />
+      <SEO title="Ödeme" description="GoCards TCG güvenli ödeme sayfası." url={`/odeme/${token}`} noIndex />
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">{children}</main>
       <Footer />

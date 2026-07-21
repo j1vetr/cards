@@ -1,6 +1,6 @@
 import { storage, db } from "./storage";
 
-const SITE_URL = "https://ecartejeans.com";
+const SITE_URL = "https://gocards.toov.com.tr";
 const BRAND_NAME = "Marka";
 
 function escapeXml(value: string | null | undefined): string {

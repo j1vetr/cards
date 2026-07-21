@@ -11,7 +11,7 @@
  *   - Görseller içerik hash'i ile dedupe edilir, sharp ile optimize edilir,
  *     `client/public/uploads/products/` altına yazılır.
  *   - Trendyol'da olmayan ürün soft-delete (isActive=false), tekrar gelirse re-activate.
- *   - Eşlenmemiş kategoriden gelen ürün için geçici Ecarte Jeans kategorisi
+ *   - Eşlenmemiş kategoriden gelen ürün için geçici GoCards kategorisi
  *     otomatik oluşturulur (Türkçe karakter normalize edilmiş slug).
  */
 
@@ -488,7 +488,7 @@ export async function downloadVideo(url: string): Promise<string | null> {
     resp = await fetch(url, {
       redirect: "follow",
       signal: controller.signal,
-      headers: { "User-Agent": "EcarteJeans-MarketplaceSync/1.0" },
+      headers: { "User-Agent": "GoCards-MarketplaceSync/1.0" },
     });
   } finally {
     clearTimeout(timer);
@@ -515,7 +515,7 @@ export async function downloadVideo(url: string): Promise<string | null> {
 }
 
 /**
- * Kategori upsert — Trendyol kategorisi → Ecarte Jeans kategorisi.
+ * Kategori upsert — Trendyol kategorisi → GoCards kategorisi.
  *
  * `cameFromTree=true` ise externalName güvenilir leaf adıdır. Bu durumda mevcut
  * mapping admin tarafından elle yönetiliyorsa korunur; aksi halde (auto-create
@@ -571,7 +571,7 @@ async function ensureSiteCategory(
     // kategorisi orphan kalabilir; UI zaten 200+ display_order'da gizliyor.
   }
 
-  // Henüz eşlenmemiş veya remap gerekiyor → leaf adıyla bir Ecarte Jeans
+  // Henüz eşlenmemiş veya remap gerekiyor → leaf adıyla bir GoCards
   // kategorisi bul (slug eşleşirse var olanı kullan), yoksa yarat (200+).
   const slug = turkishSlugify(externalName);
   let siteCat = await storage.getCategoryBySlug(slug);
