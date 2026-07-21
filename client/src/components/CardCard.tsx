@@ -1,8 +1,9 @@
 import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Check, Loader2 } from 'lucide-react';
 import { CardQuickViewModal } from './CardQuickViewModal';
+import { useCart } from '@/hooks/useCart';
 
 export interface CardPublic {
   id: string;
@@ -26,6 +27,7 @@ export interface CardPublic {
   listing_count: number;
   available_conditions: string[];
   lowest_condition: string | null;
+  lowest_listing_id: string | null;
   market_price?: string | null;
 }
 
@@ -63,11 +65,32 @@ interface CardCardProps {
 export const CardCard = memo(function CardCard({ card }: CardCardProps) {
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(card.image_url || FALLBACK_IMG);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
   const [, navigate] = useLocation();
+  const { addToCart } = useCart();
 
   const price = card.min_price ? parseFloat(card.min_price) : null;
   const hasStock = card.listing_count > 0;
+  const isSingleListing = card.listing_count === 1;
   const rarityStyle = card.rarity ? (RARITY_BADGE[card.rarity] ?? DEFAULT_RARITY) : null;
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSingleListing && card.lowest_listing_id) {
+      setAdding(true);
+      try {
+        await addToCart(undefined, undefined, 1, { cardListingId: card.lowest_listing_id });
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      } finally {
+        setAdding(false);
+      }
+    } else {
+      setQuickViewOpen(true);
+    }
+  };
 
   return (
     <>
@@ -144,12 +167,18 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-250 flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100">
                   <button
                     data-testid={`btn-addtocart-${card.id}`}
-                    onClick={e => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
-                    className="flex items-center gap-1.5 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-xl transition-all scale-90 group-hover:scale-100"
-                    style={{ background: card.listing_count === 1 ? '#4f46e5' : '#1e293b', border: '1px solid rgba(255,255,255,0.18)' }}
+                    onClick={handleAddToCart}
+                    disabled={adding}
+                    className="flex items-center gap-1.5 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-xl transition-all scale-90 group-hover:scale-100 disabled:opacity-70"
+                    style={{ background: isSingleListing ? (added ? '#16a34a' : '#4f46e5') : '#1e293b', border: '1px solid rgba(255,255,255,0.18)' }}
                   >
-                    {card.listing_count === 1
-                      ? <><ShoppingCart className="w-3 h-3" /> Sepete Ekle</>
+                    {isSingleListing
+                      ? (adding
+                          ? <><Loader2 className="w-3 h-3 animate-spin" /> Ekleniyor...</>
+                          : added
+                            ? <><Check className="w-3 h-3" /> Eklendi!</>
+                            : <><ShoppingCart className="w-3 h-3" /> Sepete Ekle</>
+                        )
                       : <>🔍 Seçenekleri Gör</>
                     }
                   </button>

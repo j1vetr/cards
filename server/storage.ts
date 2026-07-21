@@ -2421,6 +2421,7 @@ export class DbStorage implements IStorage {
         COUNT(CASE WHEN ${listingExpr} THEN 1 END)::int AS listing_count,
         ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN ${listingExpr} THEN cl.condition END), NULL) AS available_conditions,
         (ARRAY_AGG(CASE WHEN ${listingExpr} THEN cl.condition END ORDER BY CASE WHEN ${listingExpr} THEN cl.price::numeric END ASC NULLS LAST))[1] AS lowest_condition,
+        (ARRAY_AGG(CASE WHEN ${listingExpr} THEN cl.id::text END ORDER BY CASE WHEN ${listingExpr} THEN cl.price::numeric END ASC NULLS LAST))[1] AS lowest_listing_id,
         MAX(cp.price_market::numeric) AS market_price
       FROM cards c
       JOIN card_sets cs ON cs.id = c.set_id
@@ -2436,7 +2437,7 @@ export class DbStorage implements IStorage {
         ${featuredFilter}
         ${searchFilter}
       GROUP BY c.id, cs.id, cg.id
-      ${(filters.inStock || filters.minPrice != null || filters.maxPrice != null)
+      ${(filters.inStock || filters.condition || filters.minPrice != null || filters.maxPrice != null)
         ? sql`HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0 ${minPriceHaving} ${maxPriceHaving}`
         : sql``}
       ORDER BY ${orderClause}
@@ -2459,7 +2460,7 @@ export class DbStorage implements IStorage {
           ${featuredFilter}
           ${searchFilter}
         GROUP BY c.id
-        ${(filters.inStock || filters.minPrice != null || filters.maxPrice != null)
+        ${(filters.inStock || filters.condition || filters.minPrice != null || filters.maxPrice != null)
           ? sql`HAVING COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0 ${minPriceHaving} ${maxPriceHaving}`
           : sql``}
       ) sub
