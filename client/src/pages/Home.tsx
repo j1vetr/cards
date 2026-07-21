@@ -614,14 +614,16 @@ interface GameSectionProps {
 
 function GameSection({ game, title, accentColor, accentClass, bgColor, PlaceholderIcon, testId }: GameSectionProps) {
   const { data: allSets = [], isLoading: setsLoading } = useCardSets(game);
-  const { data: cardsData, isLoading: cardsLoading } = useCards({
-    game,
-    limit: 6,
-    featured: true,
-  });
+
+  // Try featured cards first; if none exist, fall back to newest available
+  const { data: featuredData, isLoading: featuredLoading } = useCards({ game, limit: 6, featured: true });
+  const featuredCards = featuredData?.cards ?? [];
+  const { data: fallbackData, isLoading: fallbackLoading } = useCards({ game, limit: 6, sort: 'newest' });
+
+  const cardsLoading = featuredLoading || (featuredCards.length === 0 && fallbackLoading);
+  const cards = featuredCards.length > 0 ? featuredCards : (fallbackData?.cards ?? []);
 
   const sets = game === 'pokemon' ? allSets.slice(0, 14) : allSets;
-  const cards = cardsData?.cards ?? [];
 
   return (
     <section
