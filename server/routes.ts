@@ -1516,6 +1516,8 @@ ${items.join('\n')}
   app.post("/api/admin/products", requireAdmin, async (req, res) => {
     try {
       const { categoryIds, initialStock, ...productData } = req.body;
+      if (productData.categoryId === '') productData.categoryId = null;
+      if (productData.gameId === '') productData.gameId = null;
       const validated = insertProductSchema.parse(productData);
       const product = await storage.createProduct(validated);
       
@@ -1552,6 +1554,8 @@ ${items.join('\n')}
   app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
     try {
       const { categoryIds, ...productData } = req.body;
+      if (productData.categoryId === '') productData.categoryId = null;
+      if (productData.gameId === '') productData.gameId = null;
       const parsed = productUpdateSchema.safeParse(productData);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
 
