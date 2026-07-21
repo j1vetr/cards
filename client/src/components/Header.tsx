@@ -59,7 +59,7 @@ function MegaMenuPanel({
 }) {
   const accent = game === 'pokemon' ? '#f59e0b' : '#818cf8';
   const displaySets = game === 'pokemon' ? sets.slice(0, 18) : sets;
-  const displayBoxes = boxes.slice(0, 8);
+  const displayBoxes = boxes.slice(0, 10);
 
   return (
     <motion.div
