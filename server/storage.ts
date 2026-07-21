@@ -333,6 +333,9 @@ export interface IStorage {
 
   // TCG image URL update (called after local image download during sync)
   updateCardImageUrl(cardId: string, imageUrl: string): Promise<void>;
+
+  // Hero fan — fetch ordered card data by explicit IDs
+  getCardsByIds(ids: string[]): Promise<any[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -2905,6 +2908,32 @@ export class DbStorage implements IStorage {
       totalListings: r?.total_listings ?? 0,
       totalPrices: r?.total_prices ?? 0,
     };
+  }
+
+  async getCardsByIds(ids: string[]): Promise<any[]> {
+    if (ids.length === 0) return [];
+    const rows = await db
+      .select({
+        id: cards.id,
+        name: cards.name,
+        slug: cards.slug,
+        card_number: cards.cardNumber,
+        rarity: cards.rarity,
+        image_url: cards.imageUrl,
+        is_featured: cards.isFeatured,
+        set_id: cardSets.id,
+        set_name: cardSets.name,
+        set_slug: cardSets.slug,
+        game_id: cardGames.id,
+        game_name: cardGames.name,
+        game_slug: cardGames.slug,
+      })
+      .from(cards)
+      .innerJoin(cardSets, eq(cards.setId, cardSets.id))
+      .innerJoin(cardGames, eq(cardSets.gameId, cardGames.id))
+      .where(and(inArray(cards.id, ids), eq(cards.isActive, true)));
+    const map = new Map(rows.map(r => [r.id, r]));
+    return ids.map(id => map.get(id)).filter(Boolean);
   }
 
 }

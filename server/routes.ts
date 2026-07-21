@@ -4581,6 +4581,35 @@ export async function registerRoutes(
     }
   });
 
+  // Hero fan config — public read, admin write
+  app.get("/api/settings/hero-config", async (_req, res) => {
+    try {
+      const raw = await storage.getSiteSetting('hero_config');
+      const defaultConfig = { mode: 'random', count: 5, game: 'riftbound', cardIds: [] };
+      if (!raw) return res.json(defaultConfig);
+      try { return res.json(JSON.parse(raw)); } catch { return res.json(defaultConfig); }
+    } catch (err) {
+      res.status(500).json({ error: "Hero config yüklenemedi" });
+    }
+  });
+
+  app.put("/api/admin/settings/hero-config", requireAdmin, async (req, res) => {
+    try {
+      const schema = z.object({
+        mode: z.enum(['random', 'manual']),
+        count: z.number().int().min(3).max(5),
+        game: z.enum(['riftbound', 'pokemon', 'all']),
+        cardIds: z.array(z.string()).max(5),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      await storage.setSiteSetting('hero_config', JSON.stringify(parsed.data));
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: "Hero config kaydedilemedi" });
+    }
+  });
+
   app.post("/api/admin/settings/test-email", requireAdmin, async (req, res) => {
     try {
       const parsed = testEmailSchema.safeParse(req.body);
@@ -5828,6 +5857,19 @@ Sitemap: ${baseUrl}/sitemap.xml
       res.json(types);
     } catch (err) {
       res.status(500).json({ error: "Tipler yüklenemedi" });
+    }
+  });
+
+  app.get("/api/cards/by-ids", async (req, res) => {
+    try {
+      const idsParam = req.query.ids as string;
+      if (!idsParam) return res.json([]);
+      const ids = idsParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
+      if (ids.length === 0) return res.json([]);
+      const result = await storage.getCardsByIds(ids);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: "Kartlar yüklenemedi" });
     }
   });
 

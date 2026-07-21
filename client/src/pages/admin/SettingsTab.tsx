@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound, ShieldCheck, Truck, MapPin, Layers } from 'lucide-react';
+import { Settings, Mail, Loader2, CheckCircle2, XCircle, Send, Server, CreditCard, Copy, AlertTriangle, Wrench, MessageCircle, KeyRound, ShieldCheck, Truck, MapPin, Layers, Search, X, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 
 type WhatsAppEvent =
@@ -166,6 +166,297 @@ function ArasSenderAddressPicker({ value, onChange }: { value: string; onChange:
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Hero Cards Picker ────────────────────────────────────────────────────────
+
+type HeroMode = 'random' | 'manual';
+type HeroGame = 'riftbound' | 'pokemon' | 'all';
+interface HeroConfig { mode: HeroMode; count: number; game: HeroGame; cardIds: string[] }
+
+function HeroCardsPicker() {
+  const [config, setConfig] = useState<HeroConfig>({ mode: 'random', count: 5, game: 'riftbound', cardIds: [] });
+  const [search, setSearch] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const { data: heroConfig, isLoading: heroLoading } = useQuery<HeroConfig>({
+    queryKey: ['hero-config-admin'],
+    queryFn: () => fetch('/api/settings/hero-config').then(r => r.json()),
+  });
+
+  useEffect(() => {
+    if (heroConfig && !loaded) {
+      setConfig(heroConfig);
+      setLoaded(true);
+    }
+  }, [heroConfig, loaded]);
+
+  const { data: searchData } = useQuery<{ cards: any[] }>({
+    queryKey: ['admin-hero-search', search],
+    queryFn: () => fetch(`/api/cards?search=${encodeURIComponent(search)}&limit=8`).then(r => r.json()),
+    enabled: search.trim().length >= 1,
+    staleTime: 30_000,
+  });
+
+  const { data: selectedCards } = useQuery<any[]>({
+    queryKey: ['admin-hero-selected', config.cardIds.join(',')],
+    queryFn: () => {
+      if (!config.cardIds.length) return Promise.resolve([]);
+      return fetch(`/api/cards/by-ids?ids=${config.cardIds.join(',')}`).then(r => r.json());
+    },
+    enabled: config.cardIds.length > 0,
+    staleTime: 60_000,
+  });
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/admin/settings/hero-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMsg({ type: 'success', text: 'Hero konfigürasyonu kaydedildi.' });
+      } else {
+        setMsg({ type: 'error', text: data.error || 'Kayıt başarısız.' });
+      }
+    } catch {
+      setMsg({ type: 'error', text: 'Bir hata oluştu.' });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMsg(null), 4000);
+    }
+  };
+
+  const addCard = (id: string) => {
+    if (config.cardIds.includes(id) || config.cardIds.length >= 5) return;
+    setConfig(c => ({ ...c, cardIds: [...c.cardIds, id] }));
+  };
+
+  const removeCard = (id: string) => {
+    setConfig(c => ({ ...c, cardIds: c.cardIds.filter(x => x !== id) }));
+  };
+
+  const moveCard = (idx: number, dir: -1 | 1) => {
+    const arr = [...config.cardIds];
+    const to = idx + dir;
+    if (to < 0 || to >= arr.length) return;
+    [arr[idx], arr[to]] = [arr[to], arr[idx]];
+    setConfig(c => ({ ...c, cardIds: arr }));
+  };
+
+  if (heroLoading && !loaded) return null;
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-indigo-50 rounded-lg">
+          <Sparkles className="w-5 h-5 text-indigo-600" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-neutral-900">Hero Kartları</h3>
+          <p className="text-sm text-neutral-500">Ana sayfadaki kart fanının nasıl çalışacağını ayarlayın</p>
+        </div>
+      </div>
+
+      {msg && (
+        <div className={`flex items-center gap-2 p-3 rounded-lg mb-4 text-sm ${
+          msg.type === 'success'
+            ? 'bg-green-50 border border-green-200 text-green-700'
+            : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          {msg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+          {msg.text}
+        </div>
+      )}
+
+      {/* Mode */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-neutral-700 mb-2">Mod</label>
+        <div className="flex gap-2">
+          {(['random', 'manual'] as HeroMode[]).map(m => (
+            <button
+              key={m}
+              onClick={() => setConfig(c => ({ ...c, mode: m }))}
+              data-testid={`btn-hero-mode-${m}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                config.mode === m
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-neutral-600 border-neutral-200 hover:border-indigo-400'
+              }`}
+            >
+              {m === 'random' ? 'Otomatik (Döngüsel)' : 'Manuel Seçim'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Random options */}
+      {config.mode === 'random' && (
+        <div className="grid sm:grid-cols-2 gap-4 mb-5 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Oyun Havuzu</label>
+            <select
+              value={config.game}
+              onChange={e => setConfig(c => ({ ...c, game: e.target.value as HeroGame }))}
+              data-testid="select-hero-game"
+              className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-sm text-neutral-900"
+            >
+              <option value="riftbound">Riftbound</option>
+              <option value="pokemon">Pokémon TCG</option>
+              <option value="all">Tüm Oyunlar</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Gösterilecek Kart Sayısı</label>
+            <div className="flex gap-2">
+              {[3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setConfig(c => ({ ...c, count: n }))}
+                  data-testid={`btn-hero-count-${n}`}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    config.count === n
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-indigo-400'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual options */}
+      {config.mode === 'manual' && (
+        <div className="space-y-4 mb-5">
+          <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+            <p className="text-xs text-neutral-500 mb-3">En fazla 5 kart seçebilirsiniz. Soldan sağa sıralama listeden belirlenir.</p>
+
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Kart adı veya set ara…"
+                data-testid="input-hero-card-search"
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-neutral-200 rounded-lg text-sm text-neutral-900 focus:border-indigo-400 outline-none"
+              />
+            </div>
+
+            {/* Search results */}
+            {search.trim().length >= 1 && (searchData?.cards?.length ?? 0) > 0 && (
+              <div className="border border-neutral-200 rounded-lg divide-y divide-neutral-100 bg-white mb-3 max-h-56 overflow-y-auto">
+                {(searchData?.cards ?? []).slice(0, 8).map((card: any) => {
+                  const already = config.cardIds.includes(card.id);
+                  const full = config.cardIds.length >= 5;
+                  return (
+                    <button
+                      key={card.id}
+                      onClick={() => addCard(card.id)}
+                      disabled={already || full}
+                      data-testid={`btn-hero-add-${card.id}`}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
+                        already ? 'opacity-40 cursor-not-allowed bg-neutral-50' : full ? 'opacity-40 cursor-not-allowed' : 'hover:bg-indigo-50'
+                      }`}
+                    >
+                      <div className="w-8 h-11 bg-neutral-100 rounded shrink-0 overflow-hidden">
+                        {card.image_url && <img src={card.image_url} alt="" className="w-full h-full object-contain" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-neutral-900 truncate">{card.name}</div>
+                        <div className="text-xs text-neutral-500">{card.set_name} · {card.rarity}</div>
+                      </div>
+                      {!already && !full && (
+                        <span className="text-xs text-indigo-600 font-medium shrink-0">+ Ekle</span>
+                      )}
+                      {already && <span className="text-xs text-neutral-400 shrink-0">Seçili</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Selected list */}
+            {config.cardIds.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
+                  Seçili ({config.cardIds.length}/5) — soldan sağa sıra
+                </p>
+                <div className="space-y-1.5">
+                  {config.cardIds.map((id, idx) => {
+                    const card = (selectedCards ?? []).find((c: any) => c.id === id);
+                    return (
+                      <div key={id} className="flex items-center gap-2 p-2 bg-white border border-neutral-200 rounded-lg">
+                        <div className="w-7 h-10 bg-neutral-100 rounded shrink-0 overflow-hidden">
+                          {card?.image_url && <img src={card.image_url} alt="" className="w-full h-full object-contain" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-neutral-900 truncate">{card?.name ?? id.slice(0, 8) + '…'}</div>
+                          {card && <div className="text-xs text-neutral-500 truncate">{card.set_name}</div>}
+                        </div>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            onClick={() => moveCard(idx, -1)}
+                            disabled={idx === 0}
+                            data-testid={`btn-hero-up-${idx}`}
+                            className="p-1 rounded hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5 text-neutral-500" />
+                          </button>
+                          <button
+                            onClick={() => moveCard(idx, 1)}
+                            disabled={idx === config.cardIds.length - 1}
+                            data-testid={`btn-hero-down-${idx}`}
+                            className="p-1 rounded hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
+                          </button>
+                          <button
+                            onClick={() => removeCard(id)}
+                            data-testid={`btn-hero-remove-${idx}`}
+                            className="p-1 rounded hover:bg-red-50 text-red-500 ml-1"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {config.cardIds.length === 0 && (
+              <p className="text-sm text-neutral-400 text-center py-4">Henüz kart seçilmedi. Arama kutusundan kart ekleyin.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          data-testid="button-save-hero-config"
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 text-sm font-medium"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+          Hero Ayarlarını Kaydet
+        </button>
+      </div>
     </div>
   );
 }
@@ -1388,6 +1679,8 @@ export default function SettingsPanel() {
           </div>
         </div>
       </div>
+
+      <HeroCardsPicker />
 
       <div className="flex justify-end">
         <button

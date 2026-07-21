@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, type ElementType } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { motion, MotionConfig, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/Header';
@@ -37,29 +38,57 @@ const staggerFast = {
 // ── Card fan decoration ─────────────────────────────────────────────────────
 
 const FAN_CFG = {
-  mobile: {
-    positions: [
-      { rotate: -28, x: -152, y: -5,  delay: 0.06 },
-      { rotate: -12, x: -68,  y: -22, delay: 0.14 },
-      { rotate: 0,   x: 0,    y: -42, delay: 0.22 },
-      { rotate: 12,  x: 68,   y: -22, delay: 0.30 },
-      { rotate: 28,  x: 152,  y: -5,  delay: 0.38 },
+  mobile:  { w: 118, h: 165, containerW: 370, containerH: 230 },
+  desktop: { w: 285, h: 399, containerW: 740, containerH: 520 },
+};
+
+type FanPos = { rotate: number; x: number; y: number; delay: number };
+const FAN_POSITIONS: Record<number, { mobile: FanPos[]; desktop: FanPos[] }> = {
+  3: {
+    mobile: [
+      { rotate: -28, x: -130, y: -5,   delay: 0.06 },
+      { rotate: 0,   x: 0,    y: -42,  delay: 0.22 },
+      { rotate: 28,  x: 130,  y: -5,   delay: 0.38 },
     ],
-    w: 118, h: 165,
-    containerW: 370, containerH: 230,
+    desktop: [
+      { rotate: -22, x: -220, y: -65,  delay: 0.06 },
+      { rotate: 0,   x: 0,    y: -120, delay: 0.22 },
+      { rotate: 22,  x: 220,  y: -65,  delay: 0.38 },
+    ],
   },
-  desktop: {
-    positions: [
+  4: {
+    mobile: [
+      { rotate: -22, x: -140, y: -5,   delay: 0.06 },
+      { rotate: -8,  x: -55,  y: -25,  delay: 0.14 },
+      { rotate: 8,   x: 55,   y: -25,  delay: 0.30 },
+      { rotate: 22,  x: 140,  y: -5,   delay: 0.38 },
+    ],
+    desktop: [
+      { rotate: -18, x: -225, y: -65,  delay: 0.06 },
+      { rotate: -6,  x: -90,  y: -105, delay: 0.14 },
+      { rotate: 6,   x: 90,   y: -105, delay: 0.30 },
+      { rotate: 18,  x: 225,  y: -65,  delay: 0.38 },
+    ],
+  },
+  5: {
+    mobile: [
+      { rotate: -28, x: -152, y: -5,   delay: 0.06 },
+      { rotate: -12, x: -68,  y: -22,  delay: 0.14 },
+      { rotate: 0,   x: 0,    y: -42,  delay: 0.22 },
+      { rotate: 12,  x: 68,   y: -22,  delay: 0.30 },
+      { rotate: 28,  x: 152,  y: -5,   delay: 0.38 },
+    ],
+    desktop: [
       { rotate: -22, x: -242, y: -65,  delay: 0.06 },
       { rotate: -9,  x: -119, y: -95,  delay: 0.14 },
       { rotate: 0,   x: 0,    y: -120, delay: 0.22 },
       { rotate: 9,   x: 119,  y: -95,  delay: 0.30 },
       { rotate: 22,  x: 242,  y: -65,  delay: 0.38 },
     ],
-    w: 285, h: 399,
-    containerW: 740, containerH: 520,
   },
 };
+
+type HeroConfig = { mode: 'random' | 'manual'; count: 3 | 4 | 5; game: 'riftbound' | 'pokemon' | 'all'; cardIds: string[] };
 
 const CARD_BG_FALLBACK = [
   'from-violet-700 to-indigo-800',
@@ -71,7 +100,6 @@ const CARD_BG_FALLBACK = [
 
 function CardFan() {
   const [isDesktop, setIsDesktop] = useState(false);
-
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 1024);
     check();
@@ -79,35 +107,108 @@ function CardFan() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const { data: riftData } = useCards({ game: 'riftbound', limit: 30, sort: 'newest' });
+  // Hero config from backend
+  const { data: heroConfig } = useQuery<HeroConfig>({
+    queryKey: ['hero-config'],
+    queryFn: () => fetch('/api/settings/hero-config').then(r => r.json()),
+    staleTime: 60_000,
+  });
 
-  // Only Riftbound cards in the fan
+  const mode    = heroConfig?.mode    ?? 'random';
+  const count   = (heroConfig?.count  ?? 5) as 3 | 4 | 5;
+  const game    = heroConfig?.game    ?? 'riftbound';
+  const cardIds = heroConfig?.cardIds ?? [];
+
+  // Positions for current count
+  const fanPositionSet = FAN_POSITIONS[count] ?? FAN_POSITIONS[5];
+  const positions = isDesktop ? fanPositionSet.desktop : fanPositionSet.mobile;
+  const cfg = isDesktop ? FAN_CFG.desktop : FAN_CFG.mobile;
+  const { w, h, containerW, containerH } = cfg;
+  const centerIdx = Math.floor(positions.length / 2);
+
+  // Random mode — fetch card pool from configured game
+  const { data: poolData } = useQuery<{ cards: CardPublic[] }>({
+    queryKey: ['hero-pool', game],
+    queryFn: () => {
+      const qs = game === 'all' ? '' : `game=${game}&`;
+      return fetch(`/api/cards?${qs}limit=30&sort=newest`).then(r => r.json());
+    },
+    enabled: mode === 'random',
+    staleTime: 120_000,
+  });
+
+  // Manual mode — fetch specific cards by IDs
+  const { data: manualCards } = useQuery<any[]>({
+    queryKey: ['hero-manual', cardIds.join(',')],
+    queryFn: () => {
+      if (!cardIds.length) return Promise.resolve([]);
+      return fetch(`/api/cards/by-ids?ids=${cardIds.join(',')}`).then(r => r.json());
+    },
+    enabled: mode === 'manual' && cardIds.length > 0,
+    staleTime: 120_000,
+  });
+
   const imagePool = useMemo<string[]>(() => {
-    return (riftData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
-  }, [riftData]);
-
-  // 5 slots — one per fan position
-  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null]);
-  const poolIdxRef = useRef(5);
-  const slotIdxRef = useRef(0);   // which slot to replace next (0→4→0…)
-  const initializedRef = useRef(false);
-
-  // Seed slots on first load
-  useEffect(() => {
-    if (imagePool.length >= 5 && !initializedRef.current) {
-      initializedRef.current = true;
-      setSlots(imagePool.slice(0, 5));
-      poolIdxRef.current = 5;
+    if (mode === 'manual') {
+      return (manualCards ?? []).map((c: any) => c.image_url).filter(Boolean);
     }
-  }, [imagePool]);
+    return (poolData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
+  }, [mode, poolData, manualCards]);
 
-  // Cycle one card every 3 s — leftmost first, then moving right
+  // 5 slots internally — only positions.length are rendered
+  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null]);
+  const poolIdxRef   = useRef(count);
+  const slotIdxRef   = useRef(0);
+  const initializedRef = useRef(false);
+  const prevModeRef    = useRef(mode);
+  const prevGameRef    = useRef(game);
+  const prevCountRef   = useRef(count);
+
+  // Reset when config changes
   useEffect(() => {
-    if (imagePool.length === 0) return;
+    if (prevModeRef.current !== mode || prevGameRef.current !== game || prevCountRef.current !== count) {
+      prevModeRef.current  = mode;
+      prevGameRef.current  = game;
+      prevCountRef.current = count;
+      initializedRef.current = false;
+      slotIdxRef.current   = 0;
+      poolIdxRef.current   = count;
+      setSlots([null, null, null, null, null]);
+    }
+  }, [mode, game, count]);
+
+  // Seed slots once
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (mode === 'manual') {
+      if (imagePool.length > 0) {
+        initializedRef.current = true;
+        setSlots(prev => {
+          const next = [...prev];
+          imagePool.slice(0, 5).forEach((url, i) => { next[i] = url; });
+          return next;
+        });
+      }
+    } else {
+      if (imagePool.length >= count) {
+        initializedRef.current = true;
+        setSlots(prev => {
+          const next = [...prev];
+          for (let i = 0; i < count; i++) next[i] = imagePool[i];
+          return next;
+        });
+        poolIdxRef.current = count;
+      }
+    }
+  }, [imagePool, mode, count]);
+
+  // Cycle one card every 3 s (random mode only)
+  useEffect(() => {
+    if (mode !== 'random' || imagePool.length === 0) return;
     const id = setInterval(() => {
       setSlots(prev => {
         const next = [...prev];
-        const slot = slotIdxRef.current % 5;
+        const slot = slotIdxRef.current % count;
         next[slot] = imagePool[poolIdxRef.current % imagePool.length];
         slotIdxRef.current++;
         poolIdxRef.current++;
@@ -115,11 +216,7 @@ function CardFan() {
       });
     }, 3000);
     return () => clearInterval(id);
-  }, [imagePool]);
-
-  const cfg = isDesktop ? FAN_CFG.desktop : FAN_CFG.mobile;
-  const { positions, w, h, containerW, containerH } = cfg;
-  const centerIdx = Math.floor(positions.length / 2);
+  }, [imagePool, mode, count]);
 
   return (
     <div
@@ -130,8 +227,7 @@ function CardFan() {
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
-          width: '130%',
-          height: '52%',
+          width: '130%', height: '52%',
           background: 'radial-gradient(ellipse 100% 65% at 50% 100%, rgba(99,102,241,0.6) 0%, rgba(124,58,237,0.32) 38%, rgba(79,70,229,0.1) 68%, transparent 82%)',
           filter: 'blur(26px)',
         }}
@@ -147,28 +243,23 @@ function CardFan() {
 
       {positions.map((pos, i) => {
         const isCenter = i === centerIdx;
-        const depthZ = 10 - Math.abs(i - centerIdx) * 2;
-        const imgSrc = slots[i];
+        const depthZ   = 10 - Math.abs(i - centerIdx) * 2;
+        const imgSrc   = slots[i];
 
         return (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: pos.y + 80, rotate: pos.rotate }}
             animate={{ opacity: 1, y: pos.y, x: pos.x, rotate: pos.rotate }}
-            transition={{ duration: 0.75, delay: pos.delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] }}
+            transition={{ duration: 0.75, delay: pos.delay, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
             style={{ position: 'absolute', bottom: 0, zIndex: depthZ }}
           >
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3.8 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
               style={{
-                width: w,
-                height: h,
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: isCenter
-                  ? '1.5px solid rgba(129,140,248,0.55)'
-                  : '1px solid rgba(255,255,255,0.15)',
+                width: w, height: h, borderRadius: 12, overflow: 'hidden',
+                border: isCenter ? '1.5px solid rgba(129,140,248,0.55)' : '1px solid rgba(255,255,255,0.15)',
                 boxShadow: isCenter
                   ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
                   : '0 14px 44px rgba(0,0,0,0.55)',
@@ -511,7 +602,7 @@ function GameSection({ game, title, accentColor, accentClass, bgColor, Placehold
   const { data: cardsData, isLoading: cardsLoading } = useCards({
     game,
     limit: 6,
-    sort: 'newest',
+    featured: true,
   });
 
   const sets = game === 'pokemon' ? allSets.slice(0, 14) : allSets;
