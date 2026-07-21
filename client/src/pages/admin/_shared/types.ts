@@ -154,4 +154,5 @@ export type TabType =
   | 'reviews'
   | 'card-api-sync'
   | 'cards'
-  | 'card-sets';
+  | 'card-sets'
+  | 'accessories';

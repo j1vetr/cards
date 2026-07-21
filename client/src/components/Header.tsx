@@ -138,8 +138,8 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [announceClosed, setAnnounceClosed] = useState(false);
   const [activeAnnounce, setActiveAnnounce] = useState(0);
-  const [megaMenu, setMegaMenu] = useState<'pokemon' | 'riftbound' | null>(null);
-  const [mobileAccordion, setMobileAccordion] = useState<'pokemon' | 'riftbound' | null>(null);
+  const [megaMenu, setMegaMenu] = useState<'pokemon' | 'riftbound' | 'accessories' | null>(null);
+  const [mobileAccordion, setMobileAccordion] = useState<'pokemon' | 'riftbound' | 'accessories' | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { totalItems } = useCart();
@@ -154,7 +154,7 @@ export function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const openMega = (game: 'pokemon' | 'riftbound') => {
+  const openMega = (game: 'pokemon' | 'riftbound' | 'accessories') => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setMegaMenu(game);
   };
@@ -370,6 +370,21 @@ export function Header() {
                 </button>
               </div>
 
+              {/* Aksesuarlar with simple dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => openMega('accessories')}
+                onMouseLeave={delayClose}
+              >
+                <button
+                  className={`${navCls(isActive('/aksesuarlar'))} flex items-center gap-1`}
+                  data-testid="button-nav-aksesuarlar"
+                >
+                  Aksesuarlar
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${megaMenu === 'accessories' ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+
               <Link href="/iletisim" className={navCls(isActive('/iletisim'))} data-testid="link-nav-iletisim">
                 İletişim
               </Link>
@@ -501,6 +516,63 @@ export function Header() {
               onMouseEnter={cancelClose}
               onMouseLeave={delayClose}
             />
+          )}
+          {megaMenu === 'accessories' && (
+            <motion.div
+              key="accessories-mega"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onMouseEnter={cancelClose}
+              onMouseLeave={delayClose}
+              className="absolute top-full left-0 right-0 z-50 shadow-2xl"
+              style={{ background: '#111827', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              <div className="max-w-[1440px] mx-auto px-10 py-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-1 h-5 rounded-full" style={{ background: '#818cf8' }} />
+                    <span className="text-sm font-bold text-white tracking-wide">Aksesuarlar</span>
+                  </div>
+                  <Link
+                    href="/aksesuarlar"
+                    className="text-xs font-medium transition-colors flex items-center gap-1"
+                    style={{ color: '#818cf8' }}
+                  >
+                    Tümünü Gör <ArrowUpRight className="w-3 h-3" />
+                  </Link>
+                </div>
+                <div className="flex gap-4">
+                  {[
+                    { slug: 'binder', label: 'Binder', sublabel: 'Kart Albümü', color: '#4f46e5' },
+                    { slug: 'sleeve', label: 'Sleeve', sublabel: 'Kart Koruyucu', color: '#0891b2' },
+                    { slug: 'playmat', label: 'Playmat', sublabel: 'Oyun Matı', color: '#059669' },
+                  ].map((item) => (
+                    <Link
+                      key={item.slug}
+                      href={`/aksesuarlar?cat=${item.slug}`}
+                      className="flex-1 max-w-[200px]"
+                    >
+                      <div
+                        className="group flex flex-col gap-2 p-4 rounded-xl cursor-pointer transition-all duration-150"
+                        style={{ background: 'rgba(255,255,255,0.03)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${item.color}22` }}>
+                          <div className="w-3.5 h-3.5 rounded-sm" style={{ background: item.color }} />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-semibold text-white group-hover:text-white transition-colors">{item.label}</p>
+                          <p className="text-[11px] text-white/40 mt-0.5">{item.sublabel}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </header>
@@ -668,6 +740,66 @@ export function Header() {
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
                                 className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">
                                 {set.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.li>
+
+                  {/* Aksesuarlar accordion */}
+                  <motion.li variants={drawerStagger.item} className="border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                    <button
+                      onClick={() => setMobileAccordion(a => a === 'accessories' ? null : 'accessories')}
+                      className="group w-full flex items-center justify-between py-4"
+                      data-testid="button-mobile-aksesuarlar"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: 'rgba(129,140,248,0.2)' }}>
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: '#818cf8', opacity: mobileAccordion === 'accessories' ? 1 : 0.7 }} />
+                        </div>
+                        <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'accessories' ? 'text-indigo-400' : 'text-white'}`}>
+                          Aksesuarlar
+                        </span>
+                      </span>
+                      <motion.div
+                        animate={{ rotate: mobileAccordion === 'accessories' ? 180 : 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="text-white/40"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </motion.div>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {mobileAccordion === 'accessories' && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                          className="overflow-hidden"
+                        >
+                          <div className="pl-3 pb-3 border-l border-indigo-700/30 ml-1">
+                            <Link
+                              href="/aksesuarlar"
+                              onClick={() => setMobileOpen(false)}
+                              className="flex items-center py-2 text-[12px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                            >
+                              Tümünü Gör →
+                            </Link>
+                            {[
+                              { slug: 'binder', label: 'Binder (Kart Albümü)' },
+                              { slug: 'sleeve', label: 'Sleeve (Kart Koruyucu)' },
+                              { slug: 'playmat', label: 'Playmat (Oyun Matı)' },
+                            ].map((item) => (
+                              <Link
+                                key={item.slug}
+                                href={`/aksesuarlar?cat=${item.slug}`}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors"
+                              >
+                                {item.label}
                               </Link>
                             ))}
                           </div>

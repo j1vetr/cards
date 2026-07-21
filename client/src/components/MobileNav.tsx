@@ -3,8 +3,8 @@ import { Home, User } from 'lucide-react';
 
 const NAV = [
   { href: '/',               label: 'Ana Sayfa', type: 'icon' as const, Icon: Home },
-  { href: '/oyun/pokemon',   label: 'Pokémon',   type: 'img'  as const, src: '/icon-pokemon.svg' },
   { href: '/oyun/riftbound', label: 'Riftbound',  type: 'img'  as const, src: '/icon-riftbound.svg' },
+  { href: '/oyun/pokemon',   label: 'Pokémon',   type: 'img'  as const, src: '/icon-pokemon.svg' },
   { href: '/hesabim',        label: 'Hesabım',   type: 'icon' as const, Icon: User },
 ];
 

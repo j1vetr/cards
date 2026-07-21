@@ -16,6 +16,7 @@ import ReviewsTab from './admin/ReviewsTab';
 import CardApiSyncTab from './admin/CardApiSyncTab';
 import CardsTab from './admin/CardsTab';
 import CardSetsTab from './admin/CardSetsTab';
+import AccessoriesTab from './admin/AccessoriesTab';
 
 import UserDetailModal from './admin/modals/UserDetailModal';
 
@@ -145,6 +146,7 @@ export default function AdminDashboard() {
         {activeTab === 'card-api-sync' && <CardApiSyncTab />}
         {activeTab === 'cards' && <CardsTab />}
         {activeTab === 'card-sets' && <CardSetsTab />}
+        {activeTab === 'accessories' && <AccessoriesTab />}
       </AdminLayout>
 
       {viewingUser && <UserDetailModal user={viewingUser} onClose={() => setViewingUser(null)} />}
