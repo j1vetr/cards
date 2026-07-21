@@ -206,6 +206,25 @@ export default function BoxesTab() {
                     <span className="text-[13px] font-semibold text-neutral-900 tabular-nums">
                       {formatPrice(product.basePrice)}
                     </span>
+                    {product.stock === 0 ? (
+                      <span
+                        data-testid={`badge-stock-${product.id}`}
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700"
+                      >
+                        Tükendi
+                      </span>
+                    ) : (
+                      <span
+                        data-testid={`badge-stock-${product.id}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${
+                          product.stock <= 5
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-neutral-100 text-neutral-600'
+                        }`}
+                      >
+                        {product.stock} adet
+                      </span>
+                    )}
                     <StatusBadge tone={product.isActive ? 'emerald' : 'neutral'}>
                       {product.isActive ? 'Aktif' : 'Pasif'}
                     </StatusBadge>
