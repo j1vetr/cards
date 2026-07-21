@@ -90,7 +90,7 @@ app.use((req, res, next) => {
     console.error("[index] WhatsApp default-template upgrade failed:", err);
   }
 
-  // products tablosuna game_id, product_type ve stock kolonlarını idempotent ekle
+  // products tablosuna game_id, product_type, stock ve linked_set_id kolonlarını idempotent ekle
   try {
     const { db } = await import("./db");
     const { sql: sqlTag } = await import("drizzle-orm");
@@ -98,11 +98,26 @@ app.use((req, res, next) => {
       ALTER TABLE products
         ADD COLUMN IF NOT EXISTS game_id VARCHAR REFERENCES card_games(id),
         ADD COLUMN IF NOT EXISTS product_type TEXT NOT NULL DEFAULT 'other',
-        ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 1
+        ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS linked_set_id VARCHAR REFERENCES card_sets(id)
     `);
-    console.log("[migrate] products.game_id + product_type + stock ensured");
+    console.log("[migrate] products.game_id + product_type + stock + linked_set_id ensured");
   } catch (err) {
     console.error("[migrate] products column migration failed:", err);
+  }
+
+  // cards tablosuna attacks ve abilities jsonb kolonlarını idempotent ekle
+  try {
+    const { db } = await import("./db");
+    const { sql: sqlTag } = await import("drizzle-orm");
+    await db.execute(sqlTag`
+      ALTER TABLE cards
+        ADD COLUMN IF NOT EXISTS attacks JSONB DEFAULT '[]',
+        ADD COLUMN IF NOT EXISTS abilities JSONB DEFAULT '[]'
+    `);
+    console.log("[migrate] cards.attacks + abilities ensured");
+  } catch (err) {
+    console.error("[migrate] cards attacks/abilities migration failed:", err);
   }
 
   // Aksesuar kategorilerini idempotent olarak seed et

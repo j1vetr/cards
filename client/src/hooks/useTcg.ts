@@ -27,6 +27,7 @@ export interface CardGame {
 export interface CardFilters {
   game?: string;
   set?: string;
+  setId?: string;
   rarity?: string;
   type?: string;
   condition?: string;
@@ -43,6 +44,7 @@ function buildQuery(filters: CardFilters) {
   const p = new URLSearchParams();
   if (filters.game) p.set('game', filters.game);
   if (filters.set) p.set('set', filters.set);
+  if (filters.setId) p.set('setId', filters.setId);
   if (filters.rarity) p.set('rarity', filters.rarity);
   if (filters.type) p.set('type', filters.type);
   if (filters.condition) p.set('condition', filters.condition);

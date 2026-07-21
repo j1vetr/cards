@@ -15,7 +15,9 @@ export interface Product {
   isNew: boolean;
   discountBadge?: string | null;
   gameId?: string | null;
+  linkedSetId?: string | null;
   productType?: string;
+  stock: number;
   createdAt: string;
   updatedAt?: string;
 }

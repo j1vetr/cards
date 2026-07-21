@@ -107,6 +107,7 @@ export const products = pgTable("products", {
   gameId: varchar("game_id"),
   productType: text("product_type").default('other').notNull(),
   stock: integer("stock").default(1).notNull(),
+  linkedSetId: varchar("linked_set_id").references(() => cardSets.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -1561,6 +1561,7 @@ ${items.join('\n')}
       const { categoryIds, ...productData } = req.body;
       if (productData.categoryId === '') productData.categoryId = null;
       if (productData.gameId === '') productData.gameId = null;
+      if (productData.linkedSetId === '' || productData.linkedSetId === undefined) productData.linkedSetId = null;
       const parsed = productUpdateSchema.safeParse(productData);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
 
@@ -6108,12 +6109,13 @@ Sitemap: ${baseUrl}/sitemap.xml
   app.get("/api/cards", async (req, res) => {
     try {
       const {
-        game, set, rarity, type, condition, search, sort, page, limit,
+        game, set, setId, rarity, type, condition, search, sort, page, limit,
         minPrice, maxPrice, featured, inStock,
       } = req.query as Record<string, string>;
       const result = await storage.getCardsPublic({
         gameSlug: game || undefined,
         setSlug: set || undefined,
+        ...(setId ? { setId } : {}),
         rarity: rarity || undefined,
         cardType: type || undefined,
         condition: condition || undefined,

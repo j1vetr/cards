@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Package, Search, Box, Link2 } from 'lucide-react';
+import { Plus, Edit3, Trash2, Package, Search, Box, Link2, Link } from 'lucide-react';
 import type { Product, ProductDraft, Category } from './_shared/types';
 import {
   PageHeader,
@@ -20,6 +20,13 @@ interface CardGame {
   id: string;
   name: string;
   slug: string;
+}
+
+interface CardSet {
+  id: string;
+  name: string;
+  slug: string;
+  game_id: string;
 }
 
 function formatPrice(val: string | number): string {
@@ -42,6 +49,7 @@ export default function BoxesTab() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNewGame, setSelectedNewGame] = useState<string>('');
+  const [linkingProductId, setLinkingProductId] = useState<string | null>(null);
 
   const { data: games = [] } = useQuery<CardGame[]>({
     queryKey: ['card-games'],
@@ -56,6 +64,11 @@ export default function BoxesTab() {
   const { data: allProducts = [], isLoading } = useQuery<Product[]>({
     queryKey: ['admin', 'products'],
     queryFn: () => adminFetch('/api/admin/products'),
+  });
+
+  const { data: allSets = [] } = useQuery<CardSet[]>({
+    queryKey: ['admin', 'card-sets'],
+    queryFn: () => adminFetch('/api/admin/card-sets'),
   });
 
   const boxes = allProducts.filter((p) => p.productType === 'box');
@@ -92,6 +105,20 @@ export default function BoxesTab() {
     },
   });
 
+  const linkSetMutation = useMutation({
+    mutationFn: async ({ productId, linkedSetId }: { productId: string; linkedSetId: string | null }) =>
+      adminFetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkedSetId: linkedSetId ?? '' }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setLinkingProductId(null);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
       adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' }),
@@ -103,6 +130,17 @@ export default function BoxesTab() {
   const getGameName = (product: Product) => {
     if (!product.gameId) return null;
     return games.find((g) => g.id === product.gameId)?.name ?? null;
+  };
+
+  const getLinkedSetName = (product: Product) => {
+    const ls = (product as any).linkedSetId;
+    if (!ls) return null;
+    return allSets.find((s) => s.id === ls)?.name ?? null;
+  };
+
+  const setsForProduct = (product: Product) => {
+    if (!product.gameId) return allSets;
+    return allSets.filter((s) => s.game_id === product.gameId);
   };
 
   const openNew = () => {
@@ -122,7 +160,8 @@ export default function BoxesTab() {
       isNew: false,
       productType: 'box',
       gameId: defaultGameId,
-    } as ProductDraft);
+      stock: 1,
+    } as unknown as ProductDraft);
     setShowModal(true);
   };
 
@@ -181,80 +220,133 @@ export default function BoxesTab() {
           <div className="divide-y divide-neutral-100">
             {filtered.map((product) => {
               const gameName = getGameName(product);
+              const linkedSetName = getLinkedSetName(product);
               const img = product.images?.[0];
+              const isLinking = linkingProductId === product.id;
+              const productSets = setsForProduct(product);
               return (
                 <div
                   key={product.id}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 transition-colors"
+                  className="flex flex-col gap-2 px-4 py-3 hover:bg-neutral-50 transition-colors"
                   data-testid={`row-box-${product.id}`}
                 >
-                  <div className="w-10 h-10 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0">
-                    {img ? (
-                      <img src={img} alt={product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="w-5 h-5 text-neutral-300" />
-                    )}
-                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-md bg-neutral-100 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0">
+                      {img ? (
+                        <img src={img} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-5 h-5 text-neutral-300" />
+                      )}
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-neutral-900 truncate">{product.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {gameName && (
-                        <span className="text-[11px] text-indigo-600 font-medium">{gameName}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-neutral-900 truncate">{product.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {gameName && (
+                          <span className="text-[11px] text-indigo-600 font-medium">{gameName}</span>
+                        )}
+                        {linkedSetName ? (
+                          <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-0.5">
+                            <Link className="w-2.5 h-2.5" />
+                            {linkedSetName}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-neutral-400 italic">Set bağlanmamış</span>
+                        )}
+                        {product.sku && (
+                          <span className="text-[11px] text-neutral-400">{product.sku}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[13px] font-semibold text-neutral-900 tabular-nums">
+                        {formatPrice(product.basePrice)}
+                      </span>
+                      {product.stock === 0 ? (
+                        <span
+                          data-testid={`badge-stock-${product.id}`}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700"
+                        >
+                          Tükendi
+                        </span>
+                      ) : (
+                        <span
+                          data-testid={`badge-stock-${product.id}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${
+                            product.stock <= 5
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-neutral-100 text-neutral-600'
+                          }`}
+                        >
+                          {product.stock} adet
+                        </span>
                       )}
-                      {product.sku && (
-                        <span className="text-[11px] text-neutral-400">{product.sku}</span>
-                      )}
+                      <StatusBadge tone={product.isActive ? 'emerald' : 'neutral'}>
+                        {product.isActive ? 'Aktif' : 'Pasif'}
+                      </StatusBadge>
+                      <button
+                        data-testid={`btn-link-set-${product.id}`}
+                        onClick={() => setLinkingProductId(isLinking ? null : product.id)}
+                        className={`p-1.5 rounded-md transition-colors text-[11px] flex items-center gap-1 ${
+                          isLinking
+                            ? 'bg-indigo-100 text-indigo-700'
+                            : linkedSetName
+                              ? 'text-emerald-600 hover:bg-emerald-50'
+                              : 'text-neutral-400 hover:text-indigo-600 hover:bg-indigo-50'
+                        }`}
+                        title="Set Bağla"
+                      >
+                        <Link className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        data-testid={`btn-edit-box-${product.id}`}
+                        onClick={() => openEdit(product)}
+                        className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                        title="Düzenle"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        data-testid={`btn-delete-box-${product.id}`}
+                        onClick={() => {
+                          if (confirm(`"${product.name}" silinsin mi?`)) {
+                            deleteMutation.mutate(product.id);
+                          }
+                        }}
+                        className="p-1.5 rounded-md text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[13px] font-semibold text-neutral-900 tabular-nums">
-                      {formatPrice(product.basePrice)}
-                    </span>
-                    {product.stock === 0 ? (
-                      <span
-                        data-testid={`badge-stock-${product.id}`}
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700"
+                  {/* Inline set linking panel */}
+                  {isLinking && (
+                    <div className="ml-13 flex items-center gap-2 bg-indigo-50 rounded-lg px-3 py-2 border border-indigo-100">
+                      <span className="text-[11px] text-indigo-700 font-medium whitespace-nowrap">Kart Seti:</span>
+                      <select
+                        data-testid={`select-linked-set-${product.id}`}
+                        defaultValue={(product as any).linkedSetId ?? ''}
+                        className="flex-1 text-[12px] border border-indigo-200 rounded-md px-2 py-1 bg-white text-neutral-800 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        onChange={(e) => {
+                          linkSetMutation.mutate({
+                            productId: product.id,
+                            linkedSetId: e.target.value || null,
+                          });
+                        }}
                       >
-                        Tükendi
-                      </span>
-                    ) : (
-                      <span
-                        data-testid={`badge-stock-${product.id}`}
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${
-                          product.stock <= 5
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-neutral-100 text-neutral-600'
-                        }`}
-                      >
-                        {product.stock} adet
-                      </span>
-                    )}
-                    <StatusBadge tone={product.isActive ? 'emerald' : 'neutral'}>
-                      {product.isActive ? 'Aktif' : 'Pasif'}
-                    </StatusBadge>
-                    <button
-                      data-testid={`btn-edit-box-${product.id}`}
-                      onClick={() => openEdit(product)}
-                      className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
-                      title="Düzenle"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      data-testid={`btn-delete-box-${product.id}`}
-                      onClick={() => {
-                        if (confirm(`"${product.name}" silinsin mi?`)) {
-                          deleteMutation.mutate(product.id);
-                        }
-                      }}
-                      className="p-1.5 rounded-md text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      title="Sil"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                        <option value="">— Bağlantı Yok —</option>
+                        {productSets.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      {linkSetMutation.isPending && (
+                        <span className="text-[11px] text-indigo-500 whitespace-nowrap">Kaydediliyor…</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

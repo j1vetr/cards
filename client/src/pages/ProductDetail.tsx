@@ -111,15 +111,20 @@ interface WholesaleSeries {
 }
 
 /* ─── Box → Sample cards section ────────────────────────────────────── */
-function BoxCardsSection({ gameId }: { gameId: string }) {
+function BoxCardsSection({ gameId, linkedSetId }: { gameId: string; linkedSetId?: string | null }) {
   const { data: games = [] } = useCardGames();
   const game = games.find((g) => g.id === gameId);
   const gameSlug = game?.slug;
 
-  const { data: cardsData } = useCards({ game: gameSlug, limit: 8, sort: 'newest' });
+  const { data: cardsData } = useCards(
+    linkedSetId
+      ? { setId: linkedSetId, limit: 8, sort: 'newest' }
+      : { enabled: false } as any,
+  );
   const cards = cardsData?.cards ?? [];
 
-  if (!gameSlug || cards.length === 0) return null;
+  // Only show section when a set is explicitly linked AND has cards
+  if (!linkedSetId || !gameSlug || cards.length === 0) return null;
 
   return (
     <section className="mt-16 pt-12 border-t border-black/8">
@@ -1520,7 +1525,10 @@ export default function ProductDetail() {
 
           {/* Box → sample cards section */}
           {(product as any).productType === 'box' && (product as any).gameId && (
-            <BoxCardsSection gameId={(product as any).gameId} />
+            <BoxCardsSection
+              gameId={(product as any).gameId}
+              linkedSetId={(product as any).linkedSetId}
+            />
           )}
 
           {/* Reviews */}

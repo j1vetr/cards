@@ -1294,6 +1294,10 @@ export class DbStorage implements IStorage {
         wholesaleEnabled: r.wholesale_enabled ?? false,
         wholesalePrice: r.wholesale_price ?? null,
         wholesaleSeriesId: r.wholesale_series_id ?? null,
+        gameId: r.game_id ?? null,
+        productType: r.product_type ?? 'other',
+        stock: Number(r.stock ?? 0),
+        linkedSetId: r.linked_set_id ?? null,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       },
@@ -2379,6 +2383,7 @@ export class DbStorage implements IStorage {
 
     const gameFilter = filters.gameSlug ? sql`AND cg.slug = ${filters.gameSlug}` : sql``;
     const setFilter = filters.setSlug ? sql`AND cs.slug = ${filters.setSlug}` : sql``;
+    const setIdFilter = (filters as any).setId ? sql`AND cs.id = ${(filters as any).setId}` : sql``;
     const rarityFilter = filters.rarity ? sql`AND LOWER(c.rarity) = LOWER(${filters.rarity})` : sql``;
     const cardTypeFilter = filters.cardType ? sql`AND c.card_types @> ${JSON.stringify([filters.cardType])}::jsonb` : sql``;
     const featuredFilter = filters.featured === true ? sql`AND c.is_featured = true` : sql``;
@@ -2424,6 +2429,7 @@ export class DbStorage implements IStorage {
       WHERE c.is_active = true
         ${gameFilter}
         ${setFilter}
+        ${setIdFilter}
         ${rarityFilter}
         ${cardTypeFilter}
         ${featuredFilter}
@@ -2446,6 +2452,7 @@ export class DbStorage implements IStorage {
         WHERE c.is_active = true
           ${gameFilter}
           ${setFilter}
+          ${setIdFilter}
           ${rarityFilter}
           ${cardTypeFilter}
           ${featuredFilter}
