@@ -617,7 +617,7 @@ function BoxShowcaseSection() {
           className="grid gap-4"
           style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
         >
-          {boxProducts.slice(0, 8).map((product, idx) => {
+          {boxProducts.slice(0, 10).map((product, idx) => {
             const { accent, dot, label } = gameInfo(product.gameId);
             const img = product.images?.[0];
             const price = formatPrice(product.basePrice);
@@ -724,7 +724,7 @@ function BoxShowcaseSection() {
         </motion.div>
 
         {/* CTA — shown when there are more than 8 products */}
-        {boxProducts.length > 8 && (
+        {boxProducts.length > 10 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -750,7 +750,7 @@ function BoxShowcaseSection() {
                   className="ml-0.5 px-1.5 py-0.5 rounded-md text-[11px] font-bold"
                   style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}
                 >
-                  +{boxProducts.length - 8}
+                  +{boxProducts.length - 10}
                 </span>
               </motion.button>
             </Link>
