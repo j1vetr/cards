@@ -88,41 +88,33 @@ export default function ImportUrlModal({ open, onClose, productType = 'sealed', 
   const startBulk = async () => {
     const urls = parseBulkUrls(bulkText);
     if (!urls.length) return;
-    const items: BulkItem[] = urls.map(u => ({ url: u, status: 'waiting' }));
-    setBulkItems(items);
+    const initial: BulkItem[] = urls.map(u => ({ url: u, status: 'waiting' }));
+    setBulkItems(initial);
     setBulkRunning(true);
     setBulkDone(false);
 
-    // Mark all as "processing" display sequentially via server bulk endpoint
-    // We send to the server and stream results back by polling the response array
-    try {
-      // Show first item as processing immediately
-      const processing = items.map((item, i) => i === 0 ? { ...item, status: 'processing' as const } : item);
-      setBulkItems(processing);
-
-      const res = await fetch('/api/admin/import-product-url-bulk', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls, productType }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Hata oluştu');
-
-      // Map server results back to BulkItem list with progressive UI update
-      const serverResults: Array<{ url: string; status: 'success' | 'error'; scraped?: ImportResult; error?: string }> = data.results || [];
-      const updated: BulkItem[] = serverResults.map(r => ({
-        url: r.url,
-        status: r.status,
-        result: r.scraped,
-        error: r.error,
-      }));
-      setBulkItems(updated);
-      invalidateProducts();
-    } catch (e: any) {
-      // Network-level failure — mark all as error
-      setBulkItems(items.map(item => ({ ...item, status: 'error' as const, error: e.message || 'Bağlantı hatası' })));
+    // Client-side sequential loop — each URL gets its own request so the UI
+    // updates live (waiting → processing → success/error) for every row.
+    const current = [...initial];
+    for (let i = 0; i < current.length; i++) {
+      current[i] = { ...current[i], status: 'processing' };
+      setBulkItems([...current]);
+      try {
+        const res = await fetch('/api/admin/import-product-url', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: current[i].url, productType }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Hata oluştu');
+        current[i] = { ...current[i], status: 'success', result: data.scraped };
+      } catch (e: any) {
+        current[i] = { ...current[i], status: 'error', error: e.message || 'Hata' };
+      }
+      setBulkItems([...current]);
     }
+    invalidateProducts();
     setBulkRunning(false);
     setBulkDone(true);
   };
