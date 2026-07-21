@@ -615,84 +615,91 @@ function BoxShowcaseSection() {
                 transition={{ duration: 0.4, delay: Math.min(idx * 0.06, 0.36) }}
                 data-testid={`box-card-${product.id}`}
                 className="shrink-0 group"
-                style={{ width: 252 }}
+                style={{ width: 240 }}
               >
                 <Link href={`/urun/${product.slug}`}>
-                  {/* Image block */}
+                  {/* Card shell — image + info unified */}
                   <motion.div
-                    whileHover={{ y: -6 }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className="relative rounded-xl overflow-hidden mb-3"
+                    whileHover={{ y: -5, boxShadow: '0 20px 48px rgba(0,0,0,0.55)' }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    className="rounded-xl overflow-hidden"
                     style={{
-                      height: 330,
-                      background: '#0d1323',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.09)',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
                     }}
                   >
-                    {img ? (
-                      <img
-                        src={img}
-                        alt={product.name}
-                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.04]"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Boxes className="w-14 h-14 text-white/10" />
-                      </div>
-                    )}
+                    {/* ── White image area ── */}
+                    <div
+                      className="relative"
+                      style={{ height: 260, background: '#f8f8f6' }}
+                    >
+                      {img ? (
+                        <img
+                          src={img}
+                          alt={product.name}
+                          className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.05]"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Boxes className="w-14 h-14 text-black/10" />
+                        </div>
+                      )}
 
-                    {/* Stock badge — only when noteworthy */}
-                    {(outOfStock || lowStock) && (
-                      <div className="absolute top-3 right-3">
+                      {/* Stock badge */}
+                      {outOfStock && (
+                        <div className="absolute top-2.5 right-2.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded"
+                            style={{ background: 'rgba(0,0,0,0.62)', color: '#f87171' }}>
+                            Tükendi
+                          </span>
+                        </div>
+                      )}
+                      {lowStock && (
+                        <div className="absolute top-2.5 right-2.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded"
+                            style={{ background: 'rgba(0,0,0,0.62)', color: '#fbbf24' }}>
+                            Son {product.stock}
+                          </span>
+                        </div>
+                      )}
+                      {product.isNew && !outOfStock && (
+                        <div className="absolute top-2.5 left-2.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded"
+                            style={{ background: 'rgba(0,0,0,0.62)', color: '#6ee7b7' }}>
+                            Yeni
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Dark info area ── */}
+                    <div
+                      className="px-3.5 py-3"
+                      style={{ background: '#10172a', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
+                        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: dot }}>
+                          {label}
+                        </span>
+                      </div>
+                      <p className="text-[13px] font-medium leading-snug line-clamp-2 mb-3"
+                        style={{ color: 'rgba(255,255,255,0.78)' }}>
+                        {product.name}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-white tabular-nums">
+                          {price}
+                        </span>
                         <span
-                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
-                          style={outOfStock
-                            ? { background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }
-                            : { background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.25)' }
-                          }
+                          className="text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-0.5"
+                          style={{ color: accent }}
                         >
-                          {outOfStock ? 'Tükendi' : `Son ${product.stock}`}
+                          İncele <ChevronRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
-                    )}
-
-                    {/* New badge */}
-                    {product.isNew && !outOfStock && (
-                      <div className="absolute top-3 left-3">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
-                          style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.25)' }}>
-                          Yeni
-                        </span>
-                      </div>
-                    )}
+                    </div>
                   </motion.div>
-
-                  {/* Info block — below image, not overlaid */}
-                  <div className="px-0.5">
-                    {/* Game label with dot */}
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
-                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: dot }}>
-                        {label}
-                      </span>
-                    </div>
-
-                    <p className="text-[14px] font-medium text-white/85 leading-snug line-clamp-2 mb-2">
-                      {product.name}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-white tabular-nums">
-                        {price}
-                      </span>
-                      <span
-                        className="text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1"
-                        style={{ color: accent }}
-                      >
-                        İncele <ChevronRight className="w-3 h-3" />
-                      </span>
-                    </div>
-                  </div>
                 </Link>
               </motion.div>
             );
