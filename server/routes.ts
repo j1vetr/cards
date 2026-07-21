@@ -223,6 +223,84 @@ const upload = multer({
 });
 
 
+// ── URL import helpers ────────────────────────────────────────────────────────
+function fetchUrlHtml(url: string, redirects = 0): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (redirects > 5) return reject(new Error('Too many redirects'));
+    const mod = url.startsWith('https:') ? require('https') : require('http');
+    const opts = { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GoCardsBot/1.0)', 'Accept': 'text/html', 'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8' } };
+    const req = mod.get(url, opts, (res: any) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        const next = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, url).toString();
+        return resolve(fetchUrlHtml(next, redirects + 1));
+      }
+      if (res.statusCode < 200 || res.statusCode >= 300) return reject(new Error(`HTTP ${res.statusCode}`));
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', (c: string) => { data += c; });
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error('Timeout')); });
+  });
+}
+
+function parseProductFromHtml(html: string, sourceUrl: string): { name: string; description: string; price: string; images: string[]; gameId: string | null } {
+  const ldBlocks = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g) || [];
+  for (const block of ldBlocks) {
+    try {
+      const json = block.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
+      const d = JSON.parse(json);
+      const prod = d['@type'] === 'Product' ? d : (Array.isArray(d['@graph']) ? d['@graph'].find((n: any) => n['@type'] === 'Product') : null);
+      if (prod) {
+        const name = prod.name || '';
+        const description = prod.description || '';
+        const imgs: string[] = Array.isArray(prod.image) ? prod.image : (prod.image ? [prod.image] : []);
+        const offer = Array.isArray(prod.offers) ? prod.offers[0] : prod.offers;
+        const price = offer?.price ? String(offer.price) : '';
+        const lower = (sourceUrl + name).toLowerCase();
+        const gameId = lower.includes('riftbound') ? 'riftbound' : lower.includes('pokemon') ? 'pokemon' : null;
+        return { name, description, price, images: imgs, gameId };
+      }
+    } catch { /* skip */ }
+  }
+  // fallback og:
+  const get = (prop: string) => html.match(new RegExp(`property=["']${prop}["'][^>]*content=["']([^"']+)`))?.[1]
+    || html.match(new RegExp(`content=["']([^"']+)["'][^>]*property=["']${prop}["']`))?.[1] || '';
+  const name = get('og:title');
+  const description = get('og:description');
+  const ogImage = get('og:image');
+  const lower = (sourceUrl + name).toLowerCase();
+  const gameId = lower.includes('riftbound') ? 'riftbound' : lower.includes('pokemon') ? 'pokemon' : null;
+  return { name, description, price: '', images: ogImage ? [ogImage] : [], gameId };
+}
+
+async function downloadProductImage(imageUrl: string, destDir: string): Promise<string | null> {
+  if (!imageUrl) return null;
+  try {
+    const hash = crypto.createHash('md5').update(imageUrl).digest('hex').substring(0, 8);
+    const rawExt = (imageUrl.split('.').pop() || 'jpg').split('?')[0].toLowerCase();
+    const ext = ['jpg', 'jpeg', 'png', 'webp'].includes(rawExt) ? rawExt : 'jpg';
+    const filename = `imported-${Date.now()}-${hash}.${ext}`;
+    const destPath = path.join(destDir, 'products', filename);
+    await new Promise<void>((resolve, reject) => {
+      const mod = imageUrl.startsWith('https:') ? require('https') : require('http');
+      const file = fs.createWriteStream(destPath);
+      const req = mod.get(imageUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res: any) => {
+        if (res.statusCode < 200 || res.statusCode >= 300) { file.close(); reject(new Error(`Image HTTP ${res.statusCode}`)); return; }
+        res.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+      });
+      req.on('error', (e: Error) => { file.close(); reject(e); });
+      req.setTimeout(15000, () => { req.destroy(); reject(new Error('Image timeout')); });
+    });
+    return `/uploads/products/${filename}`;
+  } catch (e) {
+    console.warn('[import-url] image download failed:', e);
+    return null;
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -803,6 +881,49 @@ ${items.join('\n')}
     } catch (error) {
       console.error('[Upload] Error:', error);
       res.status(500).json({ error: "Upload failed" });
+    }
+  });
+
+  // ── URL'den ürün içe aktar ─────────────────────────────────────────────────
+  app.post("/api/admin/import-product-url", requireAdmin, async (req, res) => {
+    try {
+      const { url } = req.body;
+      if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL gerekli' });
+      const html = await fetchUrlHtml(url.trim());
+      const data = parseProductFromHtml(html, url);
+      if (!data.name) return res.status(422).json({ error: 'Sayfadan ürün bilgisi çıkarılamadı. Lütfen manuel oluşturun.' });
+
+      const mainImageUrl = data.images.find(img => !img.includes('/theme-images/')) || data.images[0] || '';
+      const imagePath = mainImageUrl ? await downloadProductImage(mainImageUrl, uploadDir) : null;
+
+      const cleanName = data.name.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+      const slugBase = cleanName.toLowerCase()
+        .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g').replace(/[ıİ]/g, 'i')
+        .replace(/[öÖ]/g, 'o').replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
+        .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-').substring(0, 80);
+      const slug = `${slugBase}-${Date.now()}`;
+
+      const allCategories = await storage.getCategories();
+      const categoryId = allCategories[0]?.id || '';
+
+      const product = await storage.createProduct({
+        name: cleanName,
+        slug,
+        description: data.description ? `${data.description}\n\nKaynak: ${url}` : `Kaynak: ${url}`,
+        basePrice: data.price ? data.price.replace(',', '.') : '0',
+        categoryId,
+        images: imagePath ? [imagePath] : [],
+        isActive: false,
+        isFeatured: false,
+        isNew: true,
+        gameId: data.gameId,
+        productType: 'sealed',
+      } as any);
+
+      res.json({ success: true, product, scraped: { name: cleanName, price: data.price, imageCount: data.images.length } });
+    } catch (err: any) {
+      console.error('[import-url]', err);
+      res.status(500).json({ error: err.message || 'İçe aktarma başarısız' });
     }
   });
 

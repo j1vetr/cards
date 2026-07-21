@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ShoppingBag, Search, X, User, LogOut, UserPlus, ArrowUpRight, ChevronDown, ChevronRight, ChevronLeft, Layers, Zap, ShieldCheck, Lock, Gift } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { SearchOverlay } from '@/components/SearchOverlay';
@@ -17,6 +18,22 @@ import {
 const HEADER_BG = '#0c1220';
 const ANNOUNCE_BG = '#09090f';
 
+interface BoxMini {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: string;
+  images: string[];
+}
+
+function useBoxesMini(game: 'pokemon' | 'riftbound') {
+  return useQuery<BoxMini[]>({
+    queryKey: ['boxes-mini', game],
+    queryFn: () => fetch(`/api/products/boxes?game=${game}`).then(r => r.json()),
+    staleTime: 120_000,
+  });
+}
+
 const drawerStagger: { container: Variants; item: Variants } = {
   container: { animate: { transition: { staggerChildren: 0.04 } } },
   item: {
@@ -29,17 +46,20 @@ const drawerStagger: { container: Variants; item: Variants } = {
 /* ── Mega menu panel ──────────────────────────────────────────────────── */
 function MegaMenuPanel({
   sets,
+  boxes = [],
   game,
   onMouseEnter,
   onMouseLeave,
 }: {
   sets: CardSetPublic[];
+  boxes?: BoxMini[];
   game: 'pokemon' | 'riftbound';
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
   const accent = game === 'pokemon' ? '#f59e0b' : '#818cf8';
   const displaySets = game === 'pokemon' ? sets.slice(0, 18) : sets;
+  const displayBoxes = boxes.slice(0, 8);
 
   return (
     <motion.div
@@ -53,78 +73,129 @@ function MegaMenuPanel({
       style={{ background: '#111827', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
     >
       <div className="max-w-[1440px] mx-auto px-10 py-6">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-1 h-5 rounded-full" style={{ background: accent }} />
-            <span className="text-sm font-bold text-white tracking-wide">
-              {game === 'pokemon' ? 'Pokémon TCG Setleri' : 'Riftbound Setleri'}
-            </span>
-            <span className="text-xs text-white/30 ml-1">({sets.length} set)</span>
-          </div>
-          <Link
-            href={game === 'riftbound' ? '/riftbound' : `/oyun/${game}`}
-            className="text-xs font-medium transition-colors flex items-center gap-1"
-            style={{ color: accent }}
-          >
-            Tümünü Gör <ArrowUpRight className="w-3 h-3" />
-          </Link>
-        </div>
 
-        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
-          {displaySets.map(set => (
-            <Link key={set.id} href={`/set/${set.slug}`} className="flex">
-              <div
-                className="group flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-all duration-150 w-full"
-                style={{ background: 'rgba(255,255,255,0.03)', minHeight: 100 }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
-              >
-                <div className="h-10 w-full flex items-center justify-center">
-                  {set.logo_url ? (
-                    <img
-                      src={set.logo_url}
-                      alt={set.name}
-                      className="max-h-10 max-w-[110px] object-contain"
-                      onError={e => {
-                        const el = e.currentTarget as HTMLImageElement;
-                        el.style.display = 'none';
-                        const fallback = el.nextElementSibling as HTMLElement | null;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  {/* Fallback icon — shown when no logo or on img error */}
-                  <div
-                    className="items-center justify-center w-full h-full"
-                    style={{ display: set.logo_url ? 'none' : 'flex' }}
-                  >
-                    {game === 'pokemon'
-                      ? <img src="/icon-pokemon.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
-                      : <img src="/icon-riftbound.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
-                    }
-                  </div>
-                </div>
-                <span className="text-[10px] text-white/55 text-center leading-tight line-clamp-2 group-hover:text-white/80 transition-colors w-full" style={{ minHeight: '2.4em' }}>
-                  {set.name}
-                </span>
-                <span className="text-[9px] font-medium" style={{ color: accent, opacity: set.listed_cards > 0 ? 0.8 : 0, minHeight: '1em' }}>
-                  {set.listed_cards > 0 ? `${set.listed_cards} stokta` : ''}
+        {/* ── Booster Kutu & Paketler ── */}
+        {displayBoxes.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full" style={{ background: accent }} />
+                <span className="text-xs font-bold text-white/70 tracking-widest uppercase">
+                  Booster Kutu &amp; Paketler
                 </span>
               </div>
-            </Link>
-          ))}
-        </div>
-
-        {game === 'pokemon' && sets.length > 18 && (
-          <div className="mt-4 pt-4 border-t border-white/[0.06] text-center">
-            <Link
-              href="/oyun/pokemon"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
-              style={{ color: accent }}
-            >
-              +{sets.length - 18} Set Daha VAR! &nbsp;Tümü Gör <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+              <Link href="/magaza" className="text-xs font-medium flex items-center gap-1 transition-opacity hover:opacity-75" style={{ color: accent }}>
+                Tümü <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {displayBoxes.map(box => (
+                <Link key={box.id} href={`/urun/${box.slug}`} className="shrink-0">
+                  <div
+                    className="group flex flex-col gap-2 p-2.5 rounded-xl cursor-pointer transition-all duration-150 w-[108px]"
+                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.09)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                  >
+                    <div className="h-16 w-full rounded-lg overflow-hidden bg-white/[0.03]">
+                      {box.images?.[0] ? (
+                        <img src={box.images[0]} alt={box.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingBag className="w-5 h-5 text-white/20" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-white/55 leading-tight line-clamp-2 group-hover:text-white/80 transition-colors" style={{ minHeight: '2.2em' }}>
+                      {box.name}
+                    </span>
+                    <span className="text-[11px] font-bold" style={{ color: accent }}>
+                      {parseFloat(box.basePrice).toLocaleString('tr-TR', { minimumFractionDigits: 0 })} ₺
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            {sets.length > 0 && <div className="border-t border-white/[0.06] mt-5 mb-5" />}
           </div>
+        )}
+
+        {/* ── Kart Setleri ── */}
+        {sets.length > 0 && (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-1 h-5 rounded-full" style={{ background: accent }} />
+                <span className="text-sm font-bold text-white tracking-wide">
+                  {game === 'pokemon' ? 'Pokémon TCG Setleri' : 'Riftbound Setleri'}
+                </span>
+                <span className="text-xs text-white/30 ml-1">({sets.length} set)</span>
+              </div>
+              <Link
+                href={game === 'riftbound' ? '/riftbound' : `/oyun/${game}`}
+                className="text-xs font-medium transition-colors flex items-center gap-1"
+                style={{ color: accent }}
+              >
+                Tümünü Gör <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
+              {displaySets.map(set => (
+                <Link key={set.id} href={`/set/${set.slug}`} className="flex">
+                  <div
+                    className="group flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-all duration-150 w-full"
+                    style={{ background: 'rgba(255,255,255,0.03)', minHeight: 100 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                  >
+                    <div className="h-10 w-full flex items-center justify-center">
+                      {set.logo_url ? (
+                        <img
+                          src={set.logo_url}
+                          alt={set.name}
+                          className="max-h-10 max-w-[110px] object-contain"
+                          onError={e => {
+                            const el = e.currentTarget as HTMLImageElement;
+                            el.style.display = 'none';
+                            const fallback = el.nextElementSibling as HTMLElement | null;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="items-center justify-center w-full h-full"
+                        style={{ display: set.logo_url ? 'none' : 'flex' }}
+                      >
+                        {game === 'pokemon'
+                          ? <img src="/icon-pokemon.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
+                          : <img src="/icon-riftbound.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
+                        }
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-white/55 text-center leading-tight line-clamp-2 group-hover:text-white/80 transition-colors w-full" style={{ minHeight: '2.4em' }}>
+                      {set.name}
+                    </span>
+                    <span className="text-[9px] font-medium" style={{ color: accent, opacity: set.listed_cards > 0 ? 0.8 : 0, minHeight: '1em' }}>
+                      {set.listed_cards > 0 ? `${set.listed_cards} stokta` : ''}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {game === 'pokemon' && sets.length > 18 && (
+              <div className="mt-4 pt-4 border-t border-white/[0.06] text-center">
+                <Link
+                  href="/oyun/pokemon"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                  style={{ color: accent }}
+                >
+                  +{sets.length - 18} Set Daha VAR! &nbsp;Tümü Gör <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
     </motion.div>
@@ -147,6 +218,8 @@ export function Header() {
 
   const { data: pokemonSets = [] } = useCardSets('pokemon');
   const { data: riftboundSets = [] } = useCardSets('riftbound');
+  const { data: pokemonBoxes = [] } = useBoxesMini('pokemon');
+  const { data: riftboundBoxes = [] } = useBoxesMini('riftbound');
 
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden';
@@ -500,19 +573,21 @@ export function Header() {
 
         {/* ── Mega menus (absolutely positioned below header) ── */}
         <AnimatePresence>
-          {megaMenu === 'pokemon' && pokemonSets.length > 0 && (
+          {megaMenu === 'pokemon' && (pokemonSets.length > 0 || pokemonBoxes.length > 0) && (
             <MegaMenuPanel
               key="pokemon-mega"
               sets={pokemonSets}
+              boxes={pokemonBoxes}
               game="pokemon"
               onMouseEnter={cancelClose}
               onMouseLeave={delayClose}
             />
           )}
-          {megaMenu === 'riftbound' && riftboundSets.length > 0 && (
+          {megaMenu === 'riftbound' && (riftboundSets.length > 0 || riftboundBoxes.length > 0) && (
             <MegaMenuPanel
               key="riftbound-mega"
               sets={riftboundSets}
+              boxes={riftboundBoxes}
               game="riftbound"
               onMouseEnter={cancelClose}
               onMouseLeave={delayClose}
@@ -676,6 +751,18 @@ export function Header() {
                             >
                               Tümünü Gör →
                             </Link>
+                            {pokemonBoxes.length > 0 && (
+                              <>
+                                <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-1 pb-1">Ürünler</p>
+                                {pokemonBoxes.slice(0, 5).map(box => (
+                                  <Link key={box.id} href={`/urun/${box.slug}`} onClick={() => setMobileOpen(false)}
+                                    className="flex items-center py-1.5 text-[12px] text-amber-400/80 hover:text-amber-300 transition-colors">
+                                    📦 {box.name}
+                                  </Link>
+                                ))}
+                                <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-2 pb-1">Setler</p>
+                              </>
+                            )}
                             {pokemonSets.slice(0, 12).map(set => (
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
                                 className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">
@@ -737,6 +824,18 @@ export function Header() {
                             >
                               Tümünü Gör →
                             </Link>
+                            {riftboundBoxes.length > 0 && (
+                              <>
+                                <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-1 pb-1">Ürünler</p>
+                                {riftboundBoxes.slice(0, 5).map(box => (
+                                  <Link key={box.id} href={`/urun/${box.slug}`} onClick={() => setMobileOpen(false)}
+                                    className="flex items-center py-1.5 text-[12px] text-indigo-300/80 hover:text-indigo-200 transition-colors">
+                                    📦 {box.name}
+                                  </Link>
+                                ))}
+                                <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-2 pb-1">Setler</p>
+                              </>
+                            )}
                             {riftboundSets.map(set => (
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
                                 className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">

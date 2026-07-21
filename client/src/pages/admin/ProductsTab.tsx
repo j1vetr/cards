@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import {
@@ -17,6 +17,10 @@ import {
   Eye,
   ImageIcon,
   ShoppingBag,
+  Link2,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import type { Product, Category, ProductVariant, ProductDraft } from './_shared/types';
 import {
@@ -275,6 +279,39 @@ export default function ProductsTab({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ name: string; price: string; imageCount: number } | null>(null);
+  const [importError, setImportError] = useState('');
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportUrl = async () => {
+    const url = importUrl.trim();
+    if (!url) return;
+    setImportLoading(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const res = await fetch('/api/admin/import-product-url', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Hata oluştu');
+      setImportResult(data.scraped);
+      setImportUrl('');
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    } catch (e: any) {
+      setImportError(e.message || 'İçe aktarma başarısız');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return products.filter((p) => {
@@ -418,6 +455,14 @@ export default function ProductsTab({
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Bedenleri Senkronize Et</span>
               <span className="sm:hidden">Senkronize</span>
+            </SecondaryButton>
+            <SecondaryButton
+              onClick={() => { setShowImportModal(true); setImportResult(null); setImportError(''); setTimeout(() => importInputRef.current?.focus(), 80); }}
+              data-testid="button-import-url"
+              title="URL'den ürün içe aktar"
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">URL'den Al</span>
             </SecondaryButton>
             <PrimaryButton
               onClick={() => navigate('/toov-admin/products/new')}
@@ -840,6 +885,104 @@ export default function ProductsTab({
             </div>
           </div>
         </>
+      )}
+
+      {/* ── URL'den İçe Aktar Modal ── */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={e => { if (e.target === e.currentTarget) setShowImportModal(false); }}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-indigo-600" />
+                <h2 className="text-[15px] font-semibold text-neutral-800">URL'den Ürün İçe Aktar</h2>
+              </div>
+              <button onClick={() => setShowImportModal(false)} className="p-1 hover:bg-neutral-100 rounded-md">
+                <X className="w-4 h-4 text-neutral-400" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-[13px] text-neutral-500">
+                bnb-games.com veya benzeri bir ürün sayfasının URL'sini yapıştırın. İsim, açıklama ve fotoğraf otomatik alınır.
+                Ürün <strong>pasif</strong> olarak oluşturulur — fiyatı ve kategoriyi siz ayarlarsınız.
+              </p>
+
+              <div className="flex gap-2">
+                <input
+                  ref={importInputRef}
+                  type="url"
+                  value={importUrl}
+                  onChange={e => { setImportUrl(e.target.value); setImportError(''); setImportResult(null); }}
+                  onKeyDown={e => { if (e.key === 'Enter') handleImportUrl(); }}
+                  placeholder="https://bnb-games.com/riftbound-..."
+                  className="flex-1 border border-neutral-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                  data-testid="input-import-url"
+                  disabled={importLoading}
+                />
+                <button
+                  onClick={handleImportUrl}
+                  disabled={importLoading || !importUrl.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-[13px] font-medium rounded-lg transition-colors"
+                  data-testid="button-do-import-url"
+                >
+                  {importLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                  {importLoading ? 'Alınıyor…' : 'Al'}
+                </button>
+              </div>
+
+              {importError && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-red-700">{importError}</p>
+                </div>
+              )}
+
+              {importResult && (
+                <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="text-[12px] text-emerald-800 space-y-0.5">
+                    <p className="font-semibold">Ürün oluşturuldu (pasif)</p>
+                    <p>İsim: {importResult.name}</p>
+                    {importResult.price && <p>Fiyat: {importResult.price} (düzenlemeniz gerekebilir)</p>}
+                    <p>Fotoğraf: {importResult.imageCount > 0 ? `${importResult.imageCount} kaynak görsel bulundu` : 'Fotoğraf bulunamadı'}</p>
+                    <p className="text-emerald-600 mt-1">Ürünler listesinde bulup fiyatı, kategoriyi ve stoğu ayarlayabilirsiniz.</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-1">
+                <p className="text-[11px] text-neutral-400 font-medium mb-1.5">Hızlı yapıştır (bnb-games.com örnekleri):</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {[
+                    'https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-booster-box-on-siparis',
+                    'https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-booster-pack-on-siparis',
+                    'https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-champion-deck-vi-on-siparis',
+                    'https://bnb-games.com/riftbound--league-of-legends-tcg---set-two--spiritforged-booster-box',
+                    'https://bnb-games.com/riftbound--league-of-legends-tcg---set-two--spiritforged-booster-pack',
+                    'https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-booster-box-on-siparis',
+                    'https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-booster-pack-on-siparis',
+                    'https://bnb-games.com/riftbound-league-of-legends-tcg-bulk-runler-ve-saklama-kutusu',
+                  ].map(url => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => { setImportUrl(url); setImportError(''); setImportResult(null); }}
+                      className="w-full text-left text-[11px] text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded truncate transition-colors"
+                    >
+                      {url.replace('https://bnb-games.com/', '…/')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-neutral-100 flex justify-end">
+              <button onClick={() => setShowImportModal(false)} className="px-4 py-2 text-[13px] text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors">
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
