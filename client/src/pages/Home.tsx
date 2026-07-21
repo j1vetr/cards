@@ -120,6 +120,8 @@ const CARD_BG_FALLBACK = [
   'from-purple-700 to-indigo-800',
 ];
 
+type LiveCard = { id: number; url: string; slug?: string; posIdx: number };
+
 function CardFan() {
   const [isDesktop, setIsDesktop] = useState(false);
   useEffect(() => {
@@ -179,59 +181,59 @@ function CardFan() {
     return (poolData?.cards ?? []).filter(c => c.image_url).map(c => ({ url: c.image_url!, slug: c.slug }));
   }, [mode, poolData, manualCards]);
 
-  // 6 slots internally (max count) — only positions.length are rendered
-  const [slots, setSlots] = useState<(SlotItem | null)[]>(Array(6).fill(null));
-  const poolIdxRef   = useRef(count);
-  const slotIdxRef   = useRef(0);
-  const initializedRef = useRef(false);
-  const prevModeRef    = useRef(mode);
-  const prevGameRef    = useRef(game);
-  const prevCountRef   = useRef(count);
+  // ── Conveyor-belt state ────────────────────────────────────────────────────
+  // Each "live card" has a stable id so Framer can animate its position change.
+  const [liveCards, setLiveCards] = useState<LiveCard[]>([]);
+  const poolCursorRef = useRef(0);
+  const cardIdCounter = useRef(0);
+  const seededRef     = useRef(false);
+  const prevPoolKey   = useRef('');
 
-  // Reset when config changes
+  // Seed (or re-seed on pool change)
   useEffect(() => {
-    if (prevModeRef.current !== mode || prevGameRef.current !== game || prevCountRef.current !== count) {
-      prevModeRef.current  = mode;
-      prevGameRef.current  = game;
-      prevCountRef.current = count;
-      initializedRef.current = false;
-      slotIdxRef.current   = 0;
-      poolIdxRef.current   = count;
-      setSlots(Array(6).fill(null));
+    const key = imagePool.map(s => s.url).join('|');
+    if (imagePool.length === 0 || key === prevPoolKey.current) return;
+    prevPoolKey.current  = key;
+    seededRef.current    = true;
+    poolCursorRef.current = 0;
+    cardIdCounter.current = 0;
+    const initial: LiveCard[] = [];
+    for (let i = 0; i < count; i++) {
+      const item = imagePool[i % imagePool.length];
+      initial.push({ id: cardIdCounter.current++, url: item.url, slug: item.slug, posIdx: i });
     }
-  }, [mode, game, count]);
+    poolCursorRef.current = count;
+    setLiveCards(initial);
+  }, [imagePool, count]);
 
-  // Seed slots once
+  // Advance belt every 3.5 s
   useEffect(() => {
-    if (initializedRef.current) return;
-    if (imagePool.length > 0) {
-      initializedRef.current = true;
-      setSlots(prev => {
-        const next = [...prev];
-        imagePool.slice(0, count).forEach((item, i) => { next[i] = item; });
-        return next;
-      });
-      poolIdxRef.current = count;
-    }
-  }, [imagePool, mode, count]);
-
-  // Cycle one card every 3 s (both random and manual modes)
-  useEffect(() => {
-    if (imagePool.length === 0) return;
-    const id = setInterval(() => {
-      setSlots(prev => {
-        const next = [...prev];
-        const slot = slotIdxRef.current % count;
-        next[slot] = imagePool[poolIdxRef.current % imagePool.length];
-        slotIdxRef.current++;
-        poolIdxRef.current++;
-        return next;
-      });
-    }, 3000);
-    return () => clearInterval(id);
+    if (!seededRef.current || imagePool.length === 0) return;
+    const timer = setInterval(() => {
+      const item = imagePool[poolCursorRef.current % imagePool.length];
+      poolCursorRef.current++;
+      const newCard: LiveCard = { id: cardIdCounter.current++, url: item.url, slug: item.slug, posIdx: 0 };
+      setLiveCards(prev =>
+        [newCard, ...prev
+          .map(c => ({ ...c, posIdx: c.posIdx + 1 }))
+          .filter(c => c.posIdx < count)
+        ]
+      );
+    }, 3500);
+    return () => clearInterval(timer);
   }, [imagePool, count]);
 
   const [, navigate] = useLocation();
+
+  // Entry: slide in from beyond the left edge
+  const entryX = (positions[0]?.x ?? 0) - (isDesktop ? 340 : 190);
+  const entryY = (positions[0]?.y ?? 0);
+  const entryR = (positions[0]?.rotate ?? 0) - 12;
+
+  // Exit: slide out past the right edge
+  const exitX = (positions[count - 1]?.x ?? 0) + (isDesktop ? 340 : 190);
+  const exitY = (positions[count - 1]?.y ?? 0);
+  const exitR = (positions[count - 1]?.rotate ?? 0) + 12;
 
   return (
     <div
@@ -256,57 +258,51 @@ function CardFan() {
         }}
       />
 
-      {positions.map((pos, i) => {
-        const isCenter = i === centerIdx;
-        const depthZ   = 10 - Math.abs(i - centerIdx) * 2;
-        const slot     = slots[i];
+      <AnimatePresence mode="popLayout">
+        {liveCards.map((card) => {
+          const pos      = positions[card.posIdx];
+          if (!pos) return null;
+          const isCenter = card.posIdx === centerIdx;
+          const depthZ   = 10 - Math.abs(card.posIdx - centerIdx) * 2;
 
-        return (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: pos.y + 80, rotate: pos.rotate }}
-            animate={{ opacity: 1, y: pos.y, x: pos.x, rotate: pos.rotate }}
-            transition={{ duration: 0.75, delay: pos.delay, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-            style={{ position: 'absolute', bottom: 0, zIndex: depthZ }}
-          >
+          return (
             <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3.8 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
-              whileHover={{ y: 0, scale: 1.06, transition: { duration: 0.25, ease: 'easeOut' } }}
-              onClick={() => { if (slot?.slug) navigate(`/kart/${slot.slug}`); }}
-              style={{
-                width: w, height: h, borderRadius: 12, overflow: 'hidden',
-                border: isCenter ? '1.5px solid rgba(129,140,248,0.55)' : '1px solid rgba(255,255,255,0.15)',
-                boxShadow: isCenter
-                  ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
-                  : '0 14px 44px rgba(0,0,0,0.55)',
-                cursor: slot?.slug ? 'pointer' : 'default',
-              }}
+              key={card.id}
+              initial={{ opacity: 0, x: entryX, y: entryY, rotate: entryR, scale: 0.88 }}
+              animate={{ opacity: 1, x: pos.x, y: pos.y, rotate: pos.rotate, scale: 1 }}
+              exit={{ opacity: 0, x: exitX, y: exitY, rotate: exitR, scale: 0.88 }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              style={{ position: 'absolute', bottom: 0, zIndex: depthZ }}
             >
-              <AnimatePresence mode="sync" initial={false}>
-                <motion.div
-                  key={slot?.url ?? `empty-${i}`}
-                  initial={{ opacity: 0, x: -28 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 28 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  style={{ position: 'absolute', inset: 0 }}
-                >
-                  {slot?.url ? (
-                    <img
-                      src={slot.url}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
-                    />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[i % CARD_BG_FALLBACK.length]}`} />
-                  )}
-                </motion.div>
-              </AnimatePresence>
+              {/* Gentle float */}
+              <motion.div
+                animate={{ y: [0, -9, 0] }}
+                transition={{ duration: 3.8 + card.posIdx * 0.6, repeat: Infinity, ease: 'easeInOut', delay: card.posIdx * 0.3 }}
+                whileHover={{ y: 0, scale: 1.06, transition: { duration: 0.22, ease: 'easeOut' } }}
+                onClick={() => { if (card.slug) navigate(`/kart/${card.slug}`); }}
+                style={{
+                  width: w, height: h, borderRadius: 12, overflow: 'hidden',
+                  border: isCenter ? '1.5px solid rgba(129,140,248,0.55)' : '1px solid rgba(255,255,255,0.15)',
+                  boxShadow: isCenter
+                    ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
+                    : '0 14px 44px rgba(0,0,0,0.55)',
+                  cursor: card.slug ? 'pointer' : 'default',
+                }}
+              >
+                {card.url ? (
+                  <img
+                    src={card.url}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
+                  />
+                ) : (
+                  <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[card.posIdx % CARD_BG_FALLBACK.length]}`} />
+                )}
+              </motion.div>
             </motion.div>
-          </motion.div>
-        );
-      })}
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }
