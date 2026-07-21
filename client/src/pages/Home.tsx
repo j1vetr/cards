@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, type ElementType } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { motion, MotionConfig, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -167,15 +167,17 @@ function CardFan() {
     staleTime: 120_000,
   });
 
-  const imagePool = useMemo<string[]>(() => {
+  type SlotItem = { url: string; slug?: string };
+
+  const imagePool = useMemo<SlotItem[]>(() => {
     if (mode === 'manual') {
-      return (manualCards ?? []).map((c: any) => c.image_url).filter(Boolean);
+      return (manualCards ?? []).map((c: any) => ({ url: c.image_url, slug: c.slug })).filter((s: SlotItem) => s.url);
     }
-    return (poolData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
+    return (poolData?.cards ?? []).filter(c => c.image_url).map(c => ({ url: c.image_url!, slug: c.slug }));
   }, [mode, poolData, manualCards]);
 
   // 6 slots internally (max count) — only positions.length are rendered
-  const [slots, setSlots] = useState<(string | null)[]>(Array(6).fill(null));
+  const [slots, setSlots] = useState<(SlotItem | null)[]>(Array(6).fill(null));
   const poolIdxRef   = useRef(count);
   const slotIdxRef   = useRef(0);
   const initializedRef = useRef(false);
@@ -199,31 +201,20 @@ function CardFan() {
   // Seed slots once
   useEffect(() => {
     if (initializedRef.current) return;
-    if (mode === 'manual') {
-      if (imagePool.length > 0) {
-        initializedRef.current = true;
-        setSlots(prev => {
-          const next = [...prev];
-          imagePool.slice(0, count).forEach((url, i) => { next[i] = url; });
-          return next;
-        });
-      }
-    } else {
-      if (imagePool.length >= count) {
-        initializedRef.current = true;
-        setSlots(prev => {
-          const next = [...prev];
-          for (let i = 0; i < count; i++) next[i] = imagePool[i];
-          return next;
-        });
-        poolIdxRef.current = count;
-      }
+    if (imagePool.length > 0) {
+      initializedRef.current = true;
+      setSlots(prev => {
+        const next = [...prev];
+        imagePool.slice(0, count).forEach((item, i) => { next[i] = item; });
+        return next;
+      });
+      poolIdxRef.current = count;
     }
   }, [imagePool, mode, count]);
 
-  // Cycle one card every 3 s (random mode only)
+  // Cycle one card every 3 s (both random and manual modes)
   useEffect(() => {
-    if (mode !== 'random' || imagePool.length === 0) return;
+    if (imagePool.length === 0) return;
     const id = setInterval(() => {
       setSlots(prev => {
         const next = [...prev];
@@ -235,11 +226,13 @@ function CardFan() {
       });
     }, 3000);
     return () => clearInterval(id);
-  }, [imagePool, mode, count]);
+  }, [imagePool, count]);
+
+  const [, navigate] = useLocation();
 
   return (
     <div
-      className="relative flex items-center justify-center select-none pointer-events-none"
+      className="relative flex items-center justify-center"
       style={{ width: containerW, height: containerH }}
     >
       {/* Platform glow ring */}
@@ -263,7 +256,7 @@ function CardFan() {
       {positions.map((pos, i) => {
         const isCenter = i === centerIdx;
         const depthZ   = 10 - Math.abs(i - centerIdx) * 2;
-        const imgSrc   = slots[i];
+        const slot     = slots[i];
 
         return (
           <motion.div
@@ -276,26 +269,29 @@ function CardFan() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3.8 + i * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
+              whileHover={{ y: 0, scale: 1.06, transition: { duration: 0.25, ease: 'easeOut' } }}
+              onClick={() => { if (slot?.slug) navigate(`/kart/${slot.slug}`); }}
               style={{
                 width: w, height: h, borderRadius: 12, overflow: 'hidden',
                 border: isCenter ? '1.5px solid rgba(129,140,248,0.55)' : '1px solid rgba(255,255,255,0.15)',
                 boxShadow: isCenter
                   ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
                   : '0 14px 44px rgba(0,0,0,0.55)',
+                cursor: slot?.slug ? 'pointer' : 'default',
               }}
             >
               <AnimatePresence mode="sync" initial={false}>
                 <motion.div
-                  key={imgSrc ?? `empty-${i}`}
+                  key={slot?.url ?? `empty-${i}`}
                   initial={{ opacity: 0, x: -28 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 28 }}
                   transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
                   style={{ position: 'absolute', inset: 0 }}
                 >
-                  {imgSrc ? (
+                  {slot?.url ? (
                     <img
-                      src={imgSrc}
+                      src={slot.url}
                       alt=""
                       style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
                     />
