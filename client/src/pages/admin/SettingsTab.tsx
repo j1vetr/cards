@@ -401,7 +401,7 @@ function HeroCardsPicker() {
             {config.cardIds.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                  Seçili ({config.cardIds.length}/5) — soldan sağa sıra
+                  Seçili ({config.cardIds.length}/6) — soldan sağa sıra
                 </p>
                 <div className="space-y-1.5">
                   {config.cardIds.map((id, idx) => {

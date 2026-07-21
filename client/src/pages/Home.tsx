@@ -174,8 +174,8 @@ function CardFan() {
     return (poolData?.cards ?? []).filter(c => c.image_url).map(c => c.image_url!);
   }, [mode, poolData, manualCards]);
 
-  // 5 slots internally — only positions.length are rendered
-  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null]);
+  // 6 slots internally (max count) — only positions.length are rendered
+  const [slots, setSlots] = useState<(string | null)[]>(Array(6).fill(null));
   const poolIdxRef   = useRef(count);
   const slotIdxRef   = useRef(0);
   const initializedRef = useRef(false);
@@ -192,7 +192,7 @@ function CardFan() {
       initializedRef.current = false;
       slotIdxRef.current   = 0;
       poolIdxRef.current   = count;
-      setSlots([null, null, null, null, null]);
+      setSlots(Array(6).fill(null));
     }
   }, [mode, game, count]);
 
@@ -204,7 +204,7 @@ function CardFan() {
         initializedRef.current = true;
         setSlots(prev => {
           const next = [...prev];
-          imagePool.slice(0, 5).forEach((url, i) => { next[i] = url; });
+          imagePool.slice(0, count).forEach((url, i) => { next[i] = url; });
           return next;
         });
       }

@@ -5872,7 +5872,7 @@ Sitemap: ${baseUrl}/sitemap.xml
     try {
       const idsParam = req.query.ids as string;
       if (!idsParam) return res.json([]);
-      const ids = idsParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
+      const ids = idsParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 6);
       if (ids.length === 0) return res.json([]);
       const result = await storage.getCardsByIds(ids);
       res.json(result);
