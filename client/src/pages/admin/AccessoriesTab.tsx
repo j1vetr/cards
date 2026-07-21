@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Package, ImageIcon, Search } from 'lucide-react';
+import { Plus, Edit3, Trash2, Package, ImageIcon, Search, Link2 } from 'lucide-react';
 import type { Product, Category, ProductDraft } from './_shared/types';
 import {
   PageHeader,
@@ -10,9 +10,11 @@ import {
   InlineAlert,
   SearchInput,
   PrimaryButton,
+  SecondaryButton,
   StatusBadge,
 } from './_ui/AdminUI';
 import ProductModal from './modals/ProductModal';
+import ImportUrlModal from './modals/ImportUrlModal';
 
 const ACCESSORY_SLUGS = ['binder', 'sleeve', 'playmat'];
 
@@ -39,6 +41,7 @@ export default function AccessoriesTab() {
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | ProductDraft | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { data: allCategories = [] } = useQuery<Category[]>({
@@ -137,10 +140,16 @@ export default function AccessoriesTab() {
         title="Aksesuarlar"
         description="Binder, sleeve ve playmat ürünlerini yönetin."
         actions={
-          <PrimaryButton onClick={openNew} data-testid="button-new-accessory">
-            <Plus className="w-3.5 h-3.5" />
-            Yeni Ürün
-          </PrimaryButton>
+          <>
+            <SecondaryButton onClick={() => setShowImportModal(true)} data-testid="button-accessory-import-url" title="URL'den aksesuar içe aktar">
+              <Link2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">URL'den Al</span>
+            </SecondaryButton>
+            <PrimaryButton onClick={openNew} data-testid="button-new-accessory">
+              <Plus className="w-3.5 h-3.5" />
+              Yeni Ürün
+            </PrimaryButton>
+          </>
         }
       />
 
@@ -261,6 +270,13 @@ export default function AccessoriesTab() {
           isSaving={saveMutation.isPending}
         />
       )}
+
+      <ImportUrlModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        productType="accessory"
+        title="URL'den Aksesuar İçe Aktar"
+      />
     </div>
   );
 }

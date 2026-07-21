@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Package, Search, Box } from 'lucide-react';
+import { Plus, Edit3, Trash2, Package, Search, Box, Link2 } from 'lucide-react';
 import type { Product, ProductDraft, Category } from './_shared/types';
 import {
   PageHeader,
@@ -10,9 +10,11 @@ import {
   InlineAlert,
   SearchInput,
   PrimaryButton,
+  SecondaryButton,
   StatusBadge,
 } from './_ui/AdminUI';
 import ProductModal from './modals/ProductModal';
+import ImportUrlModal from './modals/ImportUrlModal';
 
 interface CardGame {
   id: string;
@@ -37,6 +39,7 @@ export default function BoxesTab() {
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | ProductDraft | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNewGame, setSelectedNewGame] = useState<string>('');
 
@@ -134,13 +137,16 @@ export default function BoxesTab() {
         title="Box & Sealed Ürünler"
         description="Booster box, Elite Trainer Box ve diğer sealed ürünleri yönetin."
         actions={
-          <PrimaryButton
-            onClick={openNew}
-            data-testid="btn-add-box"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Yeni Box Ekle
-          </PrimaryButton>
+          <>
+            <SecondaryButton onClick={() => setShowImportModal(true)} data-testid="button-box-import-url" title="URL'den box ürünü içe aktar">
+              <Link2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">URL'den Al</span>
+            </SecondaryButton>
+            <PrimaryButton onClick={openNew} data-testid="btn-add-box">
+              <Plus className="w-3.5 h-3.5" />
+              Yeni Box Ekle
+            </PrimaryButton>
+          </>
         }
       />
 
@@ -271,6 +277,23 @@ export default function BoxesTab() {
           isSaving={saveMutation.isPending}
         />
       )}
+
+      <ImportUrlModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        productType="box"
+        title="URL'den Box Ürünü İçe Aktar"
+        quickLinks={[
+          { label: 'Set 3 Unleashed — Booster Box', url: 'https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-booster-box-on-siparis' },
+          { label: 'Set 3 Unleashed — Booster Pack', url: 'https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-booster-pack-on-siparis' },
+          { label: 'Set 3 Unleashed — Champion Deck Vi', url: 'https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-champion-deck-vi-on-siparis' },
+          { label: 'Set 2 Spiritforged — Booster Box', url: 'https://bnb-games.com/riftbound--league-of-legends-tcg---set-two--spiritforged-booster-box' },
+          { label: 'Set 2 Spiritforged — Booster Pack', url: 'https://bnb-games.com/riftbound--league-of-legends-tcg---set-two--spiritforged-booster-pack' },
+          { label: 'Set 4 Vendetta — Booster Box', url: 'https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-booster-box-on-siparis' },
+          { label: 'Set 4 Vendetta — Booster Pack', url: 'https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-booster-pack-on-siparis' },
+          { label: 'Bulk Runler ve Saklama Kutusu', url: 'https://bnb-games.com/riftbound-league-of-legends-tcg-bulk-runler-ve-saklama-kutusu' },
+        ]}
+      />
     </>
   );
 }

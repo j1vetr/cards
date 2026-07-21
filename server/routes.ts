@@ -887,7 +887,7 @@ ${items.join('\n')}
   // ── URL'den ürün içe aktar ─────────────────────────────────────────────────
   app.post("/api/admin/import-product-url", requireAdmin, async (req, res) => {
     try {
-      const { url } = req.body;
+      const { url, productType: overrideType } = req.body;
       if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL gerekli' });
       const html = await fetchUrlHtml(url.trim());
       const data = parseProductFromHtml(html, url);
@@ -917,7 +917,7 @@ ${items.join('\n')}
         isFeatured: false,
         isNew: true,
         gameId: data.gameId,
-        productType: 'sealed',
+        productType: overrideType || 'sealed',
       } as any);
 
       res.json({ success: true, product, scraped: { name: cleanName, price: data.price, imageCount: data.images.length } });
