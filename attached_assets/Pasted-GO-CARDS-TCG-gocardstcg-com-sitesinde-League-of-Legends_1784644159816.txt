@@ -1,0 +1,25 @@
+GO CARDS TCG
+gocardstcg.com sitesinde League of Legends Riftbound TCG ürünleri için organik trafiği domine etmek adına bir SEO çalışması başlatıyoruz. Sitede teknik ve yapısal olarak yapmamız gereken değişikliklerin listesini aşağıda çıkarıyorum. Sırasıyla aksiyon alabilirsek çok sevinirim
+
+1. URL ve Kategori Yapısının Kurulması:
+Sitede Riftbound için özel bir kategori açalım. URL yapısı şu şekilde olsun: [gocardstcg.com/league-of-legends-riftbound-tcg](https://gocardstcg.com/league-of-legends-riftbound-tcg) veya [gocardstcg.com/riftbound](https://gocardstcg.com/riftbound)
+Bu kategorinin ana başlığı (H1 tagı) tam olarak şu olmalı: "League of Legends Riftbound TCG Ürünleri ve Kartları"
+2. Ürün İsimlendirme Formatı (Çok Önemli):
+Ürünleri siteye girerken veya mevcut olanları düzenlerken sadece "Riftbound Booster" yazmayalım. Başlıkların (Title ve H1) tam e-ticaret/SEO formatı şu şekilde güncellenmeli:
+Örnek: League of Legends Riftbound TCG Booster Pack (24'lü Kapalı Kutu)
+Ürün açıklamalarına üreticinin standart metni yerine; "Nadir kartlar", "Riftbound paket açılımı", "LoL TCG resmi kutu" gibi oyuncuların aratabileceği kelimeleri içeren özgün açıklamalar ekleyelim.
+3. Tekli Kart (Single Card) Sistemi Tasarımı:
+Rakiplerimizin yapmadığı en büyük şeyi yapıp popüler tekli kartları (Örn: Ahri Kartı, Yasuo Holo Kartı) sitede ayrı birer ürün gibi listeleyebileceğimiz bir altyapı hazırlayalım. Bu tekli kart sayfalarından da ana "Booster Pack" ürünlerine iç linkleme (link yönlendirmesi) yapacağız.
+4. Blog/Rehber Bölümü Açılması:
+Sitede oyuncuları bilgilendirebileceğimiz bir Blog altyapısı yoksa kuralım, varsa aktif edelim. "Riftbound TCG Nasıl Oynanır?", "En Değerli Kartlar Listesi" gibi içerikler girip, bu yazılardan ürün satış sayfalarımıza link çıkışı yapacağız
+5. Teknik SEO ve Google Merchant Entegrasyonu:
+Sitedeki tüm Riftbound ürünlerine Product Schema (Ürün Şeması) uygulayalım. Google aramalarında fiyat, stok durumu ve yıldızlar doğrudan görünsün.
+Google Merchant Center kurulumunu kontrol edelim, eksikler varsa tamamlayalım ki Google Alışveriş sekmelerinde rakiplerin önüne geçebilelim.
+MARKALARIN DOĞRU YAPTIKLARI VE ÖRNEK ALMAMIZ GEREKENLER
+
+BnB Games: URL ve kategori yapısında "Riftbound" ve "League of Legends TCG" kelimelerini birlikte kullanarak Google'a kendini net anlatıyor.
+Overgame: Ürün isimlerinde tüm teknik detayları (Booster Pack, 24'lü, Kapalı Kutu) belirterek Google Alışveriş aramalarında öne çıkıyor.
+
+Kutu Oyunu Al: Temiz bir altyapı ile doğrudan Riftbound'a özel filtreleme seçenekleri sunarak kullanıcı deneyimini artırıyor.
+
+Sagen Tech: Oldukça kısa ve net bir URL yapısı (/riftbound) kullanarak marka otoritesi ve resmi distribütör algısı yaratıyor.
