@@ -1,0 +1,346 @@
+Aksesuar menüsü ve ürün yönetimi
+Header navigasyonuna "Aksesuarlar" sekmesi eklenecek. Aksesuar alt kategorileri (Binder, Sleeve, Playmat) hem admin panelde manuel ürün eklemeye izin verecek hem de müşteri tarafında sıralı listelenecek. Mobil alt menüde Riftbound ile Pokémon yer değiştirecek (tek satır düzeltme, bu task'a dahil).
+
+
+Checkpoint made
+8 hours ago
+
+43 messages & 146 actions
+
+Worked for 18 minutes
+
+Started task
+Hero kart seçimi admin paneli
+Ana sayfanın hero bölümündeki dönen kart fanı şu an hardcode edilmiş: "en yeni 30 Riftbound karttan 5 tanesi random". Admin panelden hangi kartların gösterileceği, kaç tane gösterileceği ve random mı yoksa seçili mi olacağı ayarlanabilmeli.
+
+
+46 messages & 164 actions
+
+Worked for 28 minutes
+
+Started task
+Box ürünleri ve önce-box sıralama
+Booster box, Elite Trainer Box gibi mühürlü ürünler şu an genel products tablosunda tutulsa da oyuna bağlı değil ve GamePage'de listelenmiyorlar. Her oyun sayfasında önce box/sealed ürünler, sonra tekli kartlar görünmeli. Adminler hangi oyuna ait olduğunu belirterek box manuel ekleyebilmeli.
+
+
+27 messages & 117 actions
+
+Worked for 14 minutes
+Emir Simsek started: Box'lar için stok takibi ve düşük stok uyarısı
+Neler yaptın son planda anlat ne nerde
+
+6 hours ago
+
+1 message & 1 action
+Emir Simsek completed: Box'lar için stok takibi ve düşük stok uyarısı
+Updated environment
+
+Checkpoint made
+6 hours ago
+hero da ki kartlar manuel olsun random olsun farketmez o cardın üstüne gelince o animasyon dursun ve o karta tıklarsa o kartın detayına gitsin.
+
+Ek olarka manuel eklediğimde sabit duruyor kartlar soldan sağa yine gitmeli gösterecek şekilde sürekli yer değişecek yani anladın mı
+
+6 hours ago
+
+10 messages & 28 actions
+
+Checkpoint made
+6 hours ago
+
+Worked for 4 minutes
+Admin panelde boxes sayfasına veya aksesuarlar sayfasına girdiğimde bembeyaz kalıyor sayfa
+
+6 hours ago
+
+10 messages & 31 actions
+
+Checkpoint made
+6 hours ago
+
+Worked for 3 minutes
+footer da yasal sayfalar bize göre değil ecartejeanse göre yazılmış bize göre ayarla ve tasarımı da dark yap o legal sayfaları mevcut tasarımımıza uygun.
+
+6 hours ago
+
+6 messages & 24 actions
+
+Checkpoint made
+6 hours ago
+
+Worked for 5 minutes
+Yeni box eklerken veya, aksesuar ürünü eklerken ki açılan popuplara baksana alakası yok ne eklediğimiz ile ilgili polenstone.com felan da yazıyor detaylıca bakıp uygun şekilde düzenlermisin şuraları.
+
+5 hours ago
+
+14 messages & 44 actions
+
+Checkpoint made
+5 hours ago
+
+Worked for 5 minutes
+
+Pasted-GO-CARDS-TCG-gocardstcg-com-sitesinde-League-of-Legends_1784644159816.txt
+5 hours ago
+
+3 messages & 16 actions
+
+Proposed 4 tasks
+
+Worked for 2 minutes
+
+Started task
+Riftbound SEO landing page (/riftbound)
+Create a dedicated SEO-optimized landing page at /riftbound (with redirect alias /league-of-legends-riftbound-tcg) targeting the keyword "League of Legends Riftbound TCG". Currently /oyun/riftbound exists but uses a generic game page layout with no keyword optimization. This page becomes the organic traffic entry point for all Riftbound searches.
+
+
+Checkpoint made
+5 hours ago
+
+13 messages & 44 actions
+
+Worked for 7 minutes
+
+Started task
+Teknik SEO + Google Merchant feed
+Two related technical SEO improvements: (1) fix schema markup across the site so Google sees correct GoCards TCG branding (Organization schema still references "Ecarte Jeans"), and ensure every Riftbound product/card page emits a complete Product schema with price and availability so Google can show rich snippets. (2) Build a Google Merchant Center product feed endpoint so GoCards products appear in Google Shopping results.
+
+
+39 messages & 135 actions
+
+Worked for 19 minutes
+Started: Kart ↔ Booster iç linkleme
+Riftbound üstüne gelince sadece card setleri gözükmesin veya pokemonun üstüne gelince bunların booster packleri var, boxları var vs.
+
+Sana linkleri iletiyorum mesela incele anlayacaksın. Ona göre mega menüyü ayarlarsın birde riftbounda tıklayınca onun sayfasına gitsin orada kategorize olsun en üstte mutlaka eklediğimiz boxlar booster packler vs gözükmeli.
+
+Sana ürün linkleri gönderdim ya bu siteden tüm fotoğrafları alıcaz (locale indircez öyle kullancaz) , açıklamasını ve fiyatını alacak şekilde bir import yap. Aslında ben 1 tane linki gireceğim gidip alıp gelecek mesela anladınmı ona göre bir şey ayarlar mısın.
+
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-booster-box-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-booster-pack-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-champion-deck-vi-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-3-unleashed-champion-deck-vex-on-siparis
+https://bnb-games.com/riftbound--league-of-legends-tcg---set-two--spiritforged-booster-box
+https://bnb-games.com/riftbound--league-of-legends-tcg---set-two--spiritforged-booster-pack
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-booster-box-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-showdown-decks-zed-vs-shen-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-booster-pack-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-set-4-vendetta-vault-on-siparis
+https://bnb-games.com/riftbound-league-of-legends-tcg-bulk-runler-ve-saklama-kutusu
+
+5 hours ago
+
+35 messages & 108 actions
+
+Checkpoint made
+4 hours ago
+
+Worked for 13 minutes
+Box ve Aksesuarlar kısmı içinde aynı import mantığını yap, birde kontrol et locale kaydediyormu resmi ürünü kaydediyormu vs.
+
+4 hours ago
+
+20 messages & 68 actions
+
+Checkpoint made
+4 hours ago
+
+Worked for 6 minutes
+Aksesuar veya box eklerken ürün eklenemedi hatası veriyor.
+
+4 hours ago
+
+8 messages & 34 actions
+
+Checkpoint made
+4 hours ago
+
+Worked for 4 minutes
+Site title da halen Ecarte Jeans yazıyor ne alaka şu title meta ayarları olsun sitemap ayarları olsun hepsini ayarla Ecarte Jeans görmek istemiyorum herhangi bir yerde.
+
+4 hours ago
+
+11 messages & 49 actions
+
+Checkpoint made
+4 hours ago
+
+Worked for 4 minutes
+Birde import yaparken sadece 1 tane fotoğrafımı alıyor yoksa ne kadar varsa hepsini mi indiriyor felan bir bak
+
+4 hours ago
+
+7 messages & 19 actions
+
+Checkpoint made
+4 hours ago
+
+Worked for 1 minute
+Completed: Kart ↔ Booster iç linkleme
+Updated environment
+
+Checkpoint made
+4 hours ago
+Detaylı siteyi incele ne eksikler var hem görünüm men mantık bakımından söyle, admin panelide incele unutma biz kart satış sitesiyiz. Ona göre planlama yapalım
+
+4 hours ago
+
+3 messages & 12 actions
+
+Worked for 2 minutes
+Önce kırıkları düzelt, sonra mağaza sayfasını tcg ye göre ayarla. Bunları ayrı ayrı plan oluştur ama
+
+3 hours ago
+
+1 message & 7 actions
+
+Proposed 2 tasks
+
+Worked for 1 minute
+
+Started task
+Kırık sayfaları onar (attacks + box-set bağlantısı)
+Üç kritik hata var: (1) Kart detay sayfası (/kart/:slug) DB'de attacks kolonu olmadığı için 500 hatası veriyor — hiçbir kart sayfası açılmıyor. (2) Booster kutu sayfasında setine özgü kartlar yerine oyunun rastgele kartları gösteriliyor. (3) Box ↔ Set bağlantısı fuzzy substring match ile çalışıyor, yanlış kutu gösterebilir; admin elle tanımlayabilmeli.
+
+
+Checkpoint made
+3 hours ago
+
+25 messages & 108 actions
+
+Worked for 11 minutes
+
+Started task
+TCG kart katalog sayfası (/kartlar)
+Şu anki /magaza sayfası eski genel ürün mağazası — TCG'ye özgü değil. Müşterinin tüm kartları fiyat, nadirlik, koşul ve oyun/set bazında filtreleyip sıralayabileceği bir kart katalog sayfası yok. Bu, TCG marketplace'in en temel alışveriş akışı.
+
+
+26 messages & 89 actions
+
+Worked for 14 minutes
+Box & Selaed kısmınra url den alıyoruz ya, açıklamayı tam çekmiyor ve sonuna kaynak ekliyor. Kaynak eklememesi lazım ve açıklamayı tam çekmeli.
+
+Bu sorunu hallettikten sonra toplu url şeklinde de yappabilmeliyiz sırayla yapsın gibi.
+
+1 hour ago
+
+4 messages & 17 actions
+
+Proposed 1 task
+
+Worked for 1 minute
+
+Started task
+URL import: açıklama düzelt + toplu import
+Admin panelindeki URL'den ürün import özelliğinin iki sorunu var:
+
+"Kaynak: URL" eklenmesi — server/routes.ts:917 satırında description'ın sonuna \n\nKaynak: ${url} yapıştırılıyor. Bu istenmiyor; ürün açıklaması olduğu gibi kaydedilmeli.
+Açıklama eksik/kısa çekiliyor — parseProductFromHtml önce LD+JSON Product.description'a, bulamazsa og:description meta etiketine bakıyor. og:description sosyal medya önizlemesi için tasarlandığından genellikle 160 karakterle kısıtlı oluyor. Ürünün gerçek açıklaması HTML gövdesinde (örn. .product-description, [itemprop=description], .woocommerce-product-details__short-description) bulunuyor ama şu an bu alan taranmıyor.
+Toplu URL import yok — Şu an sadece tek tek URL girilebiliyor; yöneticinin onlarca ürünü teker teker eklemesi gerekiyor.
+
+Checkpoint made
+1 hour ago
+
+11 messages & 38 actions
+
+Worked for 8 minutes
+ana sayfada hero sonrası rift bound kısmı varya, orada öne çıkan kartlara random 1 sıra göster. Şuan boş gözüküyor riftbound kartları olduğu halde.
+
+46 minutes ago
+
+8 messages & 21 actions
+
+Checkpoint made
+43 minutes ago
+
+Worked for 2 minutes
+Şimdi biliyorsun box mantığını ekledik ve bunların ilk gözükmesi lazım card olarak vitrin gibi.
+
+Riftbound cardlarından önce yani herodan hemen sonra gözükmesi gerekli hepsi mevcut olanlar ve güzel gözükmeli.
+
+Hatta buraya efekt felan bile koyulabilir daha öne çıksın diye.
+
+42 minutes ago
+
+11 messages & 46 actions
+
+Checkpoint made
+38 minutes ago
+
+Worked for 4 minutes
+Hero da mesela manuel kartları ekledim 5 tane sıralı şekilde duruyor sıkıntı yok, ama animasyon yok yani en soldaki yavaş yavaş en sağa gelmeli animasyonla.
+
+37 minutes ago
+
+6 messages & 20 actions
+
+Checkpoint made
+33 minutes ago
+
+Worked for 4 minutes
+Ana sayfada box sealed ürünler sağdan kesilmiş gibi bo kısmı güzel yap yaratıcı ol, yapay zeka esintileri verme.
+
+33 minutes ago
+
+6 messages & 19 actions
+
+Checkpoint made
+30 minutes ago
+
+Worked for 3 minutes
+
+Attached Image
+bak böyle gözüküyor sence doğrumu ?
+
+25 minutes ago
+
+3 messages & 9 actions
+
+Checkpoint made
+23 minutes ago
+
+Worked for 2 minutes
+Sağdan kesilsin istemiyorum ya o section da tam ortalı dursun kesilen bir şey görmek istemiyorum o kısımda
+
+22 minutes ago
+
+5 messages & 16 actions
+
+Checkpoint made
+21 minutes ago
+
+Worked for 1 minute
+Şuan güzel ama tüm ürünleri göstermesin mesela 8 tane göstersin devamını hani diğerlerini de gör tarzı bir cta olsun anladın.
+
+19 minutes ago
+
+3 messages & 12 actions
+
+Checkpoint made
+17 minutes ago
+
+Worked for 1 minute
+Hero da bir kartın üstüne gelince diğer cardlar ve o kendi kendine büyüyor sonsuz, tam istediğim çalışmıyor orası. 2 kart da yanyana gözükmemeli en sağdaki en sola gelicek onun solundaki sağa gelicek yani yer değiştirecekler ama üst üste gelmeyecekler.
+
+13 minutes ago
+
+3 messages & 10 actions
+
+Checkpoint made
+10 minutes ago
+
+Worked for 3 minutes
+Biz bugün yani son 14 saat içerisinde neler yaptık bana detaylıca açıklar mısın şimdi müşterime ileteceğim, bugün kü yaptığımız tüm değişiklikler.
+
+9 minutes ago
+Ana sayfada seledler max 8 ya 10 olsun
+
+4 minutes ago
+
+2 messages & 12 actions
+
+Checkpoint made
+3 minutes ago
+
+Worked for 1 minute
+Biz bugün yani son 14 saat içerisinde neler yaptık bana detaylıca açıklar mısın şimdi müşterime ileteceğim, bugün kü yaptığımız tüm değişiklikler.
