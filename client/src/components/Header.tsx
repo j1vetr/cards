@@ -62,7 +62,7 @@ function MegaMenuPanel({
             <span className="text-xs text-white/30 ml-1">({sets.length} set)</span>
           </div>
           <Link
-            href={`/oyun/${game}`}
+            href={game === 'riftbound' ? '/riftbound' : `/oyun/${game}`}
             className="text-xs font-medium transition-colors flex items-center gap-1"
             style={{ color: accent }}
           >
@@ -362,7 +362,7 @@ export function Header() {
                 onMouseLeave={delayClose}
               >
                 <button
-                  className={`${navCls(isActive('/oyun/riftbound'))} flex items-center gap-1`}
+                  className={`${navCls(isActive('/riftbound') || isActive('/oyun/riftbound'))} flex items-center gap-1`}
                   data-testid="button-nav-riftbound"
                 >
                   Riftbound
@@ -731,9 +731,9 @@ export function Header() {
                         >
                           <div className="pl-3 pb-3 border-l border-orange-700/30 ml-1">
                             <Link
-                              href="/oyun/riftbound"
+                              href="/riftbound"
                               onClick={() => setMobileOpen(false)}
-                              className="flex items-center py-2 text-[12px] font-semibold text-[#EF7D00] hover:text-orange-400 transition-colors"
+                              className="flex items-center py-2 text-[12px] font-semibold text-[#818cf8] hover:text-indigo-400 transition-colors"
                             >
                               Tümünü Gör →
                             </Link>

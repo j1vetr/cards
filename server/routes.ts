@@ -229,6 +229,11 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+  // 301 redirect — SEO alternate URL for Riftbound
+  app.get('/league-of-legends-riftbound-tcg', (_req, res) => {
+    res.redirect(301, '/riftbound');
+  });
+
   // Dynamic sitemap.xml — categories + products + static pages
   app.get(["/sitemap.xml", "/sitemap_index.xml"], async (_req, res) => {
     try {
