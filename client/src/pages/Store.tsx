@@ -3,16 +3,31 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
-import { useLocation, useSearch } from 'wouter';
+import { useLocation, useSearch, Link } from 'wouter';
 import {
   SlidersHorizontal, X, Search, ChevronLeft, ChevronRight,
-  Layers, Grid3X3, LayoutGrid,
+  Layers, Grid3X3, LayoutGrid, Package,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCards, useCardSets, useCardGames, useRarities, useCardTypes } from '@/hooks/useTcg';
+import { useQuery } from '@tanstack/react-query';
+
+interface BoxProduct {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: string;
+  images: string[];
+}
+
+const PRODUCT_TYPES = [
+  { value: '', label: 'Tümü' },
+  { value: 'card', label: 'Tekli Kart' },
+  { value: 'box', label: 'Box & Sealed' },
+];
 
 const LIMIT = 24;
 
@@ -47,11 +62,25 @@ export default function Store() {
   const selectedRarity = urlParams.get('rarity') || '';
   const selectedType = urlParams.get('type') || '';
   const selectedCondition = urlParams.get('condition') || '';
+  const selectedProductType = urlParams.get('productType') || '';
   const searchQuery = urlParams.get('search') || '';
   const sort = urlParams.get('sort') || 'newest';
   const page = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
   const urlMinPrice = parseInt(urlParams.get('minPrice') || '0', 10);
   const urlMaxPrice = parseInt(urlParams.get('maxPrice') || String(MAX_PRICE), 10);
+
+  const showBoxView = selectedProductType === 'box';
+  const { data: boxProducts = [], isLoading: boxesLoading } = useQuery<BoxProduct[]>({
+    queryKey: ['boxes', selectedGame],
+    queryFn: () => {
+      const url = selectedGame
+        ? `/api/products/boxes?game=${encodeURIComponent(selectedGame)}`
+        : '/api/products/boxes';
+      return fetch(url).then(r => r.json());
+    },
+    enabled: showBoxView,
+    staleTime: 60_000,
+  });
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [localPriceRange, setLocalPriceRange] = useState<[number, number]>([urlMinPrice, urlMaxPrice]);
@@ -114,6 +143,7 @@ export default function Store() {
   }, [localSearch]);
 
   const activeFilterCount = [selectedGame, selectedSet, selectedRarity, selectedType, selectedCondition,
+    selectedProductType,
     urlMinPrice > 0 || urlMaxPrice < MAX_PRICE ? 'price' : ''].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -124,6 +154,26 @@ export default function Store() {
 
   const FiltersPanel = () => (
     <div className="space-y-6">
+      <div>
+        <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Ürün Türü</p>
+        <div className="space-y-0.5">
+          {PRODUCT_TYPES.map(pt => (
+            <button
+              key={pt.value}
+              data-testid={`filter-product-type-${pt.value || 'all'}`}
+              onClick={() => setFilter({ productType: pt.value || null, page: null })}
+              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
+                selectedProductType === pt.value
+                  ? 'bg-indigo-600/20 text-indigo-300 font-medium'
+                  : 'text-white/55 hover:bg-white/[0.06] hover:text-white/80'
+              }`}
+            >
+              {pt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {games.length > 0 && (
         <div>
           <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Oyun</p>
@@ -413,6 +463,7 @@ export default function Store() {
             )}
 
             {/* Result count */}
+            {!showBoxView && (
             <div className="flex items-center gap-3 mb-5">
               <p className="text-sm text-white/35">
                 {isLoading ? 'Yükleniyor...' : (
@@ -420,58 +471,124 @@ export default function Store() {
                 )}
               </p>
             </div>
+            )}
 
-            {/* Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {Array.from({ length: LIMIT }).map((_, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden animate-pulse" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div className="aspect-[63/88]" style={{ background: 'rgba(255,255,255,0.05)' }} />
-                    <div className="p-3 space-y-2">
-                      <div className="h-3 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                      <div className="h-4 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                      <div className="h-3 rounded w-3/4" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                    </div>
+            {/* Box view */}
+            {showBoxView && (
+              <div>
+                {boxesLoading ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="rounded-xl overflow-hidden animate-pulse" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div className="aspect-square" style={{ background: 'rgba(255,255,255,0.05)' }} />
+                        <div className="p-3 space-y-2">
+                          <div className="h-3 rounded w-3/4" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                          <div className="h-4 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : boxProducts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <Package className="w-7 h-7 text-white/20" />
+                    </div>
+                    <p className="text-lg font-semibold text-white/60 mb-2">Box ürünü bulunamadı</p>
+                    <p className="text-sm text-white/30">Henüz box ürünü eklenmemiş</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {boxProducts.map(box => {
+                      const img = box.images?.[0];
+                      const price = parseFloat(box.basePrice);
+                      return (
+                        <Link key={box.id} href={`/urun/${box.slug}`}>
+                          <div
+                            className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02]"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                            data-testid={`card-box-${box.id}`}
+                          >
+                            <div className="aspect-square overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                              {img ? (
+                                <img src={img} alt={box.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Package className="w-12 h-12 text-zinc-700" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-3">
+                              <p className="text-xs font-semibold text-zinc-200 leading-tight line-clamp-2 group-hover:text-white transition-colors mb-2">
+                                {box.name}
+                              </p>
+                              {!Number.isNaN(price) && (
+                                <p className="text-sm font-bold text-indigo-400 tabular-nums">
+                                  {price.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            ) : cards.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  <Search className="w-7 h-7 text-white/20" />
-                </div>
-                <p className="text-lg font-semibold text-white/60 mb-2">Kart bulunamadı</p>
-                <p className="text-sm text-white/30 mb-6">Filtreleri değiştirerek tekrar deneyin</p>
-                <button
-                  onClick={clearFilters}
-                  className="text-sm px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-colors"
-                >
-                  Filtreleri Temizle
-                </button>
-              </div>
-            ) : (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${selectedGame}-${selectedSet}-${selectedRarity}-${page}-${sort}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`grid gap-4 ${
-                    gridCols === 3
-                      ? 'grid-cols-2 sm:grid-cols-3'
-                      : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4'
-                  }`}
-                >
-                  {cards.map(card => (
-                    <CardCard key={card.id} card={card} />
+            )}
+
+            {/* Card Grid */}
+            {!showBoxView && (
+              isLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: LIMIT }).map((_, i) => (
+                    <div key={i} className="rounded-xl overflow-hidden animate-pulse" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="aspect-[63/88]" style={{ background: 'rgba(255,255,255,0.05)' }} />
+                      <div className="p-3 space-y-2">
+                        <div className="h-3 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                        <div className="h-4 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                        <div className="h-3 rounded w-3/4" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                      </div>
+                    </div>
                   ))}
-                </motion.div>
-              </AnimatePresence>
+                </div>
+              ) : cards.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <Search className="w-7 h-7 text-white/20" />
+                  </div>
+                  <p className="text-lg font-semibold text-white/60 mb-2">Kart bulunamadı</p>
+                  <p className="text-sm text-white/30 mb-6">Filtreleri değiştirerek tekrar deneyin</p>
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                </div>
+              ) : (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${selectedGame}-${selectedSet}-${selectedRarity}-${page}-${sort}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={`grid gap-4 ${
+                      gridCols === 3
+                        ? 'grid-cols-2 sm:grid-cols-3'
+                        : 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4'
+                    }`}
+                  >
+                    {cards.map(card => (
+                      <CardCard key={card.id} card={card} />
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              )
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {!showBoxView && totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
                 <button
                   data-testid="btn-prev-page"

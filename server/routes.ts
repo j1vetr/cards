@@ -1205,6 +1205,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/products/boxes", async (req, res) => {
+    try {
+      const gameSlug = req.query.game as string | undefined;
+      const boxes = await storage.getBoxProducts(gameSlug);
+      res.json(boxes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch box products" });
+    }
+  });
+
   app.get("/api/products/facets", async (req, res) => {
     try {
       const { categoryId, search, minPrice, maxPrice } = req.query;

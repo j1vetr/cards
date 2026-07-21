@@ -4,9 +4,27 @@ import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
 import { useCardGames, useCardSets, useCards } from '@/hooks/useTcg';
-import { ChevronRight, ChevronLeft, Loader2, Search, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, Search, X, Package } from 'lucide-react';
 import { useMemo, useState, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+
+interface BoxProduct {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: string;
+  images: string[];
+  isActive: boolean;
+}
+
+function useBoxProducts(gameSlug: string) {
+  return useQuery<BoxProduct[]>({
+    queryKey: ['boxes', gameSlug],
+    queryFn: () => fetch(`/api/products/boxes?game=${encodeURIComponent(gameSlug)}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+}
 
 const CARD_LIMIT = 24;
 
@@ -76,6 +94,7 @@ export default function GamePage() {
 
   const { data: games = [] } = useCardGames();
   const { data: sets = [], isLoading: setsLoading } = useCardSets(gameSlug);
+  const { data: boxes = [] } = useBoxProducts(gameSlug);
   const { data: cardsData, isLoading: cardsLoading } = useCards({
     game: gameSlug,
     sort: cardSort,
@@ -196,6 +215,64 @@ export default function GamePage() {
       </div>
 
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-14">
+
+        {/* ── Box & Sealed ── */}
+        {boxes.length > 0 && (
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-5 rounded-full" style={{ background: cfg.accent }} />
+              <h2 className="text-lg font-bold text-white">Box & Sealed Ürünler</h2>
+              <span className="text-xs text-zinc-500">{boxes.length} ürün</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin -mx-1 px-1">
+              {boxes.map(box => {
+                const img = box.images?.[0];
+                const price = parseFloat(box.basePrice);
+                return (
+                  <Link key={box.id} href={`/urun/${box.slug}`}>
+                    <div
+                      className="group shrink-0 w-36 sm:w-44 cursor-pointer rounded-xl overflow-hidden transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = `${cfg.accent}50`;
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                      }}
+                    >
+                      <div className="aspect-square overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        {img ? (
+                          <img
+                            src={img}
+                            alt={box.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-10 h-10 text-zinc-700" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <p className="text-xs font-semibold text-zinc-200 leading-tight line-clamp-2 group-hover:text-white transition-colors mb-1.5">
+                          {box.name}
+                        </p>
+                        {!Number.isNaN(price) && (
+                          <p className="text-sm font-bold tabular-nums" style={{ color: cfg.accent }}>
+                            {price.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ── Sets Grid ── */}
         {sets.length > 0 && (

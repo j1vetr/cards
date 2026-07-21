@@ -15,6 +15,7 @@ import {
   Layers,
   BookOpen,
   ShoppingBag,
+  Box,
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
@@ -34,6 +35,7 @@ export const VALID_TABS: TabType[] = [
   'cards',
   'card-sets',
   'accessories',
+  'boxes',
 ];
 
 export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
@@ -51,6 +53,7 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
       { id: 'card-sets', icon: BookOpen, label: 'Kart Setleri' },
       { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
       { id: 'accessories', icon: ShoppingBag, label: 'Aksesuarlar' },
+      { id: 'boxes', icon: Box, label: 'Box & Sealed' },
     ],
   },
   {

@@ -90,6 +90,20 @@ app.use((req, res, next) => {
     console.error("[index] WhatsApp default-template upgrade failed:", err);
   }
 
+  // products tablosuna game_id ve product_type kolonlarını idempotent ekle
+  try {
+    const { db } = await import("./db");
+    const { sql: sqlTag } = await import("drizzle-orm");
+    await db.execute(sqlTag`
+      ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS game_id VARCHAR REFERENCES card_games(id),
+        ADD COLUMN IF NOT EXISTS product_type TEXT NOT NULL DEFAULT 'other'
+    `);
+    console.log("[migrate] products.game_id + product_type ensured");
+  } catch (err) {
+    console.error("[migrate] products column migration failed:", err);
+  }
+
   // Aksesuar kategorilerini idempotent olarak seed et
   try {
     const { db } = await import("./db");

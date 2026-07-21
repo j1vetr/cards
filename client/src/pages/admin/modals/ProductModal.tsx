@@ -52,15 +52,23 @@ function generateSlug(name: string) {
     .replace(/^-+|-+$/g, '');
 }
 
+interface CardGame {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export default function ProductModal({
   product,
   categories,
+  games = [],
   onClose,
   onSave,
   isSaving,
 }: {
   product: Product | ProductDraft | null;
   categories: Category[];
+  games?: CardGame[];
   onClose: () => void;
   onSave: (product: Partial<Product>) => void;
   isSaving: boolean;
@@ -91,6 +99,8 @@ export default function ProductModal({
     isActive: product?.isActive ?? true,
     isFeatured: product?.isFeatured ?? false,
     isNew: product?.isNew ?? false,
+    productType: (product as any)?.productType || 'other',
+    gameId: (product as any)?.gameId || '',
     initialStock: '',
   });
 
@@ -127,6 +137,8 @@ export default function ProductModal({
       isActive: product?.isActive ?? true,
       isFeatured: product?.isFeatured ?? false,
       isNew: product?.isNew ?? false,
+      productType: (product as any)?.productType || 'other',
+      gameId: (product as any)?.gameId || '',
       initialStock: '',
     });
     setPendingFiles([]);
@@ -226,8 +238,9 @@ export default function ProductModal({
     });
   };
 
+  const isBox = formData.productType === 'box';
   const isValid =
-    !!formData.name.trim() && !!formData.basePrice.trim() && formData.categoryIds.length > 0;
+    !!formData.name.trim() && !!formData.basePrice.trim() && (isBox || formData.categoryIds.length > 0);
   const totalImageCount = formData.images.length + pendingFiles.length;
   const previewImages = useMemo(() => {
     const list = [
@@ -268,7 +281,9 @@ export default function ProductModal({
         <>
           <p className="mr-auto text-[12px] text-neutral-500 hidden sm:block">
             {!isValid ? (
-              <span className="text-amber-700">Ürün adı, fiyat ve en az bir kategori gerekli.</span>
+              <span className="text-amber-700">
+                {isBox ? 'Ürün adı ve fiyat gerekli.' : 'Ürün adı, fiyat ve en az bir kategori gerekli.'}
+              </span>
             ) : pendingFiles.length > 0 ? (
               <span>
                 {pendingFiles.length} resim kaydederken yüklenecek
@@ -357,6 +372,34 @@ export default function ProductModal({
               </p>
             </div>
 
+            {games.length > 0 && isBox && (
+              <div className="mt-3">
+                <FormField label="Oyun" required>
+                  <div className="flex flex-wrap gap-1.5">
+                    {games.map((g) => {
+                      const sel = formData.gameId === g.id;
+                      return (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, gameId: g.id })}
+                          className={`px-2.5 h-7 rounded-md text-[12px] font-medium transition-colors border ${
+                            sel
+                              ? 'bg-neutral-900 text-white border-neutral-900'
+                              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                          }`}
+                          data-testid={`button-game-${g.slug}`}
+                        >
+                          {g.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FormField>
+              </div>
+            )}
+
+            {!isBox && (
             <div className="mt-3">
               <FormField
                 label="Kategoriler"
@@ -394,6 +437,7 @@ export default function ProductModal({
                 </div>
               </FormField>
             </div>
+            )}
           </section>
 
           {/* Section 2 — Açıklama */}

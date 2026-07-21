@@ -336,6 +336,9 @@ export interface IStorage {
 
   // Hero fan — fetch ordered card data by explicit IDs
   getCardsByIds(ids: string[]): Promise<any[]>;
+
+  // Box & Sealed products
+  getBoxProducts(gameSlug?: string): Promise<Product[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -2934,6 +2937,19 @@ export class DbStorage implements IStorage {
       .where(and(inArray(cards.id, ids), eq(cards.isActive, true)));
     const map = new Map(rows.map(r => [r.id, r]));
     return ids.map(id => map.get(id)).filter(Boolean);
+  }
+
+  async getBoxProducts(gameSlug?: string): Promise<Product[]> {
+    if (gameSlug) {
+      const [game] = await db.select({ id: cardGames.id }).from(cardGames).where(eq(cardGames.slug, gameSlug)).limit(1);
+      if (!game) return [];
+      return db.select().from(products).where(
+        and(eq(products.productType, 'box'), eq(products.gameId, game.id), eq(products.isActive, true))
+      ).orderBy(desc(products.createdAt));
+    }
+    return db.select().from(products).where(
+      and(eq(products.productType, 'box'), eq(products.isActive, true))
+    ).orderBy(desc(products.createdAt));
   }
 
 }

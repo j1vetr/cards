@@ -14,6 +14,8 @@ export interface Product {
   isFeatured: boolean;
   isNew: boolean;
   discountBadge?: string | null;
+  gameId?: string | null;
+  productType?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -155,4 +157,5 @@ export type TabType =
   | 'card-api-sync'
   | 'cards'
   | 'card-sets'
-  | 'accessories';
+  | 'accessories'
+  | 'boxes';
