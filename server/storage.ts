@@ -2949,15 +2949,16 @@ export class DbStorage implements IStorage {
   }
 
   async getBoxProducts(gameSlug?: string): Promise<Product[]> {
+    const boxOrSealed = inArray(products.productType, ['box', 'sealed']);
     if (gameSlug) {
       const [game] = await db.select({ id: cardGames.id }).from(cardGames).where(eq(cardGames.slug, gameSlug)).limit(1);
       if (!game) return [];
       return db.select().from(products).where(
-        and(eq(products.productType, 'box'), eq(products.gameId, game.id), eq(products.isActive, true))
+        and(boxOrSealed, eq(products.gameId, game.id), eq(products.isActive, true))
       ).orderBy(desc(products.createdAt));
     }
     return db.select().from(products).where(
-      and(eq(products.productType, 'box'), eq(products.isActive, true))
+      and(boxOrSealed, eq(products.isActive, true))
     ).orderBy(desc(products.createdAt));
   }
 

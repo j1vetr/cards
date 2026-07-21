@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
-import { useCardSets, useCards, type CardSetPublic } from '@/hooks/useTcg';
+import { useCardSets, useCards, useCardGames, type CardSetPublic } from '@/hooks/useTcg';
 import type { CardPublic } from '@/components/CardCard';
 import {
   ShieldCheck,
@@ -16,6 +16,9 @@ import {
   ChevronDown,
   Layers,
   Zap,
+  Boxes,
+  ShoppingCart,
+  Sparkles,
 } from 'lucide-react';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -513,6 +516,238 @@ function HeroSection() {
 }
 
 
+// ── Box & Sealed Showcase ────────────────────────────────────────────────────
+
+interface BoxProduct {
+  id: string;
+  name: string;
+  slug: string;
+  images: string[];
+  basePrice: string;
+  gameId: string | null;
+  productType: string;
+  stock: number;
+  isNew: boolean;
+  isFeatured: boolean;
+}
+
+function BoxShowcaseSection() {
+  const { data: boxProducts = [] } = useQuery<BoxProduct[]>({
+    queryKey: ['box-products-home'],
+    queryFn: () => fetch('/api/products/boxes').then(r => r.json()),
+    staleTime: 120_000,
+  });
+  const { data: games = [] } = useCardGames();
+
+  if (!boxProducts.length) return null;
+
+  const gameColor = (gameId: string | null) => {
+    const g = games.find(g => g.id === gameId);
+    if (!g) return { accent: '#818cf8', label: 'TCG' };
+    if (g.slug === 'pokemon') return { accent: '#f59e0b', label: 'Pokémon TCG' };
+    if (g.slug === 'riftbound') return { accent: '#818cf8', label: 'Riftbound' };
+    return { accent: '#818cf8', label: g.name };
+  };
+
+  const formatPrice = (val: string) => {
+    const n = parseFloat(val);
+    if (Number.isNaN(n)) return '—';
+    return `${n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺`;
+  };
+
+  return (
+    <section
+      className="relative overflow-hidden py-16"
+      style={{ background: 'linear-gradient(180deg, #0d1427 0%, #080e1c 100%)' }}
+      data-testid="section-box-showcase"
+    >
+      {/* Background glow blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[120px] opacity-20"
+          style={{ background: 'radial-gradient(circle, #818cf8, transparent)' }} />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full blur-[100px] opacity-15"
+          style={{ background: 'radial-gradient(circle, #f59e0b, transparent)' }} />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5 }}
+          className="flex items-end justify-between mb-8"
+        >
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1 h-5 rounded-full bg-indigo-400" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" />
+                Sealed Ürünler
+              </span>
+            </div>
+            <h2
+              className="text-3xl sm:text-4xl font-bold text-white"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              Box &amp; Sealed
+            </h2>
+          </div>
+          <Link href="/kartlar?type=Box+%26+Sealed">
+            <button
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium border rounded-lg px-4 py-2 transition-colors text-indigo-400 border-indigo-400/40 hover:border-indigo-400/80 hover:bg-indigo-400/5"
+              data-testid="btn-box-tumu"
+            >
+              Tümünü Gör <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </motion.div>
+
+        {/* Horizontal scroll */}
+        <div className="relative">
+          {/* Left/right fade edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, #080e1c, transparent)' }} />
+          <div className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to left, #080e1c, transparent)' }} />
+
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.55 }}
+            className="flex gap-5 overflow-x-auto pb-4 px-1"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {boxProducts.map((product, idx) => {
+              const { accent, label } = gameColor(product.gameId);
+              const img = product.images?.[0];
+              const price = formatPrice(product.basePrice);
+              const lowStock = product.stock > 0 && product.stock <= 5;
+              const outOfStock = product.stock === 0;
+
+              return (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-20px' }}
+                  transition={{ duration: 0.45, delay: Math.min(idx * 0.07, 0.42) }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  className="shrink-0 relative group cursor-pointer"
+                  style={{ width: 220 }}
+                  data-testid={`box-card-${product.id}`}
+                >
+                  <Link href={`/urun/${product.slug}`}>
+                    <div
+                      className="relative rounded-2xl overflow-hidden border transition-all duration-300"
+                      style={{
+                        height: 300,
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        background: 'rgba(255,255,255,0.03)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      {/* Hover glow ring */}
+                      <div
+                        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
+                        style={{ boxShadow: `inset 0 0 0 1.5px ${accent}60, 0 0 40px ${accent}30` }}
+                      />
+
+                      {/* Product image */}
+                      {img ? (
+                        <img
+                          src={img}
+                          alt={product.name}
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          style={{ background: '#0d1427' }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center"
+                          style={{ background: `linear-gradient(135deg, #0d1427, ${accent}22)` }}>
+                          <Boxes className="w-16 h-16 opacity-20" style={{ color: accent }} />
+                        </div>
+                      )}
+
+                      {/* Bottom gradient overlay */}
+                      <div
+                        className="absolute inset-x-0 bottom-0 h-36 pointer-events-none"
+                        style={{ background: 'linear-gradient(to top, rgba(6,8,20,0.97) 0%, rgba(6,8,20,0.6) 60%, transparent 100%)' }}
+                      />
+
+                      {/* Game badge — top left */}
+                      <div className="absolute top-3 left-3 z-10">
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                          style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}44` }}
+                        >
+                          {label}
+                        </span>
+                      </div>
+
+                      {/* New badge — top right */}
+                      {product.isNew && (
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            Yeni
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Info row at bottom */}
+                      <div className="absolute inset-x-0 bottom-0 p-3 z-10">
+                        <p className="text-[13px] font-semibold text-white leading-snug line-clamp-2 mb-2">
+                          {product.name}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-base font-bold tabular-nums" style={{ color: accent }}>
+                            {price}
+                          </span>
+                          {outOfStock ? (
+                            <span className="text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
+                              Tükendi
+                            </span>
+                          ) : lowStock ? (
+                            <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                              Son {product.stock}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {/* CTA — visible on hover */}
+                        <div className="mt-2 overflow-hidden max-h-0 group-hover:max-h-12 transition-all duration-300">
+                          <button
+                            className="w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-1.5 rounded-lg transition-colors"
+                            style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}44` }}
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            İncele
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        {/* Mobile CTA */}
+        <div className="mt-6 text-center sm:hidden">
+          <Link href="/kartlar?type=Box+%26+Sealed">
+            <button className="inline-flex items-center gap-1.5 text-sm font-medium border rounded-lg px-5 py-2.5 text-indigo-400 border-indigo-400/40">
+              Tümünü Gör <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
 // ── Set scroll row ──────────────────────────────────────────────────────────
 
 function SetScrollRow({
@@ -766,6 +1001,7 @@ export default function Home() {
       <MotionConfig reducedMotion="user">
         <main style={{ background: '#080e1c' }}>
           <HeroSection />
+          <BoxShowcaseSection />
 
           <GameSection
             game="riftbound"
