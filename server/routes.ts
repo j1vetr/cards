@@ -893,8 +893,13 @@ ${items.join('\n')}
       const data = parseProductFromHtml(html, url);
       if (!data.name) return res.status(422).json({ error: 'Sayfadan ürün bilgisi çıkarılamadı. Lütfen manuel oluşturun.' });
 
-      const mainImageUrl = data.images.find(img => !img.includes('/theme-images/')) || data.images[0] || '';
-      const imagePath = mainImageUrl ? await downloadProductImage(mainImageUrl, uploadDir) : null;
+      // Tüm görselleri filtrele ve paralel indir (en fazla 10, tema görselleri hariç)
+      const candidateImages = data.images
+        .filter(img => img && !img.includes('/theme-images/') && img.startsWith('http'))
+        .slice(0, 10);
+      const downloadedPaths = (
+        await Promise.all(candidateImages.map(img => downloadProductImage(img, uploadDir)))
+      ).filter((p): p is string => p !== null);
 
       const cleanName = data.name.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
       const slugBase = cleanName.toLowerCase()
@@ -912,7 +917,7 @@ ${items.join('\n')}
         description: data.description ? `${data.description}\n\nKaynak: ${url}` : `Kaynak: ${url}`,
         basePrice: data.price ? data.price.replace(',', '.') : '0',
         categoryId,
-        images: imagePath ? [imagePath] : [],
+        images: downloadedPaths,
         isActive: false,
         isFeatured: false,
         isNew: true,
@@ -920,7 +925,7 @@ ${items.join('\n')}
         productType: overrideType || 'sealed',
       } as any);
 
-      res.json({ success: true, product, scraped: { name: cleanName, price: data.price, imageCount: data.images.length } });
+      res.json({ success: true, product, scraped: { name: cleanName, price: data.price, imageCount: downloadedPaths.length, foundCount: data.images.length } });
     } catch (err: any) {
       console.error('[import-url]', err);
       res.status(500).json({ error: err.message || 'İçe aktarma başarısız' });

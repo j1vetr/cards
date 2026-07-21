@@ -6,6 +6,7 @@ interface ImportResult {
   name: string;
   price: string;
   imageCount: number;
+  foundCount?: number;
 }
 
 interface Props {
@@ -125,7 +126,7 @@ export default function ImportUrlModal({ open, onClose, productType = 'sealed', 
                 <p>
                   Fotoğraf:{' '}
                   {result.imageCount > 0
-                    ? `${result.imageCount} görsel kaynağı bulundu, ilki indirildi`
+                    ? `${result.imageCount} görsel indirildi${result.foundCount && result.foundCount > result.imageCount ? ` (${result.foundCount} bulundu)` : ''}`
                     : 'Fotoğraf bulunamadı — manuel eklemeniz gerekiyor'}
                 </p>
                 <p className="text-emerald-600 mt-1">
