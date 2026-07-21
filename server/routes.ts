@@ -4595,15 +4595,23 @@ export async function registerRoutes(
 
   app.put("/api/admin/settings/hero-config", requireAdmin, async (req, res) => {
     try {
-      const schema = z.object({
+      const baseSchema = z.object({
         mode: z.enum(['random', 'manual']),
         count: z.number().int().min(3).max(5),
         game: z.enum(['riftbound', 'pokemon', 'all']),
         cardIds: z.array(z.string()).max(5),
-      });
-      const parsed = schema.safeParse(req.body);
+      }).refine(
+        (d) => d.mode === 'random' || d.cardIds.length >= 1,
+        { message: 'Manuel modda en az 1 kart seçilmelidir.', path: ['cardIds'] },
+      );
+      const parsed = baseSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      await storage.setSiteSetting('hero_config', JSON.stringify(parsed.data));
+      // In manual mode, count is auto-derived from the selected card list (clamped 3–5)
+      const configToSave = { ...parsed.data };
+      if (configToSave.mode === 'manual') {
+        configToSave.count = Math.max(3, Math.min(5, configToSave.cardIds.length));
+      }
+      await storage.setSiteSetting('hero_config', JSON.stringify(configToSave));
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: "Hero config kaydedilemedi" });

@@ -299,41 +299,49 @@ function HeroCardsPicker() {
         </div>
       </div>
 
-      {/* Random options */}
+      {/* Kart sayısı — her iki modda da göster; manuel modda seçim miktarından otomatik türer */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-neutral-700 mb-2">Gösterilecek Kart Sayısı</label>
+        {config.mode === 'random' ? (
+          <div className="flex gap-2">
+            {[3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => setConfig(c => ({ ...c, count: n }))}
+                data-testid={`btn-hero-count-${n}`}
+                className={`px-5 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  config.count === n
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-neutral-600 border-neutral-200 hover:border-indigo-400'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-lg inline-flex w-fit">
+            <span className="text-2xl font-bold text-indigo-700">{Math.max(1, config.cardIds.length)}</span>
+            <span className="text-sm text-indigo-600">kart — seçilen kartlardan otomatik belirlenir</span>
+          </div>
+        )}
+      </div>
+
+      {/* Random options (game pool) */}
       {config.mode === 'random' && (
-        <div className="grid sm:grid-cols-2 gap-4 mb-5 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">Oyun Havuzu</label>
-            <select
-              value={config.game}
-              onChange={e => setConfig(c => ({ ...c, game: e.target.value as HeroGame }))}
-              data-testid="select-hero-game"
-              className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-sm text-neutral-900"
-            >
-              <option value="riftbound">Riftbound</option>
-              <option value="pokemon">Pokémon TCG</option>
-              <option value="all">Tüm Oyunlar</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">Gösterilecek Kart Sayısı</label>
-            <div className="flex gap-2">
-              {[3, 4, 5].map(n => (
-                <button
-                  key={n}
-                  onClick={() => setConfig(c => ({ ...c, count: n }))}
-                  data-testid={`btn-hero-count-${n}`}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    config.count === n
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-indigo-400'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="mb-5 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+          <label className="block text-sm font-medium text-neutral-700 mb-2">Oyun Havuzu</label>
+          <select
+            value={config.game}
+            onChange={e => setConfig(c => ({ ...c, game: e.target.value as HeroGame }))}
+            data-testid="select-hero-game"
+            className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-sm text-neutral-900"
+          >
+            <option value="riftbound">Riftbound</option>
+            <option value="pokemon">Pokémon TCG</option>
+            <option value="all">Tüm Oyunlar</option>
+          </select>
+          <p className="text-xs text-neutral-500 mt-2">Seçilen oyunun stoklu kartları havuzdan rastgele döngüyle gösterilir.</p>
         </div>
       )}
 
@@ -446,12 +454,18 @@ function HeroCardsPicker() {
         </div>
       )}
 
+      {config.mode === 'manual' && config.cardIds.length === 0 && (
+        <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
+          Kaydetmek için manuel modda en az 1 kart seçmelisiniz.
+        </p>
+      )}
+
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || (config.mode === 'manual' && config.cardIds.length === 0)}
           data-testid="button-save-hero-config"
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 text-sm font-medium"
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           Hero Ayarlarını Kaydet
