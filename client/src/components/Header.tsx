@@ -84,8 +84,8 @@ function MegaMenuPanel({
                   Booster Kutu &amp; Paketler
                 </span>
               </div>
-              <Link href="/magaza" className="text-xs font-medium flex items-center gap-1 transition-opacity hover:opacity-75" style={{ color: accent }}>
-                Tümü <ArrowUpRight className="w-3 h-3" />
+              <Link href={`/kartlar?game=${game}`} className="text-xs font-medium flex items-center gap-1 transition-opacity hover:opacity-75" style={{ color: accent }}>
+                Tüm Kartlar <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -131,13 +131,21 @@ function MegaMenuPanel({
                 </span>
                 <span className="text-xs text-white/30 ml-1">({sets.length} set)</span>
               </div>
-              <Link
-                href={game === 'riftbound' ? '/riftbound' : `/oyun/${game}`}
-                className="text-xs font-medium transition-colors flex items-center gap-1"
-                style={{ color: accent }}
-              >
-                Tümünü Gör <ArrowUpRight className="w-3 h-3" />
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href={`/kartlar?game=${game}`}
+                  className="text-xs font-medium transition-colors flex items-center gap-1"
+                  style={{ color: accent }}
+                >
+                  Tüm Kartlar <ArrowUpRight className="w-3 h-3" />
+                </Link>
+                <Link
+                  href={game === 'riftbound' ? '/riftbound' : `/oyun/${game}`}
+                  className="text-xs font-medium transition-colors flex items-center gap-1 text-white/40 hover:text-white/70"
+                >
+                  Oyun Sayfası <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
             </div>
 
             <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
@@ -751,6 +759,14 @@ export function Header() {
                             >
                               Tümünü Gör →
                             </Link>
+                            <Link
+                              href="/kartlar?game=pokemon"
+                              onClick={() => setMobileOpen(false)}
+                              className="flex items-center py-2 text-[12px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+                              data-testid="link-mobile-pokemon-kartlar"
+                            >
+                              Tüm Kartlar →
+                            </Link>
                             {pokemonBoxes.length > 0 && (
                               <>
                                 <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-1 pb-1">Ürünler</p>
@@ -823,6 +839,14 @@ export function Header() {
                               className="flex items-center py-2 text-[12px] font-semibold text-[#818cf8] hover:text-indigo-400 transition-colors"
                             >
                               Tümünü Gör →
+                            </Link>
+                            <Link
+                              href="/kartlar?game=riftbound"
+                              onClick={() => setMobileOpen(false)}
+                              className="flex items-center py-2 text-[12px] font-semibold text-indigo-300 hover:text-indigo-200 transition-colors"
+                              data-testid="link-mobile-riftbound-kartlar"
+                            >
+                              Tüm Kartlar →
                             </Link>
                             {riftboundBoxes.length > 0 && (
                               <>
