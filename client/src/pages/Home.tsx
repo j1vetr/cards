@@ -17,8 +17,6 @@ import {
   Layers,
   Zap,
   Boxes,
-  ShoppingCart,
-  Sparkles,
 } from 'lucide-react';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -537,12 +535,12 @@ function BoxShowcaseSection() {
 
   if (!boxProducts.length) return null;
 
-  const gameColor = (gameId: string | null) => {
+  const gameInfo = (gameId: string | null) => {
     const g = games.find(g => g.id === gameId);
-    if (!g) return { accent: '#818cf8', label: 'TCG' };
-    if (g.slug === 'pokemon') return { accent: '#f59e0b', label: 'Pokémon TCG' };
-    if (g.slug === 'riftbound') return { accent: '#818cf8', label: 'Riftbound' };
-    return { accent: '#818cf8', label: g.name };
+    if (!g) return { accent: '#818cf8', dot: '#818cf8', label: 'TCG' };
+    if (g.slug === 'pokemon') return { accent: '#f59e0b', dot: '#f59e0b', label: 'Pokémon' };
+    if (g.slug === 'riftbound') return { accent: '#818cf8', dot: '#818cf8', label: 'Riftbound' };
+    return { accent: '#818cf8', dot: '#818cf8', label: g.name };
   };
 
   const formatPrice = (val: string) => {
@@ -551,194 +549,164 @@ function BoxShowcaseSection() {
     return `${n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺`;
   };
 
+  /* Edge-aligned padding: matches the site's max-w-7xl px-4/sm:px-6/lg:px-8 */
+  const scrollPad = 'calc(max((100vw - 80rem) / 2, 1rem))';
+
   return (
     <section
-      className="relative overflow-hidden py-16"
-      style={{ background: 'linear-gradient(180deg, #0d1427 0%, #080e1c 100%)' }}
       data-testid="section-box-showcase"
+      style={{ background: '#080e1c', paddingTop: 64, paddingBottom: 72 }}
     >
-      {/* Background glow blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[120px] opacity-20"
-          style={{ background: 'radial-gradient(circle, #818cf8, transparent)' }} />
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full blur-[100px] opacity-15"
-          style={{ background: 'radial-gradient(circle, #f59e0b, transparent)' }} />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.5 }}
-          className="flex items-end justify-between mb-8"
-        >
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1 h-5 rounded-full bg-indigo-400" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3" />
-                Sealed Ürünler
-              </span>
-            </div>
-            <h2
-              className="text-3xl sm:text-4xl font-bold text-white"
-              style={{ fontFamily: "'Oswald', sans-serif" }}
-            >
-              Box &amp; Sealed
-            </h2>
-          </div>
-          <Link href="/kartlar?type=Box+%26+Sealed">
-            <button
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium border rounded-lg px-4 py-2 transition-colors text-indigo-400 border-indigo-400/40 hover:border-indigo-400/80 hover:bg-indigo-400/5"
-              data-testid="btn-box-tumu"
-            >
-              Tümünü Gör <ChevronRight className="w-4 h-4" />
-            </button>
-          </Link>
-        </motion.div>
-
-        {/* Horizontal scroll */}
-        <div className="relative">
-          {/* Left/right fade edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to right, #080e1c, transparent)' }} />
-          <div className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to left, #080e1c, transparent)' }} />
-
-          <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.55 }}
-            className="flex gap-5 overflow-x-auto pb-4 px-1"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      {/* ── Header ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.45 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between mb-10"
+      >
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-400 mb-2">
+            Sealed Ürünler
+          </p>
+          <h2
+            className="text-3xl sm:text-4xl font-bold text-white leading-none"
+            style={{ fontFamily: "'Oswald', sans-serif" }}
           >
-            {boxProducts.map((product, idx) => {
-              const { accent, label } = gameColor(product.gameId);
-              const img = product.images?.[0];
-              const price = formatPrice(product.basePrice);
-              const lowStock = product.stock > 0 && product.stock <= 5;
-              const outOfStock = product.stock === 0;
+            Box &amp; Sealed
+          </h2>
+        </div>
+        <Link href="/urunler">
+          <button
+            data-testid="btn-box-tumu"
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-white/50 hover:text-white transition-colors"
+          >
+            Tümünü Gör <ChevronRight className="w-4 h-4" />
+          </button>
+        </Link>
+      </motion.div>
 
-              return (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-20px' }}
-                  transition={{ duration: 0.45, delay: Math.min(idx * 0.07, 0.42) }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                  className="shrink-0 relative group cursor-pointer"
-                  style={{ width: 220 }}
-                  data-testid={`box-card-${product.id}`}
-                >
-                  <Link href={`/urun/${product.slug}`}>
-                    <div
-                      className="relative rounded-2xl overflow-hidden border transition-all duration-300"
-                      style={{
-                        height: 300,
-                        borderColor: 'rgba(255,255,255,0.08)',
-                        background: 'rgba(255,255,255,0.03)',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                      }}
-                    >
-                      {/* Hover glow ring */}
-                      <div
-                        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
-                        style={{ boxShadow: `inset 0 0 0 1.5px ${accent}60, 0 0 40px ${accent}30` }}
+      {/* ── Full-bleed scroll row ── */}
+      <div
+        className="overflow-x-auto"
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+      >
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+          className="flex gap-4"
+          style={{ paddingLeft: scrollPad, paddingRight: scrollPad, width: 'max-content' }}
+        >
+          {boxProducts.map((product, idx) => {
+            const { accent, dot, label } = gameInfo(product.gameId);
+            const img = product.images?.[0];
+            const price = formatPrice(product.basePrice);
+            const outOfStock = product.stock === 0;
+            const lowStock   = !outOfStock && product.stock <= 5;
+
+            return (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.4, delay: Math.min(idx * 0.06, 0.36) }}
+                data-testid={`box-card-${product.id}`}
+                className="shrink-0 group"
+                style={{ width: 252 }}
+              >
+                <Link href={`/urun/${product.slug}`}>
+                  {/* Image block */}
+                  <motion.div
+                    whileHover={{ y: -6 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="relative rounded-xl overflow-hidden mb-3"
+                    style={{
+                      height: 330,
+                      background: '#0d1323',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                    }}
+                  >
+                    {img ? (
+                      <img
+                        src={img}
+                        alt={product.name}
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.04]"
                       />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Boxes className="w-14 h-14 text-white/10" />
+                      </div>
+                    )}
 
-                      {/* Product image */}
-                      {img ? (
-                        <img
-                          src={img}
-                          alt={product.name}
-                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                          style={{ background: '#0d1427' }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center"
-                          style={{ background: `linear-gradient(135deg, #0d1427, ${accent}22)` }}>
-                          <Boxes className="w-16 h-16 opacity-20" style={{ color: accent }} />
-                        </div>
-                      )}
-
-                      {/* Bottom gradient overlay */}
-                      <div
-                        className="absolute inset-x-0 bottom-0 h-36 pointer-events-none"
-                        style={{ background: 'linear-gradient(to top, rgba(6,8,20,0.97) 0%, rgba(6,8,20,0.6) 60%, transparent 100%)' }}
-                      />
-
-                      {/* Game badge — top left */}
-                      <div className="absolute top-3 left-3 z-10">
+                    {/* Stock badge — only when noteworthy */}
+                    {(outOfStock || lowStock) && (
+                      <div className="absolute top-3 right-3">
                         <span
-                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                          style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}44` }}
+                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
+                          style={outOfStock
+                            ? { background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }
+                            : { background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.25)' }
+                          }
                         >
-                          {label}
+                          {outOfStock ? 'Tükendi' : `Son ${product.stock}`}
                         </span>
                       </div>
+                    )}
 
-                      {/* New badge — top right */}
-                      {product.isNew && (
-                        <div className="absolute top-3 right-3 z-10">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            Yeni
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Info row at bottom */}
-                      <div className="absolute inset-x-0 bottom-0 p-3 z-10">
-                        <p className="text-[13px] font-semibold text-white leading-snug line-clamp-2 mb-2">
-                          {product.name}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-base font-bold tabular-nums" style={{ color: accent }}>
-                            {price}
-                          </span>
-                          {outOfStock ? (
-                            <span className="text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
-                              Tükendi
-                            </span>
-                          ) : lowStock ? (
-                            <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                              Son {product.stock}
-                            </span>
-                          ) : null}
-                        </div>
-
-                        {/* CTA — visible on hover */}
-                        <div className="mt-2 overflow-hidden max-h-0 group-hover:max-h-12 transition-all duration-300">
-                          <button
-                            className="w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold py-1.5 rounded-lg transition-colors"
-                            style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}44` }}
-                          >
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                            İncele
-                          </button>
-                        </div>
+                    {/* New badge */}
+                    {product.isNew && !outOfStock && (
+                      <div className="absolute top-3 left-3">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
+                          style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.25)' }}>
+                          Yeni
+                        </span>
                       </div>
+                    )}
+                  </motion.div>
+
+                  {/* Info block — below image, not overlaid */}
+                  <div className="px-0.5">
+                    {/* Game label with dot */}
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: dot }}>
+                        {label}
+                      </span>
                     </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
 
-        {/* Mobile CTA */}
-        <div className="mt-6 text-center sm:hidden">
-          <Link href="/kartlar?type=Box+%26+Sealed">
-            <button className="inline-flex items-center gap-1.5 text-sm font-medium border rounded-lg px-5 py-2.5 text-indigo-400 border-indigo-400/40">
-              Tümünü Gör <ChevronRight className="w-4 h-4" />
-            </button>
-          </Link>
-        </div>
+                    <p className="text-[14px] font-medium text-white/85 leading-snug line-clamp-2 mb-2">
+                      {product.name}
+                    </p>
 
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-white tabular-nums">
+                        {price}
+                      </span>
+                      <span
+                        className="text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1"
+                        style={{ color: accent }}
+                      >
+                        İncele <ChevronRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </div>
+
+      {/* Mobile CTA */}
+      <div className="mt-8 text-center sm:hidden px-4">
+        <Link href="/urunler">
+          <button className="text-sm font-medium text-white/50 inline-flex items-center gap-1">
+            Tümünü Gör <ChevronRight className="w-4 h-4" />
+          </button>
+        </Link>
       </div>
     </section>
   );
