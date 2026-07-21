@@ -594,7 +594,7 @@ function BoxShowcaseSection() {
           className="grid gap-4"
           style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
         >
-          {boxProducts.map((product, idx) => {
+          {boxProducts.slice(0, 8).map((product, idx) => {
             const { accent, dot, label } = gameInfo(product.gameId);
             const img = product.images?.[0];
             const price = formatPrice(product.basePrice);
@@ -700,14 +700,39 @@ function BoxShowcaseSection() {
           })}
         </motion.div>
 
-        {/* Mobile CTA */}
-        <div className="mt-8 text-center sm:hidden">
-          <Link href="/urunler">
-            <button className="text-sm font-medium text-white/50 inline-flex items-center gap-1">
-              Tümünü Gör <ChevronRight className="w-4 h-4" />
-            </button>
-          </Link>
-        </div>
+        {/* CTA — shown when there are more than 8 products */}
+        {boxProducts.length > 8 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.35 }}
+            className="mt-10 flex flex-col items-center gap-2"
+          >
+            <Link href="/urunler">
+              <motion.button
+                data-testid="btn-box-tumu"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-sm transition-colors"
+                style={{
+                  background: 'rgba(99,102,241,0.12)',
+                  color: '#a5b4fc',
+                  border: '1px solid rgba(99,102,241,0.25)',
+                }}
+              >
+                <Boxes className="w-4 h-4" />
+                Tüm Box &amp; Sealed Ürünleri Gör
+                <span
+                  className="ml-0.5 px-1.5 py-0.5 rounded-md text-[11px] font-bold"
+                  style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}
+                >
+                  +{boxProducts.length - 8}
+                </span>
+              </motion.button>
+            </Link>
+          </motion.div>
+        )}
 
       </div>
     </section>
