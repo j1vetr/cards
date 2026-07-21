@@ -245,6 +245,38 @@ function fetchUrlHtml(url: string, redirects = 0): Promise<string> {
   });
 }
 
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function extractBodyDescription(html: string): string {
+  const selectors = [
+    /itemprop=["']description["'][^>]*>([\s\S]*?)<\/[^>]+>/i,
+    /class=["'][^"']*product-description[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section|article)>/i,
+    /class=["'][^"']*woocommerce-product-details__short-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    /id=["']tab-description["'][^>]*>([\s\S]*?)<\/(?:div|section)>/i,
+    /class=["'][^"']*product__description[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section)>/i,
+    /class=["'][^"']*product-detail[^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section)>/i,
+  ];
+  for (const re of selectors) {
+    const m = html.match(re);
+    if (m) {
+      const text = stripHtmlTags(m[1] || m[0]);
+      if (text && text.length > 30) return text.substring(0, 3000);
+    }
+  }
+  return '';
+}
+
 function parseProductFromHtml(html: string, sourceUrl: string): { name: string; description: string; price: string; images: string[]; gameId: string | null } {
   const ldBlocks = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g) || [];
   for (const block of ldBlocks) {
@@ -254,7 +286,11 @@ function parseProductFromHtml(html: string, sourceUrl: string): { name: string; 
       const prod = d['@type'] === 'Product' ? d : (Array.isArray(d['@graph']) ? d['@graph'].find((n: any) => n['@type'] === 'Product') : null);
       if (prod) {
         const name = prod.name || '';
-        const description = prod.description || '';
+        let description = prod.description || '';
+        if (!description || description.length < 80) {
+          const bodyDesc = extractBodyDescription(html);
+          if (bodyDesc.length > description.length) description = bodyDesc;
+        }
         const imgs: string[] = Array.isArray(prod.image) ? prod.image : (prod.image ? [prod.image] : []);
         const offer = Array.isArray(prod.offers) ? prod.offers[0] : prod.offers;
         const price = offer?.price ? String(offer.price) : '';
@@ -264,11 +300,13 @@ function parseProductFromHtml(html: string, sourceUrl: string): { name: string; 
       }
     } catch { /* skip */ }
   }
-  // fallback og:
+  // fallback: try to extract from HTML body first, then og:description
+  const bodyDesc = extractBodyDescription(html);
   const get = (prop: string) => html.match(new RegExp(`property=["']${prop}["'][^>]*content=["']([^"']+)`))?.[1]
     || html.match(new RegExp(`content=["']([^"']+)["'][^>]*property=["']${prop}["']`))?.[1] || '';
   const name = get('og:title');
-  const description = get('og:description');
+  const ogDescription = get('og:description');
+  const description = bodyDesc.length > ogDescription.length ? bodyDesc : ogDescription;
   const ogImage = get('og:image');
   const lower = (sourceUrl + name).toLowerCase();
   const gameId = lower.includes('riftbound') ? 'riftbound' : lower.includes('pokemon') ? 'pokemon' : null;
@@ -914,7 +952,7 @@ ${items.join('\n')}
       const product = await storage.createProduct({
         name: cleanName,
         slug,
-        description: data.description ? `${data.description}\n\nKaynak: ${url}` : `Kaynak: ${url}`,
+        description: data.description || '',
         basePrice: data.price ? data.price.replace(',', '.') : '0',
         categoryId,
         images: downloadedPaths,
