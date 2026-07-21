@@ -167,7 +167,7 @@ export default function BoxesTab() {
           <LoadingState />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={<Box className="w-8 h-8 text-neutral-300" />}
+            icon={Box}
             title={search ? 'Arama sonucu bulunamadı' : 'Henüz box ürünü eklenmemiş'}
             description={search ? undefined : 'Yeni Box Ekle butonuna tıklayarak başlayın.'}
           />

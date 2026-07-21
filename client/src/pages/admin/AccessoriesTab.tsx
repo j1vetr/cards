@@ -167,7 +167,14 @@ export default function AccessoriesTab() {
             icon={Package}
             title="Aksesuar ürün yok"
             description={search ? 'Aramanızla eşleşen ürün bulunamadı.' : 'İlk aksesuar ürününü eklemek için "Yeni Ürün" butonuna tıklayın.'}
-            action={!search ? { label: 'Yeni Ürün Ekle', onClick: openNew } : undefined}
+            action={!search ? (
+              <button
+                onClick={openNew}
+                className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium bg-neutral-900 text-white rounded-md hover:bg-neutral-800 transition-colors"
+              >
+                Yeni Ürün Ekle
+              </button>
+            ) : undefined}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -209,7 +216,7 @@ export default function AccessoriesTab() {
                       <span className="text-[13px] font-semibold text-neutral-900">{formatPrice(product.basePrice)}</span>
                     </td>
                     <td className="py-3 px-4 text-center hidden sm:table-cell">
-                      <StatusBadge tone={product.isActive ? 'green' : 'neutral'}>
+                      <StatusBadge tone={product.isActive ? 'emerald' : 'neutral'}>
                         {product.isActive ? 'Aktif' : 'Pasif'}
                       </StatusBadge>
                     </td>
