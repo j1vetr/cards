@@ -73,16 +73,18 @@ export default function ProductModal({
   onSave: (product: Partial<Product>) => void;
   isSaving: boolean;
 }) {
-  const JEANS_ATTR_KEYS = [
-    { key: 'Materyal', label: 'Materyal', placeholder: 'Örn: %98 Pamuk, %2 Elastan' },
-    { key: 'Likra', label: 'Likra / Elastan', placeholder: 'Örn: %2' },
-    { key: 'Kumaş Tipi', label: 'Kumaş Tipi', placeholder: 'Örn: Dokuma, Örme' },
-    { key: 'Paça Tipi', label: 'Paça Tipi', placeholder: 'Örn: Skinny, Straight, Wide Leg' },
-    { key: 'Bel', label: 'Bel', placeholder: 'Örn: Normal Bel, Yüksek Bel, Düşük Bel' },
-    { key: 'Kalıp', label: 'Kalıp', placeholder: 'Örn: Slim Fit, Regular Fit, Loose Fit' },
-    { key: 'Desen', label: 'Desen', placeholder: 'Örn: Düz, Çizgili, Baskılı' },
-    { key: 'Renk', label: 'Renk Tonu', placeholder: 'Örn: Açık Mavi, Koyu İndigo' },
-    { key: 'Cep', label: 'Cep', placeholder: 'Örn: 5 Cep, Kargo Cepli' },
+  const BOX_ATTR_KEYS = [
+    { key: 'Set', label: 'Kart Seti', placeholder: 'Örn: Prismatic Evolutions' },
+    { key: 'Paket Sayısı', label: 'Paket Sayısı', placeholder: 'Örn: 36 paket' },
+    { key: 'Dil', label: 'Dil', placeholder: 'Örn: İngilizce, Japonca, Türkçe' },
+    { key: 'Baskı', label: 'Baskı', placeholder: 'Örn: 1. Baskı, Sınırsız' },
+  ] as const;
+
+  const ACCESSORY_ATTR_KEYS = [
+    { key: 'Marka', label: 'Marka', placeholder: 'Örn: Ultra Pro, Dragon Shield' },
+    { key: 'Materyal', label: 'Materyal', placeholder: 'Örn: PVC Serbest Polipropilen' },
+    { key: 'Boyut', label: 'Boyut / Kapasite', placeholder: 'Örn: 9-Cepli, 360 Kart' },
+    { key: 'Uyumluluk', label: 'Uyumluluk', placeholder: 'Örn: Standart Boyut Kartlar' },
   ] as const;
 
   const [formData, setFormData] = useState({
@@ -110,7 +112,6 @@ export default function ProductModal({
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const [colorInput, setColorInput] = useState<string>('');
   const [previewImage, setPreviewImage] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -144,7 +145,6 @@ export default function ProductModal({
     setPendingFiles([]);
     setUploadError(null);
     setPreviewImage(0);
-    setColorInput('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
@@ -239,6 +239,7 @@ export default function ProductModal({
   };
 
   const isBox = formData.productType === 'box';
+  const ATTR_KEYS = isBox ? BOX_ATTR_KEYS : ACCESSORY_ATTR_KEYS;
   const isValid =
     !!formData.name.trim() && !!formData.basePrice.trim() && (isBox || formData.categoryIds.length > 0);
   const totalImageCount = formData.images.length + pendingFiles.length;
@@ -327,7 +328,7 @@ export default function ProductModal({
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  placeholder="Örn: Anadolu El İşi Bardak Seti"
+                  placeholder="Örn: Scarlet & Violet ETB, Dragon Shield Sleeves"
                   data-testid="input-product-name"
                 />
               </FormField>
@@ -368,7 +369,7 @@ export default function ProductModal({
                 data-testid="input-product-slug"
               />
               <p className="text-[11px] text-neutral-500 mt-1">
-                polenstone.com/urun/<span className="text-neutral-700">{formData.slug || 'slug'}</span>
+                gocards.toov.com.tr/urun/<span className="text-neutral-700">{formData.slug || 'slug'}</span>
               </p>
             </div>
 
@@ -583,35 +584,14 @@ export default function ProductModal({
             )}
           </section>
 
-          {/* Section 4 — Beden & Renk */}
+          {/* Section 4 — Fiyat & Stok */}
           <section>
             <SectionHeading
               number={4}
-              title="Beden & Renk"
-              description="Ürünün beden ve rengini belirtin (opsiyonel)."
-            />
-
-            <FormField label="Renk">
-              <TextInput
-                value={colorInput}
-                onChange={(e) => setColorInput(e.target.value)}
-                placeholder="Örn. SİYAH, BEYAZ"
-                data-testid="input-product-color"
-              />
-              <p className="mt-1 text-[11px] text-neutral-500">
-                Boş bırakılırsa renksiz varyant oluşturulur.
-              </p>
-            </FormField>
-          </section>
-
-          {/* Section 5 — Fiyat & Stok */}
-          <section>
-            <SectionHeading
-              number={5}
               title="Fiyat & Stok"
               description={
                 product?.id
-                  ? 'Stok bilgileri varyant yönetiminden ayarlanır.'
+                  ? 'Mevcut stok ürün sayfasından güncellenir.'
                   : 'Yeni ürün için başlangıç stok miktarını girin.'
               }
             />
@@ -644,15 +624,15 @@ export default function ProductModal({
             </div>
           </section>
 
-          {/* Section 6 — Ürün Özellikleri (Jeans) */}
+          {/* Section 5 — Ürün Özellikleri */}
           <section>
             <SectionHeading
-              number={6}
+              number={5}
               title="Ürün Özellikleri"
-              description="Trendyol'dan otomatik doldurulur; manuel olarak da girilebilir."
+              description={isBox ? 'Box ürününe ait set, dil ve baskı bilgileri.' : 'Aksesuar ürününe ait marka, materyal ve boyut bilgileri.'}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {JEANS_ATTR_KEYS.map(({ key, label, placeholder }) => (
+              {ATTR_KEYS.map(({ key, label, placeholder }) => (
                 <FormField key={key} label={label}>
                   <TextInput
                     type="text"
@@ -671,10 +651,10 @@ export default function ProductModal({
             </div>
           </section>
 
-          {/* Section 7 — Görünürlük */}
+          {/* Section 6 — Görünürlük */}
           <section>
             <SectionHeading
-              number={7}
+              number={6}
               title="Görünürlük"
               description="Ürünün mağazadaki yerini kontrol edin."
             />
@@ -797,17 +777,6 @@ export default function ProductModal({
                   {formData.isNew && <StatusBadge tone="blue">Yeni</StatusBadge>}
                 </div>
               </div>
-
-              {colorInput.trim() && (
-                <div>
-                  <p className="text-[12px] text-neutral-500 mb-1.5">
-                    Renk:{' '}
-                    <span className="text-neutral-900 font-medium tracking-wide">
-                      {colorInput.trim().toUpperCase()}
-                    </span>
-                  </p>
-                </div>
-              )}
 
               {formData.description && !formData.description.includes('<') && (
                 <div>
