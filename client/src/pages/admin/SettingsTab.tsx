@@ -237,7 +237,7 @@ function HeroCardsPicker() {
   };
 
   const addCard = (id: string) => {
-    if (config.cardIds.includes(id) || config.cardIds.length >= 5) return;
+    if (config.cardIds.includes(id) || config.cardIds.length >= 6) return;
     setConfig(c => ({ ...c, cardIds: [...c.cardIds, id] }));
   };
 
@@ -321,8 +321,8 @@ function HeroCardsPicker() {
           </div>
         ) : (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-lg inline-flex w-fit">
-            <span className="text-2xl font-bold text-indigo-700">{Math.max(1, config.cardIds.length)}</span>
-            <span className="text-sm text-indigo-600">kart — seçilen kartlardan otomatik belirlenir</span>
+            <span className="text-2xl font-bold text-indigo-700">{config.cardIds.length}</span>
+            <span className="text-sm text-indigo-600">kart seçildi (en az 3, en fazla 6)</span>
           </div>
         )}
       </div>
@@ -349,7 +349,7 @@ function HeroCardsPicker() {
       {config.mode === 'manual' && (
         <div className="space-y-4 mb-5">
           <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-            <p className="text-xs text-neutral-500 mb-3">En fazla 5 kart seçebilirsiniz. Soldan sağa sıralama listeden belirlenir.</p>
+            <p className="text-xs text-neutral-500 mb-3">En az 3, en fazla 6 kart seçebilirsiniz. Soldan sağa sıralama listeden belirlenir.</p>
 
             {/* Search */}
             <div className="relative mb-3">
@@ -369,7 +369,7 @@ function HeroCardsPicker() {
               <div className="border border-neutral-200 rounded-lg divide-y divide-neutral-100 bg-white mb-3 max-h-56 overflow-y-auto">
                 {(searchData?.cards ?? []).slice(0, 8).map((card: any) => {
                   const already = config.cardIds.includes(card.id);
-                  const full = config.cardIds.length >= 5;
+                  const full = config.cardIds.length >= 6;
                   return (
                     <button
                       key={card.id}
@@ -454,16 +454,16 @@ function HeroCardsPicker() {
         </div>
       )}
 
-      {config.mode === 'manual' && config.cardIds.length === 0 && (
+      {config.mode === 'manual' && config.cardIds.length < 3 && (
         <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
-          Kaydetmek için manuel modda en az 1 kart seçmelisiniz.
+          Kaydetmek için manuel modda en az 3 kart seçmelisiniz ({config.cardIds.length}/3).
         </p>
       )}
 
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          disabled={saving || (config.mode === 'manual' && config.cardIds.length === 0)}
+          disabled={saving || (config.mode === 'manual' && config.cardIds.length < 3)}
           data-testid="button-save-hero-config"
           className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
         >

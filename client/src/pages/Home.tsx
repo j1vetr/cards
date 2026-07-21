@@ -86,9 +86,27 @@ const FAN_POSITIONS: Record<number, { mobile: FanPos[]; desktop: FanPos[] }> = {
       { rotate: 22,  x: 242,  y: -65,  delay: 0.38 },
     ],
   },
+  6: {
+    mobile: [
+      { rotate: -30, x: -160, y: -4,   delay: 0.06 },
+      { rotate: -16, x: -88,  y: -20,  delay: 0.14 },
+      { rotate: -5,  x: -26,  y: -38,  delay: 0.22 },
+      { rotate: 5,   x: 26,   y: -38,  delay: 0.30 },
+      { rotate: 16,  x: 88,   y: -20,  delay: 0.38 },
+      { rotate: 30,  x: 160,  y: -4,   delay: 0.46 },
+    ],
+    desktop: [
+      { rotate: -25, x: -258, y: -55,  delay: 0.06 },
+      { rotate: -14, x: -155, y: -88,  delay: 0.14 },
+      { rotate: -5,  x: -52,  y: -110, delay: 0.22 },
+      { rotate: 5,   x: 52,   y: -110, delay: 0.30 },
+      { rotate: 14,  x: 155,  y: -88,  delay: 0.38 },
+      { rotate: 25,  x: 258,  y: -55,  delay: 0.46 },
+    ],
+  },
 };
 
-type HeroConfig = { mode: 'random' | 'manual'; count: 3 | 4 | 5; game: 'riftbound' | 'pokemon' | 'all'; cardIds: string[] };
+type HeroConfig = { mode: 'random' | 'manual'; count: 3 | 4 | 5 | 6; game: 'riftbound' | 'pokemon' | 'all'; cardIds: string[] };
 
 const CARD_BG_FALLBACK = [
   'from-violet-700 to-indigo-800',
@@ -96,6 +114,7 @@ const CARD_BG_FALLBACK = [
   'from-indigo-600 to-violet-700',
   'from-sky-600 to-indigo-700',
   'from-blue-700 to-violet-800',
+  'from-purple-700 to-indigo-800',
 ];
 
 function CardFan() {
@@ -115,7 +134,7 @@ function CardFan() {
   });
 
   const mode    = heroConfig?.mode    ?? 'random';
-  const count   = (heroConfig?.count  ?? 5) as 3 | 4 | 5;
+  const count   = (heroConfig?.count  ?? 5) as 3 | 4 | 5 | 6;
   const game    = heroConfig?.game    ?? 'riftbound';
   const cardIds = heroConfig?.cardIds ?? [];
 

@@ -4597,19 +4597,19 @@ export async function registerRoutes(
     try {
       const baseSchema = z.object({
         mode: z.enum(['random', 'manual']),
-        count: z.number().int().min(3).max(5),
+        count: z.number().int().min(3).max(6),
         game: z.enum(['riftbound', 'pokemon', 'all']),
-        cardIds: z.array(z.string()).max(5),
+        cardIds: z.array(z.string()).max(6),
       }).refine(
-        (d) => d.mode === 'random' || d.cardIds.length >= 1,
-        { message: 'Manuel modda en az 1 kart seçilmelidir.', path: ['cardIds'] },
+        (d) => d.mode === 'random' || d.cardIds.length >= 3,
+        { message: 'Manuel modda en az 3 kart seçilmelidir.', path: ['cardIds'] },
       );
       const parsed = baseSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
-      // In manual mode, count is auto-derived from the selected card list (clamped 3–5)
+      // In manual mode, count is auto-derived from the selected card list (clamped 3–6)
       const configToSave = { ...parsed.data };
       if (configToSave.mode === 'manual') {
-        configToSave.count = Math.max(3, Math.min(5, configToSave.cardIds.length));
+        configToSave.count = Math.max(3, Math.min(6, configToSave.cardIds.length));
       }
       await storage.setSiteSetting('hero_config', JSON.stringify(configToSave));
       res.json({ success: true });
