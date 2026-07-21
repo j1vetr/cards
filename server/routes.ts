@@ -259,20 +259,24 @@ function stripHtmlTags(html: string): string {
 }
 
 function extractBodyDescription(html: string): string {
-  const selectors = [
-    /itemprop=["']description["'][^>]*>([\s\S]*?)<\/[^>]+>/i,
-    /class=["'][^"']*product-description[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section|article)>/i,
-    /class=["'][^"']*woocommerce-product-details__short-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /id=["']tab-description["'][^>]*>([\s\S]*?)<\/(?:div|section)>/i,
-    /class=["'][^"']*product__description[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section)>/i,
-    /class=["'][^"']*product-detail[^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section)>/i,
+  // Find the opening tag position with one of the known description markers,
+  // then extract a raw chunk (up to 6000 chars) from after the opening tag.
+  // This avoids the nested-div truncation problem of lazy regex matching.
+  const markerPatterns = [
+    /itemprop=["']description["'][^>]*>/i,
+    /class=["'][^"']*woocommerce-product-details__short-description[^"']*["'][^>]*>/i,
+    /class=["'][^"']*product-description[^"']*["'][^>]*>/i,
+    /id=["']tab-description["'][^>]*>/i,
+    /class=["'][^"']*product__description[^"']*["'][^>]*>/i,
+    /class=["'][^"']*product-detail[^"']*description[^"']*["'][^>]*>/i,
   ];
-  for (const re of selectors) {
-    const m = html.match(re);
-    if (m) {
-      const text = stripHtmlTags(m[1] || m[0]);
-      if (text && text.length > 30) return text.substring(0, 3000);
-    }
+  for (const re of markerPatterns) {
+    const m = re.exec(html);
+    if (!m) continue;
+    const contentStart = m.index + m[0].length;
+    const chunk = html.slice(contentStart, contentStart + 6000);
+    const text = stripHtmlTags(chunk);
+    if (text && text.length > 30) return text.substring(0, 3000);
   }
   return '';
 }
@@ -922,51 +926,86 @@ ${items.join('\n')}
     }
   });
 
-  // ── URL'den ürün içe aktar ─────────────────────────────────────────────────
+  // ── URL'den ürün içe aktar — paylaşılan core mantık ──────────────────────
+  async function importProductFromUrl(url: string, productType: string): Promise<{ scraped: { name: string; price: string; imageCount: number; foundCount: number } }> {
+    const html = await fetchUrlHtml(url.trim());
+    const data = parseProductFromHtml(html, url);
+    if (!data.name) throw new Error('Sayfadan ürün bilgisi çıkarılamadı. Lütfen manuel oluşturun.');
+
+    const candidateImages = data.images
+      .filter(img => img && !img.includes('/theme-images/') && img.startsWith('http'))
+      .slice(0, 10);
+    const downloadedPaths = (
+      await Promise.all(candidateImages.map(img => downloadProductImage(img, uploadDir)))
+    ).filter((p): p is string => p !== null);
+
+    const cleanName = data.name.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+    const slugBase = cleanName.toLowerCase()
+      .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g').replace(/[ıİ]/g, 'i')
+      .replace(/[öÖ]/g, 'o').replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
+      .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-').substring(0, 80);
+    const slug = `${slugBase}-${Date.now()}`;
+
+    const allCategories = await storage.getCategories();
+    const categoryId = allCategories[0]?.id || '';
+
+    await storage.createProduct({
+      name: cleanName,
+      slug,
+      description: data.description || '',
+      basePrice: data.price ? data.price.replace(',', '.') : '0',
+      categoryId,
+      images: downloadedPaths,
+      isActive: false,
+      isFeatured: false,
+      isNew: true,
+      gameId: data.gameId,
+      productType,
+    } as any);
+
+    return { scraped: { name: cleanName, price: data.price, imageCount: downloadedPaths.length, foundCount: data.images.length } };
+  }
+
   app.post("/api/admin/import-product-url", requireAdmin, async (req, res) => {
     try {
       const { url, productType: overrideType } = req.body;
       if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL gerekli' });
-      const html = await fetchUrlHtml(url.trim());
-      const data = parseProductFromHtml(html, url);
-      if (!data.name) return res.status(422).json({ error: 'Sayfadan ürün bilgisi çıkarılamadı. Lütfen manuel oluşturun.' });
-
-      // Tüm görselleri filtrele ve paralel indir (en fazla 10, tema görselleri hariç)
-      const candidateImages = data.images
-        .filter(img => img && !img.includes('/theme-images/') && img.startsWith('http'))
-        .slice(0, 10);
-      const downloadedPaths = (
-        await Promise.all(candidateImages.map(img => downloadProductImage(img, uploadDir)))
-      ).filter((p): p is string => p !== null);
-
-      const cleanName = data.name.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
-      const slugBase = cleanName.toLowerCase()
-        .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g').replace(/[ıİ]/g, 'i')
-        .replace(/[öÖ]/g, 'o').replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
-        .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-').substring(0, 80);
-      const slug = `${slugBase}-${Date.now()}`;
-
-      const allCategories = await storage.getCategories();
-      const categoryId = allCategories[0]?.id || '';
-
-      const product = await storage.createProduct({
-        name: cleanName,
-        slug,
-        description: data.description || '',
-        basePrice: data.price ? data.price.replace(',', '.') : '0',
-        categoryId,
-        images: downloadedPaths,
-        isActive: false,
-        isFeatured: false,
-        isNew: true,
-        gameId: data.gameId,
-        productType: overrideType || 'sealed',
-      } as any);
-
-      res.json({ success: true, product, scraped: { name: cleanName, price: data.price, imageCount: downloadedPaths.length, foundCount: data.images.length } });
+      const { scraped } = await importProductFromUrl(url.trim(), overrideType || 'sealed');
+      res.json({ success: true, scraped });
     } catch (err: any) {
       console.error('[import-url]', err);
-      res.status(500).json({ error: err.message || 'İçe aktarma başarısız' });
+      const status = err.message?.includes('çıkarılamadı') ? 422 : 500;
+      res.status(status).json({ error: err.message || 'İçe aktarma başarısız' });
+    }
+  });
+
+  // ── Toplu URL'den ürün içe aktar ──────────────────────────────────────────
+  app.post("/api/admin/import-product-url-bulk", requireAdmin, async (req, res) => {
+    try {
+      const { urls, productType: overrideType } = req.body;
+      if (!Array.isArray(urls) || urls.length === 0) return res.status(400).json({ error: 'urls dizisi gerekli' });
+      if (urls.length > 100) return res.status(400).json({ error: 'En fazla 100 URL desteklenir' });
+
+      const results: Array<{ url: string; status: 'success' | 'error'; scraped?: { name: string; price: string; imageCount: number; foundCount: number }; error?: string }> = [];
+
+      for (const rawUrl of urls) {
+        if (!rawUrl || typeof rawUrl !== 'string') {
+          results.push({ url: String(rawUrl), status: 'error', error: 'Geçersiz URL' });
+          continue;
+        }
+        try {
+          const { scraped } = await importProductFromUrl(rawUrl.trim(), overrideType || 'sealed');
+          results.push({ url: rawUrl, status: 'success', scraped });
+        } catch (err: any) {
+          console.error('[import-url-bulk]', rawUrl, err.message);
+          results.push({ url: rawUrl, status: 'error', error: err.message || 'İçe aktarma başarısız' });
+        }
+      }
+
+      res.json({ success: true, results });
+    } catch (err: any) {
+      console.error('[import-url-bulk]', err);
+      res.status(500).json({ error: err.message || 'Toplu içe aktarma başarısız' });
     }
   });
 
