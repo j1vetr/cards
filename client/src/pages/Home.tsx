@@ -256,7 +256,7 @@ function CardFan() {
         }}
       />
 
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="sync">
         {liveCards.map((card) => {
           const pos      = positions[card.posIdx];
           if (!pos) return null;
@@ -266,36 +266,59 @@ function CardFan() {
           return (
             <motion.div
               key={card.id}
-              initial={{ opacity: 0, x: entryX, y: entryY, rotate: entryR, scale: 0.88 }}
+              /* New cards fade+rise in at their target position — no side-by-side fly-in */
+              initial={{ opacity: 0, x: pos.x, y: pos.y + 32, rotate: pos.rotate, scale: 0.86 }}
+              /* When posIdx changes, Framer animates the SAME element to the new position */
               animate={{ opacity: 1, x: pos.x, y: pos.y, rotate: pos.rotate, scale: 1 }}
-              exit={{ opacity: 0, x: exitX, y: exitY, rotate: exitR, scale: 0.88 }}
-              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              /* Exit in place — just fade+shrink, no flying off screen */
+              exit={{ opacity: 0, x: pos.x, y: pos.y + 16, rotate: pos.rotate, scale: 0.86 }}
+              transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
               style={{ position: 'absolute', bottom: 0, zIndex: depthZ }}
             >
-              {/* Gentle float */}
+              {/* Float animation — stable duration from card.id so it doesn't restart on posIdx change */}
               <motion.div
                 animate={{ y: [0, -9, 0] }}
-                transition={{ duration: 3.8 + card.posIdx * 0.6, repeat: Infinity, ease: 'easeInOut', delay: card.posIdx * 0.3 }}
-                whileHover={{ y: 0, scale: 1.06, transition: { duration: 0.22, ease: 'easeOut' } }}
-                onClick={() => { if (card.slug) navigate(`/kart/${card.slug}`); }}
-                style={{
-                  width: w, height: h, borderRadius: 12, overflow: 'hidden',
-                  border: isCenter ? '1.5px solid rgba(129,140,248,0.55)' : '1px solid rgba(255,255,255,0.15)',
-                  boxShadow: isCenter
-                    ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
-                    : '0 14px 44px rgba(0,0,0,0.55)',
-                  cursor: card.slug ? 'pointer' : 'default',
+                transition={{
+                  duration: 3.6 + (card.id % 4) * 0.55,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
                 }}
               >
-                {card.url ? (
-                  <img
-                    src={card.url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
-                  />
-                ) : (
-                  <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[card.posIdx % CARD_BG_FALLBACK.length]}`} />
-                )}
+                {/* Hover handled by CSS only — avoids Framer scale/infinite-loop conflict */}
+                <div
+                  onClick={() => { if (card.slug) navigate(`/kart/${card.slug}`); }}
+                  style={{
+                    width: w, height: h, borderRadius: 12, overflow: 'hidden',
+                    border: isCenter ? '1.5px solid rgba(129,140,248,0.55)' : '1px solid rgba(255,255,255,0.15)',
+                    boxShadow: isCenter
+                      ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
+                      : '0 14px 44px rgba(0,0,0,0.55)',
+                    cursor: card.slug ? 'pointer' : 'default',
+                    transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.07)';
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = isCenter
+                      ? '0 0 45px rgba(99,102,241,0.55), 0 28px 72px rgba(0,0,0,0.75)'
+                      : '0 18px 52px rgba(0,0,0,0.7)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = isCenter
+                      ? '0 0 35px rgba(99,102,241,0.4), 0 24px 64px rgba(0,0,0,0.65)'
+                      : '0 14px 44px rgba(0,0,0,0.55)';
+                  }}
+                >
+                  {card.url ? (
+                    <img
+                      src={card.url}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${CARD_BG_FALLBACK[card.posIdx % CARD_BG_FALLBACK.length]}`} />
+                  )}
+                </div>
               </motion.div>
             </motion.div>
           );
