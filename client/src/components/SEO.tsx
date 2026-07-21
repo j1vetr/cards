@@ -20,9 +20,9 @@ interface SEOProps {
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const DEFAULT_TITLE = 'Ecarte Jeans | Premium Denim & Jean Koleksiyonu';
-const DEFAULT_DESCRIPTION = 'Ecarte Jeans — Kadın, erkek ve çocuk için premium denim koleksiyonu. Toptan ve bireysel sipariş imkânı. Türkiye\'nin kaliteli jean markası.';
-const SITE_NAME = 'Ecarte Jeans';
+const DEFAULT_TITLE = 'Go|Cards — Pokémon TCG & Riftbound Kart Oyunları';
+const DEFAULT_DESCRIPTION = 'Go|Cards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
+const SITE_NAME = 'Go|Cards';
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 export function SEO({ 
@@ -80,15 +80,15 @@ export function SEO({
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Ecarte Jeans',
+      name: 'Go|Cards',
       url: BASE_URL,
-      logo: `${BASE_URL}/logo.png`,
+      logo: `${BASE_URL}/gocards-logo-white.png`,
       sameAs: [
-        'https://instagram.com/ecartejeans',
+        'https://instagram.com/gocardstcg',
       ],
       contactPoint: {
         '@type': 'ContactPoint',
-        email: 'info@ecartejeans.com',
+        email: 'gocardshub@gmail.com',
         contactType: 'customer service'
       }
     });
@@ -113,7 +113,7 @@ export function SEO({
         sku: product.sku,
         brand: {
           '@type': 'Brand',
-          name: product.brand || 'Ecarte Jeans'
+          name: product.brand || 'Go|Cards'
         },
         category: product.category,
         offers: {
@@ -124,7 +124,7 @@ export function SEO({
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
-            name: 'Ecarte Jeans'
+            name: 'Go|Cards'
           }
         }
       });
@@ -147,7 +147,7 @@ export function SEO({
       schemas.push({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: 'Ecarte Jeans',
+        name: 'Go|Cards',
         url: BASE_URL,
         potentialAction: {
           '@type': 'SearchAction',

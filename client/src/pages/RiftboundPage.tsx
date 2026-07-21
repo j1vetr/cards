@@ -33,23 +33,23 @@ function useBoxProducts(gameSlug: string) {
 const FAQ_ITEMS = [
   {
     q: 'Riftbound TCG nedir?',
-    a: 'Riftbound, Riot Games tarafından League of Legends evrenine dayalı olarak geliştirilen stratejik kart oyunudur. Oyuncular şampiyonlardan oluşan desteler kurarak rakiplerine karşı mücadele eder.',
+    a: 'Riftbound TCG, Riot Games tarafından League of Legends (LoL TCG) evrenine dayalı olarak geliştirilen stratejik kart oyunudur. Oyuncular şampiyonlardan oluşan desteler kurarak rakiplerine karşı mücadele eder.',
   },
   {
-    q: 'Riftbound kartlarını Türkiye\'de nereden satın alabilirim?',
-    a: 'Go|Cards olarak Türkiye\'nin önde gelen Riftbound TCG satıcısıyız. Tüm Riftbound setlerini, booster paketlerini ve tek kartları gocards.toov.com.tr adresinden sipariş verebilirsiniz.',
+    q: 'Riftbound booster pack kaç kart içerir?',
+    a: 'Riftbound booster pack içeriği sete göre değişmekle birlikte standart paketler genellikle 10–12 kart içerir. Kapalı Display Box ise 24–36 booster pack\'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.',
   },
   {
-    q: 'Riftbound kartlarının NM, LP, MP gibi koşulları ne anlama gelir?',
-    a: 'NM (Near Mint) neredeyse kusursuz, LP (Lightly Played) hafif kullanılmış, MP (Moderately Played) orta derecede kullanılmış, HP (Heavily Played) çok kullanılmış kart koşullarını ifade eder.',
+    q: 'League of Legends kart oyunu (LoL TCG) nasıl oynanır?',
+    a: 'League of Legends Riftbound TCG\'de her oyuncu bir şampiyon destesiyle oynar. Kartlar sıra tabanlı olarak oynanır; birimler, büyüler ve donanımlar aracılığıyla rakip şampiyonun can puanını sıfırlamak hedeflenir. Öğrenmesi kolay ama ustalaşması derin bir sistem sunar.',
   },
   {
-    q: 'Riftbound booster kutu fiyatları ne kadar?',
-    a: 'Riftbound booster kutu fiyatları set ve içerik sayısına göre değişir. Güncel fiyatlar için ürün sayfalarımızı inceleyebilirsiniz. 500₺ ve üzeri siparişlerde kargo ücretsizdir.',
+    q: 'En değerli Riftbound kartları hangileridir?',
+    a: 'En değerli Riftbound kartları genellikle ultra rare ve secret rare nadirlik seviyesindeki şampiyon kartlarıdır. Ahri, Jinx, Yasuo gibi popüler şampiyonların özel baskı versiyonları koleksiyoncular arasında en çok aranan Riftbound kartları arasındadır.',
   },
   {
-    q: 'Riftbound ile Pokémon TCG arasındaki fark nedir?',
-    a: 'Her ikisi de koleksiyon kart oyunudur; ancak Riftbound League of Legends şampiyonlarını içerir ve Riot Games\'in kendi mekaniklerini kullanır. Pokémon TCG Nintendo\'nun Pokémon IP\'sine dayanır.',
+    q: 'Riftbound tekli kart (single card) alabilir miyim?',
+    a: 'Evet! Go|Cards olarak Riftbound tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir; böylece tournament destesi için ihtiyacınız olan belirli kartları satın alabilirsiniz.',
   },
 ];
 
@@ -69,7 +69,7 @@ export default function RiftboundPage() {
     <>
       <SEO
         title="League of Legends Riftbound TCG Ürünleri ve Kartları"
-        description="Türkiye'nin en iyi Riftbound TCG mağazası. League of Legends Riftbound booster paket, kapalı kutu ve tek kart satışı. Hızlı kargo, güvenli alışveriş. Stok garantili."
+        description="Türkiye'nin LoL TCG mağazası Go|Cards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."
         url="/riftbound"
         type="website"
         breadcrumbs={breadcrumbs}
