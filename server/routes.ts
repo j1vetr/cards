@@ -357,11 +357,11 @@ export async function registerRoutes(
         .orderBy(desc(cardListings.updatedAt))
         .limit(5000);
 
-      // ── Query active box/sealed products ─────────────────────────────────
+      // ── Query active box/sealed products with stock > 0 ──────────────────
       const boxRows = await db
         .select()
         .from(products)
-        .where(eq(products.isActive, true))
+        .where(and(eq(products.isActive, true), gte(products.stock, 1)))
         .orderBy(desc(products.updatedAt))
         .limit(1000);
 
@@ -407,14 +407,17 @@ export async function registerRoutes(
           : '';
         const price = parseFloat(prod.basePrice).toFixed(2);
 
+        const prodStock = typeof (prod as any).stock === 'number' ? (prod as any).stock : 1;
+        const prodAvailability = prodStock > 0 ? 'in_stock' : 'out_of_stock';
+
         items.push(`    <item>
       <g:id>${escXml('prod_' + prod.id)}</g:id>
       <g:title>${title}</g:title>
       <g:description>${desc}</g:description>
       <g:link>${link}</g:link>${normalizedImage ? `\n      <g:image_link>${escXml(normalizedImage)}</g:image_link>` : ''}
-      <g:availability>in_stock</g:availability>
+      <g:availability>${prodAvailability}</g:availability>
       <g:price>${price} TRY</g:price>
-      <g:brand>Go|Cards</g:brand>
+      <g:brand>GoCards TCG</g:brand>
       <g:condition>new</g:condition>
       <g:google_product_category>5710</g:google_product_category>
     </item>`);

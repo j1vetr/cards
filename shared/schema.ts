@@ -106,6 +106,7 @@ export const products = pgTable("products", {
   discountBadge: text("discount_badge"),
   gameId: varchar("game_id"),
   productType: text("product_type").default('other').notNull(),
+  stock: integer("stock").default(1).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
