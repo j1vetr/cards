@@ -549,55 +549,50 @@ function BoxShowcaseSection() {
     return `${n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺`;
   };
 
-  /* Edge-aligned padding: matches the site's max-w-7xl px-4/sm:px-6/lg:px-8 */
-  const scrollPad = 'calc(max((100vw - 80rem) / 2, 1rem))';
-
   return (
     <section
       data-testid="section-box-showcase"
       style={{ background: '#080e1c', paddingTop: 64, paddingBottom: 72 }}
     >
-      {/* ── Header ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.45 }}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between mb-10"
-      >
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-400 mb-2">
-            Sealed Ürünler
-          </p>
-          <h2
-            className="text-3xl sm:text-4xl font-bold text-white leading-none"
-            style={{ fontFamily: "'Oswald', sans-serif" }}
-          >
-            Box &amp; Sealed
-          </h2>
-        </div>
-        <Link href="/urunler">
-          <button
-            data-testid="btn-box-tumu"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-white/50 hover:text-white transition-colors"
-          >
-            Tümünü Gör <ChevronRight className="w-4 h-4" />
-          </button>
-        </Link>
-      </motion.div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      {/* ── Full-bleed scroll row ── */}
-      <div
-        className="overflow-x-auto"
-        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
-      >
+        {/* ── Header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.45 }}
+          className="flex items-center justify-between mb-10"
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-400 mb-2">
+              Sealed Ürünler
+            </p>
+            <h2
+              className="text-3xl sm:text-4xl font-bold text-white leading-none"
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            >
+              Box &amp; Sealed
+            </h2>
+          </div>
+          <Link href="/urunler">
+            <button
+              data-testid="btn-box-tumu"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-white/50 hover:text-white transition-colors"
+            >
+              Tümünü Gör <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </motion.div>
+
+        {/* ── Centered wrap grid ── */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.4 }}
-          className="flex gap-4"
-          style={{ paddingLeft: scrollPad, paddingRight: scrollPad, width: 'max-content' }}
+          className="grid gap-4"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
         >
           {boxProducts.map((product, idx) => {
             const { accent, dot, label } = gameInfo(product.gameId);
@@ -614,8 +609,7 @@ function BoxShowcaseSection() {
                 viewport={{ once: true, margin: '-20px' }}
                 transition={{ duration: 0.4, delay: Math.min(idx * 0.06, 0.36) }}
                 data-testid={`box-card-${product.id}`}
-                className="shrink-0 group"
-                style={{ width: 240 }}
+                className="group"
               >
                 <Link href={`/urun/${product.slug}`}>
                   {/* Card shell — image + info unified */}
@@ -705,15 +699,16 @@ function BoxShowcaseSection() {
             );
           })}
         </motion.div>
-      </div>
 
-      {/* Mobile CTA */}
-      <div className="mt-8 text-center sm:hidden px-4">
-        <Link href="/urunler">
-          <button className="text-sm font-medium text-white/50 inline-flex items-center gap-1">
-            Tümünü Gör <ChevronRight className="w-4 h-4" />
-          </button>
-        </Link>
+        {/* Mobile CTA */}
+        <div className="mt-8 text-center sm:hidden">
+          <Link href="/urunler">
+            <button className="text-sm font-medium text-white/50 inline-flex items-center gap-1">
+              Tümünü Gör <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </div>
+
       </div>
     </section>
   );
