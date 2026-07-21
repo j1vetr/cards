@@ -1,4 +1,5 @@
 import { useParams, Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
@@ -6,7 +7,7 @@ import { CardCard } from '@/components/CardCard';
 import { useCardSet, useCards } from '@/hooks/useTcg';
 import { useState, useCallback } from 'react';
 import { useSearch, useLocation } from 'wouter';
-import { ChevronRight, ChevronLeft, Loader2, Search, X, Calendar, Hash } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, Search, X, Calendar, Hash, Package } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const LIMIT = 24;
@@ -29,6 +30,78 @@ function formatDate(raw?: string | null): string | null {
   const d = new Date(raw.replace(/\//g, '-') + 'T00:00:00');
   if (isNaN(d.getTime())) return raw;
   return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/* ─── Booster Box Widget ─────────────────────────────────────────────── */
+function SetBoosterBoxWidget({
+  gameSlug,
+  setName,
+  accent,
+}: {
+  gameSlug?: string;
+  setName: string;
+  accent: { color: string; dim: string; glow: string };
+}) {
+  const { data: boxes = [] } = useQuery<any[]>({
+    queryKey: ['boxes-for-game', gameSlug],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/boxes?game=${encodeURIComponent(gameSlug!)}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!gameSlug,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const setNameLower = setName.toLowerCase();
+  const matchingBox = boxes.find((box: any) =>
+    box.name.toLowerCase().includes(setNameLower)
+  );
+
+  if (!matchingBox) return null;
+
+  const boxImage = matchingBox.images?.[0];
+  const price = matchingBox.basePrice ? parseFloat(matchingBox.basePrice) : null;
+
+  return (
+    <a
+      href={`/urun/${matchingBox.slug}`}
+      className="mt-6 sm:mt-8 inline-flex items-center gap-3 px-4 py-3 rounded-xl border transition-all hover:opacity-90 w-full sm:w-auto"
+      style={{
+        background: accent.dim,
+        borderColor: `${accent.color}40`,
+      }}
+      data-testid="link-set-booster-box"
+    >
+      {boxImage && (
+        <img
+          src={boxImage}
+          alt={matchingBox.name}
+          className="w-10 h-10 object-contain rounded-lg shrink-0"
+        />
+      )}
+      {!boxImage && (
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: `${accent.color}20` }}
+        >
+          <Package className="w-5 h-5" style={{ color: accent.color }} />
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: accent.color }}>
+          Bu Setin Booster Kutusu
+        </p>
+        <p className="text-sm font-semibold text-white truncate">{matchingBox.name}</p>
+        {price != null && (
+          <p className="text-xs" style={{ color: accent.color }}>
+            ₺{price.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+          </p>
+        )}
+      </div>
+      <ChevronRight className="w-4 h-4 ml-auto shrink-0" style={{ color: accent.color }} />
+    </a>
+  );
 }
 
 export default function CardSet() {
@@ -194,6 +267,9 @@ export default function CardSet() {
               <img src={set.symbol_url} alt="" className="h-12 object-contain shrink-0 opacity-70" />
             )}
           </div>
+
+          {/* Booster box widget */}
+          <SetBoosterBoxWidget gameSlug={set.game_slug} setName={set.name} accent={accent} />
         </div>
       </div>
 

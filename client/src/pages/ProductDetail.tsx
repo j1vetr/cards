@@ -53,6 +53,7 @@ import { ProductCard } from '@/components/ProductCard';
 
 import { getOriginalPrice } from '@/lib/discountPrice';
 import { useProduct, useProducts, useCategories } from '@/hooks/useProducts';
+import { useCardGames, useCards } from '@/hooks/useTcg';
 import { useCart } from '@/hooks/useCart';
 import { useCartModal } from '@/hooks/useCartModal';
 import { useToast } from '@/hooks/use-toast';
@@ -107,6 +108,63 @@ interface WholesaleSeries {
   name: string;
   sizeDistribution: { size: string; quantity: number }[];
   isActive: boolean;
+}
+
+/* ─── Box → Sample cards section ────────────────────────────────────── */
+function BoxCardsSection({ gameId }: { gameId: string }) {
+  const { data: games = [] } = useCardGames();
+  const game = games.find((g) => g.id === gameId);
+  const gameSlug = game?.slug;
+
+  const { data: cardsData } = useCards({ game: gameSlug, limit: 8, sort: 'newest' });
+  const cards = cardsData?.cards ?? [];
+
+  if (!gameSlug || cards.length === 0) return null;
+
+  return (
+    <section className="mt-16 pt-12 border-t border-black/8">
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-black">
+            Bu Kutuda Çıkabilecek Kartlar
+          </h2>
+          <p className="text-sm text-black/40 mt-1">
+            {game?.name} koleksiyonundan örnek kartlar
+          </p>
+        </div>
+        <a
+          href={`/oyun/${gameSlug}`}
+          className="text-xs font-semibold text-black/45 hover:text-black transition-colors flex items-center gap-1 uppercase tracking-[0.15em]"
+          data-testid="link-view-all-cards"
+        >
+          Tüm Kartlar
+          <ChevronRight className="w-3.5 h-3.5" />
+        </a>
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+        {cards.map((card: any) => (
+          <a
+            key={card.id}
+            href={`/kart/${card.slug}`}
+            className="group block"
+            data-testid={`link-sample-card-${card.id}`}
+          >
+            <div className="aspect-[63/88] rounded-lg overflow-hidden bg-stone-100 border border-black/6 group-hover:border-black/20 transition-all group-hover:shadow-md">
+              <img
+                src={card.image_url || 'https://images.pokemontcg.io/sv3pt5/logo.png'}
+                alt={card.name}
+                loading="lazy"
+                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
+            <p className="text-[10px] text-black/50 mt-1.5 truncate text-center group-hover:text-black transition-colors leading-tight">
+              {card.name}
+            </p>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function ProductDetail() {
@@ -1459,6 +1517,11 @@ export default function ProductDetail() {
               )}
             </motion.aside>
           </div>
+
+          {/* Box → sample cards section */}
+          {(product as any).productType === 'box' && (product as any).gameId && (
+            <BoxCardsSection gameId={(product as any).gameId} />
+          )}
 
           {/* Reviews */}
           <motion.section

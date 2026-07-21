@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { SEO } from '@/components/SEO';
@@ -549,6 +550,67 @@ function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
   );
 }
 
+/* ─── Set + Booster Box links ────────────────────────────────────────── */
+function SetBoxSection({ card }: { card: any }) {
+  const { data: boxes = [] } = useQuery<any[]>({
+    queryKey: ['boxes-for-game', card.game_slug],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/boxes?game=${encodeURIComponent(card.game_slug)}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!card.game_slug,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const setNameLower = (card.set_name ?? '').toLowerCase();
+  const matchingBox = setNameLower
+    ? boxes.find((box: any) => box.name.toLowerCase().includes(setNameLower))
+    : null;
+
+  if (!card.set_name && !matchingBox) return null;
+
+  return (
+    <div className="border-t border-white/[0.07] py-5">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-8">
+        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Bu Kartın Seti</p>
+        <div className="flex flex-wrap items-center gap-3">
+          {card.set_slug && card.set_name && (
+            <a
+              href={`/set/${card.set_slug}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/[0.1] text-sm font-medium text-zinc-200 hover:text-white hover:border-white/20 transition-colors"
+              style={{ background: 'rgba(255,255,255,0.04)' }}
+              data-testid="link-card-set"
+            >
+              {card.set_logo_url && (
+                <img src={card.set_logo_url} alt="" className="h-5 object-contain opacity-70" />
+              )}
+              {card.set_name}
+              <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            </a>
+          )}
+          {matchingBox && (
+            <a
+              href={`/urun/${matchingBox.slug}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}
+              data-testid="link-booster-box"
+            >
+              <Package className="w-4 h-4 shrink-0" />
+              Booster Kutusu Satın Al
+              {matchingBox.basePrice && (
+                <span className="ml-1 opacity-75 font-normal">
+                  ₺{parseFloat(matchingBox.basePrice).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                </span>
+              )}
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Set cards row ──────────────────────────────────────────────────── */
 function SetCardsRow({ cards, setSlug }: { cards: any[]; setSlug?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -942,6 +1004,9 @@ export default function CardDetail() {
           {/* Mobile trust row */}
           {trustRow}
         </div>
+
+        {/* ── Set + Booster box links ── */}
+        <SetBoxSection card={card} />
 
         {/* ── Set cards — full width, below both layouts ── */}
         <SetCardsRow cards={similar} setSlug={card.set_slug} />
