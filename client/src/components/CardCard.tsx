@@ -25,6 +25,7 @@ export interface CardPublic {
   min_price: string | null;
   listing_count: number;
   available_conditions: string[];
+  lowest_condition: string | null;
   market_price?: string | null;
 }
 
@@ -138,17 +139,22 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
                 </div>
               )}
 
-              {/* Hover: sepete ekle butonu */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-250 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <button
-                  data-testid={`btn-addtocart-${card.id}`}
-                  onClick={e => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
-                  className="bg-indigo-600 hover:bg-indigo-500 rounded-full p-2.5 shadow-xl transition-colors scale-90 group-hover:scale-100"
-                  title="Hızlı Bakış"
-                >
-                  <ShoppingCart className="w-4 h-4 text-white" />
-                </button>
-              </div>
+              {/* Hover: sepete ekle / seçenekleri gör butonu */}
+              {hasStock && (
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-250 flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100">
+                  <button
+                    data-testid={`btn-addtocart-${card.id}`}
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
+                    className="flex items-center gap-1.5 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-xl transition-all scale-90 group-hover:scale-100"
+                    style={{ background: card.listing_count === 1 ? '#4f46e5' : '#1e293b', border: '1px solid rgba(255,255,255,0.18)' }}
+                  >
+                    {card.listing_count === 1
+                      ? <><ShoppingCart className="w-3 h-3" /> Sepete Ekle</>
+                      : <>🔍 Seçenekleri Gör</>
+                    }
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* ── Info area — flex-col so price stays at bottom ── */}
@@ -209,10 +215,18 @@ export const CardCard = memo(function CardCard({ card }: CardCardProps) {
               {/* Price row — always at bottom */}
               <div className="pt-1.5 border-t border-white/[0.06]">
                 {price != null ? (
-                  <p className="text-base font-bold"
-                    style={{ color: '#818cf8', fontFamily: 'var(--font-display)' }}>
-                    {price.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
-                  </p>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <p className="text-base font-bold"
+                      style={{ color: '#818cf8', fontFamily: 'var(--font-display)' }}>
+                      {price.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
+                    </p>
+                    {card.lowest_condition && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide text-zinc-400"
+                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {card.lowest_condition}
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-[11px] font-semibold text-red-400/70 uppercase tracking-wide">
                     Stok Yok

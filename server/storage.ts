@@ -2420,6 +2420,7 @@ export class DbStorage implements IStorage {
         MIN(CASE WHEN ${listingExpr} THEN cl.price::numeric END) AS min_price,
         COUNT(CASE WHEN ${listingExpr} THEN 1 END)::int AS listing_count,
         ARRAY_REMOVE(ARRAY_AGG(DISTINCT CASE WHEN ${listingExpr} THEN cl.condition END), NULL) AS available_conditions,
+        (ARRAY_AGG(CASE WHEN ${listingExpr} THEN cl.condition END ORDER BY CASE WHEN ${listingExpr} THEN cl.price::numeric END ASC NULLS LAST))[1] AS lowest_condition,
         MAX(cp.price_market::numeric) AS market_price
       FROM cards c
       JOIN card_sets cs ON cs.id = c.set_id
