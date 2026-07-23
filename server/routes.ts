@@ -187,8 +187,9 @@ const ensureDir = (dir: string) => {
 ensureDir(path.join(uploadDir, "products"));
 ensureDir(path.join(uploadDir, "categories"));
 ensureDir(path.join(uploadDir, "hero"));
+ensureDir(path.join(uploadDir, "blog"));
 
-const VALID_UPLOAD_TYPES = ['products', 'categories', 'hero', 'branding'];
+const VALID_UPLOAD_TYPES = ['products', 'categories', 'hero', 'branding', 'blog'];
 
 const multerStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -899,7 +900,7 @@ ${items.join('\n')}
   };
 
   // Allowed upload types for security
-  const ALLOWED_UPLOAD_TYPES = ['products', 'categories', 'hero', 'branding'];
+  const ALLOWED_UPLOAD_TYPES = ['products', 'categories', 'hero', 'branding', 'blog'];
 
   // File Upload Route with type validation and image optimization
   app.post("/api/admin/upload/:type", requireAdmin, (req, res, next) => {

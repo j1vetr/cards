@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -88,12 +88,24 @@ function ToolbarBtn({
   );
 }
 
+async function uploadBlogImage(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append('images', file);
+  const res = await fetch('/api/admin/upload/blog', { method: 'POST', body: fd, credentials: 'include' });
+  if (!res.ok) throw new Error('Resim yüklenemedi');
+  const data = await res.json();
+  return data.urls[0];
+}
+
 // ── Rich text editor ─────────────────────────────────────────────────────────
 function RichEditor({
   content, onChange,
 }: {
   content: string; onChange: (html: string) => void;
 }) {
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -115,9 +127,19 @@ function RichEditor({
     if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
-  const addImage = () => {
-    const url = window.prompt('Resim URL\'si girin:');
-    if (url) editor.chain().focus().setImage({ src: url }).run();
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploading(true);
+    try {
+      const url = await uploadBlogImage(file);
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch {
+      alert('Resim yüklenirken hata oluştu.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -137,7 +159,20 @@ function RichEditor({
         <ToolbarBtn onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Kod bloğu">{`<>`}</ToolbarBtn>
         <div className="w-px h-4 bg-neutral-200 mx-1" />
         <ToolbarBtn onClick={addLink} active={editor.isActive('link')} title="Link ekle">🔗</ToolbarBtn>
-        <ToolbarBtn onClick={addImage} title="Resim ekle">🖼</ToolbarBtn>
+        <ToolbarBtn
+          onClick={() => imageInputRef.current?.click()}
+          title={uploading ? 'Yükleniyor…' : 'Resim yükle'}
+        >
+          {uploading ? <span className="text-[10px]">…</span> : '🖼'}
+        </ToolbarBtn>
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageFileChange}
+          data-testid="input-inline-image-upload"
+        />
         <div className="w-px h-4 bg-neutral-200 mx-1" />
         <ToolbarBtn onClick={() => editor.chain().focus().undo().run()} title="Geri al">↩</ToolbarBtn>
         <ToolbarBtn onClick={() => editor.chain().focus().redo().run()} title="İleri al">↪</ToolbarBtn>
@@ -175,12 +210,29 @@ function PostModal({
   });
   const [content, setContent] = useState(post?.content ?? '');
   const [error, setError] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleTitleChange = (v: string) => {
     set('title', v);
     if (!post) set('slug', slugify(v));
+  };
+
+  const handleCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setCoverUploading(true);
+    try {
+      const url = await uploadBlogImage(file);
+      set('coverImageUrl', url);
+    } catch {
+      setError('Kapak resmi yüklenirken hata oluştu.');
+    } finally {
+      setCoverUploading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -284,12 +336,66 @@ function PostModal({
 
           {/* Cover image */}
           <div>
-            <label className="block text-[12px] font-medium text-neutral-700 mb-1">Kapak Resmi URL</label>
+            <label className="block text-[12px] font-medium text-neutral-700 mb-1">Kapak Resmi</label>
             <input
-              className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverFileChange}
+              data-testid="input-blog-cover-file"
+            />
+            {form.coverImageUrl ? (
+              <div className="relative rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50">
+                <img
+                  src={form.coverImageUrl}
+                  alt="Kapak"
+                  className="w-full h-40 object-cover"
+                />
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => coverInputRef.current?.click()}
+                    disabled={coverUploading}
+                    className="bg-white text-neutral-800 text-[12px] font-medium px-3 py-1.5 rounded-md shadow flex items-center gap-1.5 hover:bg-neutral-100 transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    {coverUploading ? 'Yükleniyor…' : 'Değiştir'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set('coverImageUrl', '')}
+                    className="bg-white text-red-600 text-[12px] font-medium px-3 py-1.5 rounded-md shadow flex items-center gap-1.5 hover:bg-red-50 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Kaldır
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={coverUploading}
+                className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-neutral-200 rounded-lg py-8 text-neutral-400 hover:border-neutral-400 hover:text-neutral-600 transition-colors"
+                data-testid="button-blog-cover-upload"
+              >
+                {coverUploading ? (
+                  <span className="text-[13px]">Yükleniyor…</span>
+                ) : (
+                  <>
+                    <ImageIcon className="w-6 h-6" />
+                    <span className="text-[13px] font-medium">Kapak resmi yükle</span>
+                    <span className="text-[11px]">veya URL gir</span>
+                  </>
+                )}
+              </button>
+            )}
+            <input
+              className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-neutral-900 mt-2"
               value={form.coverImageUrl}
               onChange={e => set('coverImageUrl', e.target.value)}
-              placeholder="https://..."
+              placeholder="https://... (URL ile de ekleyebilirsiniz)"
               data-testid="input-blog-cover"
             />
           </div>
