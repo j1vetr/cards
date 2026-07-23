@@ -113,10 +113,15 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-8 pt-6 border-t border-white/[0.06]">
+        <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <p className="text-[11px] text-white/25">
             © 2026 Go|Cards TCG. Tüm Hakları Saklıdır.
           </p>
+          <img
+            src="/payment-logos.png"
+            alt="iyzico · Mastercard · Visa · American Express · Troy"
+            className="h-5 w-auto object-contain opacity-40"
+          />
         </div>
 
       </div>
