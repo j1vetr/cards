@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle, Share2, Copy, Check, ListOrdered, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle, Share2, Copy, Check, ListOrdered, ArrowUp, ArrowDown, History } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -452,7 +452,9 @@ function PostModal({
   const [aiTopics, setAiTopics] = useState<string[]>([]);
   const [aiSelectedTopic, setAiSelectedTopic] = useState('');
   const [aiOutline, setAiOutline] = useState<Array<{ level: 2 | 3; text: string }>>([]);
-  const [aiTitles, setAiTitles] = useState<string[]>([]);
+  const [aiOutlineHistory, setAiOutlineHistory] = useState<Array<{ topic: string; ts: Date; outline: Array<{ level: 2 | 3; text: string }> }>>([]);
+  const [aiOutlineHistoryOpen, setAiOutlineHistoryOpen] = useState(false);
+  const [aiTitlesHistory, setAiTitlesHistory] = useState<Array<{ topic: string; ts: Date; titles: string[] }>>([]);
   const [aiLoading, setAiLoading] = useState<'topics' | 'outline' | 'titles' | 'generate' | 'cover' | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(!post);
@@ -516,7 +518,15 @@ function PostModal({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Taslak oluşturulamadı');
-      setAiOutline(data.outline ?? []);
+      const newOutline = data.outline ?? [];
+      setAiOutline(newOutline);
+      if (newOutline.length > 0) {
+        setAiOutlineHistory(prev => {
+          const entry = { topic: aiSelectedTopic, ts: new Date(), outline: newOutline };
+          const next = [entry, ...prev].slice(0, 3);
+          return next;
+        });
+      }
     } catch (e: any) {
       setAiError(e.message);
     } finally {
@@ -537,7 +547,13 @@ function PostModal({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Başlık önerileri alınamadı');
-      setAiTitles(data.titles ?? []);
+      const newTitles = data.titles ?? [];
+      if (newTitles.length > 0) {
+        setAiTitlesHistory(prev => [
+          ...prev,
+          { topic: topicForTitles, ts: new Date(), titles: newTitles },
+        ]);
+      }
     } catch (e: any) {
       setAiError(e.message);
     } finally {
@@ -855,7 +871,7 @@ function PostModal({
                       <button
                         key={i}
                         type="button"
-                        onClick={() => { setAiSelectedTopic(t); setAiOutline([]); setAiTitles([]); }}
+                        onClick={() => { setAiSelectedTopic(t); setAiOutline([]); }}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
                           aiSelectedTopic === t
                             ? 'bg-violet-600 text-white border-violet-600'
@@ -876,11 +892,48 @@ function PostModal({
                     <span className="text-[12px] text-neutral-700 flex-1">{aiSelectedTopic}</span>
                     <button
                       type="button"
-                      onClick={() => { setAiSelectedTopic(''); setAiOutline([]); setAiTitles([]); }}
+                      onClick={() => { setAiSelectedTopic(''); setAiOutline([]); }}
                       className="text-neutral-400 hover:text-neutral-600 text-[11px]"
                     >
                       ✕
                     </button>
+                  </div>
+                )}
+
+                {/* Outline history dropdown */}
+                {aiOutlineHistory.length > 1 && (
+                  <div className="relative" data-testid="outline-history">
+                    <button
+                      type="button"
+                      onClick={() => setAiOutlineHistoryOpen(o => !o)}
+                      className="flex items-center gap-1.5 text-[11px] text-violet-600 hover:text-violet-800 font-medium transition-colors"
+                      data-testid="button-outline-history-toggle"
+                    >
+                      <History className="w-3 h-3" />
+                      Önceki Taslaklar ({aiOutlineHistory.length - 1})
+                      <ChevronDown className={`w-3 h-3 transition-transform ${aiOutlineHistoryOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {aiOutlineHistoryOpen && (
+                      <div className="absolute z-10 top-6 left-0 w-72 bg-white border border-violet-200 rounded-lg shadow-lg overflow-hidden" data-testid="outline-history-dropdown">
+                        {aiOutlineHistory.slice(1).map((entry, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => { setAiOutline(entry.outline); setAiOutlineHistoryOpen(false); }}
+                            className="w-full text-left px-3 py-2.5 hover:bg-violet-50 transition-colors border-b border-violet-50 last:border-0"
+                            data-testid={`button-outline-history-${i}`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <span className="text-[10px] text-violet-500 font-medium">
+                                {entry.ts.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-[10px] text-neutral-400">{entry.outline.length} bölüm</span>
+                            </div>
+                            <p className="text-[11px] text-neutral-600 truncate">{entry.topic}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -976,27 +1029,41 @@ function PostModal({
                   </div>
                 )}
 
-                {/* Title suggestions */}
-                {aiTitles.length > 0 && (
+                {/* Title history — accumulated batches */}
+                {aiTitlesHistory.length > 0 && (
                   <div className="border border-amber-200 rounded-lg overflow-hidden" data-testid="title-suggestions">
                     <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-amber-700">Başlık Önerileri — birini seçin</span>
-                      <button type="button" onClick={() => setAiTitles([])} className="text-[10px] text-neutral-400 hover:text-neutral-600">✕</button>
+                      <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1.5">
+                        <History className="w-3 h-3" />
+                        Önceki Başlıklar — birini seçin
+                      </span>
+                      <button type="button" onClick={() => setAiTitlesHistory([])} className="text-[10px] text-neutral-400 hover:text-neutral-600" data-testid="button-clear-title-history">✕</button>
                     </div>
-                    <div className="divide-y divide-amber-50">
-                      {aiTitles.map((t, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => { handleTitleChange(t); setAiTitles([]); }}
-                          className="w-full text-left px-3 py-2 text-[12px] text-neutral-700 hover:bg-amber-50 transition-colors"
-                          data-testid={`button-title-suggestion-${i}`}
-                        >
-                          <span className="text-[10px] font-bold text-amber-500 mr-1.5">
-                            {i === 0 ? 'SORU' : i === 1 ? 'LİSTE' : 'VAAT'}
-                          </span>
-                          {t}
-                        </button>
+                    <div className="divide-y divide-amber-100">
+                      {[...aiTitlesHistory].reverse().map((batch, bi) => (
+                        <div key={bi} data-testid={`title-batch-${bi}`}>
+                          <div className="px-3 pt-2 pb-1 flex items-center gap-1.5">
+                            <span className="text-[10px] text-neutral-400 font-medium">
+                              {batch.ts.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <span className="text-[10px] text-neutral-300">·</span>
+                            <span className="text-[10px] text-neutral-400 truncate max-w-[180px]">{batch.topic}</span>
+                          </div>
+                          {batch.titles.map((t, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => { handleTitleChange(t); }}
+                              className="w-full text-left px-3 py-2 text-[12px] text-neutral-700 hover:bg-amber-50 transition-colors"
+                              data-testid={`button-title-suggestion-${bi}-${i}`}
+                            >
+                              <span className="text-[10px] font-bold text-amber-500 mr-1.5">
+                                {i === 0 ? 'SORU' : i === 1 ? 'LİSTE' : 'VAAT'}
+                              </span>
+                              {t}
+                            </button>
+                          ))}
+                        </div>
                       ))}
                     </div>
                   </div>
