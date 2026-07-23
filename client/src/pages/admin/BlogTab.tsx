@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -62,7 +62,7 @@ const EMPTY_FORM = {
   slug: '',
   summary: '',
   coverImageUrl: '',
-  category: 'general',
+  category: 'guide',
   status: 'draft',
   metaTitle: '',
   metaDescription: '',
@@ -119,6 +119,12 @@ function RichEditor({
       attributes: { class: 'prose prose-sm max-w-none min-h-[300px] p-3 focus:outline-none text-neutral-900' },
     },
   });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   if (!editor) return null;
 
@@ -302,7 +308,16 @@ function PostModal({
               <select
                 className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-neutral-900"
                 value={form.status}
-                onChange={e => set('status', e.target.value)}
+                onChange={e => {
+                  const next = e.target.value;
+                  setForm(f => ({
+                    ...f,
+                    status: next,
+                    publishedAt: next === 'published' && !f.publishedAt
+                      ? new Date().toISOString().slice(0, 16)
+                      : f.publishedAt,
+                  }));
+                }}
                 data-testid="select-blog-status"
               >
                 <option value="draft">Taslak</option>
@@ -468,6 +483,7 @@ function PostModal({
 export default function BlogTab() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -520,11 +536,11 @@ export default function BlogTab() {
     deleteMutation.mutate(post.id);
   };
 
-  const filtered = posts.filter(p =>
-    !search ||
-    p.title.toLowerCase().includes(search.toLowerCase()) ||
-    p.slug.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = posts.filter(p => {
+    if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+    if (search && !p.title.toLowerCase().includes(search.toLowerCase()) && !p.slug.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   const categoryLabel = (cat: string) => CATEGORIES.find(c => c.value === cat)?.label ?? cat;
 
@@ -546,12 +562,26 @@ export default function BlogTab() {
       {error && <InlineAlert tone="error" >{error}</InlineAlert>}
 
       <Card className="mb-4 px-4 py-3">
-        <SearchInput
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Başlık veya slug ile ara…"
-          data-testid="input-blog-search"
-        />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex-1">
+            <SearchInput
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Başlık veya slug ile ara…"
+              data-testid="input-blog-search"
+            />
+          </div>
+          <select
+            className="border border-neutral-200 rounded-md px-3 py-2 text-[13px] text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-900 bg-white"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as 'all' | 'draft' | 'published')}
+            data-testid="select-blog-status-filter"
+          >
+            <option value="all">Tüm Yazılar ({posts.length})</option>
+            <option value="published">Yayında ({posts.filter(p => p.status === 'published').length})</option>
+            <option value="draft">Taslak ({posts.filter(p => p.status === 'draft').length})</option>
+          </select>
+        </div>
       </Card>
 
       {isLoading ? (
@@ -559,10 +589,14 @@ export default function BlogTab() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title={search ? 'Sonuç bulunamadı' : 'Henüz yazı yok'}
-          description={search ? 'Arama kriterini değiştirin.' : 'Yeni yazı oluşturarak başlayın.'}
+          title={search || statusFilter !== 'all' ? 'Sonuç bulunamadı' : 'Henüz yazı yok'}
+          description={
+            search || statusFilter !== 'all'
+              ? 'Arama ya da filtre kriterini değiştirin.'
+              : 'Yeni yazı oluşturarak başlayın.'
+          }
           action={
-            !search ? (
+            !search && statusFilter === 'all' ? (
               <PrimaryButton onClick={() => { setEditingPost(null); setShowModal(true); }}>
                 <Plus className="w-3.5 h-3.5" /> Yeni Yazı
               </PrimaryButton>
