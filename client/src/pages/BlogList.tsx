@@ -102,7 +102,7 @@ export default function BlogList() {
         <div className="bg-white border-b border-neutral-200 sticky top-0 z-10 shadow-sm">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center gap-1 overflow-x-auto py-3" style={{ scrollbarWidth: 'none' }}>
-              {CATEGORIES.map(cat => (
+              {CATEGORIES.filter(cat => cat.value === 'all' || isLoading || categoryCount(cat.value) > 0).map(cat => (
                 <button
                   key={cat.value}
                   onClick={() => selectCategory(cat.value)}
