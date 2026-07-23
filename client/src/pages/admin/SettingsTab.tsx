@@ -502,6 +502,7 @@ export default function SettingsPanel() {
     aras_kargo_default_desi: '1',
     pokemon_tcg_api_key: '',
     pricecharting_api_key: '',
+    openai_api_key: '',
     ...Object.fromEntries(WHATSAPP_EVENTS.flatMap(({ key, defaultTpl }) => [
       [`wpileti_evt_${key}`, 'true'],
       [`wpileti_tpl_${key}`, defaultTpl],
@@ -1592,6 +1593,47 @@ export default function SettingsPanel() {
         <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800">
           Anahtarları kaydettikten sonra Admin → Kart API → Mod: <strong>Fiyat Güncelleme</strong> → Sync Başlat.
           Ardından "Otomatik Listele" ile fiyatlı kartları mağazaya ekleyebilirsiniz.
+        </div>
+      </div>
+
+      {/* OpenAI API Key */}
+      <div className="bg-white border border-neutral-200 rounded-xl p-6" data-testid="card-openai-api-key">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-violet-50 rounded-lg">
+            <Sparkles className="w-5 h-5 text-violet-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-neutral-900">OpenAI API Anahtarı</h3>
+            <p className="text-sm text-neutral-500">
+              Blog yazıları, konu önerileri ve kapak görselleri için AI özelliklerini etkinleştirir.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-neutral-500 mb-2">
+            OpenAI API Key{' '}
+            <a
+              href="https://platform.openai.com/api-keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline text-xs font-normal"
+            >
+              (platform.openai.com/api-keys)
+            </a>
+          </label>
+          <input
+            type="password"
+            value={settings.openai_api_key}
+            onChange={(e) => setSettings(s => ({ ...s, openai_api_key: e.target.value }))}
+            placeholder="sk-••••••••"
+            autoComplete="new-password"
+            className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 font-mono text-sm"
+            data-testid="input-openai-api-key"
+          />
+          <p className="text-xs text-neutral-500 mt-1">
+            Sunucuda şifreli saklanır. Blog yönetiminde "Yapay Zeka ile Yaz" özelliği için gereklidir.
+          </p>
         </div>
       </div>
 

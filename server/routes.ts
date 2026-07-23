@@ -1,4 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
+import { aiTopicsHandler, aiGenerateHandler, aiCoverHandler } from './ai-blog';
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
 import { z } from "zod";
@@ -4927,6 +4928,9 @@ ${items.join('\n')}
       if (settings.pokemon_tcg_api_key) {
         settings.pokemon_tcg_api_key = '••••••••';
       }
+      if (settings.openai_api_key) {
+        settings.openai_api_key = '••••••••';
+      }
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -4956,6 +4960,9 @@ ${items.join('\n')}
       }
       if (settings.pokemon_tcg_api_key === '••••••••') {
         delete settings.pokemon_tcg_api_key;
+      }
+      if (settings.openai_api_key === '••••••••') {
+        delete settings.openai_api_key;
       }
       await storage.setSiteSettings(settings as any);
       res.json({ success: true });
@@ -6349,6 +6356,11 @@ Sitemap: ${baseUrl}/sitemap.xml
       res.status(500).json({ error: "Yazı silinemedi" });
     }
   });
+
+  // ── AI blog generation ────────────────────────────────────────────────────
+  app.post("/api/admin/blog/ai/topics", requireAdmin, aiTopicsHandler);
+  app.post("/api/admin/blog/ai/generate", requireAdmin, aiGenerateHandler);
+  app.post("/api/admin/blog/ai/cover", requireAdmin, aiCoverHandler);
 
   return httpServer;
 }

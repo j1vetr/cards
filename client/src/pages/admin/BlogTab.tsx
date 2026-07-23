@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -219,6 +219,14 @@ function PostModal({
   const [coverUploading, setCoverUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  // AI panel state
+  const [aiGame, setAiGame] = useState<'pokemon' | 'riftbound'>('pokemon');
+  const [aiTopics, setAiTopics] = useState<string[]>([]);
+  const [aiSelectedTopic, setAiSelectedTopic] = useState('');
+  const [aiLoading, setAiLoading] = useState<'topics' | 'generate' | 'cover' | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(!post);
+
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleTitleChange = (v: string) => {
@@ -238,6 +246,74 @@ function PostModal({
       setError('Kapak resmi yüklenirken hata oluştu.');
     } finally {
       setCoverUploading(false);
+    }
+  };
+
+  const handleAiTopics = async () => {
+    setAiError(null);
+    setAiLoading('topics');
+    try {
+      const existingTitles = (window as any).__blogTitles__ ?? [];
+      const res = await fetch('/api/admin/blog/ai/topics', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: aiGame, category: form.category, existingTitles }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Konu önerileri alınamadı');
+      setAiTopics(data.topics ?? []);
+    } catch (e: any) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiGenerate = async () => {
+    if (!aiSelectedTopic) return;
+    setAiError(null);
+    setAiLoading('generate');
+    try {
+      const res = await fetch('/api/admin/blog/ai/generate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: aiSelectedTopic, game: aiGame, category: form.category }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Makale üretilemedi');
+      if (data.title) { handleTitleChange(data.title); }
+      if (data.summary) { set('summary', data.summary); }
+      if (data.metaTitle) { set('metaTitle', data.metaTitle); }
+      if (data.metaDescription) { set('metaDescription', data.metaDescription); }
+      if (data.content) { setContent(data.content); }
+    } catch (e: any) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiCover = async () => {
+    const topicForCover = aiSelectedTopic || form.title;
+    if (!topicForCover) { setAiError('Önce bir konu seçin veya başlık girin.'); return; }
+    setAiError(null);
+    setAiLoading('cover');
+    try {
+      const res = await fetch('/api/admin/blog/ai/cover', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: topicForCover, game: aiGame }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Kapak görseli üretilemedi');
+      if (data.url) { set('coverImageUrl', data.url); }
+    } catch (e: any) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(null);
     }
   };
 
@@ -419,6 +495,128 @@ function PostModal({
           <div>
             <label className="block text-[12px] font-medium text-neutral-700 mb-1">İçerik</label>
             <RichEditor content={content} onChange={setContent} />
+          </div>
+
+          {/* AI Assistant Panel */}
+          <div className="border border-violet-200 rounded-lg overflow-hidden bg-violet-50/40">
+            <button
+              type="button"
+              onClick={() => setAiOpen(o => !o)}
+              className="w-full flex items-center justify-between px-4 py-2.5 text-[12px] font-medium text-violet-800 bg-violet-50 hover:bg-violet-100 transition-colors"
+              data-testid="button-ai-panel-toggle"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Yapay Zeka ile Yaz
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${aiOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {aiOpen && (
+              <div className="p-4 space-y-3">
+                {/* Game + topic suggest row */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={aiGame}
+                    onChange={e => { setAiGame(e.target.value as any); setAiTopics([]); setAiSelectedTopic(''); }}
+                    className="border border-violet-200 rounded-md px-3 py-1.5 text-[12px] text-neutral-700 bg-white focus:outline-none focus:ring-1 focus:ring-violet-400"
+                    data-testid="select-ai-game"
+                  >
+                    <option value="pokemon">Pokémon TCG</option>
+                    <option value="riftbound">Riftbound</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAiTopics}
+                    disabled={!!aiLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-[12px] font-medium rounded-md hover:bg-violet-700 disabled:opacity-60 transition-colors"
+                    data-testid="button-ai-topics"
+                  >
+                    {aiLoading === 'topics' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                    {aiLoading === 'topics' ? 'Öneriliyor…' : 'Konu Öner'}
+                  </button>
+                </div>
+
+                {/* Topic chips */}
+                {aiTopics.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiTopics.map((t, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setAiSelectedTopic(t)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                          aiSelectedTopic === t
+                            ? 'bg-violet-600 text-white border-violet-600'
+                            : 'bg-white text-violet-700 border-violet-300 hover:border-violet-500 hover:bg-violet-50'
+                        }`}
+                        data-testid={`button-ai-topic-${i}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Selected topic display */}
+                {aiSelectedTopic && (
+                  <div className="flex items-start gap-2 bg-white border border-violet-200 rounded-md px-3 py-2">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-500 mt-0.5 shrink-0" />
+                    <span className="text-[12px] text-neutral-700 flex-1">{aiSelectedTopic}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAiSelectedTopic('')}
+                      className="text-neutral-400 hover:text-neutral-600 text-[11px]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAiGenerate}
+                    disabled={!aiSelectedTopic || !!aiLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[12px] font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                    data-testid="button-ai-generate"
+                  >
+                    {aiLoading === 'generate' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    {aiLoading === 'generate' ? 'Makale yazılıyor…' : 'Makale Oluştur'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAiCover}
+                    disabled={(!aiSelectedTopic && !form.title) || !!aiLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-indigo-600 border border-indigo-300 text-[12px] font-medium rounded-md hover:bg-indigo-50 disabled:opacity-50 transition-colors"
+                    data-testid="button-ai-cover"
+                  >
+                    {aiLoading === 'cover' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                    {aiLoading === 'cover' ? 'Görsel üretiliyor…' : 'Kapak Görseli Üret'}
+                  </button>
+                </div>
+
+                {aiError && (
+                  <p className="text-[11px] text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2" data-testid="text-ai-error">
+                    {aiError}
+                  </p>
+                )}
+
+                {aiLoading === 'generate' && (
+                  <p className="text-[11px] text-violet-600 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    GPT-4o ile makale yazılıyor, 15-30 saniye sürebilir…
+                  </p>
+                )}
+                {aiLoading === 'cover' && (
+                  <p className="text-[11px] text-violet-600 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    DALL-E 3 ile kapak görseli üretiliyor, 10-20 saniye sürebilir…
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* SEO section */}
