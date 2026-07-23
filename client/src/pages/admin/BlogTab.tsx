@@ -34,11 +34,10 @@ interface BlogPost {
 }
 
 const CATEGORIES = [
-  { value: 'general', label: 'Genel' },
-  { value: 'guide', label: 'Rehber' },
+  { value: 'guide', label: 'TCG Rehberi' },
+  { value: 'analysis', label: 'Kart Analizi' },
   { value: 'news', label: 'Haberler' },
-  { value: 'strategy', label: 'Strateji' },
-  { value: 'collection', label: 'Koleksiyon' },
+  { value: 'announcements', label: 'Duyurular' },
 ];
 
 async function adminFetch(url: string, opts?: RequestInit) {

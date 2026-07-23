@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'wouter';
 import { Calendar, ChevronRight, BookOpen, ArrowLeft, Clock, User } from 'lucide-react';
@@ -6,6 +6,8 @@ import DOMPurify from 'dompurify';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
+
+const CANONICAL_SITE_URL = 'https://gocards.toov.com.tr';
 
 interface BlogPost {
   id: string;
@@ -22,11 +24,10 @@ interface BlogPost {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  general: 'Genel',
-  guide: 'Rehber',
+  guide: 'TCG Rehberi',
+  analysis: 'Kart Analizi',
   news: 'Haberler',
-  strategy: 'Strateji',
-  collection: 'Koleksiyon',
+  announcements: 'Duyurular',
 };
 
 function formatDate(iso: string | null) {
@@ -106,6 +107,41 @@ export default function BlogDetail() {
       ALLOWED_ATTR: ['href','src','alt','class','target','rel'],
     });
   }, [post?.content]);
+
+  // Article / BlogPosting JSON-LD — injected separately from SEO component
+  useEffect(() => {
+    if (!post) return;
+    const canonicalUrl = `${CANONICAL_SITE_URL}/blog/${post.slug}`;
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.metaTitle ?? post.title,
+      description: post.metaDescription ?? post.summary ?? '',
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      url: canonicalUrl,
+      ...(post.coverImageUrl ? { image: post.coverImageUrl } : {}),
+      datePublished: post.publishedAt ?? post.createdAt,
+      dateModified: post.publishedAt ?? post.createdAt,
+      author: {
+        '@type': 'Organization',
+        name: 'Go|Cards',
+        url: CANONICAL_SITE_URL,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Go|Cards',
+        logo: { '@type': 'ImageObject', url: `${CANONICAL_SITE_URL}/gocards-logo-white.png` },
+      },
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-schema', 'blog-article');
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+    return () => {
+      document.querySelector('script[data-schema="blog-article"]')?.remove();
+    };
+  }, [post]);
 
   return (
     <>

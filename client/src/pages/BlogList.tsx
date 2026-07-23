@@ -20,19 +20,17 @@ interface BlogPost {
 
 const CATEGORIES = [
   { value: 'all', label: 'Tümü' },
-  { value: 'guide', label: 'Rehber' },
-  { value: 'strategy', label: 'Strateji' },
+  { value: 'guide', label: 'TCG Rehberi' },
+  { value: 'analysis', label: 'Kart Analizi' },
   { value: 'news', label: 'Haberler' },
-  { value: 'collection', label: 'Koleksiyon' },
-  { value: 'general', label: 'Genel' },
+  { value: 'announcements', label: 'Duyurular' },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
-  general: 'Genel',
-  guide: 'Rehber',
+  guide: 'TCG Rehberi',
+  analysis: 'Kart Analizi',
   news: 'Haberler',
-  strategy: 'Strateji',
-  collection: 'Koleksiyon',
+  announcements: 'Duyurular',
 };
 
 function formatDate(iso: string | null) {
