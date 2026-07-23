@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle, Share2, Copy, Check, ListOrdered, GripVertical } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -188,6 +188,109 @@ function SeoQualityPanel({ keyword, title, slug, metaDescription, content }: {
   );
 }
 
+// ── Social media kit modal ────────────────────────────────────────────────────
+function SocialKitModal({ post, onClose }: { post: BlogPost; onClose: () => void }) {
+  const [data, setData] = useState<{ instagram: string; twitter: string; whatsapp: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/blog/ai/social', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: post.title, summary: post.summary, slug: post.slug }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Üretilemedi');
+        setData(json);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [post.id]);
+
+  const copyText = async (key: string, text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const platforms = data ? [
+    { key: 'instagram', label: 'Instagram Caption', color: 'text-pink-600 bg-pink-50 border-pink-200', text: data.instagram },
+    { key: 'twitter', label: 'Twitter / X', color: 'text-sky-600 bg-sky-50 border-sky-200', text: data.twitter },
+    { key: 'whatsapp', label: 'WhatsApp Yayın', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', text: data.whatsapp },
+  ] : [];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-start justify-center p-4 overflow-y-auto" data-testid="modal-social-kit">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg my-8">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+          <div>
+            <h3 className="text-[15px] font-semibold text-neutral-900 flex items-center gap-2">
+              <Share2 className="w-4 h-4 text-violet-500" />
+              Sosyal Medya Kiti
+            </h3>
+            <p className="text-[11px] text-neutral-400 mt-0.5 truncate max-w-xs">{post.title}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-10 gap-3">
+              <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+              <p className="text-[12px] text-neutral-500">GPT-4o-mini ile sosyal medya metinleri üretiliyor…</p>
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-[12px] text-red-700">
+              {error}
+            </div>
+          )}
+          {platforms.map(({ key, label, color, text }) => (
+            <div key={key} className="space-y-1.5" data-testid={`social-kit-${key}`}>
+              <div className="flex items-center justify-between">
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>{label}</span>
+                <div className="flex items-center gap-2">
+                  {key === 'twitter' && (
+                    <span className={`text-[10px] font-mono ${text.length > 280 ? 'text-red-500' : 'text-neutral-400'}`}>
+                      {text.length}/280
+                    </span>
+                  )}
+                  <button
+                    onClick={() => copyText(key, text)}
+                    className="flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                    data-testid={`button-copy-${key}`}
+                  >
+                    {copied === key ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied === key ? 'Kopyalandı!' : 'Kopyala'}
+                  </button>
+                </div>
+              </div>
+              <textarea
+                readOnly
+                rows={key === 'instagram' ? 6 : 3}
+                value={text}
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-[12px] text-neutral-700 bg-neutral-50 resize-none focus:outline-none"
+                data-testid={`textarea-social-${key}`}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="px-5 pb-5 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 text-[13px] font-medium border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors">
+            Kapat
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Rich text editor ─────────────────────────────────────────────────────────
 function RichEditor({
   content, onChange,
@@ -345,9 +448,12 @@ function PostModal({
 
   // AI panel state
   const [aiGame, setAiGame] = useState<'pokemon' | 'riftbound'>('pokemon');
+  const [aiTone, setAiTone] = useState<'resmi' | 'samimi' | 'enerjik'>('samimi');
   const [aiTopics, setAiTopics] = useState<string[]>([]);
   const [aiSelectedTopic, setAiSelectedTopic] = useState('');
-  const [aiLoading, setAiLoading] = useState<'topics' | 'generate' | 'cover' | null>(null);
+  const [aiOutline, setAiOutline] = useState<Array<{ level: 2 | 3; text: string }>>([]);
+  const [aiTitles, setAiTitles] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState<'topics' | 'outline' | 'titles' | 'generate' | 'cover' | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(!post);
 
@@ -384,14 +490,54 @@ function PostModal({
     setAiLoading('topics');
     try {
       const res = await fetch('/api/admin/blog/ai/topics', {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game: aiGame, category: form.category }),
+        body: JSON.stringify({ game: aiGame, category: form.category, tone: aiTone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Konu önerileri alınamadı');
       setAiTopics(data.topics ?? []);
+    } catch (e: any) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiOutline = async () => {
+    if (!aiSelectedTopic) return;
+    setAiError(null);
+    setAiLoading('outline');
+    try {
+      const res = await fetch('/api/admin/blog/ai/outline', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: aiSelectedTopic, game: aiGame, category: form.category, tone: aiTone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Taslak oluşturulamadı');
+      setAiOutline(data.outline ?? []);
+    } catch (e: any) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiTitles = async () => {
+    const topicForTitles = aiSelectedTopic || form.title;
+    if (!topicForTitles) { setAiError('Önce bir konu seçin veya başlık girin.'); return; }
+    setAiError(null);
+    setAiLoading('titles');
+    try {
+      const res = await fetch('/api/admin/blog/ai/titles', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: topicForTitles, game: aiGame, tone: aiTone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Başlık önerileri alınamadı');
+      setAiTitles(data.titles ?? []);
     } catch (e: any) {
       setAiError(e.message);
     } finally {
@@ -405,10 +551,13 @@ function PostModal({
     setAiLoading('generate');
     try {
       const res = await fetch('/api/admin/blog/ai/generate', {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: aiSelectedTopic, game: aiGame, category: form.category, focusKeyword: form.focusKeyword }),
+        body: JSON.stringify({
+          topic: aiSelectedTopic, game: aiGame, category: form.category,
+          focusKeyword: form.focusKeyword, tone: aiTone,
+          outline: aiOutline.length > 0 ? aiOutline : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Makale üretilemedi');
@@ -431,8 +580,7 @@ function PostModal({
     setAiLoading('cover');
     try {
       const res = await fetch('/api/admin/blog/ai/cover', {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: topicForCover, game: aiGame }),
       });
@@ -658,10 +806,10 @@ function PostModal({
                 )}
 
                 {/* Game + topic suggest row */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <select
                     value={aiGame}
-                    onChange={e => { setAiGame(e.target.value as any); setAiTopics([]); setAiSelectedTopic(''); }}
+                    onChange={e => { setAiGame(e.target.value as any); setAiTopics([]); setAiSelectedTopic(''); setAiOutline([]); }}
                     className="border border-violet-200 rounded-md px-3 py-1.5 text-[12px] text-neutral-700 bg-white focus:outline-none focus:ring-1 focus:ring-violet-400"
                     data-testid="select-ai-game"
                   >
@@ -680,6 +828,26 @@ function PostModal({
                   </button>
                 </div>
 
+                {/* Tone selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-neutral-500 font-medium shrink-0">Ton:</span>
+                  {(['resmi', 'samimi', 'enerjik'] as const).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setAiTone(t)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors capitalize ${
+                        aiTone === t
+                          ? 'bg-violet-100 text-violet-700 border-violet-400'
+                          : 'bg-white text-neutral-500 border-neutral-200 hover:border-violet-300 hover:text-violet-600'
+                      }`}
+                      data-testid={`button-tone-${t}`}
+                    >
+                      {t === 'resmi' ? '🎩 Resmi' : t === 'samimi' ? '😊 Samimi' : '⚡ Enerjik'}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Topic chips */}
                 {aiTopics.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -687,7 +855,7 @@ function PostModal({
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setAiSelectedTopic(t)}
+                        onClick={() => { setAiSelectedTopic(t); setAiOutline([]); setAiTitles([]); }}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
                           aiSelectedTopic === t
                             ? 'bg-violet-600 text-white border-violet-600'
@@ -708,7 +876,7 @@ function PostModal({
                     <span className="text-[12px] text-neutral-700 flex-1">{aiSelectedTopic}</span>
                     <button
                       type="button"
-                      onClick={() => setAiSelectedTopic('')}
+                      onClick={() => { setAiSelectedTopic(''); setAiOutline([]); setAiTitles([]); }}
                       className="text-neutral-400 hover:text-neutral-600 text-[11px]"
                     >
                       ✕
@@ -716,8 +884,117 @@ function PostModal({
                   </div>
                 )}
 
+                {/* Outline editor */}
+                {aiOutline.length > 0 && (
+                  <div className="border border-violet-200 rounded-lg overflow-hidden" data-testid="outline-editor">
+                    <div className="flex items-center justify-between px-3 py-2 bg-violet-50 border-b border-violet-100">
+                      <span className="text-[11px] font-semibold text-violet-700 flex items-center gap-1.5">
+                        <ListOrdered className="w-3.5 h-3.5" />
+                        Makale İskeleti — düzenleyin, sonra makale oluşturun
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAiOutline([])}
+                        className="text-[10px] text-neutral-400 hover:text-red-500 transition-colors"
+                      >
+                        Temizle
+                      </button>
+                    </div>
+                    <div className="divide-y divide-violet-50">
+                      {aiOutline.map((item, i) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-1.5" data-testid={`outline-item-${i}`}>
+                          <GripVertical className="w-3 h-3 text-neutral-300 shrink-0" />
+                          <button
+                            type="button"
+                            onClick={() => setAiOutline(o => o.map((x, idx) => idx === i ? { ...x, level: x.level === 2 ? 3 : 2 } : x))}
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 transition-colors ${
+                              item.level === 2
+                                ? 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+                                : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                            }`}
+                            title="H2/H3 değiştir"
+                            data-testid={`button-outline-level-${i}`}
+                          >
+                            H{item.level}
+                          </button>
+                          <input
+                            className="flex-1 text-[12px] text-neutral-700 bg-transparent border-none outline-none"
+                            value={item.text}
+                            onChange={e => setAiOutline(o => o.map((x, idx) => idx === i ? { ...x, text: e.target.value } : x))}
+                            data-testid={`input-outline-${i}`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setAiOutline(o => o.filter((_, idx) => idx !== i))}
+                            className="text-neutral-300 hover:text-red-500 transition-colors shrink-0"
+                            data-testid={`button-outline-remove-${i}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-3 py-2 border-t border-violet-100">
+                      <button
+                        type="button"
+                        onClick={() => setAiOutline(o => [...o, { level: 2, text: 'Yeni Bölüm' }])}
+                        className="text-[11px] text-violet-600 hover:text-violet-800 font-medium flex items-center gap-1 transition-colors"
+                        data-testid="button-outline-add"
+                      >
+                        <Plus className="w-3 h-3" /> Başlık Ekle
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Title suggestions */}
+                {aiTitles.length > 0 && (
+                  <div className="border border-amber-200 rounded-lg overflow-hidden" data-testid="title-suggestions">
+                    <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-amber-700">Başlık Önerileri — birini seçin</span>
+                      <button type="button" onClick={() => setAiTitles([])} className="text-[10px] text-neutral-400 hover:text-neutral-600">✕</button>
+                    </div>
+                    <div className="divide-y divide-amber-50">
+                      {aiTitles.map((t, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => { handleTitleChange(t); setAiTitles([]); }}
+                          className="w-full text-left px-3 py-2 text-[12px] text-neutral-700 hover:bg-amber-50 transition-colors"
+                          data-testid={`button-title-suggestion-${i}`}
+                        >
+                          <span className="text-[10px] font-bold text-amber-500 mr-1.5">
+                            {i === 0 ? 'SORU' : i === 1 ? 'LİSTE' : 'VAAT'}
+                          </span>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAiOutline}
+                    disabled={!aiSelectedTopic || !!aiLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 text-violet-700 border border-violet-300 text-[12px] font-medium rounded-md hover:bg-violet-200 disabled:opacity-50 transition-colors"
+                    data-testid="button-ai-outline"
+                  >
+                    {aiLoading === 'outline' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListOrdered className="w-3.5 h-3.5" />}
+                    {aiLoading === 'outline' ? 'Taslak oluşturuluyor…' : 'Taslak Oluştur'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAiTitles}
+                    disabled={(!aiSelectedTopic && !form.title) || !!aiLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-300 text-[12px] font-medium rounded-md hover:bg-amber-100 disabled:opacity-50 transition-colors"
+                    data-testid="button-ai-titles"
+                  >
+                    {aiLoading === 'titles' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                    {aiLoading === 'titles' ? 'Öneriliyor…' : '3 Başlık Öner'}
+                  </button>
                   <button
                     type="button"
                     onClick={handleAiGenerate}
@@ -726,7 +1003,11 @@ function PostModal({
                     data-testid="button-ai-generate"
                   >
                     {aiLoading === 'generate' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    {aiLoading === 'generate' ? 'Makale yazılıyor…' : 'Makale Oluştur'}
+                    {aiLoading === 'generate'
+                      ? 'Makale yazılıyor…'
+                      : aiOutline.length > 0
+                        ? 'Onaylayıp Makale Oluştur'
+                        : 'Makale Oluştur'}
                   </button>
                   <button
                     type="button"
@@ -746,10 +1027,17 @@ function PostModal({
                   </p>
                 )}
 
+                {aiLoading === 'outline' && (
+                  <p className="text-[11px] text-violet-600 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Makale iskeleti oluşturuluyor…
+                  </p>
+                )}
                 {aiLoading === 'generate' && (
                   <p className="text-[11px] text-violet-600 flex items-center gap-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     GPT-4o ile makale yazılıyor, 15-30 saniye sürebilir…
+                    {aiOutline.length > 0 && ' (iskelet kullanılıyor)'}
                   </p>
                 )}
                 {aiLoading === 'cover' && (
@@ -944,6 +1232,7 @@ export default function BlogTab() {
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [socialKitPost, setSocialKitPost] = useState<BlogPost | null>(null);
 
   const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
     queryKey: ['admin', 'blog'],
@@ -1112,15 +1401,25 @@ export default function BlogTab() {
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
                   {post.status === 'published' && (
-                    <a
-                      href={`/blog/${post.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
-                      title="Canlıda gör"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    <>
+                      <a
+                        href={`/blog/${post.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                        title="Canlıda gör"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        onClick={() => setSocialKitPost(post)}
+                        className="p-1.5 rounded text-neutral-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                        title="Sosyal Medya Kiti"
+                        data-testid={`button-social-kit-${post.id}`}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => {
@@ -1163,6 +1462,13 @@ export default function BlogTab() {
           post={editingPost}
           onClose={() => { setShowModal(false); setEditingPost(null); }}
           onSave={handleSave}
+        />
+      )}
+
+      {socialKitPost && (
+        <SocialKitModal
+          post={socialKitPost}
+          onClose={() => setSocialKitPost(null)}
         />
       )}
     </>
