@@ -17,6 +17,8 @@ import {
   Layers,
   Zap,
   Boxes,
+  BookOpen,
+  Calendar,
 } from 'lucide-react';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -1001,6 +1003,139 @@ function GameSection({ game, title, accentColor, accentClass, bgColor, Placehold
   );
 }
 
+// ── Blog Teaser Section ─────────────────────────────────────────────────────
+
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverImageUrl: string | null;
+  content: string;
+  category: string;
+  publishedAt: string | null;
+}
+
+const BLOG_CATEGORY_LABELS: Record<string, string> = {
+  guide: 'TCG Rehberi',
+  analysis: 'Kart Analizi',
+  news: 'Haberler',
+  announcements: 'Duyurular',
+};
+
+function blogFormatDate(iso: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('tr-TR', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
+function BlogTeaserSection() {
+  const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
+    queryKey: ['blog-list'],
+    queryFn: () => fetch('/api/blog').then(r => r.json()),
+    staleTime: 120_000,
+  });
+
+  const recent = posts.slice(0, 3);
+
+  if (isLoading || recent.length === 0) return null;
+
+  return (
+    <section
+      style={{ background: '#080e1c', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      className="py-14 px-4"
+      data-testid="section-blog-teaser"
+    >
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          className="flex items-center justify-between mb-8"
+        >
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-400 mb-1">Blog &amp; Rehber</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Son Yazılar</h2>
+          </div>
+          <Link href="/blog">
+            <button
+              className="inline-flex items-center gap-1.5 text-sm font-medium border border-indigo-500/30 text-indigo-400 rounded-lg px-4 py-2 hover:bg-indigo-500/10 transition-colors"
+              data-testid="link-blog-all"
+            >
+              Tüm Yazılar <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </motion.div>
+
+        {/* Cards */}
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+        >
+          {recent.map(post => (
+            <motion.div key={post.id} variants={fadeUp}>
+              <Link href={`/blog/${post.slug}`}>
+                <article
+                  className="group bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-indigo-500/40 hover:bg-white/[0.07] transition-all duration-200 h-full flex flex-col"
+                  data-testid={`card-blog-teaser-${post.id}`}
+                >
+                  {/* Cover */}
+                  <div className="h-40 bg-white/5 overflow-hidden shrink-0">
+                    {post.coverImageUrl ? (
+                      <img
+                        src={post.coverImageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/30 to-blue-900/20">
+                        <BookOpen className="w-8 h-8 text-indigo-400/30" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-4 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">
+                        {BLOG_CATEGORY_LABELS[post.category] ?? post.category}
+                      </span>
+                      {post.publishedAt && (
+                        <span className="flex items-center gap-1 text-[11px] text-white/35">
+                          <Calendar className="w-3 h-3" />
+                          {blogFormatDate(post.publishedAt)}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-[14px] font-bold text-white/90 leading-snug mb-2 group-hover:text-indigo-300 transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+
+                    {post.summary && (
+                      <p className="text-[12px] text-white/40 line-clamp-2 flex-1">{post.summary}</p>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-indigo-400 group-hover:gap-2 transition-all">
+                      Devamını Oku <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 // ── Home ────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -1036,6 +1171,8 @@ export default function Home() {
             PlaceholderIcon={Zap}
             testId="section-pokemon"
           />
+
+          <BlogTeaserSection />
 
         </main>
       </MotionConfig>
