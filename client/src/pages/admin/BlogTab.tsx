@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -31,6 +31,7 @@ interface BlogPost {
   metaTitle: string | null;
   metaDescription: string | null;
   faqItems: FaqItem[] | null;
+  focusKeyword: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -98,6 +99,93 @@ async function uploadBlogImage(file: File): Promise<string> {
   if (!res.ok) throw new Error('Resim yüklenemedi');
   const data = await res.json();
   return data.urls[0];
+}
+
+// ── SEO quality panel ────────────────────────────────────────────────────────
+function SeoQualityPanel({ keyword, title, slug, metaDescription, content }: {
+  keyword: string; title: string; slug: string; metaDescription: string; content: string;
+}) {
+  const kw = keyword.toLowerCase().trim();
+  if (!kw) return null;
+
+  const plainContent = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
+  const wordCount = plainContent.trim().split(/\s+/).filter(Boolean).length;
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const kwCount = (plainContent.match(new RegExp(escaped, 'g')) || []).length;
+  const slugKw = kw.replace(/\s+/g, '-');
+
+  const criteria: Array<{ label: string; pass: boolean; warn?: boolean; hint: string }> = [
+    {
+      label: 'Başlıkta anahtar kelime',
+      pass: title.toLowerCase().includes(kw),
+      hint: 'Başlığa anahtar kelimeyi ekleyin',
+    },
+    {
+      label: 'Meta açıklamada anahtar kelime',
+      pass: metaDescription.toLowerCase().includes(kw),
+      hint: 'Meta açıklamaya anahtar kelimeyi ekleyin',
+    },
+    {
+      label: `İçerikte geçiş: ${kwCount}x (ideal 5-10)`,
+      pass: kwCount >= 5 && kwCount <= 10,
+      warn: kwCount > 0 && kwCount < 5,
+      hint: kwCount === 0 ? 'İçerikte hiç kullanılmamış' : kwCount < 5 ? 'Biraz daha kullanın (ideal 5-10)' : kwCount > 10 ? 'Çok fazla — doğallık için azaltın' : '',
+    },
+    {
+      label: `İçerik uzunluğu: ${wordCount} kelime (ideal 800+)`,
+      pass: wordCount >= 800,
+      warn: wordCount >= 400 && wordCount < 800,
+      hint: wordCount < 400 ? 'Çok kısa — en az 800 kelime hedefleyin' : wordCount < 800 ? '800 kelimeye tamamlamak sıralamayı iyileştirir' : '',
+    },
+    {
+      label: 'Slug\'da anahtar kelime',
+      pass: slug.includes(slugKw),
+      hint: 'Slug\'a anahtar kelimeyi ekleyin',
+    },
+  ];
+
+  const passed = criteria.filter(c => c.pass).length;
+  const { label: scoreLabel, cls: scoreCls } = passed <= 1
+    ? { label: 'Zayıf', cls: 'text-red-600 bg-red-50 border-red-200' }
+    : passed <= 3
+      ? { label: 'Orta', cls: 'text-amber-600 bg-amber-50 border-amber-200' }
+      : passed === 4
+        ? { label: 'İyi', cls: 'text-blue-600 bg-blue-50 border-blue-200' }
+        : { label: 'Mükemmel', cls: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+
+  return (
+    <div className="mt-3 rounded-lg border border-neutral-200 overflow-hidden" data-testid="seo-quality-panel">
+      <div className="flex items-center justify-between px-3 py-2 bg-neutral-50 border-b border-neutral-100">
+        <span className="text-[11px] font-semibold text-neutral-600 flex items-center gap-1">
+          <Target className="w-3 h-3" />
+          SEO Kalitesi
+        </span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${scoreCls}`} data-testid="seo-score-label">
+          {passed}/{criteria.length} — {scoreLabel}
+        </span>
+      </div>
+      <div className="divide-y divide-neutral-100">
+        {criteria.map((c, i) => (
+          <div key={i} className="flex items-start gap-2 px-3 py-1.5" data-testid={`seo-criterion-${i}`}>
+            {c.pass
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+              : c.warn
+                ? <AlertCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                : <XCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+            }
+            <div className="min-w-0">
+              <span className={`text-[11px] font-medium ${c.pass ? 'text-neutral-700' : c.warn ? 'text-amber-700' : 'text-neutral-500'}`}>
+                {c.label}
+              </span>
+              {!c.pass && c.hint && (
+                <p className="text-[10px] text-neutral-400">{c.hint}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ── Rich text editor ─────────────────────────────────────────────────────────
@@ -216,6 +304,7 @@ function PostModal({
     publishedAt: toDatetimeLocal(post?.publishedAt),
     metaTitle: post?.metaTitle ?? '',
     metaDescription: post?.metaDescription ?? '',
+    focusKeyword: post?.focusKeyword ?? '',
   });
   const [content, setContent] = useState(post?.content ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -319,7 +408,7 @@ function PostModal({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: aiSelectedTopic, game: aiGame, category: form.category }),
+        body: JSON.stringify({ topic: aiSelectedTopic, game: aiGame, category: form.category, focusKeyword: form.focusKeyword }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Makale üretilemedi');
@@ -369,6 +458,7 @@ function PostModal({
     }
     const validFaq = faqItems.filter(f => f.question.trim() && f.answer.trim());
     payload.faqItems = validFaq.length > 0 ? validFaq : null;
+    payload.focusKeyword = form.focusKeyword.trim() || null;
     onSave(payload);
   };
 
@@ -763,11 +853,37 @@ function PostModal({
           </details>
 
           {/* SEO section */}
-          <details className="border border-neutral-200 rounded-lg overflow-hidden">
-            <summary className="px-4 py-2.5 text-[12px] font-medium text-neutral-700 cursor-pointer select-none bg-neutral-50 hover:bg-neutral-100 transition-colors">
+          <details className="border border-neutral-200 rounded-lg overflow-hidden" open={!!form.focusKeyword}>
+            <summary className="px-4 py-2.5 text-[12px] font-medium text-neutral-700 cursor-pointer select-none bg-neutral-50 hover:bg-neutral-100 transition-colors flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5" />
               SEO Ayarları (opsiyonel)
             </summary>
             <div className="p-4 space-y-3">
+              {/* Focus keyword */}
+              <div>
+                <label className="block text-[12px] font-medium text-neutral-700 mb-1 flex items-center gap-1">
+                  <Target className="w-3 h-3 text-indigo-500" />
+                  Odak Anahtar Kelime
+                </label>
+                <input
+                  className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  value={form.focusKeyword}
+                  onChange={e => set('focusKeyword', e.target.value.slice(0, 100))}
+                  placeholder="ör. pokemon kart satın al, charizard fiyatı…"
+                  maxLength={100}
+                  data-testid="input-blog-focus-keyword"
+                />
+                <p className="text-[10px] text-neutral-400 mt-1">
+                  Bu kelime tüm SEO sinyallerini yönlendirir ve AI yazı üretiminde kullanılır.
+                </p>
+                <SeoQualityPanel
+                  keyword={form.focusKeyword}
+                  title={form.title}
+                  slug={form.slug}
+                  metaDescription={form.metaDescription}
+                  content={content}
+                />
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[12px] font-medium text-neutral-700">Meta Başlık</label>
@@ -980,6 +1096,12 @@ export default function BlogTab() {
                     <span>{categoryLabel(post.category)}</span>
                     {post.publishedAt && (
                       <span>{new Date(post.publishedAt).toLocaleDateString('tr-TR')}</span>
+                    )}
+                    {post.focusKeyword && (
+                      <span className="flex items-center gap-0.5 text-indigo-500" title="Odak anahtar kelime">
+                        <Target className="w-3 h-3" />
+                        {post.focusKeyword}
+                      </span>
                     )}
                   </div>
                   {post.summary && (

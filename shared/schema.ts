@@ -895,6 +895,7 @@ export const blogPosts = pgTable("blog_posts", {
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
   faqItems: jsonb("faq_items"),
+  focusKeyword: varchar("focus_keyword", { length: 100 }),
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -913,6 +914,8 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   category: z.enum(['guide', 'analysis', 'news', 'announcements']).default('guide'),
   // FAQ items — array of question+answer pairs, nullable
   faqItems: z.array(faqItemSchema).nullable().optional(),
+  // Focus keyword for SEO quality scoring
+  focusKeyword: z.string().max(100).nullable().optional(),
 });
 
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;

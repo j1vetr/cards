@@ -106,14 +106,17 @@ export async function aiGenerateHandler(req: Request, res: Response) {
     return res.status(503).json({ error: e.message });
   }
 
-  const { topic, game = 'pokemon', category = 'guide' } = req.body as {
-    topic: string; game: string; category: string;
+  const { topic, game = 'pokemon', category = 'guide', focusKeyword = '' } = req.body as {
+    topic: string; game: string; category: string; focusKeyword?: string;
   };
 
   if (!topic?.trim()) return res.status(400).json({ error: 'Konu zorunludur' });
 
   const gameName = GAME_NAMES[game] || game;
   const catName = CATEGORY_NAMES[category] || category;
+  const kwBlock = focusKeyword?.trim()
+    ? `\nBu makalenin odak anahtar kelimesi: "${focusKeyword.trim()}". İlk 100 kelimede, en az bir H2 başlığında ve metin boyunca doğal bir şekilde kullan.`
+    : '';
 
   try {
     const completion = await openai.chat.completions.create({
@@ -123,7 +126,7 @@ export async function aiGenerateHandler(req: Request, res: Response) {
         {
           role: 'user',
           content: `"${topic}" konusunda ${gameName} için bir blog yazısı yaz.
-Kategori: ${catName}
+Kategori: ${catName}${kwBlock}
 
 Şu JSON formatında döndür:
 {
