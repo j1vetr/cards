@@ -227,6 +227,12 @@ function PostModal({
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(!post);
 
+  const { data: aiStatus } = useQuery<{ hasKey: boolean }>({
+    queryKey: ['admin', 'blog', 'ai', 'status'],
+    queryFn: () => adminFetch('/api/admin/blog/ai/status'),
+    staleTime: 60_000,
+  });
+
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleTitleChange = (v: string) => {
@@ -253,12 +259,11 @@ function PostModal({
     setAiError(null);
     setAiLoading('topics');
     try {
-      const existingTitles = (window as any).__blogTitles__ ?? [];
       const res = await fetch('/api/admin/blog/ai/topics', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game: aiGame, category: form.category, existingTitles }),
+        body: JSON.stringify({ game: aiGame, category: form.category }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Konu önerileri alınamadı');
@@ -514,6 +519,17 @@ function PostModal({
 
             {aiOpen && (
               <div className="p-4 space-y-3">
+                {/* Proactive key warning */}
+                {aiStatus && !aiStatus.hasKey && (
+                  <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-[11px] text-amber-800" data-testid="alert-ai-no-key">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
+                    <span>
+                      OpenAI API anahtarı henüz ayarlanmamış.{' '}
+                      <strong>Ayarlar → OpenAI API Anahtarı</strong> bölümünden ekleyebilirsiniz.
+                    </span>
+                  </div>
+                )}
+
                 {/* Game + topic suggest row */}
                 <div className="flex items-center gap-2">
                   <select

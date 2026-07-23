@@ -38,6 +38,12 @@ async function getClient(): Promise<OpenAI> {
   return new OpenAI({ apiKey: key });
 }
 
+// ── GET /api/admin/blog/ai/status ─────────────────────────────────────────────
+export async function aiStatusHandler(_req: Request, res: Response) {
+  const key = await storage.getSiteSetting('openai_api_key');
+  return res.json({ hasKey: !!key });
+}
+
 // ── POST /api/admin/blog/ai/topics ────────────────────────────────────────────
 export async function aiTopicsHandler(req: Request, res: Response) {
   let openai: OpenAI;
@@ -47,9 +53,16 @@ export async function aiTopicsHandler(req: Request, res: Response) {
     return res.status(503).json({ error: e.message });
   }
 
-  const { game = 'pokemon', category = 'guide', existingTitles = [] } = req.body as {
-    game: string; category: string; existingTitles: string[];
+  const { game = 'pokemon', category = 'guide' } = req.body as {
+    game: string; category: string;
   };
+
+  // Fetch existing titles server-side to avoid topic overlap
+  let existingTitles: string[] = [];
+  try {
+    const posts = await storage.getBlogPosts();
+    existingTitles = posts.map(p => p.title);
+  } catch { /* non-critical */ }
 
   const gameName = GAME_NAMES[game] || game;
   const catName = CATEGORY_NAMES[category] || category;
@@ -179,7 +192,7 @@ export async function aiCoverHandler(req: Request, res: Response) {
     if (!b64) return res.status(500).json({ error: 'Görsel verisi alınamadı' });
 
     const buffer = Buffer.from(b64, 'base64');
-    const dir = path.join(process.cwd(), 'static', 'uploads', 'blog');
+    const dir = path.join(process.cwd(), 'client', 'public', 'uploads', 'blog');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     const filename = `ai-cover-${crypto.randomUUID()}.png`;

@@ -1,5 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
-import { aiTopicsHandler, aiGenerateHandler, aiCoverHandler } from './ai-blog';
+import { aiStatusHandler, aiTopicsHandler, aiGenerateHandler, aiCoverHandler } from './ai-blog';
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
 import { z } from "zod";
@@ -6358,6 +6358,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   });
 
   // ── AI blog generation ────────────────────────────────────────────────────
+  app.get("/api/admin/blog/ai/status", requireAdmin, aiStatusHandler);
   app.post("/api/admin/blog/ai/topics", requireAdmin, aiTopicsHandler);
   app.post("/api/admin/blog/ai/generate", requireAdmin, aiGenerateHandler);
   app.post("/api/admin/blog/ai/cover", requireAdmin, aiCoverHandler);
