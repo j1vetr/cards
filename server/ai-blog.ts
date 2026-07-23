@@ -177,8 +177,8 @@ export async function aiFaqHandler(req: Request, res: Response) {
     title: string; content: string; category: string;
   };
 
-  if (!content?.trim() && !title?.trim()) {
-    return res.status(400).json({ error: 'Makale içeriği veya başlık zorunludur' });
+  if (!content?.trim()) {
+    return res.status(400).json({ error: 'Makale içeriği zorunludur' });
   }
 
   const catName = CATEGORY_NAMES[category] || category;
