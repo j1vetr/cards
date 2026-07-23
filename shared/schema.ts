@@ -889,7 +889,7 @@ export const blogPosts = pgTable("blog_posts", {
   summary: text("summary"),
   coverImageUrl: text("cover_image_url"),
   content: text("content").notNull().default(""),
-  category: text("category").notNull().default("general"),
+  category: text("category").notNull().default("guide"),
   // 'draft' | 'published'
   status: text("status").notNull().default("draft"),
   metaTitle: text("meta_title"),
@@ -903,6 +903,11 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  // Accept ISO strings from the client and coerce to Date
+  publishedAt: z.coerce.date().nullable().optional(),
+  // Enforce allowed category values
+  category: z.enum(['guide', 'analysis', 'news', 'announcements']).default('guide'),
 });
 
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;

@@ -167,7 +167,7 @@ function PostModal({
     slug: post?.slug ?? '',
     summary: post?.summary ?? '',
     coverImageUrl: post?.coverImageUrl ?? '',
-    category: post?.category ?? 'general',
+    category: post?.category ?? 'guide',
     status: post?.status ?? 'draft',
     publishedAt: toDatetimeLocal(post?.publishedAt),
     metaTitle: post?.metaTitle ?? '',
