@@ -1035,7 +1035,7 @@ function PostModal({
                     <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1.5">
                         <History className="w-3 h-3" />
-                        Önceki Başlıklar — birini seçin
+                        Önceki Başlıklar - Birini Seç !
                       </span>
                       <button type="button" onClick={() => setAiTitlesHistory([])} className="text-[10px] text-neutral-400 hover:text-neutral-600" data-testid="button-clear-title-history">✕</button>
                     </div>
