@@ -250,7 +250,7 @@ Başlık: "${title}"
 Link: ${postUrl}
 
 Kurallar:
-- Instagram caption: Emoji kullan, hashtaglerle bitir (#PokemonTCG #GoCarts #TCGTürkiye dahil), 2200 karakterin altında
+- Instagram caption: Emoji kullan, hashtaglerle bitir (#PokemonTCG #GoCards #TCGTürkiye dahil), 2200 karakterin altında
 - Twitter/X postu: En fazla 280 karakter, link dahil, 1-2 emoji
 - WhatsApp yayın mesajı: Kısa ve samimi, link ile biter, emoji kullan
 
@@ -264,9 +264,15 @@ JSON formatında döndür:
     });
 
     const parsed = JSON.parse(completion.choices[0].message.content || '{}');
+    // Enforce Twitter 280-char limit: if over, trim at last space before 277 and append "…"
+    let twitter = (parsed.twitter || '') as string;
+    if (twitter.length > 280) {
+      const cutAt = twitter.lastIndexOf(' ', 277);
+      twitter = (cutAt > 0 ? twitter.slice(0, cutAt) : twitter.slice(0, 277)) + '…';
+    }
     return res.json({
       instagram: parsed.instagram || '',
-      twitter: parsed.twitter || '',
+      twitter,
       whatsapp: parsed.whatsapp || '',
     });
   } catch (err: any) {

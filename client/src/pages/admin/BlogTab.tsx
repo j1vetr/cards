@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle, Share2, Copy, Check, ListOrdered, GripVertical } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, EyeOff, FileText, Search, ExternalLink, Upload, X, Image as ImageIcon, Wand2, Loader2, Sparkles, ChevronDown, Target, CheckCircle2, XCircle, AlertCircle, Share2, Copy, Check, ListOrdered, ArrowUp, ArrowDown } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -902,8 +902,37 @@ function PostModal({
                     </div>
                     <div className="divide-y divide-violet-50">
                       {aiOutline.map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 px-3 py-1.5" data-testid={`outline-item-${i}`}>
-                          <GripVertical className="w-3 h-3 text-neutral-300 shrink-0" />
+                        <div key={i} className="flex items-center gap-1 px-3 py-1.5" data-testid={`outline-item-${i}`}>
+                          <div className="flex flex-col shrink-0">
+                            <button
+                              type="button"
+                              disabled={i === 0}
+                              onClick={() => setAiOutline(o => {
+                                const n = [...o];
+                                [n[i - 1], n[i]] = [n[i], n[i - 1]];
+                                return n;
+                              })}
+                              className="text-neutral-300 hover:text-violet-500 disabled:opacity-20 transition-colors"
+                              title="Yukarı taşı"
+                              data-testid={`button-outline-up-${i}`}
+                            >
+                              <ArrowUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={i === aiOutline.length - 1}
+                              onClick={() => setAiOutline(o => {
+                                const n = [...o];
+                                [n[i], n[i + 1]] = [n[i + 1], n[i]];
+                                return n;
+                              })}
+                              className="text-neutral-300 hover:text-violet-500 disabled:opacity-20 transition-colors"
+                              title="Aşağı taşı"
+                              data-testid={`button-outline-down-${i}`}
+                            >
+                              <ArrowDown className="w-3 h-3" />
+                            </button>
+                          </div>
                           <button
                             type="button"
                             onClick={() => setAiOutline(o => o.map((x, idx) => idx === i ? { ...x, level: x.level === 2 ? 3 : 2 } : x))}
