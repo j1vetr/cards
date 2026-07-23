@@ -70,6 +70,11 @@ export default function BlogList() {
     ? posts
     : posts.filter(p => p.category === activeCategory);
 
+  function categoryCount(value: string): number {
+    if (value === 'all') return posts.length;
+    return posts.filter(p => p.category === value).length;
+  }
+
   return (
     <>
       <SEO
@@ -108,7 +113,7 @@ export default function BlogList() {
                   }`}
                   data-testid={`filter-category-${cat.value}`}
                 >
-                  {cat.label}
+                  {cat.label}{!isLoading && ` (${categoryCount(cat.value)})`}
                 </button>
               ))}
             </div>
