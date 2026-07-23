@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { Link, useSearch, useLocation } from 'wouter';
 import { Calendar, ChevronRight, BookOpen, Clock } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -47,7 +46,19 @@ function readingTime(content: string): number {
 }
 
 export default function BlogList() {
-  const [activeCategory, setActiveCategory] = useState('all');
+  const search = useSearch();
+  const [, setLocation] = useLocation();
+
+  const params = new URLSearchParams(search);
+  const activeCategory = params.get('category') ?? 'all';
+
+  function selectCategory(value: string) {
+    if (value === 'all') {
+      setLocation('/blog');
+    } else {
+      setLocation(`/blog?category=${value}`);
+    }
+  }
 
   const { data: posts = [], isLoading, isError } = useQuery<BlogPost[]>({
     queryKey: ['blog-list'],
@@ -89,7 +100,7 @@ export default function BlogList() {
               {CATEGORIES.map(cat => (
                 <button
                   key={cat.value}
-                  onClick={() => setActiveCategory(cat.value)}
+                  onClick={() => selectCategory(cat.value)}
                   className={`shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${
                     activeCategory === cat.value
                       ? 'bg-indigo-600 text-white'
