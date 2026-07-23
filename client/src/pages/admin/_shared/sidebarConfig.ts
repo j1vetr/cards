@@ -16,6 +16,7 @@ import {
   BookOpen,
   ShoppingBag,
   Box,
+  FileText,
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
@@ -36,6 +37,7 @@ export const VALID_TABS: TabType[] = [
   'card-sets',
   'accessories',
   'boxes',
+  'blog',
 ];
 
 export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
@@ -69,6 +71,12 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
     items: [
       { id: 'users', icon: Users, label: 'Kullanıcılar' },
       { id: 'reviews', icon: MessageSquare, label: 'Yorumlar' },
+    ],
+  },
+  {
+    title: 'İçerik',
+    items: [
+      { id: 'blog', icon: FileText, label: 'Blog / Rehber' },
     ],
   },
   {

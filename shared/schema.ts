@@ -877,3 +877,33 @@ export const woocommerceSyncLogs = pgTable("woocommerce_sync_logs", {
 });
 
 export type WoocommerceSyncLog = typeof woocommerceSyncLogs.$inferSelect;
+
+// ============================================================================
+// Blog / Rehber
+// ============================================================================
+
+export const blogPosts = pgTable("blog_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  summary: text("summary"),
+  coverImageUrl: text("cover_image_url"),
+  content: text("content").notNull().default(""),
+  category: text("category").notNull().default("general"),
+  // 'draft' | 'published'
+  status: text("status").notNull().default("draft"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
+export type BlogPost = typeof blogPosts.$inferSelect;

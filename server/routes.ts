@@ -409,6 +409,22 @@ export async function registerRoutes(
         );
       }
 
+      // Blog posts in sitemap
+      urls.push(
+        `  <url>\n    <loc>${baseUrl}/blog</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
+      );
+      try {
+        const blogPosts = await storage.getBlogPosts({ status: "published" });
+        for (const post of blogPosts) {
+          const lastmod = post.updatedAt
+            ? new Date(post.updatedAt).toISOString().split("T")[0]
+            : today;
+          urls.push(
+            `  <url>\n    <loc>${baseUrl}/blog/${escapeXml(post.slug)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`
+          );
+        }
+      } catch (_) {}
+
       const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
 
       res.set("Content-Type", "application/xml; charset=utf-8");
@@ -6264,6 +6280,72 @@ Sitemap: ${baseUrl}/sitemap.xml
       res.json(similar);
     } catch (err) {
       res.status(500).json({ error: "Benzer kartlar yüklenemedi" });
+    }
+  });
+
+  // ── Blog / Rehber (public) ─────────────────────────────────────────────────
+
+  app.get("/api/blog", async (_req, res) => {
+    try {
+      const posts = await storage.getBlogPosts({ status: "published" });
+      res.json(posts);
+    } catch (err) {
+      res.status(500).json({ error: "Blog yazıları yüklenemedi" });
+    }
+  });
+
+  app.get("/api/blog/:slug", async (req, res) => {
+    try {
+      const post = await storage.getBlogPostBySlug(req.params.slug);
+      if (!post || post.status !== "published")
+        return res.status(404).json({ error: "Yazı bulunamadı" });
+      res.json(post);
+    } catch (err) {
+      res.status(500).json({ error: "Blog yazısı yüklenemedi" });
+    }
+  });
+
+  // ── Blog / Rehber (admin) ─────────────────────────────────────────────────
+
+  app.get("/api/admin/blog", requireAdmin, async (_req, res) => {
+    try {
+      const posts = await storage.getBlogPosts();
+      res.json(posts);
+    } catch (err) {
+      res.status(500).json({ error: "Blog yazıları yüklenemedi" });
+    }
+  });
+
+  app.post("/api/admin/blog", requireAdmin, async (req, res) => {
+    try {
+      const { insertBlogPostSchema } = await import("@shared/schema");
+      const body = insertBlogPostSchema.parse(req.body);
+      const post = await storage.createBlogPost(body);
+      res.status(201).json(post);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "Yazı oluşturulamadı" });
+    }
+  });
+
+  app.patch("/api/admin/blog/:id", requireAdmin, async (req, res) => {
+    try {
+      const { insertBlogPostSchema } = await import("@shared/schema");
+      const partial = insertBlogPostSchema.partial().parse(req.body);
+      const post = await storage.updateBlogPost(req.params.id, partial);
+      if (!post) return res.status(404).json({ error: "Yazı bulunamadı" });
+      res.json(post);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "Yazı güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/admin/blog/:id", requireAdmin, async (req, res) => {
+    try {
+      const ok = await storage.deleteBlogPost(req.params.id);
+      if (!ok) return res.status(404).json({ error: "Yazı bulunamadı" });
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: "Yazı silinemedi" });
     }
   });
 

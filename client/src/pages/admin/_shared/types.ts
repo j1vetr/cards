@@ -160,4 +160,5 @@ export type TabType =
   | 'cards'
   | 'card-sets'
   | 'accessories'
-  | 'boxes';
+  | 'boxes'
+  | 'blog';

@@ -18,6 +18,7 @@ import CardsTab from './admin/CardsTab';
 import CardSetsTab from './admin/CardSetsTab';
 import AccessoriesTab from './admin/AccessoriesTab';
 import BoxesTab from './admin/BoxesTab';
+import BlogTab from './admin/BlogTab';
 
 import UserDetailModal from './admin/modals/UserDetailModal';
 
@@ -149,6 +150,7 @@ export default function AdminDashboard() {
         {activeTab === 'card-sets' && <CardSetsTab />}
         {activeTab === 'accessories' && <AccessoriesTab />}
         {activeTab === 'boxes' && <BoxesTab />}
+        {activeTab === 'blog' && <BlogTab />}
       </AdminLayout>
 
       {viewingUser && <UserDetailModal user={viewingUser} onClose={() => setViewingUser(null)} />}

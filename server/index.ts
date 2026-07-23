@@ -142,6 +142,32 @@ app.use((req, res, next) => {
     console.error("[index] accessory category seed failed:", err);
   }
 
+  // blog_posts tablosunu idempotent oluştur
+  try {
+    const { db } = await import("./db");
+    const { sql: sqlTag } = await import("drizzle-orm");
+    await db.execute(sqlTag`
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        summary TEXT,
+        cover_image_url TEXT,
+        content TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT 'general',
+        status TEXT NOT NULL DEFAULT 'draft',
+        meta_title TEXT,
+        meta_description TEXT,
+        published_at TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log("[migrate] blog_posts table ensured");
+  } catch (err) {
+    console.error("[migrate] blog_posts migration failed:", err);
+  }
+
   // Pazaryeri senkron zamanlayıcısı (Trendyol delta saatlik / full 03:00)
   try {
     const { startScheduler } = await import("./scheduler");

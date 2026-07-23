@@ -467,6 +467,10 @@ export function Header() {
                 </Link>
               </div>
 
+              <Link href="/blog" className={navCls(isActive('/blog'))} data-testid="link-nav-blog">
+                Blog
+              </Link>
+
               <Link href="/iletisim" className={navCls(isActive('/iletisim'))} data-testid="link-nav-iletisim">
                 İletişim
               </Link>
@@ -930,6 +934,14 @@ export function Header() {
                         </motion.div>
                       )}
                     </AnimatePresence>
+                  </motion.li>
+
+                  {/* Blog */}
+                  <motion.li variants={drawerStagger.item} className="border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                    <Link href="/blog" onClick={() => setMobileOpen(false)} className="group flex items-center justify-between py-4" data-testid="link-mobile-blog">
+                      <span className="text-[14px] font-semibold text-white transition-colors">Blog &amp; Rehber</span>
+                      <ArrowUpRight className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors" />
+                    </Link>
                   </motion.li>
 
                   {/* İletişim */}

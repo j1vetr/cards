@@ -45,6 +45,8 @@ const Favorites = lazy(() => import("@/pages/Favorites"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Accessories = lazy(() => import("@/pages/Accessories"));
 const RiftboundPage = lazy(() => import("@/pages/RiftboundPage"));
+const BlogList = lazy(() => import("@/pages/BlogList"));
+const BlogDetail = lazy(() => import("@/pages/BlogDetail"));
 
 function PageLoader() {
   return (
@@ -89,6 +91,8 @@ function Router() {
         <Route path="/iletisim" component={Contact} />
         <Route path="/aksesuarlar" component={Accessories} />
         <Route path="/riftbound" component={RiftboundPage} />
+        <Route path="/blog/:slug" component={BlogDetail} />
+        <Route path="/blog" component={BlogList} />
         <Route path="/toov-admin/login" component={AdminLogin} />
         <Route path="/toov-admin/orders/:id" component={AdminOrderDetail} />
         <Route path="/toov-admin" component={AdminDashboard} />

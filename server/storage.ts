@@ -88,6 +88,9 @@ import {
   type InsertMarketplaceProduct,
   type MarketplaceSyncRun,
   type InsertMarketplaceSyncRun,
+  blogPosts,
+  type BlogPost,
+  type InsertBlogPost,
 } from "@shared/schema";
 import { eq, and, or, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum, type SQL } from "drizzle-orm";
 
@@ -2960,6 +2963,60 @@ export class DbStorage implements IStorage {
     return db.select().from(products).where(
       and(boxOrSealed, eq(products.isActive, true))
     ).orderBy(desc(products.createdAt));
+  }
+
+  // ── Blog / Rehber ──────────────────────────────────────────────────────────
+
+  async getBlogPosts(opts: { status?: string } = {}): Promise<BlogPost[]> {
+    const conditions = [];
+    if (opts.status) conditions.push(eq(blogPosts.status, opts.status));
+    const q = db.select().from(blogPosts);
+    const rows = conditions.length > 0
+      ? await q.where(and(...conditions)).orderBy(desc(blogPosts.publishedAt), desc(blogPosts.createdAt))
+      : await q.orderBy(desc(blogPosts.publishedAt), desc(blogPosts.createdAt));
+    return rows;
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
+    const [row] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
+    return row;
+  }
+
+  async getBlogPostById(id: string): Promise<BlogPost | undefined> {
+    const [row] = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
+    return row;
+  }
+
+  async createBlogPost(data: InsertBlogPost): Promise<BlogPost> {
+    const now = new Date();
+    const [row] = await db.insert(blogPosts).values({
+      ...data,
+      publishedAt: data.status === 'published' ? (data.publishedAt ?? now) : data.publishedAt ?? null,
+      updatedAt: now,
+    }).returning();
+    return row;
+  }
+
+  async updateBlogPost(id: string, data: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    const now = new Date();
+    const current = await this.getBlogPostById(id);
+    if (!current) return undefined;
+    const publishedAt =
+      data.status === 'published' && !current.publishedAt
+        ? now
+        : data.publishedAt !== undefined
+          ? data.publishedAt
+          : current.publishedAt;
+    const [row] = await db.update(blogPosts)
+      .set({ ...data, publishedAt, updatedAt: now })
+      .where(eq(blogPosts.id, id))
+      .returning();
+    return row;
+  }
+
+  async deleteBlogPost(id: string): Promise<boolean> {
+    const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
 }
