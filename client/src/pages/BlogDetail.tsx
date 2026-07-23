@@ -1,13 +1,15 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'wouter';
-import { Calendar, ChevronRight, BookOpen, ArrowLeft, Clock, User } from 'lucide-react';
+import { Calendar, ChevronRight, BookOpen, ArrowLeft, Clock, User, ChevronDown, MessageCircleQuestion } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 
 const CANONICAL_SITE_URL = 'https://gocards.toov.com.tr';
+
+interface FaqItem { question: string; answer: string; }
 
 interface BlogPost {
   id: string;
@@ -19,6 +21,7 @@ interface BlogPost {
   category: string;
   metaTitle: string | null;
   metaDescription: string | null;
+  faqItems: FaqItem[] | null;
   publishedAt: string | null;
   createdAt: string;
 }
@@ -41,6 +44,40 @@ function readingTime(content: string): number {
   const text = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const wordCount = text.split(' ').filter(Boolean).length;
   return Math.max(1, Math.ceil(wordCount / 200));
+}
+
+function FaqAccordion({ items }: { items: FaqItem[] }) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="mt-10 border-t border-neutral-200 pt-8" data-testid="faq-section">
+      <div className="flex items-center gap-2 mb-5">
+        <MessageCircleQuestion className="w-5 h-5 text-indigo-500 shrink-0" />
+        <h2 className="text-lg font-bold text-neutral-900">Sık Sorulan Sorular</h2>
+      </div>
+      <div className="space-y-2">
+        {items.map((item, i) => (
+          <div key={i} className="border border-neutral-200 rounded-lg overflow-hidden" data-testid={`faq-item-${i}`}>
+            <button
+              type="button"
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left text-[14px] font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
+              aria-expanded={openIdx === i}
+              data-testid={`button-faq-toggle-${i}`}
+            >
+              <span>{item.question}</span>
+              <ChevronDown className={`w-4 h-4 text-neutral-400 shrink-0 ml-3 transition-transform ${openIdx === i ? 'rotate-180' : ''}`} />
+            </button>
+            {openIdx === i && (
+              <div className="px-4 pb-4 text-[14px] text-neutral-600 leading-relaxed border-t border-neutral-100 pt-3" data-testid={`text-faq-answer-${i}`}>
+                {item.answer}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function RelatedPostCard({ post }: { post: BlogPost }) {
@@ -140,6 +177,64 @@ export default function BlogDetail() {
     document.head.appendChild(script);
     return () => {
       document.querySelector('script[data-schema="blog-article"]')?.remove();
+    };
+  }, [post]);
+
+  // FAQPage JSON-LD — injected when faqItems exist
+  useEffect(() => {
+    if (!post || !post.faqItems || post.faqItems.length === 0) return;
+    const faqSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: post.faqItems.map(item => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      })),
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-schema', 'blog-faq');
+    script.textContent = JSON.stringify(faqSchema);
+    document.head.appendChild(script);
+    return () => {
+      document.querySelector('script[data-schema="blog-faq"]')?.remove();
+    };
+  }, [post]);
+
+  // HowTo JSON-LD — for guide category articles with ordered steps
+  useEffect(() => {
+    if (!post || post.category !== 'guide') return;
+    // Detect ordered list steps in content
+    const stepMatches = post.content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+    const hasOrderedList = /<ol[\s>]/.test(post.content);
+    if (!hasOrderedList || !stepMatches || stepMatches.length < 3) return;
+    const steps = stepMatches.slice(0, 10).map((li, i) => {
+      const text = li.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      return {
+        '@type': 'HowToStep',
+        position: i + 1,
+        name: text.slice(0, 80) || `Adım ${i + 1}`,
+        text,
+      };
+    });
+    const howToSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      name: post.metaTitle ?? post.title,
+      description: post.metaDescription ?? post.summary ?? '',
+      step: steps,
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-schema', 'blog-howto');
+    script.textContent = JSON.stringify(howToSchema);
+    document.head.appendChild(script);
+    return () => {
+      document.querySelector('script[data-schema="blog-howto"]')?.remove();
     };
   }, [post]);
 
@@ -253,6 +348,11 @@ export default function BlogDetail() {
                     className="prose prose-neutral prose-sm sm:prose max-w-none"
                     dangerouslySetInnerHTML={{ __html: safeContent }}
                   />
+
+                  {/* FAQ Accordion */}
+                  {post.faqItems && post.faqItems.length > 0 && (
+                    <FaqAccordion items={post.faqItems} />
+                  )}
 
                   {/* Back link */}
                   <div className="mt-10 pt-6 border-t border-neutral-200">

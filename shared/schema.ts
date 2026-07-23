@@ -894,10 +894,13 @@ export const blogPosts = pgTable("blog_posts", {
   status: text("status").notNull().default("draft"),
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
+  faqItems: jsonb("faq_items"),
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+const faqItemSchema = z.object({ question: z.string(), answer: z.string() });
 
 export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   id: true,
@@ -908,6 +911,8 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   publishedAt: z.coerce.date().nullable().optional(),
   // Enforce allowed category values
   category: z.enum(['guide', 'analysis', 'news', 'announcements']).default('guide'),
+  // FAQ items — array of question+answer pairs, nullable
+  faqItems: z.array(faqItemSchema).nullable().optional(),
 });
 
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;

@@ -164,6 +164,64 @@ Kategori: ${catName}
   }
 }
 
+// ── POST /api/admin/blog/ai/faq ──────────────────────────────────────────────
+export async function aiFaqHandler(req: Request, res: Response) {
+  let openai: OpenAI;
+  try {
+    openai = await getClient();
+  } catch (e: any) {
+    return res.status(503).json({ error: e.message });
+  }
+
+  const { title = '', content = '', category = 'guide' } = req.body as {
+    title: string; content: string; category: string;
+  };
+
+  if (!content?.trim() && !title?.trim()) {
+    return res.status(400).json({ error: 'Makale içeriği veya başlık zorunludur' });
+  }
+
+  const catName = CATEGORY_NAMES[category] || category;
+  // Strip HTML tags for the prompt to save tokens
+  const plainText = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 3000);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Aşağıdaki TCG blog yazısını okuyan bir okuyucunun aklına gelebilecek 5-6 gerçekçi soru-cevap çifti üret.
+Kategori: ${catName}
+Başlık: "${title}"
+
+İçerik özeti:
+${plainText}
+
+Kurallar:
+- Sorular gerçek okuyucuların sorabileceği pratik sorular olsun
+- Cevaplar 2-4 cümle, doğal Türkçe, birinci çoğul şahıs ("biz", "bizim")
+- Em dash (—) ve noktalı virgül (;) KULLANMA
+- Yapay zeka gibi değil, insan gibi yaz
+
+JSON formatında döndür:
+{"faqItems": [{"question": "Soru metni?", "answer": "Cevap metni."}]}`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 1200,
+      temperature: 0.7,
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content || '{}');
+    const items = Array.isArray(parsed.faqItems) ? parsed.faqItems : [];
+    return res.json({ faqItems: items });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'FAQ üretilemedi' });
+  }
+}
+
 // ── POST /api/admin/blog/ai/cover ─────────────────────────────────────────────
 export async function aiCoverHandler(req: Request, res: Response) {
   let openai: OpenAI;

@@ -163,6 +163,10 @@ app.use((req, res, next) => {
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
+    // Add faq_items column if missing (idempotent)
+    await db.execute(sqlTag`
+      ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS faq_items JSONB DEFAULT NULL
+    `);
     console.log("[migrate] blog_posts table ensured");
   } catch (err) {
     console.error("[migrate] blog_posts migration failed:", err);

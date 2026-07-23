@@ -17,6 +17,8 @@ import {
   SecondaryButton,
 } from './_ui/AdminUI';
 
+interface FaqItem { question: string; answer: string; }
+
 interface BlogPost {
   id: string;
   slug: string;
@@ -28,6 +30,7 @@ interface BlogPost {
   status: string;
   metaTitle: string | null;
   metaDescription: string | null;
+  faqItems: FaqItem[] | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -219,6 +222,38 @@ function PostModal({
   const [coverUploading, setCoverUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  // FAQ state
+  const [faqItems, setFaqItems] = useState<FaqItem[]>(
+    Array.isArray((post as any)?.faqItems) ? (post as any).faqItems : []
+  );
+  const [faqLoading, setFaqLoading] = useState(false);
+  const [faqError, setFaqError] = useState<string | null>(null);
+
+  const addFaqItem = () => setFaqItems(f => [...f, { question: '', answer: '' }]);
+  const removeFaqItem = (i: number) => setFaqItems(f => f.filter((_, idx) => idx !== i));
+  const updateFaqItem = (i: number, field: 'question' | 'answer', val: string) =>
+    setFaqItems(f => f.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
+
+  const handleAiFaq = async () => {
+    setFaqError(null);
+    setFaqLoading(true);
+    try {
+      const res = await fetch('/api/admin/blog/ai/faq', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, content, category: form.category }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'FAQ üretilemedi');
+      if (Array.isArray(data.faqItems)) setFaqItems(data.faqItems);
+    } catch (e: any) {
+      setFaqError(e.message);
+    } finally {
+      setFaqLoading(false);
+    }
+  };
+
   // AI panel state
   const [aiGame, setAiGame] = useState<'pokemon' | 'riftbound'>('pokemon');
   const [aiTopics, setAiTopics] = useState<string[]>([]);
@@ -332,6 +367,8 @@ function PostModal({
     } else {
       payload.publishedAt = null;
     }
+    const validFaq = faqItems.filter(f => f.question.trim() && f.answer.trim());
+    payload.faqItems = validFaq.length > 0 ? validFaq : null;
     onSave(payload);
   };
 
@@ -634,6 +671,96 @@ function PostModal({
               </div>
             )}
           </div>
+
+          {/* FAQ section */}
+          <details className="border border-emerald-200 rounded-lg overflow-hidden" open={faqItems.length > 0}>
+            <summary className="flex items-center justify-between px-4 py-2.5 text-[12px] font-medium text-emerald-800 cursor-pointer select-none bg-emerald-50 hover:bg-emerald-100 transition-colors">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Sık Sorulan Sorular (FAQ)
+                {faqItems.length > 0 && (
+                  <span className="ml-1 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{faqItems.length}</span>
+                )}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </summary>
+            <div className="p-4 space-y-3">
+              {/* AI generate button */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAiFaq}
+                  disabled={faqLoading || (!form.title && !content)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-[12px] font-medium rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                  data-testid="button-ai-faq"
+                >
+                  {faqLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                  {faqLoading ? 'Üretiliyor…' : 'AI ile Üret'}
+                </button>
+                <span className="text-[11px] text-neutral-400">Mevcut başlık ve içerikten otomatik soru-cevap oluşturur</span>
+              </div>
+
+              {faqError && (
+                <p className="text-[11px] text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2" data-testid="text-faq-error">
+                  {faqError}
+                </p>
+              )}
+
+              {/* FAQ item list */}
+              {faqItems.length > 0 && (
+                <div className="space-y-3">
+                  {faqItems.map((item, i) => (
+                    <div key={i} className="border border-neutral-200 rounded-lg p-3 bg-white space-y-2" data-testid={`faq-item-${i}`}>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded mt-0.5 shrink-0">S{i + 1}</span>
+                        <input
+                          className="flex-1 border border-neutral-200 rounded-md px-2 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                          value={item.question}
+                          onChange={e => updateFaqItem(i, 'question', e.target.value)}
+                          placeholder="Soru?"
+                          data-testid={`input-faq-question-${i}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFaqItem(i)}
+                          className="p-1 rounded text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                          title="Soruyu sil"
+                          data-testid={`button-faq-remove-${i}`}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <textarea
+                        rows={2}
+                        className="w-full border border-neutral-200 rounded-md px-2 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-neutral-900 resize-none"
+                        value={item.answer}
+                        onChange={e => updateFaqItem(i, 'answer', e.target.value)}
+                        placeholder="Cevap…"
+                        data-testid={`input-faq-answer-${i}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add question button */}
+              <button
+                type="button"
+                onClick={addFaqItem}
+                className="flex items-center gap-1.5 text-[12px] text-emerald-700 hover:text-emerald-900 font-medium transition-colors"
+                data-testid="button-faq-add"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Soru Ekle
+              </button>
+
+              {faqItems.length > 0 && (
+                <p className="text-[10px] text-neutral-400">
+                  Boş bırakılan sorular kaydedilmez. Yayımlanan yazılarda FAQPage şeması otomatik eklenir.
+                </p>
+              )}
+            </div>
+          </details>
 
           {/* SEO section */}
           <details className="border border-neutral-200 rounded-lg overflow-hidden">
