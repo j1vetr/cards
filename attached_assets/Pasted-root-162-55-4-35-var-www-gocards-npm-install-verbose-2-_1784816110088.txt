@@ -1,0 +1,522 @@
+root@162-55-4-35:/var/www/gocards# npm install --verbose 2>&1 | tee npm-install.log
+npm verbose cli /root/.nvm/versions/node/v22.22.2/bin/node /root/.nvm/versions/node/v22.22.2/bin/npm
+npm info using npm@10.9.7
+npm info using node@v22.22.2
+npm verbose title npm install
+npm verbose argv "install" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:/root/.npm/_logs/2026-07-23T14_14_23_384Z-
+npm verbose logfile /root/.npm/_logs/2026-07-23T14_14_23_384Z-debug-0.log
+npm verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+npm verbose stack Error: ENOTEMPTY: directory not empty, rename '/var/www/gocards/node_modules/fast-equals' -> '/var/www/gocards/node_modules/.fast-equals-hY8YpwNQ'
+npm verbose stack     at async Object.rename (node:internal/fs/promises:784:10)
+npm verbose stack     at async moveFile (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+npm verbose stack     at async Promise.allSettled (index 2)
+npm verbose stack     at async [reifyPackages] (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:334:11)
+npm verbose stack     at async Arborist.reify (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:149:5)
+npm verbose stack     at async Install.exec (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/commands/install.js:150:5)
+npm verbose stack     at async Npm.exec (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/npm.js:207:9)
+npm verbose stack     at async module.exports (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/cli/entry.js:74:5)
+npm error code ENOTEMPTY
+npm error syscall rename
+npm error path /var/www/gocards/node_modules/fast-equals
+npm error dest /var/www/gocards/node_modules/.fast-equals-hY8YpwNQ
+npm error errno -39
+npm error ENOTEMPTY: directory not empty, rename '/var/www/gocards/node_modules/fast-equals' -> '/var/www/gocards/node_modules/.fast-equals-hY8YpwNQ'
+npm verbose cwd /var/www/gocards
+npm verbose os Linux 5.15.0-185-generic
+npm verbose node v22.22.2
+npm verbose npm  v10.9.7
+npm verbose exit -39
+npm verbose code -39
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-07-23T14_14_23_384Z-debug-0.log
+root@162-55-4-35:/var/www/gocards# ^C
+root@162-55-4-35:/var/www/gocards# npm install --loglevel silly 2>&1 | tee npm-install.log
+npm verbose cli /root/.nvm/versions/node/v22.22.2/bin/node /root/.nvm/versions/node/v22.22.2/bin/npm
+npm info using npm@10.9.7
+npm info using node@v22.22.2
+npm silly config load:file:/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/npmrc
+npm silly config load:file:/var/www/gocards/.npmrc
+npm silly config load:file:/root/.npmrc
+npm silly config load:file:/root/.nvm/versions/node/v22.22.2/etc/npmrc
+npm verbose title npm install
+npm verbose argv "install" "--loglevel" "silly"
+npm verbose logfile logs-max:10 dir:/root/.npm/_logs/2026-07-23T14_14_47_141Z-
+npm verbose logfile /root/.npm/_logs/2026-07-23T14_14_47_141Z-debug-0.log
+npm silly logfile start cleaning logs, removing 1 files
+npm silly logfile done cleaning log files
+npm silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+npm silly idealTree buildDeps
+npm verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+npm silly reify mark retired [ '/var/www/gocards/node_modules/cssesc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/dompurify' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/fsevents' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-android-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-darwin-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-darwin-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-freebsd-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-linux-arm-gnueabihf' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-linux-arm64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-linux-arm64-musl' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-win32-arm64-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/lightningcss-win32-x64-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/linkifyjs' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/openai' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/orderedmap' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/postcss-selector-parser' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-changeset' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-gapcursor' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-history' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-inputrules' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-keymap' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-schema-list' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-model' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-state' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-tables' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-transform' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-view' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-commands' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/rope-sequence' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/prosemirror-dropcursor' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/w3c-keyname' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/credential-provider-env' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/credential-provider-http' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/credential-provider-login' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/credential-provider-ini' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/credential-provider-node' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/credential-provider-sso' ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-process'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-web-identity'
+npm silly reify ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/nested-clients' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@aws-sdk/token-providers' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/aix-ppc64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/android-arm' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/android-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/android-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/darwin-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/darwin-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/freebsd-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/freebsd-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-arm' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-loong64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-ia32' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-mips64el' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-s390x' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-ppc64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/linux-riscv64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/netbsd-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/netbsd-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/openbsd-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/openbsd-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/openharmony-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/sunos-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/win32-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/win32-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@esbuild/win32-ia32' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-darwin-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-darwin-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-darwin-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-darwin-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-linux-arm' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-linux-ppc64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-linux-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-linux-riscv64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-linux-s390x' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-libvips-linuxmusl-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-linux-arm' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-linux-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-linux-ppc64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-linux-riscv64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-linux-s390x' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-linuxmusl-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-wasm32' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-win32-ia32' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-win32-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@img/sharp-win32-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-android-arm-eabi' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-android-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-darwin-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-darwin-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-freebsd-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-freebsd-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-arm-gnueabihf' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-arm-musleabihf' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-arm64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-arm64-musl' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-loong64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-ppc64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-riscv64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-s390x-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-linux-riscv64-musl' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-openharmony-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-win32-arm64-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-win32-ia32-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-win32-x64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@rollup/rollup-win32-x64-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-android-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-darwin-x64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-darwin-arm64' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-freebsd-x64' ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf'
+npm silly reify ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-linux-arm64-gnu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-linux-arm64-musl' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-wasm32-wasi' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-win32-arm64-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/typography' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tailwindcss/oxide-win32-x64-msvc' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/core' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-blockquote' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-bold' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-bubble-menu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-code-block' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-bullet-list' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-code' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-document' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-dropcursor' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-floating-menu' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-gapcursor' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-hard-break' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-heading' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-horizontal-rule' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-image' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-link' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-italic' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-list' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-list-item' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-list-keymap' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-ordered-list' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-paragraph' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-placeholder' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-strike' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-text' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extension-underline' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/extensions' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/pm' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/react' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@tiptap/starter-kit' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@types/dompurify' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@types/trusted-types' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@types/use-sync-external-store' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/fast-equals' ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-env'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-http'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-ini'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-login'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-node'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-process'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-sso'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-web-identity'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/nested-clients'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/token-providers'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/android-arm'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/android-arm64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/android-x64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/darwin-arm64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/darwin-x64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/freebsd-arm64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/freebsd-x64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-arm'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-arm64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-ia32'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-loong64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-ppc64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-mips64el'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-riscv64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-s390x'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/netbsd-x64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/openbsd-x64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/sunos-x64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/win32-arm64'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/win32-ia32'
+npm silly reify ]
+npm silly reify mark retired [
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/win32-x64'
+npm silly reify ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/credential-provider-imds' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/fetch-http-handler' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/core' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/hash-node' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/node-http-handler' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/signature-v4' ]
+npm silly reify mark retired [ '/var/www/gocards/node_modules/@smithy/types' ]
+npm silly reify moves {
+npm silly reify   '/var/www/gocards/node_modules/cssesc': '/var/www/gocards/node_modules/.cssesc-0NEc8lRb',
+npm silly reify   '/var/www/gocards/node_modules/dompurify': '/var/www/gocards/node_modules/.dompurify-J63fi4iU',
+npm silly reify   '/var/www/gocards/node_modules/fsevents': '/var/www/gocards/node_modules/.fsevents-PbgpCqPQ',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-android-arm64': '/var/www/gocards/node_modules/.lightningcss-android-arm64-Zr89ZmyD',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-darwin-arm64': '/var/www/gocards/node_modules/.lightningcss-darwin-arm64-DMKSsCzl',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-darwin-x64': '/var/www/gocards/node_modules/.lightningcss-darwin-x64-huD24pBw',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-freebsd-x64': '/var/www/gocards/node_modules/.lightningcss-freebsd-x64-8rBgTmqB',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-linux-arm-gnueabihf': '/var/www/gocards/node_modules/.lightningcss-linux-arm-gnueabihf-eRbYUz9Q',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-linux-arm64-gnu': '/var/www/gocards/node_modules/.lightningcss-linux-arm64-gnu-DRDDF3iK',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-linux-arm64-musl': '/var/www/gocards/node_modules/.lightningcss-linux-arm64-musl-HzkhFMo3',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-win32-arm64-msvc': '/var/www/gocards/node_modules/.lightningcss-win32-arm64-msvc-69EeihcM',
+npm silly reify   '/var/www/gocards/node_modules/lightningcss-win32-x64-msvc': '/var/www/gocards/node_modules/.lightningcss-win32-x64-msvc-f3iGfVG2',
+npm silly reify   '/var/www/gocards/node_modules/linkifyjs': '/var/www/gocards/node_modules/.linkifyjs-vlJJoDZx',
+npm silly reify   '/var/www/gocards/node_modules/openai': '/var/www/gocards/node_modules/.openai-R05OOcfH',
+npm silly reify   '/var/www/gocards/node_modules/orderedmap': '/var/www/gocards/node_modules/.orderedmap-3VoPGgOc',
+npm silly reify   '/var/www/gocards/node_modules/postcss-selector-parser': '/var/www/gocards/node_modules/.postcss-selector-parser-T8dpWHaO',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-changeset': '/var/www/gocards/node_modules/.prosemirror-changeset-1xpz89Dx',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-gapcursor': '/var/www/gocards/node_modules/.prosemirror-gapcursor-aw1Y2Pto',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-history': '/var/www/gocards/node_modules/.prosemirror-history-rdWlKRuC',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-inputrules': '/var/www/gocards/node_modules/.prosemirror-inputrules-WfW4Fa6w',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-keymap': '/var/www/gocards/node_modules/.prosemirror-keymap-ZxEWY1HS',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-schema-list': '/var/www/gocards/node_modules/.prosemirror-schema-list-KgFAJFbE',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-model': '/var/www/gocards/node_modules/.prosemirror-model-jghRfNS4',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-state': '/var/www/gocards/node_modules/.prosemirror-state-nP3bGOVm',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-tables': '/var/www/gocards/node_modules/.prosemirror-tables-V4kTlxv0',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-transform': '/var/www/gocards/node_modules/.prosemirror-transform-33m3qMBg',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-view': '/var/www/gocards/node_modules/.prosemirror-view-VDAEFAna',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-commands': '/var/www/gocards/node_modules/.prosemirror-commands-6A8UxANX',
+npm silly reify   '/var/www/gocards/node_modules/rope-sequence': '/var/www/gocards/node_modules/.rope-sequence-l2ndAdvf',
+npm silly reify   '/var/www/gocards/node_modules/prosemirror-dropcursor': '/var/www/gocards/node_modules/.prosemirror-dropcursor-d1SZwaR8',
+npm silly reify   '/var/www/gocards/node_modules/w3c-keyname': '/var/www/gocards/node_modules/.w3c-keyname-rcIDgAnS',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-env': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-env-r0IlUDyw',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-http': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-http-8BWhHTlB',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-login': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-login-diWSjpeg',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-ini': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-ini-s5zM315z',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-node': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-node-vTvSIaKI',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-sso': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-sso-l5EwyiqL',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-process': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-process-l0f5aHzo',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/credential-provider-web-identity': '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-web-identity-NbuXqrRe',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/nested-clients': '/var/www/gocards/node_modules/@aws-sdk/.nested-clients-lGOBdvk6',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/token-providers': '/var/www/gocards/node_modules/@aws-sdk/.token-providers-2Lz0L1iv',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/aix-ppc64': '/var/www/gocards/node_modules/@esbuild/.aix-ppc64-BRylsN6u',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/android-arm': '/var/www/gocards/node_modules/@esbuild/.android-arm-R7At7cYM',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/android-arm64': '/var/www/gocards/node_modules/@esbuild/.android-arm64-9aNimdcK',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/android-x64': '/var/www/gocards/node_modules/@esbuild/.android-x64-Uaz6C4pc',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/darwin-arm64': '/var/www/gocards/node_modules/@esbuild/.darwin-arm64-vosfUEN3',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/darwin-x64': '/var/www/gocards/node_modules/@esbuild/.darwin-x64-WaU87cUd',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/freebsd-x64': '/var/www/gocards/node_modules/@esbuild/.freebsd-x64-ws1MNMiO',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/freebsd-arm64': '/var/www/gocards/node_modules/@esbuild/.freebsd-arm64-XLkNNqmm',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-arm': '/var/www/gocards/node_modules/@esbuild/.linux-arm-AEhk2WJr',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-arm64': '/var/www/gocards/node_modules/@esbuild/.linux-arm64-E4digVFV',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-loong64': '/var/www/gocards/node_modules/@esbuild/.linux-loong64-FFLkZOA7',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-ia32': '/var/www/gocards/node_modules/@esbuild/.linux-ia32-CaM2gjhT',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-mips64el': '/var/www/gocards/node_modules/@esbuild/.linux-mips64el-EnToNMrr',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-s390x': '/var/www/gocards/node_modules/@esbuild/.linux-s390x-fozNkj8z',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-ppc64': '/var/www/gocards/node_modules/@esbuild/.linux-ppc64-okjp0HsE',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/linux-riscv64': '/var/www/gocards/node_modules/@esbuild/.linux-riscv64-5BCjXKeb',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/netbsd-arm64': '/var/www/gocards/node_modules/@esbuild/.netbsd-arm64-SjcMrfgc',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/netbsd-x64': '/var/www/gocards/node_modules/@esbuild/.netbsd-x64-mvpG8MlU',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/openbsd-arm64': '/var/www/gocards/node_modules/@esbuild/.openbsd-arm64-1GxX6JDL',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/openbsd-x64': '/var/www/gocards/node_modules/@esbuild/.openbsd-x64-ZNdxy3RT',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/openharmony-arm64': '/var/www/gocards/node_modules/@esbuild/.openharmony-arm64-hdvDIuZo',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/sunos-x64': '/var/www/gocards/node_modules/@esbuild/.sunos-x64-nX07Nrqy',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/win32-arm64': '/var/www/gocards/node_modules/@esbuild/.win32-arm64-SFDOmNNG',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/win32-x64': '/var/www/gocards/node_modules/@esbuild/.win32-x64-k4d8zZ3e',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild/win32-ia32': '/var/www/gocards/node_modules/@esbuild/.win32-ia32-dWlEPZDH',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-darwin-arm64': '/var/www/gocards/node_modules/@img/.sharp-darwin-arm64-o0n2bQTs',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-darwin-x64': '/var/www/gocards/node_modules/@img/.sharp-darwin-x64-m9GV0ZEV',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-darwin-arm64': '/var/www/gocards/node_modules/@img/.sharp-libvips-darwin-arm64-lRwuohJT',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-darwin-x64': '/var/www/gocards/node_modules/@img/.sharp-libvips-darwin-x64-YwHVSvuh',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-linux-arm': '/var/www/gocards/node_modules/@img/.sharp-libvips-linux-arm-txU6H5yM',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-linux-ppc64': '/var/www/gocards/node_modules/@img/.sharp-libvips-linux-ppc64-6ml5CoeW',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-linux-arm64': '/var/www/gocards/node_modules/@img/.sharp-libvips-linux-arm64-kPW0k6QE',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-linux-riscv64': '/var/www/gocards/node_modules/@img/.sharp-libvips-linux-riscv64-tbNab3Pv',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-linux-s390x': '/var/www/gocards/node_modules/@img/.sharp-libvips-linux-s390x-lOYDajTO',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-libvips-linuxmusl-arm64': '/var/www/gocards/node_modules/@img/.sharp-libvips-linuxmusl-arm64-9Nee2TBT',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-linux-arm': '/var/www/gocards/node_modules/@img/.sharp-linux-arm-PVMTdtxq',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-linux-arm64': '/var/www/gocards/node_modules/@img/.sharp-linux-arm64-ryO0cGUx',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-linux-ppc64': '/var/www/gocards/node_modules/@img/.sharp-linux-ppc64-UeQX5MJL',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-linux-riscv64': '/var/www/gocards/node_modules/@img/.sharp-linux-riscv64-o9iou2fR',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-linux-s390x': '/var/www/gocards/node_modules/@img/.sharp-linux-s390x-RVjb4Ivt',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-linuxmusl-arm64': '/var/www/gocards/node_modules/@img/.sharp-linuxmusl-arm64-lvUCmm4U',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-wasm32': '/var/www/gocards/node_modules/@img/.sharp-wasm32-0pBSpUWp',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-win32-ia32': '/var/www/gocards/node_modules/@img/.sharp-win32-ia32-jRkHqELx',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-win32-arm64': '/var/www/gocards/node_modules/@img/.sharp-win32-arm64-hCNFL6lP',
+npm silly reify   '/var/www/gocards/node_modules/@img/sharp-win32-x64': '/var/www/gocards/node_modules/@img/.sharp-win32-x64-99VrRAA3',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-android-arm-eabi': '/var/www/gocards/node_modules/@rollup/.rollup-android-arm-eabi-xjHslysB',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-android-arm64': '/var/www/gocards/node_modules/@rollup/.rollup-android-arm64-vX3hL96Z',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-darwin-arm64': '/var/www/gocards/node_modules/@rollup/.rollup-darwin-arm64-qDFaOgAA',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-darwin-x64': '/var/www/gocards/node_modules/@rollup/.rollup-darwin-x64-UZlXBoQ0',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-freebsd-arm64': '/var/www/gocards/node_modules/@rollup/.rollup-freebsd-arm64-J3ZghZQM',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-freebsd-x64': '/var/www/gocards/node_modules/@rollup/.rollup-freebsd-x64-a1R1sdeK',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-arm-gnueabihf': '/var/www/gocards/node_modules/@rollup/.rollup-linux-arm-gnueabihf-7UsKRjwQ',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-arm-musleabihf': '/var/www/gocards/node_modules/@rollup/.rollup-linux-arm-musleabihf-MreymGvP',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-arm64-gnu': '/var/www/gocards/node_modules/@rollup/.rollup-linux-arm64-gnu-KufHRwnp',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-arm64-musl': '/var/www/gocards/node_modules/@rollup/.rollup-linux-arm64-musl-uEmKYTVV',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-loong64-gnu': '/var/www/gocards/node_modules/@rollup/.rollup-linux-loong64-gnu-77BSZrzC',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-ppc64-gnu': '/var/www/gocards/node_modules/@rollup/.rollup-linux-ppc64-gnu-0Wk5H8tg',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-riscv64-gnu': '/var/www/gocards/node_modules/@rollup/.rollup-linux-riscv64-gnu-rEKukxBY',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-s390x-gnu': '/var/www/gocards/node_modules/@rollup/.rollup-linux-s390x-gnu-MfSPKzMy',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-linux-riscv64-musl': '/var/www/gocards/node_modules/@rollup/.rollup-linux-riscv64-musl-wZVe3y9s',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-openharmony-arm64': '/var/www/gocards/node_modules/@rollup/.rollup-openharmony-arm64-QVvzsJhn',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-win32-arm64-msvc': '/var/www/gocards/node_modules/@rollup/.rollup-win32-arm64-msvc-qLCixd8D',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-win32-ia32-msvc': '/var/www/gocards/node_modules/@rollup/.rollup-win32-ia32-msvc-cMM86kQ2',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-win32-x64-gnu': '/var/www/gocards/node_modules/@rollup/.rollup-win32-x64-gnu-oiEdGWew',
+npm silly reify   '/var/www/gocards/node_modules/@rollup/rollup-win32-x64-msvc': '/var/www/gocards/node_modules/@rollup/.rollup-win32-x64-msvc-jczpYqPT',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-android-arm64': '/var/www/gocards/node_modules/@tailwindcss/.oxide-android-arm64-2ABr2N05',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-darwin-x64': '/var/www/gocards/node_modules/@tailwindcss/.oxide-darwin-x64-B7INSTGa',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-darwin-arm64': '/var/www/gocards/node_modules/@tailwindcss/.oxide-darwin-arm64-SgecsVUI',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-freebsd-x64': '/var/www/gocards/node_modules/@tailwindcss/.oxide-freebsd-x64-KIlZSqEq',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf': '/var/www/gocards/node_modules/@tailwindcss/.oxide-linux-arm-gnueabihf-K8JPv9im',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-linux-arm64-gnu': '/var/www/gocards/node_modules/@tailwindcss/.oxide-linux-arm64-gnu-YLDSQOC2',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-linux-arm64-musl': '/var/www/gocards/node_modules/@tailwindcss/.oxide-linux-arm64-musl-yUIfjpdX',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-wasm32-wasi': '/var/www/gocards/node_modules/@tailwindcss/.oxide-wasm32-wasi-eODeAltY',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-win32-arm64-msvc': '/var/www/gocards/node_modules/@tailwindcss/.oxide-win32-arm64-msvc-fuHVTwHF',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/typography': '/var/www/gocards/node_modules/@tailwindcss/.typography-p64tzfy7',
+npm silly reify   '/var/www/gocards/node_modules/@tailwindcss/oxide-win32-x64-msvc': '/var/www/gocards/node_modules/@tailwindcss/.oxide-win32-x64-msvc-NhL4JVgt',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/core': '/var/www/gocards/node_modules/@tiptap/.core-eAbD69yh',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-blockquote': '/var/www/gocards/node_modules/@tiptap/.extension-blockquote-O0GEW3Rh',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-bold': '/var/www/gocards/node_modules/@tiptap/.extension-bold-tNQ2tAGN',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-bubble-menu': '/var/www/gocards/node_modules/@tiptap/.extension-bubble-menu-F5bZAh2Q',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-code-block': '/var/www/gocards/node_modules/@tiptap/.extension-code-block-enPs6Abs',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-bullet-list': '/var/www/gocards/node_modules/@tiptap/.extension-bullet-list-b5Nx7snI',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-code': '/var/www/gocards/node_modules/@tiptap/.extension-code-TII1ewf9',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-document': '/var/www/gocards/node_modules/@tiptap/.extension-document-Yo54CWRQ',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-dropcursor': '/var/www/gocards/node_modules/@tiptap/.extension-dropcursor-M3Drydze',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-floating-menu': '/var/www/gocards/node_modules/@tiptap/.extension-floating-menu-NxBaSiTX',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-gapcursor': '/var/www/gocards/node_modules/@tiptap/.extension-gapcursor-LXjHdKEf',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-hard-break': '/var/www/gocards/node_modules/@tiptap/.extension-hard-break-KmKQ1E6I',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-heading': '/var/www/gocards/node_modules/@tiptap/.extension-heading-Scne8mJ7',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-horizontal-rule': '/var/www/gocards/node_modules/@tiptap/.extension-horizontal-rule-VKEKApnn',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-image': '/var/www/gocards/node_modules/@tiptap/.extension-image-iGvGX91D',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-link': '/var/www/gocards/node_modules/@tiptap/.extension-link-LjtB0NaI',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-italic': '/var/www/gocards/node_modules/@tiptap/.extension-italic-ngMm0hCp',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-list': '/var/www/gocards/node_modules/@tiptap/.extension-list-khDenCiB',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-list-item': '/var/www/gocards/node_modules/@tiptap/.extension-list-item-Wdqcc7kz',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-list-keymap': '/var/www/gocards/node_modules/@tiptap/.extension-list-keymap-9301tog5',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-ordered-list': '/var/www/gocards/node_modules/@tiptap/.extension-ordered-list-YCE53NCg',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-paragraph': '/var/www/gocards/node_modules/@tiptap/.extension-paragraph-5B8ByDOE',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-placeholder': '/var/www/gocards/node_modules/@tiptap/.extension-placeholder-UxkLwq8f',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-strike': '/var/www/gocards/node_modules/@tiptap/.extension-strike-Qt7lGzzk',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-text': '/var/www/gocards/node_modules/@tiptap/.extension-text-Oj6UTTAU',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extension-underline': '/var/www/gocards/node_modules/@tiptap/.extension-underline-x35iniQy',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/extensions': '/var/www/gocards/node_modules/@tiptap/.extensions-ksiZfFw8',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/pm': '/var/www/gocards/node_modules/@tiptap/.pm-c00N0nBA',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/react': '/var/www/gocards/node_modules/@tiptap/.react-6AFwQMMO',
+npm silly reify   '/var/www/gocards/node_modules/@tiptap/starter-kit': '/var/www/gocards/node_modules/@tiptap/.starter-kit-m1qf9T6A',
+npm silly reify   '/var/www/gocards/node_modules/@types/dompurify': '/var/www/gocards/node_modules/@types/.dompurify-CMfA45eH',
+npm silly reify   '/var/www/gocards/node_modules/@types/trusted-types': '/var/www/gocards/node_modules/@types/.trusted-types-IPfN5nfR',
+npm silly reify   '/var/www/gocards/node_modules/@types/use-sync-external-store': '/var/www/gocards/node_modules/@types/.use-sync-external-store-dRJ9m6jP',
+npm silly reify   '/var/www/gocards/node_modules/fast-equals': '/var/www/gocards/node_modules/.fast-equals-hY8YpwNQ',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-env': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-env-ArNAgoVX',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-http': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-http-gmGffNKF',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-ini': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-ini-T1Rj67Ks',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-login': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-login-7G172nYr',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-node': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-node-bUZSNUzD',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-process': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-process-Gjni6WS0',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-sso': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-sso-aLryKZdY',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/credential-provider-web-identity': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.credential-provider-web-identity-KraOj3Qi',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/nested-clients': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.nested-clients-U2XbHyRC',
+npm silly reify   '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/token-providers': '/var/www/gocards/node_modules/@aws-sdk/client-sesv2/node_modules/@aws-sdk/.token-providers-NKByICqJ',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/android-arm': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.android-arm-6KYLSTqy',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/android-arm64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.android-arm64-EPzvtV3y',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/android-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.android-x64-3IgDUzy6',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/darwin-arm64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.darwin-arm64-HaYI5TjS',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/darwin-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.darwin-x64-lQ2gViWI',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/freebsd-arm64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.freebsd-arm64-jbTb23mf',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/freebsd-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.freebsd-x64-I6ztZtEN',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-arm': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-arm-ru3AJbib',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-arm64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-arm64-b93sWpur',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-ia32': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-ia32-Ju9ryAPu',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-loong64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-loong64-SwWcaeKa',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-ppc64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-ppc64-fiGKDrws',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-mips64el': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-mips64el-QJWoFvvQ',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-riscv64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-riscv64-kn4w09R9',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/linux-s390x': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.linux-s390x-66RTMeMP',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/netbsd-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.netbsd-x64-jTkvbF2m',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/openbsd-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.openbsd-x64-FbdSWJPe',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/sunos-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.sunos-x64-5xjJCopZ',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/win32-arm64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.win32-arm64-3nsfLyw7',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/win32-ia32': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.win32-ia32-1Bu0ELMy',
+npm silly reify   '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/win32-x64': '/var/www/gocards/node_modules/@esbuild-kit/core-utils/node_modules/@esbuild/.win32-x64-awzu0Pal',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/credential-provider-imds': '/var/www/gocards/node_modules/@smithy/.credential-provider-imds-ZpKe5uOx',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/fetch-http-handler': '/var/www/gocards/node_modules/@smithy/.fetch-http-handler-GEmr677P',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/core': '/var/www/gocards/node_modules/@smithy/.core-D0W60XK4',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/hash-node': '/var/www/gocards/node_modules/@smithy/.hash-node-atvBbLuV',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/node-http-handler': '/var/www/gocards/node_modules/@smithy/.node-http-handler-g9jgMcqk',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/signature-v4': '/var/www/gocards/node_modules/@smithy/.signature-v4-kV948bdC',
+npm silly reify   '/var/www/gocards/node_modules/@smithy/types': '/var/www/gocards/node_modules/@smithy/.types-faZP6azW'
+npm silly reify }
+npm verbose stack Error: ENOTEMPTY: directory not empty, rename '/var/www/gocards/node_modules/@aws-sdk/credential-provider-env' -> '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-env-r0IlUDyw'
+npm verbose stack     at async Object.rename (node:internal/fs/promises:784:10)
+npm verbose stack     at async moveFile (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+npm verbose stack     at async Promise.allSettled (index 31)
+npm verbose stack     at async [reifyPackages] (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:334:11)
+npm verbose stack     at async Arborist.reify (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:149:5)
+npm verbose stack     at async Install.exec (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/commands/install.js:150:5)
+npm verbose stack     at async Npm.exec (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/npm.js:207:9)
+npm verbose stack     at async module.exports (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/cli/entry.js:74:5)
+npm error code ENOTEMPTY
+npm error syscall rename
+npm error path /var/www/gocards/node_modules/@aws-sdk/credential-provider-env
+npm error dest /var/www/gocards/node_modules/@aws-sdk/.credential-provider-env-r0IlUDyw
+npm error errno -39
+npm error ENOTEMPTY: directory not empty, rename '/var/www/gocards/node_modules/@aws-sdk/credential-provider-env' -> '/var/www/gocards/node_modules/@aws-sdk/.credential-provider-env-r0IlUDyw'
+npm silly unfinished npm timer reify 1784816087444
+npm silly unfinished npm timer reify:retireShallow 1784816088312
+npm verbose cwd /var/www/gocards
+npm verbose os Linux 5.15.0-185-generic
+npm verbose node v22.22.2
+npm verbose npm  v10.9.7
+npm verbose exit -39
+npm verbose code -39
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-07-23T14_14_47_141Z-debug-0.log
+root@162-55-4-35:/var/www/gocards# 

@@ -1,0 +1,32 @@
+root@162-55-4-35:/var/www/gocards# npm install --verbose 2>&1 | tee npm-install.log
+npm verbose cli /root/.nvm/versions/node/v22.22.2/bin/node /root/.nvm/versions/node/v22.22.2/bin/npm
+npm info using npm@10.9.7
+npm info using node@v22.22.2
+npm verbose title npm install
+npm verbose argv "install" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:/root/.npm/_logs/2026-07-23T14_14_23_384Z-
+npm verbose logfile /root/.npm/_logs/2026-07-23T14_14_23_384Z-debug-0.log
+npm verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+npm verbose stack Error: ENOTEMPTY: directory not empty, rename '/var/www/gocards/node_modules/fast-equals' -> '/var/www/gocards/node_modules/.fast-equals-hY8YpwNQ'
+npm verbose stack     at async Object.rename (node:internal/fs/promises:784:10)
+npm verbose stack     at async moveFile (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+npm verbose stack     at async Promise.allSettled (index 2)
+npm verbose stack     at async [reifyPackages] (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:334:11)
+npm verbose stack     at async Arborist.reify (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:149:5)
+npm verbose stack     at async Install.exec (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/commands/install.js:150:5)
+npm verbose stack     at async Npm.exec (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/npm.js:207:9)
+npm verbose stack     at async module.exports (/root/.nvm/versions/node/v22.22.2/lib/node_modules/npm/lib/cli/entry.js:74:5)
+npm error code ENOTEMPTY
+npm error syscall rename
+npm error path /var/www/gocards/node_modules/fast-equals
+npm error dest /var/www/gocards/node_modules/.fast-equals-hY8YpwNQ
+npm error errno -39
+npm error ENOTEMPTY: directory not empty, rename '/var/www/gocards/node_modules/fast-equals' -> '/var/www/gocards/node_modules/.fast-equals-hY8YpwNQ'
+npm verbose cwd /var/www/gocards
+npm verbose os Linux 5.15.0-185-generic
+npm verbose node v22.22.2
+npm verbose npm  v10.9.7
+npm verbose exit -39
+npm verbose code -39
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-07-23T14_14_23_384Z-debug-0.log
+root@162-55-4-35:/var/www/gocards# 
