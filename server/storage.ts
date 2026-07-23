@@ -342,6 +342,14 @@ export interface IStorage {
 
   // Box & Sealed products
   getBoxProducts(gameSlug?: string): Promise<Product[]>;
+
+  // Blog / Rehber
+  getBlogPosts(opts?: { status?: string }): Promise<BlogPost[]>;
+  getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
+  getBlogPostById(id: string): Promise<BlogPost | undefined>;
+  createBlogPost(data: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: string, data: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {

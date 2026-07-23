@@ -158,6 +158,11 @@ function PostModal({
   onClose: () => void;
   onSave: (data: Record<string, any>) => void;
 }) {
+  const toDatetimeLocal = (iso: string | null | undefined) => {
+    if (!iso) return '';
+    return iso.slice(0, 16);
+  };
+
   const [form, setForm] = useState({
     title: post?.title ?? '',
     slug: post?.slug ?? '',
@@ -165,6 +170,7 @@ function PostModal({
     coverImageUrl: post?.coverImageUrl ?? '',
     category: post?.category ?? 'general',
     status: post?.status ?? 'draft',
+    publishedAt: toDatetimeLocal(post?.publishedAt),
     metaTitle: post?.metaTitle ?? '',
     metaDescription: post?.metaDescription ?? '',
   });
@@ -182,7 +188,13 @@ function PostModal({
     e.preventDefault();
     if (!form.title.trim()) { setError('Başlık zorunludur'); return; }
     if (!form.slug.trim()) { setError('Slug zorunludur'); return; }
-    onSave({ ...form, content });
+    const payload: Record<string, any> = { ...form, content };
+    if (form.publishedAt) {
+      payload.publishedAt = new Date(form.publishedAt).toISOString();
+    } else {
+      payload.publishedAt = null;
+    }
+    onSave(payload);
   };
 
   return (
@@ -222,7 +234,7 @@ function PostModal({
           </div>
 
           {/* Category + status row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-[12px] font-medium text-neutral-700 mb-1">Kategori</label>
               <select
@@ -245,6 +257,16 @@ function PostModal({
                 <option value="draft">Taslak</option>
                 <option value="published">Yayında</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-[12px] font-medium text-neutral-700 mb-1">Yayın Tarihi</label>
+              <input
+                type="datetime-local"
+                className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                value={form.publishedAt}
+                onChange={e => set('publishedAt', e.target.value)}
+                data-testid="input-blog-published-at"
+              />
             </div>
           </div>
 
@@ -286,23 +308,39 @@ function PostModal({
             </summary>
             <div className="p-4 space-y-3">
               <div>
-                <label className="block text-[12px] font-medium text-neutral-700 mb-1">Meta Başlık</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[12px] font-medium text-neutral-700">Meta Başlık</label>
+                  <span className={`text-[10px] font-mono ${
+                    form.metaTitle.length > 60 ? 'text-red-500' : form.metaTitle.length > 50 ? 'text-amber-500' : 'text-neutral-400'
+                  }`}>
+                    {form.metaTitle.length}/60
+                  </span>
+                </div>
                 <input
                   className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-neutral-900"
                   value={form.metaTitle}
                   onChange={e => set('metaTitle', e.target.value)}
-                  placeholder="Google'da görünecek başlık (boş bırakılırsa yazı başlığı kullanılır)"
+                  maxLength={80}
+                  placeholder="Google'da görünecek başlık (ideal: 50-60 karakter)"
                   data-testid="input-blog-meta-title"
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-medium text-neutral-700 mb-1">Meta Açıklama</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[12px] font-medium text-neutral-700">Meta Açıklama</label>
+                  <span className={`text-[10px] font-mono ${
+                    form.metaDescription.length > 160 ? 'text-red-500' : form.metaDescription.length > 140 ? 'text-amber-500' : 'text-neutral-400'
+                  }`}>
+                    {form.metaDescription.length}/160
+                  </span>
+                </div>
                 <textarea
                   rows={2}
                   className="w-full border border-neutral-200 rounded-md px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-neutral-900 resize-none"
                   value={form.metaDescription}
                   onChange={e => set('metaDescription', e.target.value)}
-                  placeholder="Arama sonuçlarında görünecek açıklama"
+                  maxLength={200}
+                  placeholder="Arama sonuçlarında görünecek açıklama (ideal: 140-160 karakter)"
                   data-testid="input-blog-meta-description"
                 />
               </div>
