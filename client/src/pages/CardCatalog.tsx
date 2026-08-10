@@ -80,6 +80,7 @@ export default function CardCatalog() {
   const searchQuery = urlParams.get('search') || '';
   const sort = urlParams.get('sort') || 'newest';
   const page = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
+  const inStock = urlParams.get('inStock') === 'true';
   const urlMinPrice = parseInt(urlParams.get('minPrice') || '0', 10);
   const urlMaxPrice = parseInt(urlParams.get('maxPrice') || String(MAX_PRICE), 10);
 
@@ -121,6 +122,7 @@ export default function CardCatalog() {
     limit: LIMIT,
     minPrice: urlMinPrice > 0 ? urlMinPrice : undefined,
     maxPrice: urlMaxPrice < MAX_PRICE ? urlMaxPrice : undefined,
+    inStock,
   });
 
   const cards = data?.cards ?? [];

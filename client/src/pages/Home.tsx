@@ -19,6 +19,7 @@ import {
   Boxes,
   BookOpen,
   Calendar,
+  Sparkles,
 } from 'lucide-react';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -530,6 +531,137 @@ function HeroSection() {
       {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, transparent, #080e1c)' }} />
+    </section>
+  );
+}
+
+// ── Available cards showcase ────────────────────────────────────────────────
+
+const SALES_GAME_STYLE = {
+  riftbound: {
+    accent: '#818cf8',
+    glow: 'rgba(99,102,241,0.26)',
+    label: 'Riftbound',
+    logo: '/logo-riftbound.png',
+  },
+  pokemon: {
+    accent: '#f59e0b',
+    glow: 'rgba(245,158,11,0.22)',
+    label: 'Pokémon TCG',
+    logo: '/logo-pokemon-tcg.webp',
+  },
+} as const;
+
+function OnSaleGameRail({ game }: { game: keyof typeof SALES_GAME_STYLE }) {
+  const style = SALES_GAME_STYLE[game];
+  const { data, isLoading } = useCards({ game, limit: 8, inStock: true, sort: 'newest' });
+  const cards = data?.cards ?? [];
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border p-4 sm:p-5"
+      style={{
+        background: `linear-gradient(135deg, ${style.glow} 0%, rgba(10,15,30,0.94) 38%, rgba(6,13,31,0.98) 100%)`,
+        borderColor: `${style.accent}35`,
+      }}
+    >
+      <div className="absolute -right-16 -top-20 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: style.glow }} />
+      <div className="relative flex items-center justify-between gap-3 mb-4">
+          <Link href={`/kartlar?game=${game}&inStock=true`} className="flex items-center min-w-0 gap-3 group">
+          <div className="h-9 w-20 rounded-lg bg-black/20 border border-white/10 px-2 flex items-center justify-center">
+            <img src={style.logo} alt="" className="max-h-6 max-w-full object-contain" />
+          </div>
+          <div>
+            <p className="text-[10px] text-white/45 uppercase font-bold tracking-[0.18em]">Şimdi satışta</p>
+            <h3 className="text-base font-bold text-white group-hover:text-white/80 transition-colors">{style.label}</h3>
+          </div>
+        </Link>
+        <Link href={`/kartlar?game=${game}&inStock=true`}>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap transition-colors" style={{ color: style.accent }}>
+            Tümü <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="shrink-0 w-32 sm:w-36 aspect-[63/88] rounded-xl animate-pulse bg-white/[0.08]" />
+          ))}
+        </div>
+      ) : cards.length > 0 ? (
+        <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2 -mb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          {cards.map((card, index) => (
+            <motion.div
+              key={card.id}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.32, delay: Math.min(index * 0.05, 0.3) }}
+              className="w-32 sm:w-36 shrink-0"
+            >
+              <CardCard card={card} />
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className="min-h-36 flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-white/10 bg-black/10 px-4">
+          <p className="text-sm font-semibold text-white/65">{style.label} için yeni kartlar yakında</p>
+          <p className="text-xs text-white/35 mt-1">Stok eklendiğinde burada görünecek.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OnSaleCardsSection() {
+  return (
+    <section
+      data-testid="section-cards-on-sale"
+      className="relative overflow-hidden py-16 sm:py-20"
+      style={{ background: '#080e1c' }}
+    >
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute left-1/2 -top-40 h-80 w-[44rem] -translate-x-1/2 rounded-full bg-indigo-600/10 blur-[100px]" />
+      </div>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-70px' }}
+          transition={{ duration: 0.45 }}
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 mb-8"
+        >
+          <div>
+            <div className="flex items-center gap-2 mb-2 text-emerald-300">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Canlı Stok</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white leading-none" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              Satışta Olan Kartlar
+            </h2>
+            <p className="text-sm text-white/45 mt-3 max-w-xl">Şu anda stokta olan kartları oyuna göre keşfet, koleksiyonuna ekle.</p>
+          </div>
+          <Link href="/kartlar?inStock=true">
+            <button
+              data-testid="btn-on-sale-all"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold text-white/80 hover:text-white hover:bg-white/[0.07] transition-colors"
+              style={{ borderColor: 'rgba(129,140,248,0.38)' }}
+            >
+              <Sparkles className="w-4 h-4 text-indigo-300" />
+              Tüm Satıştaki Kartlar
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </motion.div>
+        <div className="grid lg:grid-cols-2 gap-4 sm:gap-5">
+          <OnSaleGameRail game="riftbound" />
+          <OnSaleGameRail game="pokemon" />
+        </div>
+      </div>
     </section>
   );
 }
@@ -1150,6 +1282,7 @@ export default function Home() {
       <MotionConfig reducedMotion="user">
         <main style={{ background: '#080e1c' }}>
           <HeroSection />
+          <OnSaleCardsSection />
           <BoxShowcaseSection />
 
           <GameSection

@@ -38,6 +38,7 @@ export interface CardFilters {
   page?: number;
   limit?: number;
   featured?: boolean;
+  inStock?: boolean;
 }
 
 function buildQuery(filters: CardFilters) {
@@ -55,6 +56,7 @@ function buildQuery(filters: CardFilters) {
   if (filters.minPrice != null && filters.minPrice > 0) p.set('minPrice', String(filters.minPrice));
   if (filters.maxPrice != null) p.set('maxPrice', String(filters.maxPrice));
   if (filters.featured) p.set('featured', 'true');
+  if (filters.inStock) p.set('inStock', 'true');
   return p.toString();
 }
 
