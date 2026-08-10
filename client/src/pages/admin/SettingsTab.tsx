@@ -516,6 +516,8 @@ export default function SettingsPanel() {
   const [callbackCopied, setCallbackCopied] = useState(false);
   const [iyzicoApiKey, setIyzicoApiKey] = useState('');
   const [iyzicoSecretKey, setIyzicoSecretKey] = useState('');
+  const [iyzicoSubMerchantKey, setIyzicoSubMerchantKey] = useState('');
+  const [iyzicoSubMerchantSaving, setIyzicoSubMerchantSaving] = useState(false);
   const [iyzicoTesting, setIyzicoTesting] = useState(false);
   const [iyzicoTestResult, setIyzicoTestResult] = useState<{
     ok: boolean;
@@ -576,11 +578,46 @@ export default function SettingsPanel() {
     secretKeyMasked: string;
     hasApiKey: boolean;
     hasSecretKey: boolean;
+    subMerchantKey: string;
+    hasSubMerchantKey: boolean;
     callbackUrl: string;
     baseUrl: string;
   }>({
     queryKey: ['/api/admin/iyzico/config'],
   });
+
+  useEffect(() => {
+    if (iyzicoConfig) setIyzicoSubMerchantKey(iyzicoConfig.subMerchantKey || '');
+  }, [iyzicoConfig?.subMerchantKey]);
+
+  const handleIyzicoSaveSubMerchant = async () => {
+    setIyzicoSubMerchantSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/iyzico/sub-merchant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subMerchantKey: iyzicoSubMerchantKey.trim() }),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        await refetchIyzico();
+        setMessage({
+          type: 'success',
+          text: iyzicoSubMerchantKey.trim()
+            ? 'Alt üye işyeri anahtarı kaydedildi. Ödemeler pazaryeri (marketplace) formatında gönderilecek.'
+            : 'Alt üye işyeri anahtarı temizlendi. Ödemeler normal (tekil satıcı) formatında gönderilecek.',
+        });
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.error || 'Alt üye işyeri anahtarı kaydedilemedi' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Alt üye işyeri anahtarı kaydedilemedi' });
+    } finally {
+      setIyzicoSubMerchantSaving(false);
+    }
+  };
 
   const handleIyzicoSaveCredentials = async () => {
     if (!iyzicoApiKey.trim() || !iyzicoSecretKey.trim()) {
@@ -1074,6 +1111,43 @@ export default function SettingsPanel() {
                     ? 'Güvenlik için kayıtlı değer gösterilmez; değiştirmek için yeniden girin.'
                     : 'Anahtar veritabanına kaydedilir; çevre değişkeni kullanılmaz.'}
                 </p>
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-200 pt-5">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Alt Üye İşyeri Anahtarı (subMerchantKey) — yalnızca pazaryeri hesapları
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={iyzicoSubMerchantKey}
+                  onChange={(e) => setIyzicoSubMerchantKey(e.target.value)}
+                  placeholder="Boş bırakın (normal satıcı hesabı)"
+                  data-testid="input-iyzico-sub-merchant-key"
+                  className="flex-1 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 text-sm font-mono focus:outline-none focus:border-neutral-900 transition-colors"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={handleIyzicoSaveSubMerchant}
+                  disabled={iyzicoSubMerchantSaving}
+                  data-testid="button-iyzico-save-sub-merchant"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {iyzicoSubMerchantSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                  Kaydet
+                </button>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1.5">
+                iyzico hesabınız <strong>pazaryeri (marketplace)</strong> üye işyeri ise bu alan zorunludur; aksi halde ödeme
+                sırasında "bütün sepet kırılımlarında subMerchantKey gönderilmelidir" hatası alınır. Anahtarı iyzico Merchant
+                Panel → Alt Üye İşyerleri ekranından alın. Normal (tekil satıcı) hesaplarda bu alan <strong>boş</strong> kalmalıdır.
+              </p>
+              <div className={`text-xs font-medium mt-2 ${iyzicoConfig.hasSubMerchantKey ? 'text-emerald-600' : 'text-neutral-500'}`} data-testid="text-iyzico-sub-merchant-status">
+                {iyzicoConfig.hasSubMerchantKey
+                  ? '✓ Pazaryeri modu aktif — her sepet kırılımına subMerchantKey ekleniyor'
+                  : 'Pazaryeri modu kapalı — ödemeler tekil satıcı formatında gönderiliyor'}
               </div>
             </div>
 

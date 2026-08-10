@@ -1,2 +1,3 @@
 - [drizzle-kit push friction](drizzle-push-friction.md) — push hangs/aborts on non-TTY prompts (user_sessions rename + refresh_tokens drift); apply additive DDL via idempotent SQL instead.
+- [iyzico marketplace subMerchantKey](iyzico-marketplace-submerchant.md) — marketplace accounts need subMerchantKey on EVERY basket line (incl. shipping); single-seller accounts must omit it entirely.
 - [Wholesale explode-at-payment](wholesale-explode-at-payment.md) — a wholesale "seri" stays ONE cart row; explosion into per-variant order rows happens only at payment, keeping stock/idempotency paths untouched.

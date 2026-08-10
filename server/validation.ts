@@ -335,6 +335,13 @@ export const iyzicoCredentialsSchema = z.object({
   apiKey: z.string().min(1, "API anahtarı zorunludur"),
   secretKey: z.string().min(1, "Gizli anahtar zorunludur"),
   sandbox: z.boolean().optional(),
+  // Sadece pazaryeri (marketplace) üye işyerleri için. Boş bırakılırsa ödeme
+  // isteği normal tekil satıcı formatında gönderilir.
+  subMerchantKey: z.string().max(255).optional(),
+});
+
+export const iyzicoSubMerchantSchema = z.object({
+  subMerchantKey: z.string().max(255),
 });
 
 // ─── Admin: Init ─────────────────────────────────────────────────────────────

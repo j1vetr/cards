@@ -14,6 +14,13 @@ async function getSecretKey(): Promise<string> {
   return (await storage.getSiteSetting('iyzico_secret_key')) || '';
 }
 
+// Pazaryeri (marketplace) üye işyeri anahtarı. Sadece iyzico hesabı marketplace
+// olarak tanımlıysa doldurulur; boşsa ödeme isteği normal (tekil satıcı)
+// formatında gider ve hiçbir sepet kırılımına subMerchantKey eklenmez.
+export async function getSubMerchantKey(): Promise<string> {
+  return ((await storage.getSiteSetting('iyzico_sub_merchant_key')) || '').trim();
+}
+
 export type IyzicoBuyer = {
   id: string;
   name: string;
@@ -43,6 +50,11 @@ export type IyzicoBasketItem = {
   category2?: string;
   itemType: 'PHYSICAL' | 'VIRTUAL';
   price: string;
+  // Marketplace (pazaryeri) üye işyerleri için zorunlu: iyzico, ödeme isteğindeki
+  // HER sepet kırılımında satıcının alt üye işyeri anahtarını bekler. Normal
+  // (tekil satıcı) hesaplarda bu alanlar hiç gönderilmez.
+  subMerchantKey?: string;
+  subMerchantPrice?: string;
 };
 
 export type IyzicoCheckoutFormInitializeRequest = {

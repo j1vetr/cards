@@ -23,7 +23,7 @@ import {
   inventoryBulkUpdateSchema, campaignWriteSchema, campaignUpdateSchema,
   settingsWriteSchema, testEmailSchema, updateCredentialsSchema,
   menuItemWriteSchema, menuItemUpdateSchema, menuReorderSchema,
-  woocommerceSettingsSchema, woocommerceTestSchema, iyzicoCredentialsSchema, adminInitSchema,
+  woocommerceSettingsSchema, woocommerceTestSchema, iyzicoCredentialsSchema, iyzicoSubMerchantSchema, adminInitSchema,
   influencerBulkSchema, paymentCreateSchema, whatsappTestSchema,
   confirmBankTransferSchema, rejectBankTransferSchema,
   adminLoginSchema, userLoginSchema, registerWriteSchema, forgotPasswordSchema, resetPasswordSchema,
@@ -70,6 +70,7 @@ import {
   retrieveCheckoutForm,
   isIyzicoConfigured,
   testIyzicoConnection,
+  getSubMerchantKey,
   type IyzicoBasketItem,
 } from "./iyzico";
 import {
@@ -2346,19 +2347,28 @@ ${items.join('\n')}
       const serverSubtotal = expanded.subtotal;
       const cartItemsForStorage = expanded.lines;
 
+      // Marketplace (pazaryeri) hesapları için iyzico HER sepet kırılımında
+      // subMerchantKey bekler. Anahtar tanımlı değilse istek normal (tekil
+      // satıcı) formatında gider.
+      const subMerchantKey = await getSubMerchantKey();
+      const withSubMerchant = (item: IyzicoBasketItem): IyzicoBasketItem =>
+        subMerchantKey
+          ? { ...item, subMerchantKey, subMerchantPrice: item.price }
+          : item;
+
       // iyzico basket: one row per unit so sum(basketItems.price) === price
       const iyzicoBasketItems: IyzicoBasketItem[] = [];
       for (const line of cartItemsForStorage) {
         const linePrice = parseFloat(line.price);
         for (let qi = 0; qi < line.quantity; qi++) {
-          iyzicoBasketItems.push({
+          iyzicoBasketItems.push(withSubMerchant({
             id: `${line.productId}-${line.variantId || 'base'}-${qi}`,
             name: line.productName.substring(0, 250),
             category1: 'Giyim',
             category2: 'Moda',
             itemType: 'PHYSICAL',
             price: linePrice.toFixed(2),
-          });
+          }));
         }
       }
 
@@ -2431,13 +2441,13 @@ ${items.join('\n')}
 
       // Add shipping as a basket line so sum(basketItems.price) === priceTry
       if (shippingCost > 0) {
-        iyzicoBasketItems.push({
+        iyzicoBasketItems.push(withSubMerchant({
           id: `shipping-${merchantOid}`,
           name: 'Kargo',
           category1: 'Kargo',
           itemType: 'VIRTUAL',
           price: shippingCost.toFixed(2),
-        });
+        }));
       }
 
       // iyzico requires sum(basketItems.price) === price (pre-discount).
@@ -3068,6 +3078,7 @@ ${items.join('\n')}
     try {
       const apiKey = (await storage.getSiteSetting('iyzico_api_key')) || '';
       const secretKey = (await storage.getSiteSetting('iyzico_secret_key')) || '';
+      const subMerchantKey = await getSubMerchantKey();
       const baseUrl = process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr';
       res.json({
         configured: Boolean(apiKey && secretKey),
@@ -3075,6 +3086,8 @@ ${items.join('\n')}
         secretKeyMasked: maskSecret(secretKey),
         hasApiKey: Boolean(apiKey),
         hasSecretKey: Boolean(secretKey),
+        subMerchantKey,
+        hasSubMerchantKey: Boolean(subMerchantKey),
         callbackUrl: `${baseUrl}/api/payment/iyzico/callback`,
         baseUrl,
         mode: 'live' as const,
@@ -3111,11 +3124,31 @@ ${items.join('\n')}
       const secretKey = parsed.data.secretKey.trim();
       await storage.setSiteSetting('iyzico_api_key', apiKey);
       await storage.setSiteSetting('iyzico_secret_key', secretKey);
+      if (parsed.data.subMerchantKey !== undefined) {
+        await storage.setSiteSetting('iyzico_sub_merchant_key', parsed.data.subMerchantKey.trim());
+      }
       console.log('[iyzico] credentials updated via admin panel');
       res.json({ success: true });
     } catch (error) {
       console.error('[iyzico credentials] error:', error);
       res.status(500).json({ error: 'iyzico anahtarları kaydedilemedi' });
+    }
+  });
+
+  // Pazaryeri (marketplace) alt üye işyeri anahtarı — API/gizli anahtarı
+  // yeniden girmeden güncellenebilsin diye ayrı uç. Boş gönderilirse
+  // marketplace modu kapanır ve ödeme normal tekil satıcı formatında gider.
+  app.post("/api/admin/iyzico/sub-merchant", requireAdmin, async (req, res) => {
+    try {
+      const parsed = iyzicoSubMerchantSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const value = parsed.data.subMerchantKey.trim();
+      await storage.setSiteSetting('iyzico_sub_merchant_key', value);
+      console.log('[iyzico] sub merchant key', value ? 'saved' : 'cleared', 'via admin panel');
+      res.json({ success: true, hasSubMerchantKey: Boolean(value) });
+    } catch (error) {
+      console.error('[iyzico sub-merchant] error:', error);
+      res.status(500).json({ error: 'Alt üye işyeri anahtarı kaydedilemedi' });
     }
   });
 
