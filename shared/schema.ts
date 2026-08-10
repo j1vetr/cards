@@ -228,6 +228,9 @@ export const cards = pgTable("cards", {
   isActive: boolean("is_active").default(true).notNull(),
   isFeatured: boolean("is_featured").default(false).notNull(),
   isNew: boolean("is_new").default(false).notNull(),
+  // Manual-edit protection: when true, card sync must not overwrite metadata with API data
+  isManuallyEdited: boolean("is_manually_edited").default(false).notNull(),
+  manuallyEditedAt: timestamp("manually_edited_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => ({

@@ -6017,7 +6017,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   app.put("/api/admin/cards/:id", requireAdmin, async (req, res) => {
     try {
       const {
-        isActive, isFeatured, isNew,
+        isActive, isFeatured, isNew, isManuallyEdited,
         name, setId, cardNumber, rarity, cardTypes, hp, artist,
         imageUrl, imageUrlHiRes, description,
       } = req.body;
@@ -6035,6 +6035,18 @@ Sitemap: ${baseUrl}/sitemap.xml
       if (imageUrl !== undefined) patch.imageUrl = imageUrl;
       if (imageUrlHiRes !== undefined) patch.imageUrlHiRes = imageUrlHiRes;
       if (description !== undefined) patch.description = description;
+
+      // Any metadata change marks the card as manually edited (protected from sync).
+      const touchesMetadata = [name, setId, cardNumber, rarity, cardTypes, hp, artist, imageUrl, imageUrlHiRes, description]
+        .some((v) => v !== undefined);
+      if (isManuallyEdited === false) {
+        // Explicit unlock: "API verisine geri dön" — next sync overwrites with API data
+        patch.isManuallyEdited = false;
+        patch.manuallyEditedAt = null;
+      } else if (touchesMetadata) {
+        patch.isManuallyEdited = true;
+        patch.manuallyEditedAt = new Date();
+      }
       const updated = await storage.updateAdminCard(req.params.id, patch as any);
       if (!updated) return res.status(404).json({ error: "Kart bulunamadı" });
       res.json(updated);

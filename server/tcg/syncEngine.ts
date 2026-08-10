@@ -229,6 +229,9 @@ async function syncCards(
           else stats.cardsUpdated++;
           stats.cardsProcessed++;
 
+          // Manually edited card — metadata (and image) left untouched
+          if (result.manualSkip) continue;
+
           // ── Download card image locally ──────────────────────────────────
           if (downloadImages && dbData.imageUrl) {
             const { localUrl, skipped } = await downloadCardImage(

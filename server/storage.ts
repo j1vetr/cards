@@ -2286,11 +2286,15 @@ export class DbStorage implements IStorage {
     apiId: string;
     apiSource: string;
     isActive: boolean;
-  }): Promise<{ card: typeof cards.$inferSelect; inserted: boolean }> {
+  }): Promise<{ card: typeof cards.$inferSelect; inserted: boolean; manualSkip?: boolean }> {
     const [existing] = await db.select().from(cards)
       .where(and(eq(cards.apiSource, data.apiSource), eq(cards.apiId, data.apiId)));
 
     if (existing) {
+      // Manual-edit protection: never overwrite admin-edited metadata with API data
+      if (existing.isManuallyEdited) {
+        return { card: existing, inserted: false, manualSkip: true };
+      }
       const [updated] = await db.update(cards)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(cards.id, existing.id))
@@ -2630,7 +2634,7 @@ export class DbStorage implements IStorage {
       SELECT
         c.id, c.name, c.slug, c.card_number, c.rarity, c.image_url,
         c.image_url_hi_res, c.card_types, c.hp, c.artist, c.description,
-        c.is_active, c.is_featured, c.is_new, c.created_at,
+        c.is_active, c.is_featured, c.is_new, c.is_manually_edited, c.created_at,
         cs.id AS set_id, cs.name AS set_name,
         cg.id AS game_id, cg.name AS game_name,
         COUNT(DISTINCT cl.id) FILTER (WHERE cl.is_active = true AND cl.stock > 0)::int AS active_listings,
@@ -2673,6 +2677,8 @@ export class DbStorage implements IStorage {
     imageUrl?: string | null;
     imageUrlHiRes?: string | null;
     description?: string | null;
+    isManuallyEdited?: boolean;
+    manuallyEditedAt?: Date | null;
   }): Promise<any> {
     const [updated] = await db.update(cards)
       .set({ ...patch, updatedAt: new Date() })

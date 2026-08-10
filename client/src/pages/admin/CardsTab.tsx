@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ChevronDown, ChevronUp, Plus, Trash2, Save,
-  EyeOff, Star, Sparkles, Package, X, Pencil,
+  EyeOff, Star, Sparkles, Package, X, Pencil, Lock, RotateCcw,
 } from 'lucide-react';
 
 const TCG_CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10', 'PSA9', 'PSA8', 'PSA7'];
@@ -33,6 +33,7 @@ interface AdminCard {
   image_url_hi_res: string | null; card_types: string[] | null; hp: number | null;
   artist: string | null; description: string | null;
   is_active: boolean; is_featured: boolean; is_new: boolean;
+  is_manually_edited: boolean;
   set_id: string; set_name: string; game_id: string; game_name: string;
   active_listings: number; total_listings: number;
 }
@@ -548,6 +549,19 @@ function EditCardModal({ card, games, allSets, onClose }: {
     onError: (err: Error) => setError(err.message),
   });
 
+  const unlockMut = useMutation({
+    mutationFn: () => adminFetch(`/api/admin/cards/${card.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isManuallyEdited: false }),
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-cards'] });
+      onClose();
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="modal-edit-card">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
@@ -555,6 +569,22 @@ function EditCardModal({ card, games, allSets, onClose }: {
           <h2 className="text-[15px] font-semibold text-neutral-900">Kartı Düzenle</h2>
           <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-4 h-4" /></button>
         </div>
+        {card.is_manually_edited && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5" data-testid="banner-manual-protection">
+            <Lock className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] text-amber-800 font-medium">Bu kart manuel düzenlendi — sync korumalı</p>
+              <p className="text-[11px] text-amber-700 mt-0.5">API sync'i bu kartın bilgilerini değiştirmez. Korumayı kaldırırsanız bir sonraki sync kartı API verisiyle günceller.</p>
+              <button type="button"
+                onClick={() => { if (confirm('Koruma kaldırılsın mı? Bir sonraki sync bu kartın bilgilerini API verisiyle güncelleyecek.')) unlockMut.mutate(); }}
+                disabled={unlockMut.isPending}
+                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 border border-amber-300 rounded-md px-2 py-1 hover:bg-amber-100 disabled:opacity-50 transition-colors"
+                data-testid="button-revert-to-api">
+                <RotateCcw className="w-3 h-3" /> API verisine geri dön
+              </button>
+            </div>
+          </div>
+        )}
         <div className="space-y-3">
           <div>
             <label className="block text-[11px] font-medium text-neutral-600 mb-1">Oyun</label>
@@ -692,7 +722,18 @@ function CardRow({ card, games, allSets }: { card: AdminCard; games: Game[]; all
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-neutral-900 leading-tight truncate">{card.name}</p>
+              <p className="text-[13px] font-medium text-neutral-900 leading-tight truncate flex items-center gap-1.5">
+                <span className="truncate">{card.name}</span>
+                {card.is_manually_edited && (
+                  <span
+                    className="inline-flex items-center gap-0.5 shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700"
+                    title="Manuel düzenlendi — sync bu kartın bilgilerini değiştirmez"
+                    data-testid={`badge-manual-${card.id}`}
+                  >
+                    <Lock className="w-2.5 h-2.5" /> Manuel
+                  </span>
+                )}
+              </p>
               <p className="text-[11px] text-neutral-400 mt-0.5">
                 {card.card_number && <span className="mr-2">#{card.card_number}</span>}
                 {card.rarity && <span>{card.rarity}</span>}

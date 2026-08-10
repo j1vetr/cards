@@ -61,6 +61,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_card_api ON cards(api_source, api_id)
 ALTER TABLE cards ADD COLUMN IF NOT EXISTS attacks  JSONB NOT NULL DEFAULT '[]';
 ALTER TABLE cards ADD COLUMN IF NOT EXISTS abilities JSONB NOT NULL DEFAULT '[]';
 
+-- Manual-edit protection (added after initial schema): when true, card sync
+-- must not overwrite this card's metadata with API data
+ALTER TABLE cards ADD COLUMN IF NOT EXISTS is_manually_edited BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE cards ADD COLUMN IF NOT EXISTS manually_edited_at TIMESTAMP;
+
 CREATE TABLE IF NOT EXISTS card_listings (
   id         VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
   card_id    VARCHAR NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
