@@ -2419,7 +2419,9 @@ export class DbStorage implements IStorage {
     if (filters.sort === 'price_asc') orderClause = sql`min_price ASC NULLS LAST`;
     else if (filters.sort === 'price_desc') orderClause = sql`min_price DESC NULLS LAST`;
     else if (filters.sort === 'name_asc') orderClause = sql`c.name ASC`;
-    else orderClause = sql`c.created_at DESC`;
+    // Default ("newest"): purchasable cards (with an active, in-stock listing) first,
+    // then everything else — each group ordered by newest.
+    else orderClause = sql`(COUNT(CASE WHEN ${listingExpr} THEN 1 END) > 0) DESC, c.created_at DESC`;
 
     const rowsResult = await db.execute(sql`
       SELECT
