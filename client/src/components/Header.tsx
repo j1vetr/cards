@@ -140,7 +140,7 @@ function MegaMenuPanel({
                   Tüm Kartlar <ArrowUpRight className="w-3 h-3" />
                 </Link>
                 <Link
-                  href={game === 'riftbound' ? '/riftbound' : `/oyun/${game}`}
+                  href={game === 'riftbound' ? '/riftbound' : '/pokemon'}
                   className="text-xs font-medium transition-colors flex items-center gap-1 text-white/40 hover:text-white/70"
                 >
                   Oyun Sayfası <ArrowUpRight className="w-3 h-3" />

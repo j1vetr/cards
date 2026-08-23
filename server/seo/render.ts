@@ -18,6 +18,7 @@ function orgSchema(baseUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${baseUrl}/#organization`,
     name: "GoCards TCG",
     legalName: "GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.",
     url: baseUrl,
@@ -81,7 +82,10 @@ async function renderHome(baseUrl: string): Promise<RenderResult> {
     .catch(() => ({ cards: [] as any[], total: 0 }));
 
   const gameLinks = games
-    .map((g: any) => `<li><a href="/oyun/${escapeHtml(g.slug)}">${escapeHtml(g.name)}</a></li>`)
+    .map((g: any) => {
+      const ownerPath = GAME_OWNER_PATHS[g.slug] || `/oyun/${g.slug}`;
+      return `<li><a href="${escapeHtml(ownerPath)}">${escapeHtml(g.name)}</a></li>`;
+    })
     .join("");
 
   const cardItems = featuredCards.cards
@@ -99,8 +103,8 @@ async function renderHome(baseUrl: string): Promise<RenderResult> {
 
   return {
     status: 200,
-    title: `${SITE_NAME} | Pokémon TCG & Riftbound Kart Pazaryeri`,
-    description: "Go|Cards TCG — Türkiye'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu ve tekli kart satışı. Gerçek stok, güncel fiyat, güvenli alışveriş.",
+    title: `Riftbound & Pokémon TCG Kartları | ${SITE_NAME}`,
+    description: "Go|Cards TCG — Türkiye'nin TCG mağazası. Riftbound ve Pokémon TCG için single kartlar, booster paketler ve kapalı kutular. Gerçek stok, güncel fiyat, güvenli alışveriş.",
     canonical: `${baseUrl}/`,
     robots: "index, follow",
     ogType: "website",
@@ -110,8 +114,10 @@ async function renderHome(baseUrl: string): Promise<RenderResult> {
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
+        "@id": `${baseUrl}/#website`,
         name: SITE_NAME,
         url: baseUrl,
+        publisher: { "@id": `${baseUrl}/#organization` },
         potentialAction: {
           "@type": "SearchAction",
           target: `${baseUrl}/kartlar?search={search_term_string}`,
@@ -121,8 +127,8 @@ async function renderHome(baseUrl: string): Promise<RenderResult> {
     ],
     bodyHtml: `
       <main>
-        <h1>Pokémon TCG &amp; Riftbound Kart Pazaryeri</h1>
-        <p>Türkiye'nin TCG mağazasında tekli kartlar, booster paketler ve kapalı kutular gerçek stok ve güncel fiyatla satışta.</p>
+        <h1>Riftbound &amp; Pokémon TCG Kartları</h1>
+        <p>Türkiye'nin TCG mağazasında Riftbound ve Pokémon TCG için tekli kartlar, booster paketler ve kapalı kutular gerçek stok ve güncel fiyatla satışta.</p>
         <nav aria-label="oyunlar"><ul>${gameLinks}</ul></nav>
         <section>
           <h2>Öne Çıkan Kartlar</h2>
@@ -137,17 +143,30 @@ async function renderHome(baseUrl: string): Promise<RenderResult> {
   };
 }
 
-async function renderGame(gameSlug: string, baseUrl: string, canonicalPath?: string): Promise<RenderResult> {
+/**
+ * Bir oyun için ayrılmış tek bir ticari "owner" sayfası varsa (ör. Riftbound
+ * için /riftbound, Pokémon için /pokemon), /oyun/:game gibi ikincil/gezinme
+ * sayfaları bu owner'a canonical verir — aynı anahtar kelime için iki sayfanın
+ * birbirini kanibalize etmesini önler. Owner'ı olmayan oyunlar kendi
+ * /oyun/:game yolunu canonical olarak kullanmaya devam eder.
+ */
+const GAME_OWNER_PATHS: Record<string, string> = {
+  riftbound: "/riftbound",
+  pokemon: "/pokemon",
+};
+
+async function renderGame(gameSlug: string, baseUrl: string): Promise<RenderResult> {
   const games = await storage.listCardGames().catch(() => []);
   const game = games.find((g: any) => g.slug === gameSlug);
-  if (!game) return notFoundResult(baseUrl, canonicalPath || `/oyun/${gameSlug}`);
+  const path = `/oyun/${gameSlug}`;
+  if (!game) return notFoundResult(baseUrl, path);
 
   const [sets, boxes] = await Promise.all([
     storage.getCardSetsPublic(gameSlug).catch(() => []),
     storage.getBoxProducts(gameSlug).catch(() => []),
   ]);
 
-  const path = canonicalPath || `/oyun/${gameSlug}`;
+  const canonicalPath = GAME_OWNER_PATHS[gameSlug] || path;
   const setItems = sets
     .map((s: any) => `<li><a href="/set/${escapeHtml(s.slug)}">${escapeHtml(s.name)}</a>${s.listed_cards ? ` (${s.listed_cards} kart stokta)` : ""}</li>`)
     .join("");
@@ -162,7 +181,7 @@ async function renderGame(gameSlug: string, baseUrl: string, canonicalPath?: str
     status: 200,
     title: `${game.name} Kartları ve Setleri | ${SITE_NAME}`,
     description: truncate(description, 160),
-    canonical: `${baseUrl}${path}`,
+    canonical: `${baseUrl}${canonicalPath}`,
     robots: "index, follow",
     ogType: "website",
     ogImage: game.logoUrl ? normalizeImageUrl(baseUrl, game.logoUrl) : `${baseUrl}/logo.png`,
@@ -172,7 +191,7 @@ async function renderGame(gameSlug: string, baseUrl: string, canonicalPath?: str
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         name: `${game.name} | ${SITE_NAME}`,
-        url: `${baseUrl}${path}`,
+        url: `${baseUrl}${canonicalPath}`,
       },
       breadcrumbSchema(baseUrl, [
         { name: "Ana Sayfa", path: "/" },
@@ -184,6 +203,7 @@ async function renderGame(gameSlug: string, baseUrl: string, canonicalPath?: str
         ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: game.name, path }])}
         <h1>${escapeHtml(game.name)} Kartları ve Setleri</h1>
         <p>${escapeHtml(description)}</p>
+        ${canonicalPath !== path ? `<p><a href="${escapeHtml(canonicalPath)}">${escapeHtml(game.name)} hakkında detaylı bilgi ve SSS</a></p>` : ""}
         <section>
           <h2>Setler</h2>
           <ul>${setItems}</ul>
@@ -191,6 +211,190 @@ async function renderGame(gameSlug: string, baseUrl: string, canonicalPath?: str
         <section>
           <h2>Booster ve Kapalı Kutular</h2>
           <ul>${boxItems}</ul>
+        </section>
+      </main>
+    `,
+  };
+}
+
+interface GameOwnerConfig {
+  gameSlug: string;
+  path: string;
+  keyword: string;
+  title: string;
+  description: string;
+  h1: string;
+  introParagraphs: string[];
+  faqItems: Array<{ q: string; a: string }>;
+}
+
+const GAME_OWNER_CONFIGS: Record<string, GameOwnerConfig> = {
+  riftbound: {
+    gameSlug: "riftbound",
+    path: "/riftbound",
+    keyword: "Riftbound",
+    title: "League of Legends Riftbound TCG Ürünleri ve Kartları",
+    description: "Türkiye'nin LoL TCG mağazası Go|Cards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş.",
+    h1: "League of Legends Riftbound TCG Ürünleri ve Kartları",
+    introParagraphs: [
+      "Riftbound TCG, Riot Games tarafından geliştirilen ve dünya genelinde milyonlarca oyuncuya hitap eden League of Legends evreninin resmi kart oyunudur. Oyuncular tanıdık şampiyonları ve yeteneklerini kullanarak stratejik desteler kurar, sıra tabanlı bir sistemle rakiplerine meydan okur. League of Legends kart oyunu (LoL TCG) hem yeni başlayanlar için öğrenmesi kolay hem de rekabetçi oyuncular için derinlikli bir sistem sunar.",
+      "Go|Cards olarak Riftbound TCG'nin ürünlerini Türkiye'ye getiriyoruz. Booster paket, kapalı kutu (Display Box) ve tekli kart (single card) seçenekleriyle koleksiyonunuzu büyütebilir ya da tournament destesi için ihtiyacınız olan belirli kartları tek tek satın alabilirsiniz. Riftbound kartları setlere göre listelenir; her set kendi sayfasında toplam kart sayısı ve stoktaki kart adediyle birlikte görüntülenir, böylece hangi setten hangi kartların satışta olduğunu kolayca görebilirsiniz.",
+      "Tüm Riftbound tekli kartlarımız gerçek stok durumuyla ve koşul bilgisiyle (NM, LP, MP, HP) listelenmiştir; fiyatlar güncel piyasa verisine göre düzenli olarak takip edilir. Kapalı kutu ve booster pack ürünlerinde stok adedi ve fiyat her ürün sayfasında açıkça belirtilir. 500₺ ve üzeri siparişlerde kargo ücretsizdir, siparişler güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir.",
+      "Riftbound TCG'ye yeni başlıyorsanız önce bir başlangıç destesi (starter deck) veya birkaç booster pack ile setleri tanımanızı, ardından tournament için ihtiyaç duyduğunuz belirli şampiyon ve birim kartlarını tekli kart olarak tamamlamanızı öneririz. Koleksiyonculuk odaklı alışveriş yapıyorsanız ultra rare ve secret rare nadirlikteki kartlar setler sayfasında ayrı ayrı incelenebilir.",
+    ],
+    faqItems: [
+      {
+        q: "Riftbound TCG nedir?",
+        a: "Riftbound TCG, Riot Games tarafından League of Legends (LoL TCG) evrenine dayalı olarak geliştirilen stratejik kart oyunudur. Oyuncular şampiyonlardan oluşan desteler kurarak rakiplerine karşı mücadele eder.",
+      },
+      {
+        q: "Riftbound booster pack kaç kart içerir?",
+        a: "Riftbound booster pack içeriği sete göre değişmekle birlikte standart paketler genellikle 10-12 kart içerir. Kapalı Display Box ise 24-36 booster pack'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.",
+      },
+      {
+        q: "League of Legends kart oyunu (LoL TCG) nasıl oynanır?",
+        a: "League of Legends Riftbound TCG'de her oyuncu bir şampiyon destesiyle oynar. Kartlar sıra tabanlı olarak oynanır, birimler, büyüler ve donanımlar aracılığıyla rakip şampiyonun can puanını sıfırlamak hedeflenir.",
+      },
+      {
+        q: "En değerli Riftbound kartları hangileridir?",
+        a: "En değerli Riftbound kartları genellikle ultra rare ve secret rare nadirlik seviyesindeki şampiyon kartlarıdır. Popüler şampiyonların özel baskı versiyonları koleksiyoncular arasında en çok aranan Riftbound kartları arasındadır.",
+      },
+      {
+        q: "Riftbound tekli kart (single card) alabilir miyim?",
+        a: "Evet. Go|Cards olarak Riftbound tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece tournament destesi için ihtiyacınız olan belirli kartları satın alabilirsiniz.",
+      },
+    ],
+  },
+  pokemon: {
+    gameSlug: "pokemon",
+    path: "/pokemon",
+    keyword: "Pokémon TCG",
+    title: "Pokémon TCG Kartları ve Setleri",
+    description: "Türkiye'nin Pokémon TCG mağazası Go|Cards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş.",
+    h1: "Pokémon TCG Kartları ve Setleri",
+    introParagraphs: [
+      "Pokémon TCG (Trading Card Game), Pokémon evrenindeki canlıları ve eğitmenleri temsil eden kartlarla oynanan, dünya genelinde en çok oynanan koleksiyonluk kart oyunlarından biridir. Oyuncular kendi destelerini kurar, enerji kartlarıyla Pokémon'larını güçlendirir ve rakip oyuncunun tüm Pokémon'larını yenerek ya da ödül kartlarını toplayarak kazanmayı hedefler.",
+      "Go|Cards olarak Pokémon TCG'nin güncel ve klasik setlerine ait ürünleri Türkiye'ye getiriyoruz. Booster paket, kapalı kutu (Elite Trainer Box, Booster Box) ve tekli kart (single card) seçenekleriyle koleksiyonunuzu büyütebilir ya da destenizi tamamlamak için ihtiyacınız olan belirli kartları tek tek satın alabilirsiniz. Pokémon kartları setlere göre listelenir, her set sayfasında toplam kart sayısı ve stoktaki kart adedi görüntülenir.",
+      "Tüm Pokémon tekli kartlarımız gerçek stok durumuyla ve koşul bilgisiyle (NM, LP, MP, HP) listelenmiştir, fiyatlar güncel piyasa verisine göre düzenli olarak takip edilir. Kapalı kutu ve booster pack ürünlerinde stok adedi ve fiyat her ürün sayfasında açıkça belirtilir. 500₺ ve üzeri siparişlerde kargo ücretsizdir, siparişler güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir.",
+      "Pokémon TCG koleksiyonuna yeni başlıyorsanız güncel bir setten birkaç booster pack açarak setleri tanımanızı, ardından deste için ihtiyaç duyduğunuz belirli kartları tekli kart olarak tamamlamanızı öneririz. Koleksiyonculuk odaklı alışveriş yapıyorsanız ultra rare, secret rare ve full art nadirlikteki kartlar ilgili set sayfasında ayrı ayrı incelenebilir.",
+    ],
+    faqItems: [
+      {
+        q: "Pokémon TCG nedir?",
+        a: "Pokémon TCG, Pokémon evrenindeki canlıları ve eğitmenleri temsil eden kartlarla oynanan koleksiyonluk kart oyunudur. Oyuncular destelerini kurar, Pokémon'larını enerji kartlarıyla güçlendirerek rakip oyuncuya karşı mücadele eder.",
+      },
+      {
+        q: "Pokémon booster pack kaç kart içerir?",
+        a: "Standart bir Pokémon TCG booster pack genellikle 10-11 kart içerir. Bir Booster Box ise sete göre 30-36 booster pack'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.",
+      },
+      {
+        q: "Pokémon TCG'ye yeni başlayanlar nereden başlamalı?",
+        a: "Yeni başlayanlar için güncel bir setten birkaç booster pack açmak ya da hazır bir başlangıç ürünüyle temel mekanikleri öğrenmek iyi bir başlangıçtır. Ardından ihtiyacınız olan belirli kartları tekli kart olarak tamamlayabilirsiniz.",
+      },
+      {
+        q: "En değerli Pokémon kartları hangileridir?",
+        a: "En değerli Pokémon kartları genellikle ultra rare, secret rare ve full art nadirlik seviyesindeki kartlardır. Popüler Pokémon'ların özel baskı versiyonları koleksiyoncular arasında en çok aranan kartlar arasındadır.",
+      },
+      {
+        q: "Pokémon tekli kart (single card) alabilir miyim?",
+        a: "Evet. Go|Cards olarak Pokémon tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece destenize eksik olan belirli kartları satın alabilirsiniz.",
+      },
+    ],
+  },
+};
+
+async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promise<RenderResult> {
+  const games = await storage.listCardGames().catch(() => []);
+  const game = games.find((g: any) => g.slug === config.gameSlug);
+
+  const [sets, boxes, cardsResult] = await Promise.all([
+    storage.getCardSetsPublic(config.gameSlug).catch(() => []),
+    storage.getBoxProducts(config.gameSlug).catch(() => []),
+    storage.getCardsPublic({ gameSlug: config.gameSlug, limit: 24, sort: "newest" }).catch(() => ({ cards: [] as any[], total: 0 })),
+  ]);
+
+  const path = config.path;
+  const setItems = sets
+    .map((s: any) => `<li><a href="/set/${escapeHtml(s.slug)}">${escapeHtml(s.name)}</a>${s.listed_cards ? ` (${s.listed_cards} kart stokta)` : ""}</li>`)
+    .join("");
+  const boxItems = boxes
+    .slice(0, 24)
+    .map((p: any) => `<li><a href="/urun/${escapeHtml(p.slug)}">${escapeHtml(p.name)} — ${formatTRY(p.basePrice)} — ${p.stock > 0 ? "Stokta" : "Tükendi"}</a></li>`)
+    .join("");
+  const cardItems = cardsResult.cards
+    .map((c: any) => {
+      const price = c.min_price != null ? formatTRY(c.min_price) : "Stokta yok";
+      return `<li><a href="/kart/${escapeHtml(c.slug)}">${escapeHtml(c.name)} (${escapeHtml(c.set_name || "")}) — ${price}</a></li>`;
+    })
+    .join("");
+  const introHtml = config.introParagraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("");
+  const faqHtml = config.faqItems
+    .map((item) => `<div><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></div>`)
+    .join("");
+
+  const ogImage = game?.logoUrl ? normalizeImageUrl(baseUrl, game.logoUrl) : `${baseUrl}/logo.png`;
+
+  return {
+    status: 200,
+    title: `${config.title} | ${SITE_NAME}`,
+    description: truncate(config.description, 160),
+    canonical: `${baseUrl}${path}`,
+    robots: "index, follow",
+    ogType: "website",
+    ogImage,
+    jsonLd: [
+      orgSchema(baseUrl),
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: `${config.title} | ${SITE_NAME}`,
+        url: `${baseUrl}${path}`,
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: `${config.keyword} Setleri`,
+        itemListElement: sets.map((s: any, index: number) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${baseUrl}/set/${s.slug}`,
+          name: s.name,
+        })),
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: config.faqItems.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      },
+      breadcrumbSchema(baseUrl, [
+        { name: "Ana Sayfa", path: "/" },
+        { name: config.keyword, path },
+      ]),
+    ],
+    bodyHtml: `
+      <main>
+        ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: config.keyword, path }])}
+        <h1>${escapeHtml(config.h1)}</h1>
+        ${introHtml}
+        <section>
+          <h2>${escapeHtml(config.keyword)} Kart Setleri</h2>
+          <ul>${setItems}</ul>
+        </section>
+        <section>
+          <h2>${escapeHtml(config.keyword)} Booster ve Kapalı Kutular</h2>
+          <ul>${boxItems}</ul>
+        </section>
+        <section>
+          <h2>${escapeHtml(config.keyword)} Tekli Kartları</h2>
+          <ul>${cardItems}</ul>
+        </section>
+        <section>
+          <h2>Sık Sorulan Sorular</h2>
+          ${faqHtml}
         </section>
       </main>
     `,
@@ -723,7 +927,8 @@ export async function renderPublicPage(pathname: string, baseUrl: string): Promi
   }
 
   if (segments.length === 1) {
-    if (segments[0] === "riftbound") return renderGame("riftbound", baseUrl, "/riftbound");
+    const owner = GAME_OWNER_CONFIGS[segments[0]];
+    if (owner) return renderGameOwner(owner, baseUrl);
     if (segments[0] === "blog") return renderBlogList(baseUrl);
   }
 
@@ -731,7 +936,7 @@ export async function renderPublicPage(pathname: string, baseUrl: string): Promi
   // da eksik segment) gerçek 404 almalı; renderPublicPage null dönerse
   // renderAppShellResponse bunu yalnızca isKnownAppPath ile statik bir yol
   // ise 200 sayar — o yüzden burada açıkça 404 üretiyoruz.
-  const knownPrefixes = ["urun", "kategori", "kart", "set", "oyun", "blog", "riftbound"];
+  const knownPrefixes = ["urun", "kategori", "kart", "set", "oyun", "blog", "riftbound", "pokemon"];
   if (knownPrefixes.includes(segments[0])) {
     return notFoundResult(baseUrl, pathname);
   }

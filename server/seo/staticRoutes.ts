@@ -32,6 +32,7 @@ export const STATIC_TOP_LEVEL_PATHS: ReadonlySet<string> = new Set([
   "/iletisim",
   "/aksesuarlar",
   "/riftbound",
+  "/pokemon",
   "/blog",
 ]);
 

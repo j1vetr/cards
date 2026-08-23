@@ -45,6 +45,7 @@ const Favorites = lazy(() => import("@/pages/Favorites"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Accessories = lazy(() => import("@/pages/Accessories"));
 const RiftboundPage = lazy(() => import("@/pages/RiftboundPage"));
+const PokemonPage = lazy(() => import("@/pages/PokemonPage"));
 const BlogList = lazy(() => import("@/pages/BlogList"));
 const BlogDetail = lazy(() => import("@/pages/BlogDetail"));
 
@@ -91,6 +92,7 @@ function Router() {
         <Route path="/iletisim" component={Contact} />
         <Route path="/aksesuarlar" component={Accessories} />
         <Route path="/riftbound" component={RiftboundPage} />
+        <Route path="/pokemon" component={PokemonPage} />
         <Route path="/blog/:slug" component={BlogDetail} />
         <Route path="/blog" component={BlogList} />
         <Route path="/toov-admin/login" component={AdminLogin} />

@@ -185,6 +185,12 @@ export default function CardSet() {
       <SEO
         title={`${set.name} — ${set.game_name} | Go|Cards`}
         description={`${set.name} setindeki kartları satın al. ${set.game_name}.`}
+        url={`/set/${set.slug}`}
+        breadcrumbs={[
+          { name: 'Ana Sayfa', url: '/' },
+          { name: set.game_name, url: `/oyun/${set.game_slug}` },
+          { name: set.name, url: `/set/${set.slug}` },
+        ]}
       />
       <Header />
 

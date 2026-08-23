@@ -23,7 +23,7 @@ interface SEOProps {
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const DEFAULT_TITLE = 'Go|Cards — Pokémon TCG & Riftbound Kart Oyunları';
+const DEFAULT_TITLE = 'Go|Cards — Riftbound & Pokémon TCG Kart Oyunları';
 const DEFAULT_DESCRIPTION = 'Go|Cards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
 const SITE_NAME = 'Go|Cards';
 // NOT: window.location.origin KULLANILMAZ — eski domain (gocards.toov.com.tr),
@@ -100,6 +100,7 @@ export function SEO({
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'Organization',
+      '@id': `${CANONICAL_SITE_URL}/#organization`,
       name: 'GoCards TCG',
       legalName: 'GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.',
       url: CANONICAL_SITE_URL,
@@ -175,8 +176,10 @@ export function SEO({
       schemas.push({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
+        '@id': `${BASE_URL}/#website`,
         name: 'Go|Cards',
         url: BASE_URL,
+        publisher: { '@id': `${BASE_URL}/#organization` },
         potentialAction: {
           '@type': 'SearchAction',
           target: `${BASE_URL}/arama?q={search_term_string}`,

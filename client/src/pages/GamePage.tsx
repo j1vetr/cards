@@ -71,6 +71,15 @@ const GAME_CONFIG: Record<string, {
 
 const FALLBACK_CONFIG = GAME_CONFIG.pokemon;
 
+// Riftbound ve Pokémon için ayrılmış birer ticari "owner" sayfası var
+// (/riftbound, /pokemon). Bu sayfa (/oyun/:game) aynı anahtar kelimeler için
+// owner ile kanibalizasyona girmemesi adına canonical'ını owner'a verir;
+// owner'ı olmayan oyunlar kendi yolunu canonical olarak kullanmaya devam eder.
+const GAME_OWNER_PATHS: Record<string, string> = {
+  riftbound: '/riftbound',
+  pokemon: '/pokemon',
+};
+
 function formatReleaseDate(raw?: string | null): string | null {
   if (!raw) return null;
   const d = new Date(raw.replace(/\//g, '-') + 'T00:00:00');
@@ -160,12 +169,18 @@ export default function GamePage() {
   }
 
   const gameName = game?.name ?? (gameSlug === 'pokemon' ? 'Pokémon TCG' : gameSlug === 'riftbound' ? 'Riftbound' : gameSlug);
+  const ownerPath = GAME_OWNER_PATHS[gameSlug];
 
   return (
     <div className="min-h-screen" style={{ background: '#09090f' }}>
       <SEO
         title={`${gameName} Kartları | Go|Cards`}
         description={`${gameName} single kart ve koleksiyon ürünleri. Go|Cards TCG marketplace.`}
+        url={ownerPath || `/oyun/${gameSlug}`}
+        breadcrumbs={[
+          { name: 'Ana Sayfa', url: '/' },
+          { name: gameName, url: `/oyun/${gameSlug}` },
+        ]}
       />
       <Header />
 
@@ -209,6 +224,12 @@ export default function GamePage() {
                   </span>
                 )}
               </div>
+              {ownerPath && (
+                <Link href={ownerPath} className="text-sm font-semibold hover:opacity-80 transition-opacity underline underline-offset-4"
+                  style={{ color: cfg.accent }}>
+                  {gameName} hakkında detaylı bilgi ve SSS →
+                </Link>
+              )}
             </div>
           </div>
         </div>

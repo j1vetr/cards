@@ -418,9 +418,9 @@ function HeroSection() {
                 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold text-white leading-[1.08] mb-5"
                 style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
               >
-                Türkiye'de
+                <span className="riftbound-shimmer">Riftbound</span> &amp; Pokémon TCG
                 <br />
-                <span className="riftbound-shimmer">Riftbound</span>
+                Kartları Türkiye'de
               </motion.h1>
 
               <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
@@ -431,7 +431,7 @@ function HeroSection() {
 
               {/* CTA buttons */}
               <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto">
-                <Link href="/magaza?game=riftbound">
+                <Link href="/kartlar">
                   <motion.button
                     data-testid="btn-hero-magaza"
                     whileHover={{ scale: 1.03 }}
@@ -449,13 +449,13 @@ function HeroSection() {
                 variants={fadeUp}
                 className="flex lg:hidden items-center justify-center gap-6 mt-5"
               >
-                <Link href="/oyun/riftbound">
+                <Link href="/riftbound">
                   <img src="/logo-riftbound.png" alt="Riftbound"
                     className="h-10 w-auto object-contain select-none"
                     style={{ mixBlendMode: 'screen' }} draggable={false} />
                 </Link>
                 <div className="w-px h-10 bg-white/12 shrink-0" />
-                <Link href="/oyun/pokemon">
+                <Link href="/pokemon">
                   <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG"
                     className="h-10 w-auto object-contain select-none" draggable={false} />
                 </Link>
@@ -490,7 +490,7 @@ function HeroSection() {
           transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="hidden lg:flex pb-12 items-center justify-center gap-20"
         >
-          <Link href="/oyun/riftbound" data-testid="link-hero-riftbound-logo">
+          <Link href="/riftbound" data-testid="link-hero-riftbound-logo">
             <motion.div
               whileHover={{ scale: 1.06, y: -3 }}
               whileTap={{ scale: 0.97 }}
@@ -509,7 +509,7 @@ function HeroSection() {
 
           <div className="w-px h-12 lg:h-16 bg-white/10 shrink-0" />
 
-          <Link href="/oyun/pokemon" data-testid="link-hero-pokemon-logo">
+          <Link href="/pokemon" data-testid="link-hero-pokemon-logo">
             <motion.div
               whileHover={{ scale: 1.06, y: -3 }}
               whileTap={{ scale: 0.97 }}
@@ -1274,8 +1274,8 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="Pokemon TCG & Riftbound Kart Pazaryeri"
-        description="Go|Cards — Türkiye'nin en geniş TCG kart seçkisi. Pokemon TCG, Riftbound single kartlar, booster paketler ve PSA gradlenmiş koleksiyonlar."
+        title="Riftbound & Pokémon TCG Kartları | Go|Cards TCG"
+        description="Go|Cards TCG — Türkiye'nin TCG mağazası. Riftbound ve Pokémon TCG için single kartlar, booster paketler ve kapalı kutular. Gerçek stok, güncel fiyat, güvenli alışveriş."
         url="/"
       />
       <Header />
