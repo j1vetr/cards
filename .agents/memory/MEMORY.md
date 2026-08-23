@@ -2,3 +2,4 @@
 - [iyzico marketplace subMerchantKey](iyzico-marketplace-submerchant.md) — marketplace accounts need subMerchantKey on EVERY basket line (incl. shipping); single-seller accounts must omit it entirely.
 - [Wholesale explode-at-payment](wholesale-explode-at-payment.md) — a wholesale "seri" stays ONE cart row; explosion into per-variant order rows happens only at payment, keeping stock/idempotency paths untouched.
 - [Express wildcard catch-all req.path bug](express-wildcard-catchall-reqpath.md) — `app.use("*", ...)` resets req.path to "/"; use req.originalUrl for the real path inside it.
+- [SEO SSR/SPA parity contract](seo-ssr-spa-parity.md) — admin SEO overrides must resolve/clamp/transform identically in server/seo/render.ts and client SEO usage via shared/seoText.ts, or completion review rejects.

@@ -2,6 +2,19 @@ import { storage } from "../storage";
 import { escapeHtml, stripHtml, truncate, normalizeImageUrl, formatTRY, sanitizeRichHtml } from "./htmlUtils";
 import { resolveSeoTitle, resolveSeoDescription, resolveSeoH1, resolveSeoIntro } from "./seoDefaults";
 import { SITE_NAME } from "../../shared/siteConfig";
+import {
+  RIFTBOUND_OWNER_FAQ,
+  POKEMON_OWNER_FAQ,
+  RIFTBOUND_GUIDE_LINKS,
+  POKEMON_GUIDE_LINKS,
+} from "../../shared/gameOwnerContent";
+import {
+  resolveBlogPageTitle,
+  resolveBlogDescription,
+  buildBlogPostingSchema,
+  buildBlogFaqSchema,
+  buildBlogHowToSchema,
+} from "../../shared/blogSchema";
 
 export interface RenderResult {
   status: 200 | 404;
@@ -231,6 +244,10 @@ interface GameOwnerConfig {
   h1: string;
   introParagraphs: string[];
   faqItems: Array<{ q: string; a: string }>;
+  // Blog rehberlerine (category='guide') verilen çift yönlü iç link listesi.
+  // client/src/pages/PokemonPage.tsx ve RiftboundPage.tsx'teki GUIDE_LINKS
+  // ile aynı tutulmalıdır (parite kuralı).
+  guideLinks: Array<{ slug: string; title: string }>;
 }
 
 const GAME_OWNER_CONFIGS: Record<string, GameOwnerConfig> = {
@@ -247,28 +264,8 @@ const GAME_OWNER_CONFIGS: Record<string, GameOwnerConfig> = {
       "Tüm Riftbound tekli kartlarımız gerçek stok durumuyla ve koşul bilgisiyle (NM, LP, MP, HP) listelenmiştir; fiyatlar güncel piyasa verisine göre düzenli olarak takip edilir. Kapalı kutu ve booster pack ürünlerinde stok adedi ve fiyat her ürün sayfasında açıkça belirtilir. 500₺ ve üzeri siparişlerde kargo ücretsizdir, siparişler güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir.",
       "Riftbound TCG'ye yeni başlıyorsanız önce bir başlangıç destesi (starter deck) veya birkaç booster pack ile setleri tanımanızı, ardından tournament için ihtiyaç duyduğunuz belirli şampiyon ve birim kartlarını tekli kart olarak tamamlamanızı öneririz. Koleksiyonculuk odaklı alışveriş yapıyorsanız ultra rare ve secret rare nadirlikteki kartlar setler sayfasında ayrı ayrı incelenebilir.",
     ],
-    faqItems: [
-      {
-        q: "Riftbound TCG nedir?",
-        a: "Riftbound TCG, Riot Games tarafından League of Legends (LoL TCG) evrenine dayalı olarak geliştirilen stratejik kart oyunudur. Oyuncular şampiyonlardan oluşan desteler kurarak rakiplerine karşı mücadele eder.",
-      },
-      {
-        q: "Riftbound booster pack kaç kart içerir?",
-        a: "Riftbound booster pack içeriği sete göre değişmekle birlikte standart paketler genellikle 10-12 kart içerir. Kapalı Display Box ise 24-36 booster pack'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.",
-      },
-      {
-        q: "League of Legends kart oyunu (LoL TCG) nasıl oynanır?",
-        a: "League of Legends Riftbound TCG'de her oyuncu bir şampiyon destesiyle oynar. Kartlar sıra tabanlı olarak oynanır, birimler, büyüler ve donanımlar aracılığıyla rakip şampiyonun can puanını sıfırlamak hedeflenir.",
-      },
-      {
-        q: "En değerli Riftbound kartları hangileridir?",
-        a: "En değerli Riftbound kartları genellikle ultra rare ve secret rare nadirlik seviyesindeki şampiyon kartlarıdır. Popüler şampiyonların özel baskı versiyonları koleksiyoncular arasında en çok aranan Riftbound kartları arasındadır.",
-      },
-      {
-        q: "Riftbound tekli kart (single card) alabilir miyim?",
-        a: "Evet. Go|Cards olarak Riftbound tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece tournament destesi için ihtiyacınız olan belirli kartları satın alabilirsiniz.",
-      },
-    ],
+    faqItems: RIFTBOUND_OWNER_FAQ,
+    guideLinks: RIFTBOUND_GUIDE_LINKS,
   },
   pokemon: {
     gameSlug: "pokemon",
@@ -283,28 +280,8 @@ const GAME_OWNER_CONFIGS: Record<string, GameOwnerConfig> = {
       "Tüm Pokémon tekli kartlarımız gerçek stok durumuyla ve koşul bilgisiyle (NM, LP, MP, HP) listelenmiştir, fiyatlar güncel piyasa verisine göre düzenli olarak takip edilir. Kapalı kutu ve booster pack ürünlerinde stok adedi ve fiyat her ürün sayfasında açıkça belirtilir. 500₺ ve üzeri siparişlerde kargo ücretsizdir, siparişler güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir.",
       "Pokémon TCG koleksiyonuna yeni başlıyorsanız güncel bir setten birkaç booster pack açarak setleri tanımanızı, ardından deste için ihtiyaç duyduğunuz belirli kartları tekli kart olarak tamamlamanızı öneririz. Koleksiyonculuk odaklı alışveriş yapıyorsanız ultra rare, secret rare ve full art nadirlikteki kartlar ilgili set sayfasında ayrı ayrı incelenebilir.",
     ],
-    faqItems: [
-      {
-        q: "Pokémon TCG nedir?",
-        a: "Pokémon TCG, Pokémon evrenindeki canlıları ve eğitmenleri temsil eden kartlarla oynanan koleksiyonluk kart oyunudur. Oyuncular destelerini kurar, Pokémon'larını enerji kartlarıyla güçlendirerek rakip oyuncuya karşı mücadele eder.",
-      },
-      {
-        q: "Pokémon booster pack kaç kart içerir?",
-        a: "Standart bir Pokémon TCG booster pack genellikle 10-11 kart içerir. Bir Booster Box ise sete göre 30-36 booster pack'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.",
-      },
-      {
-        q: "Pokémon TCG'ye yeni başlayanlar nereden başlamalı?",
-        a: "Yeni başlayanlar için güncel bir setten birkaç booster pack açmak ya da hazır bir başlangıç ürünüyle temel mekanikleri öğrenmek iyi bir başlangıçtır. Ardından ihtiyacınız olan belirli kartları tekli kart olarak tamamlayabilirsiniz.",
-      },
-      {
-        q: "En değerli Pokémon kartları hangileridir?",
-        a: "En değerli Pokémon kartları genellikle ultra rare, secret rare ve full art nadirlik seviyesindeki kartlardır. Popüler Pokémon'ların özel baskı versiyonları koleksiyoncular arasında en çok aranan kartlar arasındadır.",
-      },
-      {
-        q: "Pokémon tekli kart (single card) alabilir miyim?",
-        a: "Evet. Go|Cards olarak Pokémon tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece destenize eksik olan belirli kartları satın alabilirsiniz.",
-      },
-    ],
+    faqItems: POKEMON_OWNER_FAQ,
+    guideLinks: POKEMON_GUIDE_LINKS,
   },
 };
 
@@ -335,6 +312,9 @@ async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promis
   const introHtml = config.introParagraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("");
   const faqHtml = config.faqItems
     .map((item) => `<div><h3>${escapeHtml(item.q)}</h3><p>${escapeHtml(item.a)}</p></div>`)
+    .join("");
+  const guideHtml = config.guideLinks
+    .map((g) => `<li><a href="/blog/${escapeHtml(g.slug)}">${escapeHtml(g.title)}</a></li>`)
     .join("");
 
   const ogImage = game?.logoUrl ? normalizeImageUrl(baseUrl, game.logoUrl) : `${baseUrl}/logo.png`;
@@ -402,6 +382,10 @@ async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promis
         <section>
           <h2>${escapeHtml(config.keyword)} Tekli Kartları</h2>
           <ul>${cardItems}</ul>
+        </section>
+        <section>
+          <h2>${escapeHtml(config.keyword)} Rehberleri</h2>
+          <ul>${guideHtml}</ul>
         </section>
         <section>
           <h2>Sık Sorulan Sorular</h2>
@@ -952,12 +936,17 @@ async function renderBlogDetail(slug: string, baseUrl: string): Promise<RenderRe
   if (!post || post.status !== "published") return notFoundResult(baseUrl, `/blog/${slug}`);
 
   const path = `/blog/${slug}`;
-  const description = post.metaDescription || truncate(stripHtml(post.summary || post.content || ""), 160);
+  // NOT: başlık/açıklama kırpması ve BlogPosting/FAQPage/HowTo şemaları
+  // shared/blogSchema.ts içinde TEK yerde tanımlıdır; client/src/pages/
+  // BlogDetail.tsx de aynı fonksiyonları kullanır (parite kuralı).
+  const description = resolveBlogDescription(post);
   const image = post.coverImageUrl ? normalizeImageUrl(baseUrl, post.coverImageUrl) : `${baseUrl}/logo.png`;
+  const faqItems: Array<{ question: string; answer: string }> = Array.isArray(post.faqItems) ? post.faqItems : [];
+  const howToSchema = buildBlogHowToSchema(post as any);
 
   return {
     status: 200,
-    title: post.metaTitle || `${post.title} | ${SITE_NAME}`,
+    title: resolveBlogPageTitle(post),
     description,
     canonical: `${baseUrl}${path}`,
     robots: "index, follow",
@@ -965,27 +954,24 @@ async function renderBlogDetail(slug: string, baseUrl: string): Promise<RenderRe
     ogImage: image,
     jsonLd: [
       orgSchema(baseUrl),
-      {
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        headline: post.title,
-        description,
-        image: [image],
-        datePublished: post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined,
-        dateModified: post.updatedAt ? new Date(post.updatedAt).toISOString() : undefined,
-        author: { "@type": "Organization", name: "GoCards TCG" },
-        mainEntityOfPage: `${baseUrl}${path}`,
-      },
-      breadcrumbSchema(baseUrl, [{ name: "Ana Sayfa", path: "/" }, { name: "Blog", path: "/blog" }, { name: post.title, path }]),
+      buildBlogPostingSchema(post as any),
+      breadcrumbSchema(baseUrl, [{ name: "Ana Sayfa", path: "/" }, { name: "Blog & Rehber", path: "/blog" }, { name: post.title, path }]),
+      ...(buildBlogFaqSchema({ faqItems }) ? [buildBlogFaqSchema({ faqItems })!] : []),
+      ...(howToSchema ? [howToSchema] : []),
     ],
     bodyHtml: `
       <main>
-        ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: "Blog", path: "/blog" }, { name: post.title, path }])}
+        ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: "Blog & Rehber", path: "/blog" }, { name: post.title, path }])}
         <article>
           <h1>${escapeHtml(post.title)}</h1>
           ${post.summary ? `<p>${escapeHtml(post.summary)}</p>` : ""}
           <div>${sanitizeRichHtml(post.content)}</div>
         </article>
+        ${faqItems.length > 0 ? `
+        <section>
+          <h2>Sık Sorulan Sorular</h2>
+          ${faqItems.map((item) => `<h3>${escapeHtml(item.question)}</h3><p>${escapeHtml(item.answer)}</p>`).join("")}
+        </section>` : ""}
       </main>
     `,
   };

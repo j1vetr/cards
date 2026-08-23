@@ -5,8 +5,9 @@ import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
 import { useCardSets, useCards, useCardGames } from '@/hooks/useTcg';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Package, Layers, HelpCircle, ExternalLink } from 'lucide-react';
+import { ChevronRight, Package, Layers, HelpCircle, ExternalLink, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { RIFTBOUND_OWNER_FAQ, RIFTBOUND_GUIDE_LINKS } from '@shared/gameOwnerContent';
 
 const ACCENT = '#818cf8';
 const ACCENT_DIM = 'rgba(129,140,248,0.12)';
@@ -30,28 +31,11 @@ function useBoxProducts(gameSlug: string) {
   });
 }
 
-const FAQ_ITEMS = [
-  {
-    q: 'Riftbound TCG nedir?',
-    a: 'Riftbound TCG, Riot Games tarafından League of Legends (LoL TCG) evrenine dayalı olarak geliştirilen stratejik kart oyunudur. Oyuncular şampiyonlardan oluşan desteler kurarak rakiplerine karşı mücadele eder.',
-  },
-  {
-    q: 'Riftbound booster pack kaç kart içerir?',
-    a: 'Riftbound booster pack içeriği sete göre değişmekle birlikte standart paketler genellikle 10–12 kart içerir. Kapalı Display Box ise 24–36 booster pack\'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.',
-  },
-  {
-    q: 'League of Legends kart oyunu (LoL TCG) nasıl oynanır?',
-    a: 'League of Legends Riftbound TCG\'de her oyuncu bir şampiyon destesiyle oynar. Kartlar sıra tabanlı olarak oynanır; birimler, büyüler ve donanımlar aracılığıyla rakip şampiyonun can puanını sıfırlamak hedeflenir. Öğrenmesi kolay ama ustalaşması derin bir sistem sunar.',
-  },
-  {
-    q: 'En değerli Riftbound kartları hangileridir?',
-    a: 'En değerli Riftbound kartları genellikle ultra rare ve secret rare nadirlik seviyesindeki şampiyon kartlarıdır. Ahri, Jinx, Yasuo gibi popüler şampiyonların özel baskı versiyonları koleksiyoncular arasında en çok aranan Riftbound kartları arasındadır.',
-  },
-  {
-    q: 'Riftbound tekli kart (single card) alabilir miyim?',
-    a: 'Evet! Go|Cards olarak Riftbound tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir; böylece tournament destesi için ihtiyacınız olan belirli kartları satın alabilirsiniz.',
-  },
-];
+// NOT: FAQ ve rehber linkleri shared/gameOwnerContent.ts içinde tanımlıdır ve
+// server/seo/render.ts ile birebir aynıdır (FAQPage şema parite kuralı).
+// İçeriği değiştirmek için yalnızca shared/gameOwnerContent.ts dosyasını düzenleyin.
+const GUIDE_LINKS = RIFTBOUND_GUIDE_LINKS;
+const FAQ_ITEMS = RIFTBOUND_OWNER_FAQ;
 
 export default function RiftboundPage() {
   const { data: sets = [], isLoading: setsLoading } = useCardSets('riftbound');
@@ -77,6 +61,7 @@ export default function RiftboundPage() {
         noIndex={Boolean(game?.seoNoIndex)}
         noIndexFollow={Boolean(game?.seoNoIndex)}
         breadcrumbs={breadcrumbs}
+        faqItems={FAQ_ITEMS}
       />
 
       <div className="min-h-screen flex flex-col" style={{ background: '#09090f' }}>
@@ -370,6 +355,28 @@ export default function RiftboundPage() {
                 Tüm single kartlarımız koşul bilgisiyle (NM / LP / MP / HP) listelenmiştir. 500₺ ve üzeri
                 siparişlerde kargo ücretsizdir.
               </p>
+            </div>
+          </section>
+
+          {/* ── Rehberler ── */}
+          <section aria-labelledby="heading-guides">
+            <h2 id="heading-guides" className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <BookOpen className="w-5 h-5" style={{ color: ACCENT }} />
+              Riftbound TCG Rehberleri
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {GUIDE_LINKS.map(guide => (
+                <Link
+                  key={guide.slug}
+                  href={`/blog/${guide.slug}`}
+                  className="group flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-white/[0.07] hover:border-white/20 transition-colors text-sm text-white/70 hover:text-white"
+                  style={{ background: 'rgba(255,255,255,0.02)' }}
+                  data-testid={`link-guide-${guide.slug}`}
+                >
+                  {guide.title}
+                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </Link>
+              ))}
             </div>
           </section>
 

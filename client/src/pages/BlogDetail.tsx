@@ -7,6 +7,13 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CANONICAL_SITE_URL } from '@shared/siteConfig';
+import {
+  resolveBlogPageTitle,
+  resolveBlogDescription,
+  buildBlogPostingSchema,
+  buildBlogFaqSchema,
+  buildBlogHowToSchema,
+} from '@shared/blogSchema';
 
 interface FaqItem { question: string; answer: string; }
 
@@ -23,6 +30,7 @@ interface BlogPost {
   faqItems: FaqItem[] | null;
   publishedAt: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -156,24 +164,7 @@ export default function BlogDetail() {
 
   useEffect(() => {
     if (!post) return;
-    const canonicalUrl = `${CANONICAL_SITE_URL}/blog/${post.slug}`;
-    const schema = {
-      '@context': 'https://schema.org',
-      '@type': 'BlogPosting',
-      headline: post.metaTitle ?? post.title,
-      description: post.metaDescription ?? post.summary ?? '',
-      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
-      url: canonicalUrl,
-      ...(post.coverImageUrl ? { image: post.coverImageUrl } : {}),
-      datePublished: post.publishedAt ?? post.createdAt,
-      dateModified: post.publishedAt ?? post.createdAt,
-      author: { '@type': 'Organization', name: 'Go|Cards', url: CANONICAL_SITE_URL },
-      publisher: {
-        '@type': 'Organization',
-        name: 'Go|Cards',
-        logo: { '@type': 'ImageObject', url: `${CANONICAL_SITE_URL}/gocards-logo-white.png` },
-      },
-    };
+    const schema = buildBlogPostingSchema(post);
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.setAttribute('data-schema', 'blog-article');
@@ -183,16 +174,9 @@ export default function BlogDetail() {
   }, [post]);
 
   useEffect(() => {
-    if (!post || !post.faqItems || post.faqItems.length === 0) return;
-    const faqSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: post.faqItems.map(item => ({
-        '@type': 'Question',
-        name: item.question,
-        acceptedAnswer: { '@type': 'Answer', text: item.answer },
-      })),
-    };
+    if (!post) return;
+    const faqSchema = buildBlogFaqSchema(post);
+    if (!faqSchema) return;
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.setAttribute('data-schema', 'blog-faq');
@@ -202,21 +186,9 @@ export default function BlogDetail() {
   }, [post]);
 
   useEffect(() => {
-    if (!post || post.category !== 'guide') return;
-    const stepMatches = post.content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
-    const hasOrderedList = /<ol[\s>]/.test(post.content);
-    if (!hasOrderedList || !stepMatches || stepMatches.length < 3) return;
-    const steps = stepMatches.slice(0, 10).map((li, i) => {
-      const text = li.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      return { '@type': 'HowToStep', position: i + 1, name: text.slice(0, 80) || `Adım ${i + 1}`, text };
-    });
-    const howToSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'HowTo',
-      name: post.metaTitle ?? post.title,
-      description: post.metaDescription ?? post.summary ?? '',
-      step: steps,
-    };
+    if (!post) return;
+    const howToSchema = buildBlogHowToSchema(post);
+    if (!howToSchema) return;
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.setAttribute('data-schema', 'blog-howto');
@@ -232,7 +204,7 @@ export default function BlogDetail() {
       {post && (
         <SEO
           title={post.metaTitle ?? post.title}
-          description={post.metaDescription ?? post.summary ?? `Go|Cards blog: ${post.title}`}
+          description={resolveBlogDescription(post)}
           image={post.coverImageUrl ?? undefined}
           url={`/blog/${post.slug}`}
           type="article"

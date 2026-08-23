@@ -30,6 +30,9 @@ interface SEOProps {
     rating?: { average: number; count: number };
   };
   breadcrumbs?: Array<{ name: string; url: string }>;
+  /** Sayfada görünür SSS bölümü varsa FAQPage şeması üretir — SSR (server/seo/render.ts)
+   * ile aynı soru/cevap içeriği kullanılmalıdır (parite kuralı). */
+  faqItems?: Array<{ q: string; a: string }>;
 }
 
 const DEFAULT_TITLE = 'Go|Cards — Riftbound & Pokémon TCG Kart Oyunları';
@@ -59,7 +62,8 @@ export function SEO({
   noIndex = false,
   noIndexFollow = false,
   product,
-  breadcrumbs
+  breadcrumbs,
+  faqItems
 }: SEOProps) {
   // SSR (server/seo/seoDefaults.ts) ile birebir aynı kırpma sözleşmesi:
   // sayfaya özgü başlık/açıklama 70/160 karaktere kırpılır, site adı eki
@@ -183,6 +187,18 @@ export function SEO({
       schemas.push(productSchema);
     }
 
+    if (faqItems && faqItems.length > 0) {
+      schemas.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map(item => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      });
+    }
+
     if (breadcrumbs && breadcrumbs.length > 0) {
       schemas.push({
         '@context': 'https://schema.org',
@@ -224,7 +240,7 @@ export function SEO({
       const managedCanonical = document.querySelector('link[rel="canonical"][data-managed="seo"]');
       if (managedCanonical) managedCanonical.remove();
     };
-  }, [fullTitle, description, fullUrl, type, imageUrl, noIndex, noIndexFollow, product, breadcrumbs]);
+  }, [fullTitle, description, fullUrl, type, imageUrl, noIndex, noIndexFollow, product, breadcrumbs, faqItems]);
 
   return null;
 }

@@ -258,6 +258,17 @@ app.use((req, res, next) => {
     console.error("[migrate] blog_posts migration failed:", err);
   }
 
+  // Öncelikli Riftbound/Pokémon rehber yazılarını idempotent seed et
+  // (blog_posts.category='guide') — böylece her deploy/restart'ta rehberler
+  // veritabanında garanti olarak yayınlanmış durumda bulunur.
+  try {
+    const { seedGuidePosts } = await import("../scripts/seed-guide-posts");
+    await seedGuidePosts();
+    console.log("[seed] guide posts ensured");
+  } catch (err) {
+    console.error("[index] guide posts seed failed:", err);
+  }
+
   // Pazaryeri senkron zamanlayıcısı (Trendyol delta saatlik / full 03:00)
   try {
     const { startScheduler } = await import("./scheduler");

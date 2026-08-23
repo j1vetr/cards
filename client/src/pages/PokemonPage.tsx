@@ -5,8 +5,9 @@ import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
 import { useCardSets, useCards, useCardGames } from '@/hooks/useTcg';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Package, Layers, HelpCircle, ExternalLink } from 'lucide-react';
+import { ChevronRight, Package, Layers, HelpCircle, ExternalLink, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { POKEMON_OWNER_FAQ, POKEMON_GUIDE_LINKS } from '@shared/gameOwnerContent';
 
 const ACCENT = '#f59e0b';
 const ACCENT_DIM = 'rgba(245,158,11,0.12)';
@@ -30,31 +31,11 @@ function useBoxProducts(gameSlug: string) {
   });
 }
 
-// NOT: Bu SSS içerikleri server/seo/render.ts içindeki GAME_OWNER_CONFIGS.pokemon
-// ile aynı tutulmalıdır — sunucu tarafı prerender ile istemci tarafı ilk
-// yüklemede kullanıcıya aynı gerçek içerik gösterilmelidir.
-const FAQ_ITEMS = [
-  {
-    q: 'Pokémon TCG nedir?',
-    a: 'Pokémon TCG, Pokémon evrenindeki canlıları ve eğitmenleri temsil eden kartlarla oynanan koleksiyonluk kart oyunudur. Oyuncular destelerini kurar, Pokémon\'larını enerji kartlarıyla güçlendirerek rakip oyuncuya karşı mücadele eder.',
-  },
-  {
-    q: 'Pokémon booster pack kaç kart içerir?',
-    a: 'Standart bir Pokémon TCG booster pack genellikle 10–11 kart içerir. Bir Booster Box ise sete göre 30–36 booster pack\'ten oluşur. Kesin içerik bilgisi her ürün sayfasında belirtilmektedir.',
-  },
-  {
-    q: 'Pokémon TCG\'ye yeni başlayanlar nereden başlamalı?',
-    a: 'Yeni başlayanlar için güncel bir setten birkaç booster pack açmak ya da hazır bir başlangıç ürünüyle temel mekanikleri öğrenmek iyi bir başlangıçtır. Ardından ihtiyacınız olan belirli kartları tekli kart olarak tamamlayabilirsiniz.',
-  },
-  {
-    q: 'En değerli Pokémon kartları hangileridir?',
-    a: 'En değerli Pokémon kartları genellikle ultra rare, secret rare ve full art nadirlik seviyesindeki kartlardır. Popüler Pokémon\'ların özel baskı versiyonları koleksiyoncular arasında en çok aranan kartlar arasındadır.',
-  },
-  {
-    q: 'Pokémon tekli kart (single card) alabilir miyim?',
-    a: 'Evet! Go|Cards olarak Pokémon tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir; böylece destenizde eksik olan belirli kartları satın alabilirsiniz.',
-  },
-];
+// NOT: FAQ ve rehber linkleri shared/gameOwnerContent.ts içinde tanımlıdır ve
+// server/seo/render.ts ile birebir aynıdır (FAQPage şema parite kuralı).
+// İçeriği değiştirmek için yalnızca shared/gameOwnerContent.ts dosyasını düzenleyin.
+const GUIDE_LINKS = POKEMON_GUIDE_LINKS;
+const FAQ_ITEMS = POKEMON_OWNER_FAQ;
 
 export default function PokemonPage() {
   const { data: sets = [], isLoading: setsLoading } = useCardSets('pokemon');
@@ -80,6 +61,7 @@ export default function PokemonPage() {
         noIndex={Boolean(game?.seoNoIndex)}
         noIndexFollow={Boolean(game?.seoNoIndex)}
         breadcrumbs={breadcrumbs}
+        faqItems={FAQ_ITEMS}
       />
 
       <div className="min-h-screen flex flex-col" style={{ background: '#09090f' }}>
@@ -374,6 +356,28 @@ export default function PokemonPage() {
                 Tüm single kartlarımız koşul bilgisiyle (NM / LP / MP / HP) listelenmiştir. 500₺ ve üzeri
                 siparişlerde kargo ücretsizdir.
               </p>
+            </div>
+          </section>
+
+          {/* ── Rehberler ── */}
+          <section aria-labelledby="heading-guides">
+            <h2 id="heading-guides" className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <BookOpen className="w-5 h-5" style={{ color: ACCENT }} />
+              Pokémon TCG Rehberleri
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {GUIDE_LINKS.map(guide => (
+                <Link
+                  key={guide.slug}
+                  href={`/blog/${guide.slug}`}
+                  className="group flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-white/[0.07] hover:border-white/20 transition-colors text-sm text-white/70 hover:text-white"
+                  style={{ background: 'rgba(255,255,255,0.02)' }}
+                  data-testid={`link-guide-${guide.slug}`}
+                >
+                  {guide.title}
+                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </Link>
+              ))}
             </div>
           </section>
 
