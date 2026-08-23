@@ -349,7 +349,7 @@ function HeroSection() {
       {/* YouTube video background — all screens */}
       <div className="absolute inset-0 pointer-events-none">
         <iframe
-          src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocards.toov.com.tr"
+          src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocardstcg.com"
           allow="autoplay; encrypted-media"
           allowFullScreen={false}
           title=""

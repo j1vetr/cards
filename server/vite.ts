@@ -5,6 +5,7 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
+import { renderAppShellResponse, getLegacyRedirectTarget } from "./seo/appShell";
 
 const viteLogger = createLogger();
 
@@ -35,6 +36,14 @@ export async function setupVite(server: Server, app: Express) {
     const url = req.originalUrl;
 
     try {
+      const pathOnly = url.split("?")[0].split("#")[0];
+      const redirectTarget = getLegacyRedirectTarget(pathOnly);
+      if (redirectTarget) {
+        const qs = url.slice(pathOnly.length);
+        res.redirect(301, redirectTarget + qs);
+        return;
+      }
+
       const clientTemplate = path.resolve(
         import.meta.dirname,
         "..",
@@ -48,8 +57,9 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      const transformed = await vite.transformIndexHtml(url, template);
+      const { status, html } = await renderAppShellResponse(req, transformed);
+      res.status(status).set({ "Content-Type": "text/html; charset=utf-8" }).end(html);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);

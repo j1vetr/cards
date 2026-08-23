@@ -33,6 +33,7 @@ import {
   reviewRejectSchema, iyzicoCallbackSchema,
 } from "./validation";
 import { optimizeImage, optimizeImageBuffer, optimizeUploadedFiles } from "./imageOptimizer";
+import { CANONICAL_SITE_URL } from "@shared/siteConfig";
 import { downloadVideo } from "./marketplaces/sync/engine";
 import { 
   sendWelcomeEmail, 
@@ -581,179 +582,10 @@ ${items.join('\n')}
     }
   });
 
-  // Social Media Crawler Detection - serves pre-rendered OG tags for bots
-  const crawlerPatterns = [
-    'facebookexternalhit',
-    'Facebot',
-    'WhatsApp',
-    'Twitterbot',
-    'LinkedInBot',
-    'Slackbot',
-    'TelegramBot',
-    'Pinterest',
-    'Discordbot',
-    'Googlebot',
-    'bingbot'
-  ];
-
-  const isCrawler = (userAgent: string | undefined): boolean => {
-    if (!userAgent) return false;
-    return crawlerPatterns.some(pattern => 
-      userAgent.toLowerCase().includes(pattern.toLowerCase())
-    );
-  };
-
-  const escapeHtml = (str: string): string => {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  };
-
-  const stripHtml = (str: string): string =>
-    str.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
-  const normalizeImageUrl = (baseUrl: string, imageUrl: string): string => {
-    if (!imageUrl) return `${baseUrl}/logo.png`;
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
-    return `${baseUrl}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
-  };
-
-  // Product page crawler middleware
-  app.get('/urun/:slug', async (req, res, next) => {
-    const userAgent = req.get('user-agent');
-    
-    if (!isCrawler(userAgent)) {
-      return next();
-    }
-
-    try {
-      const product = await storage.getProductBySlug(req.params.slug);
-      if (!product) {
-        return next();
-      }
-
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const pageUrl = `${baseUrl}/urun/${product.slug}`;
-      const mainImage = product.images && product.images.length > 0 
-        ? normalizeImageUrl(baseUrl, product.images[0])
-        : `${baseUrl}/logo.png`;
-      const price = parseFloat(product.basePrice || '0');
-      const description = product.description 
-        ? escapeHtml(stripHtml(product.description).substring(0, 200))
-        : `${escapeHtml(product.name)} — Go|Cards TCG mağazasında satın al.`;
-
-      const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(product.name)} | Go|Cards</title>
-  <meta name="description" content="${description}">
-  
-  <!-- Open Graph -->
-  <meta property="og:type" content="product">
-  <meta property="og:title" content="${escapeHtml(product.name)}">
-  <meta property="og:description" content="${description}">
-  <meta property="og:image" content="${mainImage}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:url" content="${pageUrl}">
-  <meta property="og:site_name" content="Go|Cards">
-  <meta property="og:locale" content="tr_TR">
-  <meta property="product:price:amount" content="${price}">
-  <meta property="product:price:currency" content="TRY">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${escapeHtml(product.name)} | Go|Cards">
-  <meta name="twitter:description" content="${description}">
-  <meta name="twitter:image" content="${mainImage}">
-  
-  <link rel="canonical" href="${pageUrl}">
-</head>
-<body>
-  <h1>${escapeHtml(product.name)}</h1>
-  <p>${description}</p>
-  <p>Fiyat: ${price.toLocaleString('tr-TR')} TL</p>
-  <img src="${mainImage}" alt="${escapeHtml(product.name)}">
-  <a href="${pageUrl}">Ürünü Görüntüle</a>
-</body>
-</html>`;
-
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(html);
-    } catch (error) {
-      console.error('Crawler middleware error:', error);
-      next();
-    }
-  });
-
-  // Category page crawler middleware
-  app.get('/kategori/:slug', async (req, res, next) => {
-    const userAgent = req.get('user-agent');
-    
-    if (!isCrawler(userAgent)) {
-      return next();
-    }
-
-    try {
-      const category = await storage.getCategoryBySlug(req.params.slug);
-      if (!category) {
-        return next();
-      }
-
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const pageUrl = `${baseUrl}/kategori/${category.slug}`;
-      const mainImage = category.image 
-        ? normalizeImageUrl(baseUrl, category.image)
-        : `${baseUrl}/logo.png`;
-      const description = `${escapeHtml(category.name)} — Go|Cards TCG mağazasında satın al.`;
-
-      const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(category.name)} | Go|Cards</title>
-  <meta name="description" content="${description}">
-  
-  <!-- Open Graph -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="${escapeHtml(category.name)} | Go|Cards">
-  <meta property="og:description" content="${description}">
-  <meta property="og:image" content="${mainImage}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:url" content="${pageUrl}">
-  <meta property="og:site_name" content="Go|Cards">
-  <meta property="og:locale" content="tr_TR">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${escapeHtml(category.name)} | Go|Cards">
-  <meta name="twitter:description" content="${description}">
-  <meta name="twitter:image" content="${mainImage}">
-  
-  <link rel="canonical" href="${pageUrl}">
-</head>
-<body>
-  <h1>${escapeHtml(category.name)}</h1>
-  <p>${description}</p>
-  <img src="${mainImage}" alt="${escapeHtml(category.name)}">
-  <a href="${pageUrl}">Ürünleri Görüntüle</a>
-</body>
-</html>`;
-
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(html);
-    } catch (error) {
-      console.error('Crawler middleware error:', error);
-      next();
-    }
-  });
+  // NOT: Ürün/kategori/kart/set/oyun/blog sayfaları için gerçek SEO içeriği
+  // artık user-agent'tan bağımsız olarak server/seo/appShell.ts üzerinden,
+  // SPA kabuğu render edilirken (server/vite.ts, server/static.ts) üretiliyor.
+  // Bkz. server/seo/render.ts.
 
   // Admin Authentication with JWT
   app.post("/api/admin/login", authLimiter, async (req: Request, res) => {
@@ -2436,7 +2268,7 @@ ${items.join('\n')}
 
       // Get base URL for callback - use production domain in prod
       const baseUrl = process.env.NODE_ENV === 'production' 
-        ? (process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr')
+        ? (process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL)
         : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
       // Add shipping as a basket line so sum(basketItems.price) === priceTry
@@ -2734,7 +2566,7 @@ ${items.join('\n')}
   // The legacy /api/payment/callback path is kept as an alias for older webhooks.
   const iyzicoCallbackHandler = async (req: Request, res: Response) => {
     const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr')
+      ? (process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL)
       : `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || 'localhost:5000'}`;
 
     const sendRedirect = (path: string) => {
@@ -3079,7 +2911,7 @@ ${items.join('\n')}
       const apiKey = (await storage.getSiteSetting('iyzico_api_key')) || '';
       const secretKey = (await storage.getSiteSetting('iyzico_secret_key')) || '';
       const subMerchantKey = await getSubMerchantKey();
-      const baseUrl = process.env.PUBLIC_BASE_URL || 'https://gocards.toov.com.tr';
+      const baseUrl = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
       res.json({
         configured: Boolean(apiKey && secretKey),
         apiKeyMasked: maskSecret(apiKey),

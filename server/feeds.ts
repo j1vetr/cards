@@ -1,6 +1,7 @@
 import { storage, db } from "./storage";
+import { CANONICAL_SITE_URL } from "../shared/siteConfig";
 
-const SITE_URL = "https://gocards.toov.com.tr";
+const SITE_URL = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
 const BRAND_NAME = "Marka";
 
 function escapeXml(value: string | null | undefined): string {

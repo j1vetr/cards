@@ -11,6 +11,7 @@
  */
 
 import { httpFetchWithRetry } from "./httpUtils";
+import { CANONICAL_SITE_URL } from "@shared/siteConfig";
 
 const BASE_URL = "https://api.riftcodex.com";
 const PAGE_SIZE = 50;
@@ -76,7 +77,7 @@ interface PagedResponse<T> {
 // ── Fetchers ─────────────────────────────────────────────────────────────────
 
 const RIFT_HEADERS = {
-  "User-Agent": "Mozilla/5.0 (compatible; GoCards-Sync/1.0; +https://gocards.toov.com.tr)",
+  "User-Agent": `Mozilla/5.0 (compatible; GoCards-Sync/1.0; +${CANONICAL_SITE_URL})`,
   "Accept": "application/json",
 };
 

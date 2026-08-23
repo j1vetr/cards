@@ -83,14 +83,14 @@ export default function KVKK() {
                   KVKK (Kişisel Verilerin Korunması Kanunu) kapsamında kişisel verilerinizi işleyen veri sorumlusu aşağıdaki şekildedir:
                 </p>
                 <p><strong>GoCards TCG</strong> (Go Cards TCG İç ve Dış Tic. Ltd. Şti.)</p>
-                <p><strong>Web Sitesi:</strong> <a href="https://gocards.toov.com.tr">gocards.toov.com.tr</a></p>
+                <p><strong>Web Sitesi:</strong> <a href="https://gocardstcg.com">gocardstcg.com</a></p>
                 <p><strong>E-posta:</strong> <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a></p>
                 <p><strong>Telefon:</strong> <a href="tel:+905389216780">0538 921 67 80</a></p>
                 <p><strong>Vergi Dairesi:</strong> Beykoz V.D. — Vergi No: 396 175 96 05</p>
 
                 <h2>2) Kişisel Verilerin Toplanma Yöntemi</h2>
                 <p>
-                  Kişisel verileriniz; <strong>gocards.toov.com.tr</strong> web sitesi, sosyal medya hesaplarımız, müşteri destek hattı ve e-posta aracılığıyla tamamen veya kısmen otomatik yollarla toplanmaktadır.
+                  Kişisel verileriniz; <strong>gocardstcg.com</strong> web sitesi, sosyal medya hesaplarımız, müşteri destek hattı ve e-posta aracılığıyla tamamen veya kısmen otomatik yollarla toplanmaktadır.
                 </p>
 
                 <h2>3) Kişisel Verilerin İşlenme Amaçları</h2>
@@ -166,7 +166,7 @@ export default function KVKK() {
 
                 <h2>11) Güncellemeler ve Değişiklikler</h2>
                 <p>
-                  Bu Aydınlatma Metni, mevzuat değişiklikleri ve platform politikalarına uygun olarak güncellenebilir. Güncel versiyon her zaman <strong>gocards.toov.com.tr</strong> adresinde yayınlanır.
+                  Bu Aydınlatma Metni, mevzuat değişiklikleri ve platform politikalarına uygun olarak güncellenebilir. Güncel versiyon her zaman <strong>gocardstcg.com</strong> adresinde yayınlanır.
                 </p>
               </div>
             </div>

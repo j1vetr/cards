@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { renderAppShellResponse, getLegacyRedirectTarget } from "./seo/appShell";
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
@@ -53,9 +54,27 @@ export function serveStatic(app: Express) {
     }
   }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.sendFile(path.resolve(distPath, "index.html"));
+  // fall through to index.html if the file doesn't exist — but inject real
+  // SEO data + content per-route, and return true 404 for unknown content.
+  const indexHtmlPath = path.resolve(distPath, "index.html");
+  app.use("*", async (req, res) => {
+    try {
+      const pathOnly = req.originalUrl.split("?")[0].split("#")[0];
+      const redirectTarget = getLegacyRedirectTarget(pathOnly);
+      if (redirectTarget) {
+        const qs = req.originalUrl.slice(pathOnly.length);
+        res.redirect(301, redirectTarget + qs);
+        return;
+      }
+
+      const template = await fs.promises.readFile(indexHtmlPath, "utf-8");
+      const { status, html } = await renderAppShellResponse(req, template);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.status(status).set({ "Content-Type": "text/html; charset=utf-8" }).end(html);
+    } catch (err) {
+      console.error('[static] app shell render failed:', err);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.sendFile(indexHtmlPath);
+    }
   });
 }

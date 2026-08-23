@@ -2,6 +2,7 @@ import { storage } from './storage';
 import type { Order } from '@shared/schema';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 import { formatTRDate, formatTRTime, formatTRDateTime } from '@shared/dateFormat';
+import { CANONICAL_SITE_URL } from '@shared/siteConfig';
 
 export interface WhatsAppResult {
   success: boolean;
@@ -221,7 +222,7 @@ async function resolveSiteUrl(): Promise<string> {
   } catch (err) {
     console.error('[WhatsApp] site_url lookup failed:', err);
   }
-  return (process.env.SITE_URL || 'https://gocards.toov.com.tr').replace(/\/+$/, '');
+  return (process.env.SITE_URL || process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL).replace(/\/+$/, '');
 }
 
 async function orderVars(order: Order, config: WhatsAppConfig): Promise<Record<string, string>> {

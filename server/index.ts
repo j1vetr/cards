@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { CANONICAL_SITE_HOST, LEGACY_SITE_HOSTS } from "../shared/siteConfig";
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,6 +12,43 @@ const httpServer = createServer(app);
 app.set('trust proxy', 1);
 app.use(compression());
 app.use(cookieParser());
+
+// ── Canonical host/protocol normalizasyonu ─────────────────────────────────
+// Yalnızca canonical domain ailesine (gocardstcg.com / www.gocardstcg.com)
+// gelen istekleri tek bir HTTPS apex host'a 301 ile normalize eder. Replit
+// preview/dev domain'leri (*.replit.dev, *.repl.co vb.) dokunulmadan geçer,
+// aksi halde geliştirme önizlemesi kırılır.
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const host = (req.get("host") || "").toLowerCase();
+  const hostNoWww = host.replace(/^www\./, "");
+
+  // Emekliye ayrılmış eski üretim host'u (ör. gocards.toov.com.tr) —
+  // http/https ve www farkı gözetmeksizin doğrudan canonical apex'e 301.
+  if (LEGACY_SITE_HOSTS.includes(hostNoWww)) {
+    return res.redirect(301, `https://${CANONICAL_SITE_HOST}${req.originalUrl}`);
+  }
+
+  if (hostNoWww !== CANONICAL_SITE_HOST.toLowerCase()) return next();
+
+  const isHttps = req.protocol === "https";
+  const isWww = host.startsWith("www.");
+  if (isHttps && !isWww) return next();
+
+  return res.redirect(301, `https://${CANONICAL_SITE_HOST}${req.originalUrl}`);
+});
+
+// ── Trailing slash normalizasyonu ──────────────────────────────────────────
+// "/kategori/foo/" -> "/kategori/foo" (kök "/" ve /api hariç).
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  if (req.path === "/" || req.path.startsWith("/api")) return next();
+  if (!req.path.endsWith("/")) return next();
+
+  const cleanPath = req.path.replace(/\/+$/, "") || "/";
+  const query = req.url.slice(req.path.length);
+  return res.redirect(301, cleanPath + query);
+});
 
 declare module "http" {
   interface IncomingMessage {

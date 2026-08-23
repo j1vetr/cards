@@ -3,6 +3,7 @@ import { storage } from './storage';
 import type { Order, OrderItem, User } from '@shared/schema';
 import { BANK_TRANSFER_INFO } from '@shared/bankInfo';
 import { formatTRDateTime } from '@shared/dateFormat';
+import { CANONICAL_SITE_URL, CANONICAL_SITE_HOST } from '@shared/siteConfig';
 
 interface SmtpConfig {
   host: string;
@@ -73,8 +74,8 @@ const CONTACT = {
   email: 'info@ecartejeans.com',
   addressLine1: 'Şeker Ahmet Paşa Sk. Maşallah Han No: 7',
   addressLine2: 'Mercan Fatih / İstanbul',
-  site: 'gocards.toov.com.tr',
-  siteUrl: 'https://gocards.toov.com.tr',
+  site: CANONICAL_SITE_HOST,
+  siteUrl: CANONICAL_SITE_URL,
   whatsapp: 'https://wa.me/905312171130',
   instagram: 'https://www.instagram.com/ecarte/',
 };

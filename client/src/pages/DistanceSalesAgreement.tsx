@@ -83,12 +83,12 @@ export default function DistanceSalesAgreement() {
                 <p><strong>Vergi Dairesi:</strong> Beykoz V.D. — Vergi No: 396 175 96 05</p>
                 <p><strong>Telefon:</strong> <a href="tel:+905389216780">0538 921 67 80</a></p>
                 <p><strong>E-posta:</strong> <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a></p>
-                <p><strong>Web Sitesi:</strong> <a href="https://gocards.toov.com.tr">gocards.toov.com.tr</a></p>
-                <p><strong>Alıcı:</strong> gocards.toov.com.tr üzerinden sipariş veren müşteridir. Alıcının adı, soyadı, adresi ve iletişim bilgileri sipariş formunda yer alır.</p>
+                <p><strong>Web Sitesi:</strong> <a href="https://gocardstcg.com">gocardstcg.com</a></p>
+                <p><strong>Alıcı:</strong> gocardstcg.com üzerinden sipariş veren müşteridir. Alıcının adı, soyadı, adresi ve iletişim bilgileri sipariş formunda yer alır.</p>
 
                 <h2>2) Sözleşmenin Konusu</h2>
                 <p>
-                  Bu sözleşmenin konusu, alıcının <strong>gocards.toov.com.tr</strong> web sitesinden elektronik ortamda sipariş verdiği Pokémon TCG, Riftbound ve diğer TCG ürünlerinin (tekli kart, booster box, sealed ürün, aksesuar) satışı, teslimatı, ödemesi ve tarafların 6502 sayılı Kanun ile Mesafeli Satışlar Yönetmeliği hükümleri doğrultusunda hak ve yükümlülüklerinin belirlenmesidir.
+                  Bu sözleşmenin konusu, alıcının <strong>gocardstcg.com</strong> web sitesinden elektronik ortamda sipariş verdiği Pokémon TCG, Riftbound ve diğer TCG ürünlerinin (tekli kart, booster box, sealed ürün, aksesuar) satışı, teslimatı, ödemesi ve tarafların 6502 sayılı Kanun ile Mesafeli Satışlar Yönetmeliği hükümleri doğrultusunda hak ve yükümlülüklerinin belirlenmesidir.
                 </p>
 
                 <h2>3) Ürün/Hizmet Bilgileri</h2>
@@ -152,7 +152,7 @@ export default function DistanceSalesAgreement() {
 
                 <h2>13) Yürürlük</h2>
                 <p>
-                  Alıcı, <strong>gocards.toov.com.tr</strong> üzerinden sipariş vererek bu sözleşmenin tüm şartlarını elektronik olarak kabul etmiş sayılır. Bu sözleşme, siparişin tamamlanmasıyla yürürlüğe girer.
+                  Alıcı, <strong>gocardstcg.com</strong> üzerinden sipariş vererek bu sözleşmenin tüm şartlarını elektronik olarak kabul etmiş sayılır. Bu sözleşme, siparişin tamamlanmasıyla yürürlüğe girer.
                 </p>
               </div>
             </div>

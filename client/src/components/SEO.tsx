@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { CANONICAL_SITE_URL } from '@shared/siteConfig';
 
 interface SEOProps {
   title?: string;
@@ -25,8 +26,12 @@ interface SEOProps {
 const DEFAULT_TITLE = 'Go|Cards — Pokémon TCG & Riftbound Kart Oyunları';
 const DEFAULT_DESCRIPTION = 'Go|Cards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
 const SITE_NAME = 'Go|Cards';
-const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
-const CANONICAL_SITE_URL = 'https://gocards.toov.com.tr';
+// NOT: window.location.origin KULLANILMAZ — eski domain (gocards.toov.com.tr),
+// www ön eki veya bir replit.dev önizleme host'undan JS mount olduğunda
+// canonical/OG URL'lerin yanlış host'u reklam etmesini önlemek için sabit
+// canonical domain kullanılır. Sunucu tarafı prerender de aynı sabiti kullanır
+// (server/seo/render.ts), böylece ilk yanıt ile client mount sonrası tutarlı kalır.
+const BASE_URL = CANONICAL_SITE_URL;
 
 /** Map TCG condition codes to schema.org itemCondition values */
 function toSchemaCondition(condition?: string): string | undefined {
@@ -48,7 +53,10 @@ export function SEO({
   breadcrumbs
 }: SEOProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
-  const fullUrl = url ? `${BASE_URL}${url}` : (typeof window !== 'undefined' ? window.location.href : '');
+  // `url` verilmediğinde de mevcut host yerine canonical domain + gerçek
+  // pathname kullanılır (window.location.href asla host kaynağı olarak
+  // kullanılmaz — bkz. BASE_URL notu).
+  const fullUrl = `${BASE_URL}${url ?? (typeof window !== 'undefined' ? window.location.pathname : '')}`;
   const imageUrl = image ? (image.startsWith('http') ? image : `${BASE_URL}${image}`) : `${BASE_URL}/og-image.png`;
 
   useEffect(() => {

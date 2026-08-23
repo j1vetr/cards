@@ -369,7 +369,7 @@ export default function ProductModal({
                 data-testid="input-product-slug"
               />
               <p className="text-[11px] text-neutral-500 mt-1">
-                gocards.toov.com.tr/urun/<span className="text-neutral-700">{formData.slug || 'slug'}</span>
+                gocardstcg.com/urun/<span className="text-neutral-700">{formData.slug || 'slug'}</span>
               </p>
             </div>
 

@@ -6,8 +6,7 @@ import DOMPurify from 'dompurify';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
-
-const CANONICAL_SITE_URL = 'https://gocards.toov.com.tr';
+import { CANONICAL_SITE_URL } from '@shared/siteConfig';
 
 interface FaqItem { question: string; answer: string; }
 
