@@ -80,7 +80,9 @@ export default function BlogList() {
       <SEO
         title="Blog &amp; Rehber"
         description="Pokémon TCG ve Riftbound hakkında rehberler, haberler ve stratejiler. Go|Cards blog ve rehber içerikleri."
-        url="/blog"
+        url={activeCategory !== 'all' ? `/blog?category=${activeCategory}` : '/blog'}
+        noIndex={activeCategory !== 'all'}
+        noIndexFollow
         type="website"
       />
       <Header />

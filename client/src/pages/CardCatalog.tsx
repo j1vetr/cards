@@ -84,6 +84,14 @@ export default function CardCatalog() {
   const urlMinPrice = parseInt(urlParams.get('minPrice') || '0', 10);
   const urlMaxPrice = parseInt(urlParams.get('maxPrice') || String(MAX_PRICE), 10);
 
+  // Yalnızca sayfalama/sıralama içerik kümesini değiştirmez — gerçek bir
+  // filtre veya arama parametresi varsa bu sayfa noindex olur (kendi query'siyle
+  // self-canonical kalır, asla körlemesine ana /kartlar'a toplanmaz).
+  const hasActiveFilters = Boolean(
+    selectedGame || selectedSet || selectedRarity || selectedType || selectedCondition ||
+    selectedProductType || searchQuery || inStock || urlMinPrice > 0 || urlMaxPrice < MAX_PRICE
+  );
+
   const showBoxView = selectedProductType === 'box';
   const { data: boxProducts = [], isLoading: boxesLoading } = useQuery<BoxProduct[]>({
     queryKey: ['boxes', selectedGame],
@@ -336,6 +344,9 @@ export default function CardCatalog() {
       <SEO
         title="Tüm Kartlar — Go|Cards TCG Marketplace"
         description="Pokemon TCG ve Riftbound single kartları fiyat, nadirlik, kondisyon ve sete göre filtrele. Türkiye'nin TCG marketplace'i."
+        url={`/kartlar${hasActiveFilters ? searchStr ? `?${searchStr}` : '' : page > 1 ? `?page=${page}` : ''}`}
+        noIndex={hasActiveFilters}
+        noIndexFollow
       />
       <Header />
 

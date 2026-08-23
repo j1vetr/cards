@@ -8,6 +8,10 @@ interface SEOProps {
   url?: string;
   type?: 'website' | 'product' | 'article';
   noIndex?: boolean;
+  /** noIndex true iken 'noindex, follow' üretir (varsayılan 'noindex, nofollow' yerine) —
+   * filtre/arama sonucu listeleme sayfaları gibi indexlenmemesi ama linkleri takip
+   * edilmesi gereken sayfalar için kullanılır. */
+  noIndexFollow?: boolean;
   product?: {
     name: string;
     /** null/undefined = gerçek bir fiyat verisi yok (ör. hiç aktif liste yok); alan şemadan tamamen çıkarılır */
@@ -52,6 +56,7 @@ export function SEO({
   url,
   type = 'website',
   noIndex = false,
+  noIndexFollow = false,
   product,
   breadcrumbs
 }: SEOProps) {
@@ -73,7 +78,7 @@ export function SEO({
     };
 
     updateMetaTag('meta[name="description"]', description);
-    updateMetaTag('meta[name="robots"]', noIndex ? 'noindex, nofollow' : 'index, follow');
+    updateMetaTag('meta[name="robots"]', noIndex ? (noIndexFollow ? 'noindex, follow' : 'noindex, nofollow') : 'index, follow');
 
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonical) {
@@ -194,7 +199,7 @@ export function SEO({
         publisher: { '@id': `${BASE_URL}/#organization` },
         potentialAction: {
           '@type': 'SearchAction',
-          target: `${BASE_URL}/arama?q={search_term_string}`,
+          target: `${BASE_URL}/kartlar?search={search_term_string}`,
           'query-input': 'required name=search_term_string'
         }
       });
@@ -212,7 +217,7 @@ export function SEO({
       const managedCanonical = document.querySelector('link[rel="canonical"][data-managed="seo"]');
       if (managedCanonical) managedCanonical.remove();
     };
-  }, [fullTitle, description, fullUrl, type, imageUrl, noIndex, product, breadcrumbs]);
+  }, [fullTitle, description, fullUrl, type, imageUrl, noIndex, noIndexFollow, product, breadcrumbs]);
 
   return null;
 }

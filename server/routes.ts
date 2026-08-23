@@ -357,17 +357,21 @@ export async function registerRoutes(
     res.redirect(301, '/riftbound');
   });
 
-  // Dynamic sitemap.xml — categories + products + static pages
-  app.get(["/sitemap.xml", "/sitemap_index.xml"], async (req, res) => {
+  // Dynamic sitemap.xml — yalnızca canonical, 200 dönen ve indexlenebilir
+  // gerçek URL'ler: ana sayfa, oyun sahibi kategoriler, aksesuar/kart kataloğu,
+  // ürünler (görselleriyle), kart setleri, tekli kartlar, rehberler (blog).
+  // Sepet, ödeme, hesap, arama, filtre ve boş kategori URL'leri asla girmez.
+  app.get("/sitemap.xml", async (req, res) => {
     try {
-      const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
-      const today = new Date().toISOString().split("T")[0];
+      const baseUrl = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
 
       const staticPages: Array<{ loc: string; priority: string; changefreq: string }> = [
         { loc: "/", priority: "1.0", changefreq: "daily" },
-        { loc: "/magaza", priority: "0.9", changefreq: "daily" },
+        { loc: "/kartlar", priority: "0.9", changefreq: "daily" },
+        { loc: "/aksesuarlar", priority: "0.7", changefreq: "weekly" },
         { loc: "/pokemon", priority: "0.9", changefreq: "weekly" },
         { loc: "/riftbound", priority: "0.9", changefreq: "weekly" },
+        { loc: "/blog", priority: "0.7", changefreq: "weekly" },
         { loc: "/hakkimizda", priority: "0.6", changefreq: "monthly" },
         { loc: "/teslimat-kosullari", priority: "0.4", changefreq: "yearly" },
         { loc: "/mesafeli-satis-sozlesmesi", priority: "0.4", changefreq: "yearly" },
@@ -375,9 +379,16 @@ export async function registerRoutes(
         { loc: "/kvkk", priority: "0.4", changefreq: "yearly" },
       ];
 
-      const [categories, products] = await Promise.all([
+      const [categories, allProducts, productCategoryLinks, cardSetRows, cardRows, blogPosts] = await Promise.all([
         storage.getCategories().catch(() => []),
         storage.getAllProducts().catch(() => []),
+        db.select({ categoryId: productCategories.categoryId, productId: productCategories.productId })
+          .from(productCategories).catch(() => []),
+        db.select({ slug: cardSets.slug, updatedAt: cardSets.updatedAt })
+          .from(cardSets).where(eq(cardSets.isActive, true)).catch(() => []),
+        db.select({ slug: cardsTable.slug, updatedAt: cardsTable.updatedAt })
+          .from(cardsTable).where(eq(cardsTable.isActive, true)).catch(() => []),
+        storage.getBlogPosts({ status: "published" }).catch(() => []),
       ]);
 
       const escapeXml = (str: string) =>
@@ -388,48 +399,83 @@ export async function registerRoutes(
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&apos;");
 
+      const normalizeImageUrl = (url: string) => {
+        if (!url) return "";
+        if (/^https?:\/\//i.test(url)) return url;
+        return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+      };
+
+      const lastmodOf = (value: unknown): string | null => {
+        if (!value) return null;
+        const d = value instanceof Date ? value : new Date(value as string);
+        return Number.isNaN(d.getTime()) ? null : d.toISOString().split("T")[0];
+      };
+
       const urls: string[] = [];
 
-      for (const page of staticPages) {
-        urls.push(
-          `  <url>\n    <loc>${baseUrl}${page.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`
-        );
-      }
-
-      for (const cat of categories) {
-        if (!cat?.slug) continue;
-        urls.push(
-          `  <url>\n    <loc>${baseUrl}/kategori/${escapeXml(cat.slug)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
-        );
-      }
-
-      for (const product of products) {
-        if (!product?.slug) continue;
-        const lastmod = (product as any).updatedAt
-          ? new Date((product as any).updatedAt).toISOString().split("T")[0]
-          : today;
-        urls.push(
-          `  <url>\n    <loc>${baseUrl}/urun/${escapeXml(product.slug)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
-        );
-      }
-
-      // Blog posts in sitemap
-      urls.push(
-        `  <url>\n    <loc>${baseUrl}/blog</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
-      );
-      try {
-        const blogPosts = await storage.getBlogPosts({ status: "published" });
-        for (const post of blogPosts) {
-          const lastmod = post.updatedAt
-            ? new Date(post.updatedAt).toISOString().split("T")[0]
-            : today;
-          urls.push(
-            `  <url>\n    <loc>${baseUrl}/blog/${escapeXml(post.slug)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`
-          );
+      const pushUrl = (loc: string, opts: { lastmod?: string | null; changefreq: string; priority: string; images?: string[] }) => {
+        let entry = `  <url>\n    <loc>${escapeXml(baseUrl + loc)}</loc>\n`;
+        if (opts.lastmod) entry += `    <lastmod>${opts.lastmod}</lastmod>\n`;
+        entry += `    <changefreq>${opts.changefreq}</changefreq>\n    <priority>${opts.priority}</priority>\n`;
+        for (const img of opts.images || []) {
+          entry += `    <image:image>\n      <image:loc>${escapeXml(normalizeImageUrl(img))}</image:loc>\n    </image:image>\n`;
         }
-      } catch (_) {}
+        entry += `  </url>`;
+        urls.push(entry);
+      };
 
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
+      for (const page of staticPages) {
+        pushUrl(page.loc, { changefreq: page.changefreq, priority: page.priority });
+      }
+
+      // Yalnızca en az bir aktif ürüne sahip kategoriler — boş kategori
+      // arşivleri sitemap'e (ve dolayısıyla indexlenmeye) hiç girmez.
+      // Ürün-kategori ilişkisi hem products.categoryId (birincil) hem de
+      // product_categories (çoklu kategori) tablosu üzerinden kurulabilir —
+      // storage.getProducts({categoryId}) ile aynı kurala uymak için ikisi de sayılır.
+      const activeProductIds = new Set(
+        (allProducts as any[]).filter((p) => p?.isActive).map((p) => p.id)
+      );
+      const activeCategoryIds = new Set(
+        (allProducts as any[]).filter((p) => p?.isActive && p?.categoryId).map((p) => p.categoryId)
+      );
+      for (const link of productCategoryLinks as any[]) {
+        if (link?.categoryId && link?.productId && activeProductIds.has(link.productId)) {
+          activeCategoryIds.add(link.categoryId);
+        }
+      }
+      for (const cat of categories as any[]) {
+        if (!cat?.slug || !activeCategoryIds.has(cat.id)) continue;
+        pushUrl(`/kategori/${cat.slug}`, { changefreq: "weekly", priority: "0.8" });
+      }
+
+      for (const product of allProducts as any[]) {
+        if (!product?.slug || !product.isActive) continue;
+        const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+        pushUrl(`/urun/${product.slug}`, {
+          lastmod: lastmodOf(product.updatedAt),
+          changefreq: "weekly",
+          priority: "0.7",
+          images: images.slice(0, 5),
+        });
+      }
+
+      for (const set of cardSetRows as any[]) {
+        if (!set?.slug) continue;
+        pushUrl(`/set/${set.slug}`, { lastmod: lastmodOf(set.updatedAt), changefreq: "weekly", priority: "0.6" });
+      }
+
+      for (const card of cardRows as any[]) {
+        if (!card?.slug) continue;
+        pushUrl(`/kart/${card.slug}`, { lastmod: lastmodOf(card.updatedAt), changefreq: "weekly", priority: "0.5" });
+      }
+
+      for (const post of blogPosts as any[]) {
+        if (!post?.slug) continue;
+        pushUrl(`/blog/${post.slug}`, { lastmod: lastmodOf(post.updatedAt), changefreq: "monthly", priority: "0.6" });
+      }
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join("\n")}\n</urlset>\n`;
 
       res.set("Content-Type", "application/xml; charset=utf-8");
       res.set("Cache-Control", "public, max-age=3600");
@@ -5158,89 +5204,15 @@ ${items.join('\n')}
     }
   });
 
-  // Sitemap XML
-  app.get("/sitemap.xml", async (req, res) => {
-    try {
-      const baseUrl = req.protocol + '://' + req.get('host');
-      const { products } = await storage.getProducts();
-      const categories = await storage.getCategories();
-      
-      const escapeXml = (str: string) => {
-        return str
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&apos;');
-      };
-      
-      const normalizeUrl = (url: string) => {
-        if (!url) return '';
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-          return url;
-        }
-        return baseUrl + (url.startsWith('/') ? url : '/' + url);
-      };
-      
-      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-      xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
-      
-      const staticPages = [
-        { loc: '/', priority: '1.0', changefreq: 'daily' },
-        { loc: '/giris', priority: '0.5', changefreq: 'monthly' },
-        { loc: '/kayit', priority: '0.5', changefreq: 'monthly' },
-        { loc: '/sepet', priority: '0.6', changefreq: 'weekly' },
-      ];
-      
-      for (const page of staticPages) {
-        xml += '  <url>\n';
-        xml += `    <loc>${escapeXml(baseUrl + page.loc)}</loc>\n`;
-        xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
-        xml += `    <priority>${page.priority}</priority>\n`;
-        xml += '  </url>\n';
-      }
-      
-      for (const category of categories) {
-        xml += '  <url>\n';
-        xml += `    <loc>${escapeXml(baseUrl + '/kategori/' + category.slug)}</loc>\n`;
-        xml += '    <changefreq>weekly</changefreq>\n';
-        xml += '    <priority>0.8</priority>\n';
-        xml += '  </url>\n';
-      }
-      
-      for (const product of products) {
-        xml += '  <url>\n';
-        xml += `    <loc>${escapeXml(baseUrl + '/urun/' + product.slug)}</loc>\n`;
-        xml += '    <changefreq>weekly</changefreq>\n';
-        xml += '    <priority>0.9</priority>\n';
-        if (product.images && product.images.length > 0) {
-          const imageUrl = normalizeUrl(product.images[0]);
-          xml += '    <image:image>\n';
-          xml += `      <image:loc>${escapeXml(imageUrl)}</image:loc>\n`;
-          xml += `      <image:title>${escapeXml(product.name)}</image:title>\n`;
-          xml += '    </image:image>\n';
-        }
-        xml += '  </url>\n';
-      }
-      
-      xml += '</urlset>';
-      
-      res.set('Content-Type', 'application/xml');
-      res.send(xml);
-    } catch (error) {
-      console.error('Sitemap error:', error);
-      res.status(500).send('Error generating sitemap');
-    }
-  });
-
-  // Robots.txt
+  // Robots.txt — genel Allow, gerçek private route'lar için Disallow, sitemap
+  // referansı ve AI crawler'lara (GPTBot, OAI-SearchBot vb.) genel erişim izni.
+  // Filtre/arama query parametreleri burada değil, ilgili sayfaların
+  // meta robots (noindex) direktifiyle kontrol edilir — böylece bot canonical/
+  // noindex sinyalini görebilir, sadece indexlemez.
   app.get("/robots.txt", (req, res) => {
     const host = req.get('host') || '';
     const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${host}`;
-    const robotsTxt = `User-agent: *
-Allow: /
-
-Disallow: /sepet
+    const disallowBlock = `Disallow: /sepet
 Disallow: /odeme
 Disallow: /odeme-basarili
 Disallow: /odeme-basarisiz
@@ -5251,16 +5223,106 @@ Disallow: /giris
 Disallow: /kayit
 Disallow: /sifremi-unuttum
 Disallow: /sifre-sifirla
+Disallow: /koleksiyon
+Disallow: /favoriler
 Disallow: /toov-admin
 Disallow: /toov-admin/
 Disallow: /api/
-Disallow: /uploads/temp/
+Disallow: /uploads/temp/`;
+    const aiBots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "anthropic-ai", "PerplexityBot", "Google-Extended", "Bingbot"];
+    const robotsTxt = `User-agent: *
+Allow: /
+
+${disallowBlock}
+
+${aiBots.map((bot) => `User-agent: ${bot}\nAllow: /\n\n${disallowBlock}`).join("\n\n")}
 
 Sitemap: ${baseUrl}/sitemap.xml
 `;
     res.set('Content-Type', 'text/plain; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=3600');
     res.send(robotsTxt);
+  });
+
+  // llms.txt — AI asistanlarının siteyi anlaması için doğrulanmış, gerçek
+  // marka/kategori/rehber bilgisi (müşteri veya sipariş verisi asla girmez).
+  app.get("/llms.txt", async (req, res) => {
+    try {
+      const baseUrl = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
+      const [games, blogPosts] = await Promise.all([
+        storage.listCardGames().catch(() => []),
+        storage.getBlogPosts({ status: "published" }).catch(() => []),
+      ]);
+
+      const gameLines = (games as any[])
+        .map((g) => {
+          const ownerPath = g.slug === "pokemon" ? "/pokemon" : g.slug === "riftbound" ? "/riftbound" : `/oyun/${g.slug}`;
+          return `- [${g.name}](${baseUrl}${ownerPath}): ${g.name} tekli kartları, setleri, booster paket ve kapalı kutuları.`;
+        })
+        .join("\n");
+
+      const guideLines = (blogPosts as any[])
+        .slice(0, 30)
+        .map((p) => `- [${p.title}](${baseUrl}/blog/${p.slug})${p.metaDescription ? `: ${p.metaDescription}` : ""}`)
+        .join("\n");
+
+      const content = `# Go|Cards TCG
+
+> Go|Cards TCG, Pokémon TCG ve Riftbound tekli kartlarını, booster paketlerini ve kapalı kutularını gerçek stok ve güncel fiyatla sunan Türkiye merkezli bir trading card game (TCG) pazaryeridir.
+
+## Kategoriler
+${gameLines || "- Kategori verisi şu anda mevcut değil."}
+- [Tüm Kartlar](${baseUrl}/kartlar): Pokémon TCG ve Riftbound tekli kartlarını fiyat, nadirlik, kondisyon ve sete göre filtreleyin.
+- [Aksesuarlar](${baseUrl}/aksesuarlar): Sleeve, kutu ve saklama aksesuarları.
+
+## Rehberler
+${guideLines || "- Rehber içerikleri yakında yayında olacak."}
+
+## Diğer
+- [Hakkımızda](${baseUrl}/hakkimizda)
+- [Teslimat Koşulları](${baseUrl}/teslimat-kosullari)
+- Makine okunabilir katalog indeksi için: ${baseUrl}/llms-full.txt
+`;
+
+      res.set("Content-Type", "text/plain; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=3600");
+      res.send(content);
+    } catch (error) {
+      console.error("[llms.txt] generation failed:", error);
+      res.status(500).type("text/plain").send("llms.txt generation failed");
+    }
+  });
+
+  // llms-full.txt — gerçek katalog verisinden (oyun/set) makine okunur indeks.
+  // Müşteri veya sipariş verisi asla içermez.
+  app.get("/llms-full.txt", async (req, res) => {
+    try {
+      const baseUrl = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
+      const games = await storage.listCardGames().catch(() => []);
+
+      const sections: string[] = [];
+      for (const game of games as any[]) {
+        const sets = await storage.getCardSetsPublic(game.slug).catch(() => []);
+        const setLines = (sets as any[])
+          .map((s) => `- [${s.name}](${baseUrl}/set/${s.slug})${s.total_cards ? ` — ${s.total_cards} kart` : ""}`)
+          .join("\n");
+        sections.push(`## ${game.name} Setleri\n${setLines || "- Set verisi şu anda mevcut değil."}`);
+      }
+
+      const content = `# Go|Cards TCG — Katalog İndeksi
+
+> Bu dosya, Go|Cards TCG kataloğundaki gerçek oyun ve set verisinin makine okunur bir indeksidir. Müşteri veya sipariş verisi içermez.
+
+${sections.join("\n\n")}
+`;
+
+      res.set("Content-Type", "text/plain; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=3600");
+      res.send(content);
+    } catch (error) {
+      console.error("[llms-full.txt] generation failed:", error);
+      res.status(500).type("text/plain").send("llms-full.txt generation failed");
+    }
   });
 
   // Cache invalidation endpoint for admin

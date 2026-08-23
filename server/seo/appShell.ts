@@ -37,8 +37,10 @@ export async function renderAppShellResponse(req: Request, template: string): Pr
   // yeniden hesaplar (genelde "/"). Gerçek istek yolu için her zaman
   // req.originalUrl kullanılmalı.
   const pathname = req.originalUrl.split("?")[0].split("#")[0] || "/";
+  const queryIndex = req.originalUrl.indexOf("?");
+  const search = queryIndex >= 0 ? req.originalUrl.slice(queryIndex).split("#")[0] : "";
 
-  let seo = await renderPublicPage(pathname, baseUrl);
+  let seo = await renderPublicPage(pathname, baseUrl, search);
   let status = 200;
 
   if (seo) {

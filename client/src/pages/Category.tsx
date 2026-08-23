@@ -173,7 +173,9 @@ export default function Category() {
       <SEO
         title={category?.name || 'Kategori'}
         description={`${category?.name || 'Ürünler'} — GoCards TCG kart koleksiyonu`}
-        url={`/kategori/${slug}`}
+        url={`/kategori/${slug}${hasActiveFilters ? (searchStr ? `?${searchStr}` : '') : (page > 1 ? `?page=${page}` : '')}`}
+        noIndex={hasActiveFilters || (!isLoading && total === 0)}
+        noIndexFollow
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },
           { name: category?.name || 'Kategori', url: `/kategori/${slug}` },

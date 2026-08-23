@@ -401,7 +401,7 @@ async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promis
   };
 }
 
-async function renderSet(setSlug: string, baseUrl: string): Promise<RenderResult> {
+async function renderSet(setSlug: string, baseUrl: string, search: string = ""): Promise<RenderResult> {
   const set = await storage.getCardSetPublicBySlug(setSlug).catch(() => null);
   if (!set) return notFoundResult(baseUrl, `/set/${setSlug}`);
 
@@ -415,13 +415,14 @@ async function renderSet(setSlug: string, baseUrl: string): Promise<RenderResult
     .join("");
 
   const description = `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla Go|Cards TCG'de.`;
+  const { robots, canonical } = listingRobotsAndCanonical(baseUrl, path, search, SET_FILTER_KEYS);
 
   return {
     status: 200,
     title: `${set.name} Seti Kartları | ${SITE_NAME}`,
     description: truncate(description, 160),
-    canonical: `${baseUrl}${path}`,
-    robots: "index, follow",
+    canonical,
+    robots,
     ogType: "website",
     ogImage: set.logo_url ? normalizeImageUrl(baseUrl, set.logo_url) : `${baseUrl}/logo.png`,
     jsonLd: [
@@ -617,7 +618,55 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
   };
 }
 
-async function renderCardsSearch(baseUrl: string): Promise<RenderResult> {
+/**
+ * Filtre/arama query parametresi taşıyan listeleme sayfaları (/kartlar,
+ * /kategori/:slug) için ortak index kontrolü: yalnızca sayfalama (page) ve
+ * sıralama (sort) parametreleri içerik kümesini değiştirmez — bu sayfalar
+ * index,follow kalır ve KENDİ query'leriyle kanonikleşir (asla körlemesine
+ * 1. sayfaya toplanmaz). Gerçek bir filtre veya arama parametresi varsa
+ * sayfa noindex,follow olur ve yine kendi URL'ine self-canonical verilir.
+ */
+// Bazı parametreler "no-op" varsayılan değerle de URL'de açıkça yazılabilir
+// (ör. ?minPrice=0 veya ?maxPrice=5000) — client tarafındaki gerçek filtre
+// algısıyla aynı sonucu vermek için sadece anahtarın VAR olması değil,
+// varsayılandan FARKLI bir değer taşıması filtre sayılır.
+const NOOP_FILTER_VALUES: Record<string, string[]> = {
+  minPrice: ["0"],
+  maxPrice: ["5000", "10000"],
+  inStock: ["false"],
+  new: ["0"],
+  discounted: ["0"],
+};
+
+function listingRobotsAndCanonical(
+  baseUrl: string,
+  pathname: string,
+  search: string,
+  filterKeys: readonly string[]
+): { robots: RenderResult["robots"]; canonical: string } {
+  const params = new URLSearchParams(search);
+  const hasFilters = filterKeys.some((key) => {
+    const value = params.get(key);
+    if (value === null || value === "") return false;
+    const noopValues = NOOP_FILTER_VALUES[key];
+    if (noopValues && noopValues.includes(value)) return false;
+    return true;
+  });
+
+  if (hasFilters) {
+    return { robots: "noindex, follow", canonical: `${baseUrl}${pathname}${search}` };
+  }
+
+  const page = params.get("page");
+  const canonicalSuffix = page && page !== "1" ? `?page=${encodeURIComponent(page)}` : "";
+  return { robots: "index, follow", canonical: `${baseUrl}${pathname}${canonicalSuffix}` };
+}
+
+const CARDS_SEARCH_FILTER_KEYS = ["game", "set", "rarity", "type", "condition", "productType", "search", "inStock", "minPrice", "maxPrice"] as const;
+const CATEGORY_FILTER_KEYS = ["minPrice", "maxPrice", "sizes", "colors", "fits", "new", "discounted"] as const;
+const SET_FILTER_KEYS = ["search", "type"] as const;
+
+async function renderCardsSearch(baseUrl: string, search: string = ""): Promise<RenderResult> {
   const { cards } = await storage
     .getCardsPublic({ limit: 48, sort: "newest" })
     .catch(() => ({ cards: [] as any[], total: 0 }));
@@ -631,13 +680,14 @@ async function renderCardsSearch(baseUrl: string): Promise<RenderResult> {
 
   const description = "Pokemon TCG ve Riftbound single kartları fiyat, nadirlik, kondisyon ve sete göre filtrele. Türkiye'nin TCG marketplace'i.";
   const path = "/kartlar";
+  const { robots, canonical } = listingRobotsAndCanonical(baseUrl, path, search, CARDS_SEARCH_FILTER_KEYS);
 
   return {
     status: 200,
     title: `Tüm Kartlar — ${SITE_NAME} Marketplace`,
     description,
-    canonical: `${baseUrl}${path}`,
-    robots: "index, follow",
+    canonical,
+    robots,
     ogType: "website",
     ogImage: `${baseUrl}/logo.png`,
     jsonLd: [
@@ -793,7 +843,7 @@ async function renderAccessories(baseUrl: string): Promise<RenderResult> {
   };
 }
 
-async function renderLegacyCategory(categorySlug: string, baseUrl: string): Promise<RenderResult> {
+async function renderLegacyCategory(categorySlug: string, baseUrl: string, search: string = ""): Promise<RenderResult> {
   const category = await storage.getCategoryBySlug(categorySlug).catch(() => null);
   if (!category) return notFoundResult(baseUrl, `/kategori/${categorySlug}`);
 
@@ -804,13 +854,18 @@ async function renderLegacyCategory(categorySlug: string, baseUrl: string): Prom
     .join("");
 
   const description = `${category.name} — Go|Cards TCG mağazasında gerçek stok ve güncel fiyatla satışta.`;
+  const listingResult = listingRobotsAndCanonical(baseUrl, path, search, CATEGORY_FILTER_KEYS);
+  // Boş kategori (henüz hiç ürün yok) düşük değerli sayılır ve indexlenmez —
+  // ürün eklenince bir sonraki render'da otomatik index,follow'a döner.
+  const robots = products.length === 0 ? "noindex, follow" : listingResult.robots;
+  const canonical = listingResult.canonical;
 
   return {
     status: 200,
     title: `${category.name} | ${SITE_NAME}`,
     description: truncate(description, 160),
-    canonical: `${baseUrl}${path}`,
-    robots: "index, follow",
+    canonical,
+    robots,
     ogType: "website",
     ogImage: category.image ? normalizeImageUrl(baseUrl, category.image) : `${baseUrl}/logo.png`,
     jsonLd: [
@@ -834,18 +889,22 @@ async function renderLegacyCategory(categorySlug: string, baseUrl: string): Prom
   };
 }
 
-async function renderBlogList(baseUrl: string): Promise<RenderResult> {
+async function renderBlogList(baseUrl: string, search: string = ""): Promise<RenderResult> {
   const posts = await storage.getBlogPosts({ status: "published" }).catch(() => []);
   const items = posts
     .map((p: any) => `<li><a href="/blog/${escapeHtml(p.slug)}">${escapeHtml(p.title)}</a>${p.summary ? ` — ${escapeHtml(truncate(p.summary, 120))}` : ""}</li>`)
     .join("");
 
+  // "category" bir filtre parametresidir — aynı rehber listesinin bir alt
+  // kümesini gösterir, kendi query'siyle self-canonical + noindex olur.
+  const { robots, canonical } = listingRobotsAndCanonical(baseUrl, "/blog", search, ["category"] as const);
+
   return {
     status: 200,
     title: `Rehber ve Blog | ${SITE_NAME}`,
     description: "Pokémon TCG ve Riftbound hakkında rehberler, kart tanıtımları ve koleksiyon ipuçları.",
-    canonical: `${baseUrl}/blog`,
-    robots: "index, follow",
+    canonical,
+    robots,
     ogType: "website",
     ogImage: `${baseUrl}/logo.png`,
     jsonLd: [orgSchema(baseUrl), breadcrumbSchema(baseUrl, [{ name: "Ana Sayfa", path: "/" }, { name: "Blog", path: "/blog" }])],
@@ -908,10 +967,10 @@ async function renderBlogDetail(slug: string, baseUrl: string): Promise<RenderRe
  * bildiği bir "içerik" rotasına ait değilse (örn. /sepet, /giris, /toov-admin)
  * null döner ve çağıran taraf varsayılan kabuğu (default meta ile) kullanır.
  */
-export async function renderPublicPage(pathname: string, baseUrl: string): Promise<RenderResult | null> {
+export async function renderPublicPage(pathname: string, baseUrl: string, search: string = ""): Promise<RenderResult | null> {
   const clean = pathname.replace(/\/+$/, "") || "/";
   if (clean === "/") return renderHome(baseUrl);
-  if (clean === "/kartlar") return renderCardsSearch(baseUrl);
+  if (clean === "/kartlar") return renderCardsSearch(baseUrl, search);
   if (clean === "/aksesuarlar") return renderAccessories(baseUrl);
 
   const staticInfo = STATIC_INFO_PAGES.find((p) => p.path === clean);
@@ -927,9 +986,9 @@ export async function renderPublicPage(pathname: string, baseUrl: string): Promi
     const [prefix, param] = segments;
     const decoded = decodeURIComponent(param);
     if (prefix === "urun") return renderProduct(decoded, baseUrl);
-    if (prefix === "kategori") return renderLegacyCategory(decoded, baseUrl);
+    if (prefix === "kategori") return renderLegacyCategory(decoded, baseUrl, search);
     if (prefix === "kart") return renderCard(decoded, baseUrl);
-    if (prefix === "set") return renderSet(decoded, baseUrl);
+    if (prefix === "set") return renderSet(decoded, baseUrl, search);
     if (prefix === "oyun") return renderGame(decoded, baseUrl);
     if (prefix === "blog") return renderBlogDetail(decoded, baseUrl);
   }
@@ -937,7 +996,7 @@ export async function renderPublicPage(pathname: string, baseUrl: string): Promi
   if (segments.length === 1) {
     const owner = GAME_OWNER_CONFIGS[segments[0]];
     if (owner) return renderGameOwner(owner, baseUrl);
-    if (segments[0] === "blog") return renderBlogList(baseUrl);
+    if (segments[0] === "blog") return renderBlogList(baseUrl, search);
   }
 
   // Bilinen bir prefix ile başlayıp segment sayısı uymayan her yol (fazla ya
