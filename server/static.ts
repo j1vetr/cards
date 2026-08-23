@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { renderAppShellResponse, getLegacyRedirectTarget } from "./seo/appShell";
+import { renderAppShellResponse, resolveRedirectDecision } from "./seo/appShell";
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
@@ -60,10 +60,10 @@ export function serveStatic(app: Express) {
   app.use("*", async (req, res) => {
     try {
       const pathOnly = req.originalUrl.split("?")[0].split("#")[0];
-      const redirectTarget = getLegacyRedirectTarget(pathOnly);
-      if (redirectTarget) {
+      const redirectDecision = await resolveRedirectDecision(pathOnly);
+      if (redirectDecision?.status === 301) {
         const qs = req.originalUrl.slice(pathOnly.length);
-        res.redirect(301, redirectTarget + qs);
+        res.redirect(301, redirectDecision.to + qs);
         return;
       }
 

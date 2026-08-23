@@ -91,6 +91,9 @@ import {
   blogPosts,
   type BlogPost,
   type InsertBlogPost,
+  redirects,
+  type Redirect,
+  type InsertRedirect,
 } from "@shared/schema";
 import { eq, and, or, desc, asc, sql, ilike, gte, lte, gt, between, inArray, sum, type SQL } from "drizzle-orm";
 
@@ -350,6 +353,13 @@ export interface IStorage {
   createBlogPost(data: InsertBlogPost): Promise<BlogPost>;
   updateBlogPost(id: string, data: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: string): Promise<boolean>;
+
+  // Eski URL / 301-410 redirect haritası
+  getRedirects(): Promise<Redirect[]>;
+  getRedirectByFromPath(fromPath: string): Promise<Redirect | undefined>;
+  createRedirect(data: InsertRedirect): Promise<Redirect>;
+  updateRedirect(id: string, data: Partial<InsertRedirect>): Promise<Redirect | undefined>;
+  deleteRedirect(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -3075,6 +3085,30 @@ export class DbStorage implements IStorage {
   async deleteBlogPost(id: string): Promise<boolean> {
     const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Eski URL / 301-410 redirect haritası
+  async getRedirects(): Promise<Redirect[]> {
+    return db.select().from(redirects).orderBy(asc(redirects.fromPath));
+  }
+
+  async getRedirectByFromPath(fromPath: string): Promise<Redirect | undefined> {
+    const [row] = await db.select().from(redirects).where(eq(redirects.fromPath, fromPath));
+    return row;
+  }
+
+  async createRedirect(data: InsertRedirect): Promise<Redirect> {
+    const [row] = await db.insert(redirects).values(data).returning();
+    return row;
+  }
+
+  async updateRedirect(id: string, data: Partial<InsertRedirect>): Promise<Redirect | undefined> {
+    const [row] = await db.update(redirects).set(data).where(eq(redirects.id, id)).returning();
+    return row;
+  }
+
+  async deleteRedirect(id: string): Promise<void> {
+    await db.delete(redirects).where(eq(redirects.id, id));
   }
 
 }

@@ -5,7 +5,7 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
-import { renderAppShellResponse, getLegacyRedirectTarget } from "./seo/appShell";
+import { renderAppShellResponse, resolveRedirectDecision } from "./seo/appShell";
 
 const viteLogger = createLogger();
 
@@ -37,10 +37,10 @@ export async function setupVite(server: Server, app: Express) {
 
     try {
       const pathOnly = url.split("?")[0].split("#")[0];
-      const redirectTarget = getLegacyRedirectTarget(pathOnly);
-      if (redirectTarget) {
+      const redirectDecision = await resolveRedirectDecision(pathOnly);
+      if (redirectDecision?.status === 301) {
         const qs = url.slice(pathOnly.length);
-        res.redirect(301, redirectTarget + qs);
+        res.redirect(301, redirectDecision.to + qs);
         return;
       }
 

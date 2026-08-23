@@ -17,7 +17,7 @@ import {
 } from "../../shared/blogSchema";
 
 export interface RenderResult {
-  status: 200 | 404;
+  status: 200 | 404 | 410;
   title: string;
   description: string;
   canonical: string;
@@ -79,6 +79,27 @@ function notFoundResult(baseUrl: string, pathname: string): RenderResult {
       <main>
         <h1>Sayfa Bulunamadı</h1>
         <p>Aradığınız sayfa bulunamadı. Ürün, kart veya kategori kaldırılmış ya da hiç var olmamış olabilir.</p>
+        <p><a href="/">Ana sayfaya dön</a></p>
+      </main>
+    `,
+  };
+}
+
+/** Kalıcı olarak kaldırılmış, karşılığı olmayan eski URL'ler için (redirects tablosu, statusCode=410). */
+export function goneResult(baseUrl: string, pathname: string): RenderResult {
+  return {
+    status: 410,
+    title: `Sayfa Kaldırıldı | ${SITE_NAME}`,
+    description: "Bu sayfa kalıcı olarak kaldırılmıştır ve bir daha yayınlanmayacaktır.",
+    canonical: `${baseUrl}${pathname}`,
+    robots: "noindex, nofollow",
+    ogType: "website",
+    ogImage: `${baseUrl}/logo.png`,
+    jsonLd: [orgSchema(baseUrl)],
+    bodyHtml: `
+      <main>
+        <h1>Sayfa Kaldırıldı</h1>
+        <p>Aradığınız sayfa kalıcı olarak kaldırılmıştır ve artık mevcut değildir.</p>
         <p><a href="/">Ana sayfaya dön</a></p>
       </main>
     `,

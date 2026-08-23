@@ -3,3 +3,4 @@
 - [Wholesale explode-at-payment](wholesale-explode-at-payment.md) — a wholesale "seri" stays ONE cart row; explosion into per-variant order rows happens only at payment, keeping stock/idempotency paths untouched.
 - [Express wildcard catch-all req.path bug](express-wildcard-catchall-reqpath.md) — `app.use("*", ...)` resets req.path to "/"; use req.originalUrl for the real path inside it.
 - [SEO SSR/SPA parity contract](seo-ssr-spa-parity.md) — admin SEO overrides must resolve/clamp/transform identically in server/seo/render.ts and client SEO usage via shared/seoText.ts, or completion review rejects.
+- [Legacy URL redirect/410 decision map](legacy-url-redirect-map.md) — old URL 301/410 decisions live in a DB `redirects` table, not code, so slug changes never need a deploy.

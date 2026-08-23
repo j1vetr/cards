@@ -12,7 +12,7 @@ import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
-import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings, cards as cardsTable, cardSets, cardGames } from "@shared/schema";
+import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, insertRedirectSchema, updateRedirectSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings, cards as cardsTable, cardSets, cardGames } from "@shared/schema";
 import { authLimiter, registerLimiter, passwordResetLimiter, trackingLimiter, couponLimiter } from "./rateLimit";
 import {
   validateBody, firstZodMessage,
@@ -1419,6 +1419,62 @@ ${items.join('\n')}
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+
+  // Eski URL / 301-410 redirect haritası — slug değişikliklerinde kod
+  // değişikliği gerekmeden yönetilebilir olması için DB üzerinden CRUD.
+  app.get("/api/admin/redirects", requireAdmin, async (_req, res) => {
+    try {
+      const rows = await storage.getRedirects();
+      res.json(rows);
+    } catch (error) {
+      res.status(500).json({ error: "Yönlendirmeler alınamadı" });
+    }
+  });
+
+  app.post("/api/admin/redirects", requireAdmin, async (req, res) => {
+    try {
+      const validated = insertRedirectSchema.parse(req.body);
+      if (validated.statusCode === 301 && !validated.toPath) {
+        return res.status(400).json({ error: "301 kararı için hedef URL (toPath) gerekli" });
+      }
+      const row = await storage.createRedirect({
+        ...validated,
+        fromPath: validated.fromPath.replace(/\/+$/, "") || "/",
+      });
+      res.status(201).json(row);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ error: firstZodMessage(error) });
+      console.error('Redirect creation error:', error);
+      res.status(500).json({ error: "Yönlendirme oluşturulamadı" });
+    }
+  });
+
+  app.patch("/api/admin/redirects/:id", requireAdmin, async (req, res) => {
+    try {
+      const parsed = updateRedirectSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: firstZodMessage(parsed.error) });
+      const existing = await storage.getRedirects().then((rows) => rows.find((r) => r.id === req.params.id));
+      if (!existing) return res.status(404).json({ error: "Yönlendirme bulunamadı" });
+      const merged = { ...existing, ...parsed.data };
+      if (merged.statusCode === 301 && !merged.toPath) {
+        return res.status(400).json({ error: "301 kararı için hedef URL (toPath) gerekli" });
+      }
+      const row = await storage.updateRedirect(req.params.id, parsed.data);
+      if (!row) return res.status(404).json({ error: "Yönlendirme bulunamadı" });
+      res.json(row);
+    } catch (error) {
+      res.status(400).json({ error: "Yönlendirme güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/admin/redirects/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteRedirect(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Yönlendirme silinemedi" });
     }
   });
 

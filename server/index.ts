@@ -269,6 +269,71 @@ app.use((req, res, next) => {
     console.error("[index] guide posts seed failed:", err);
   }
 
+  // redirects tablosunu idempotent oluştur (eski URL 301/410 karar haritası)
+  try {
+    const { db } = await import("./db");
+    const { sql: sqlTag } = await import("drizzle-orm");
+    await db.execute(sqlTag`
+      CREATE TABLE IF NOT EXISTS redirects (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        from_path TEXT NOT NULL UNIQUE,
+        to_path TEXT,
+        status_code INTEGER NOT NULL DEFAULT 301,
+        note TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log("[migrate] redirects table ensured");
+  } catch (err) {
+    console.error("[migrate] redirects table migration failed:", err);
+  }
+
+  // Denetlenmiş eski URL 301/410 kararlarını idempotent seed et (bkz. görev
+  // #119 — eski URL denetimi). Bu blok yalnızca `redirects` tablosuna yazar;
+  // katalog/kategori verisine dokunmaz ki bir katalog temizliği hatası bu
+  // seed'i asla engellemesin — eski URL'ler her koşulda haritalanmış olur
+  // (/kategori/<slug> istekleri kategori satırı DB'de kalsa bile bu tablo
+  // üzerinden 410 ile karşılanır, bkz. server/seo/appShell.ts).
+  try {
+    const { db } = await import("./db");
+    const { redirects } = await import("../shared/schema");
+    const { LEGACY_URL_DECISIONS } = await import("../shared/legacyUrlDecisions");
+    const { eq } = await import("drizzle-orm");
+
+    for (const decision of LEGACY_URL_DECISIONS) {
+      const existing = await db.select().from(redirects).where(eq(redirects.fromPath, decision.fromPath)).limit(1);
+      if (existing.length === 0) {
+        await db.insert(redirects).values(decision);
+      }
+    }
+    console.log("[seed] legacy URL redirect map ensured");
+  } catch (err) {
+    console.error("[index] legacy URL redirect seed failed:", err);
+  }
+
+  // Admin menü yönetiminde kalkmış giyim kategorilerine işaret eden döküntü
+  // menü öğelerini temizle. Kategori satırlarının kendisine dokunulmaz (ürünü
+  // olan bir kategoriyi silmek FK ihlaline yol açabilir); /kategori/<slug>
+  // istekleri zaten yukarıdaki redirect haritası üzerinden 410 döner, bu blok
+  // yalnızca admin panelindeki döküntü menü kayıtlarını temizler.
+  try {
+    const { db } = await import("./db");
+    const { categories, menuItems } = await import("../shared/schema");
+    const { OLD_APPAREL_CATEGORY_SLUGS } = await import("../shared/legacyUrlDecisions");
+    const { inArray } = await import("drizzle-orm");
+
+    const staleCategories = await db.select().from(categories).where(inArray(categories.slug, [...OLD_APPAREL_CATEGORY_SLUGS]));
+    if (staleCategories.length > 0) {
+      const staleIds = staleCategories.map((c) => c.id);
+      const removed = await db.delete(menuItems).where(inArray(menuItems.categoryId, staleIds)).returning();
+      if (removed.length > 0) {
+        console.log(`[migrate] removed ${removed.length} stale menu entries pointing to defunct apparel categories`);
+      }
+    }
+  } catch (err) {
+    console.error("[index] stale menu item cleanup failed:", err);
+  }
+
   // Pazaryeri senkron zamanlayıcısı (Trendyol delta saatlik / full 03:00)
   try {
     const { startScheduler } = await import("./scheduler");

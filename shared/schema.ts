@@ -92,6 +92,55 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
+// Eski/kalkmış URL'ler için karar haritası — 301 (yeni karşılığa yönlendir),
+// 410 (kalıcı olarak kaldırıldı, karşılığı yok) veya 404 kararı DB'de tutulur;
+// slug/URL değişikliklerinde kod değişikliği gerekmez. Sunucu tarafı catch-all
+// (server/seo/appShell.ts) her bilinmeyen yol için önce bu tabloya bakar.
+export const redirects = pgTable("redirects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Normalize edilmiş kaynak yol: küçük harf, tek baştaki "/", sondaki "/" yok, query/hash yok.
+  fromPath: text("from_path").notNull().unique(),
+  // 301 için hedef yol (query string istekten korunur); 410/404 için null.
+  toPath: text("to_path"),
+  statusCode: integer("status_code").notNull().default(301), // 301 | 404 | 410
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Sadece site-içi mutlak yol kabul edilir (örn. "/set/riftbound-sfd"); dış
+// domain'e veya protocol-relative bir hedefe yönlendirmeye izin verilmez.
+const internalAbsolutePath = z
+  .string()
+  .trim()
+  .min(1)
+  .refine(
+    (v) => v.startsWith("/") && !v.startsWith("//") && !/^\/\\/.test(v) && !/[a-zA-Z][a-zA-Z0-9+.-]*:/.test(v),
+    { message: "Yalnızca site-içi mutlak yol kabul edilir (örn. /set/riftbound-sfd)" }
+  )
+  .transform((v) => v.replace(/\/+$/, "") || "/");
+
+const redirectBaseSchema = createInsertSchema(redirects).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  fromPath: internalAbsolutePath,
+  toPath: internalAbsolutePath.nullable().optional(),
+  statusCode: z.union([z.literal(301), z.literal(404), z.literal(410)]),
+});
+
+export const insertRedirectSchema = redirectBaseSchema.refine(
+  (data) => data.statusCode !== 301 || !!data.toPath,
+  { message: "301 kararı için hedef URL (toPath) gerekli", path: ["toPath"] }
+);
+
+// PATCH için: alanlar opsiyonel ama tekil validasyon (path şekli) korunur;
+// 301 <-> toPath tutarlılığı route seviyesinde mevcut kayıtla birleştirilip
+// kontrol edilir (bkz. server/routes.ts).
+export const updateRedirectSchema = redirectBaseSchema.partial();
+
+export type InsertRedirect = z.infer<typeof insertRedirectSchema>;
+export type Redirect = typeof redirects.$inferSelect;
+
 // Products table — kept for backward compatibility with existing orders/cart.
 // New TCG cards use the cards + card_listings tables below.
 export const products = pgTable("products", {
