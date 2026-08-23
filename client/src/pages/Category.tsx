@@ -171,10 +171,10 @@ export default function Category() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <SEO
-        title={category?.name || 'Kategori'}
-        description={`${category?.name || 'Ürünler'} — GoCards TCG kart koleksiyonu`}
+        title={category?.seoTitle || category?.name || 'Kategori'}
+        description={category?.seoDescription || `${category?.name || 'Ürünler'} — Go|Cards TCG mağazasında gerçek stok ve güncel fiyatla satışta.`}
         url={`/kategori/${slug}${hasActiveFilters ? (searchStr ? `?${searchStr}` : '') : (page > 1 ? `?page=${page}` : '')}`}
-        noIndex={hasActiveFilters || (!isLoading && total === 0)}
+        noIndex={Boolean(category?.seoNoIndex) || hasActiveFilters || (!isLoading && total === 0)}
         noIndexFollow
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },
@@ -222,7 +222,7 @@ export default function Category() {
                 className="font-display text-2xl sm:text-3xl lg:text-4xl text-white tracking-wide leading-[1.1]"
                 data-testid="text-category-title"
               >
-                {category?.name?.toUpperCase()}
+                {(category?.seoH1 || category?.name)?.toLocaleUpperCase('tr-TR')}
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -233,6 +233,17 @@ export default function Category() {
                 {isLoading ? '—' : total} ürün
               </motion.p>
             </div>
+            {category?.seoIntro && (
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="mt-2 max-w-2xl text-sm text-white/55 leading-relaxed"
+                data-testid="text-category-intro"
+              >
+                {category.seoIntro}
+              </motion.p>
+            )}
           </div>
         </div>
       </section>

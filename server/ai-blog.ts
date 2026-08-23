@@ -435,7 +435,7 @@ export async function aiCoverHandler(req: Request, res: Response) {
       response_format: 'b64_json',
     });
 
-    const b64 = response.data[0]?.b64_json;
+    const b64 = response.data?.[0]?.b64_json;
     if (!b64) return res.status(500).json({ error: 'Görsel verisi alınamadı' });
 
     const buffer = Buffer.from(b64, 'base64');

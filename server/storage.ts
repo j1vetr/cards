@@ -1309,6 +1309,8 @@ export class DbStorage implements IStorage {
         productType: r.product_type ?? 'other',
         stock: Number(r.stock ?? 0),
         linkedSetId: r.linked_set_id ?? null,
+        seoTitle: r.seo_title ?? null,
+        seoDescription: r.seo_description ?? null,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       },
@@ -2494,7 +2496,7 @@ export class DbStorage implements IStorage {
       SELECT
         c.id, c.name, c.slug, c.card_number, c.rarity, c.card_types,
         c.hp, c.attacks, c.abilities, c.artist, c.image_url, c.image_url_hi_res, c.description,
-        c.api_source, c.is_featured, c.is_new, c.created_at,
+        c.api_source, c.is_featured, c.is_new, c.created_at, c.seo_title, c.seo_description,
         cs.id AS set_id, cs.name AS set_name, cs.slug AS set_slug,
         cs.series AS set_series, cs.release_date AS set_release_date,
         cs.total_cards AS set_total_cards,
@@ -2574,6 +2576,7 @@ export class DbStorage implements IStorage {
       SELECT
         cs.id, cs.name, cs.slug, cs.series, cs.release_date, cs.total_cards,
         cs.logo_url, cs.symbol_url,
+        cs.seo_title, cs.seo_description, cs.seo_h1, cs.seo_intro, cs.seo_no_index,
         cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug
       FROM card_sets cs
       JOIN card_games cg ON cg.id = cs.game_id
@@ -2634,6 +2637,7 @@ export class DbStorage implements IStorage {
       SELECT
         c.id, c.name, c.slug, c.card_number, c.rarity, c.image_url,
         c.image_url_hi_res, c.card_types, c.hp, c.artist, c.description,
+        c.seo_title, c.seo_description,
         c.is_active, c.is_featured, c.is_new, c.is_manually_edited, c.created_at,
         cs.id AS set_id, cs.name AS set_name,
         cg.id AS game_id, cg.name AS game_name,
@@ -2679,6 +2683,8 @@ export class DbStorage implements IStorage {
     description?: string | null;
     isManuallyEdited?: boolean;
     manuallyEditedAt?: Date | null;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
   }): Promise<any> {
     const [updated] = await db.update(cards)
       .set({ ...patch, updatedAt: new Date() })
@@ -2701,6 +2707,8 @@ export class DbStorage implements IStorage {
     isActive: boolean;
     isFeatured: boolean;
     isNew: boolean;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
   }): Promise<any> {
     let slug = data.slug;
     const [collision] = await db.select({ id: cards.id }).from(cards).where(eq(cards.slug, slug));
@@ -2719,6 +2727,8 @@ export class DbStorage implements IStorage {
       isActive: data.isActive,
       isFeatured: data.isFeatured,
       isNew: data.isNew,
+      seoTitle: data.seoTitle ?? null,
+      seoDescription: data.seoDescription ?? null,
     }).returning();
     return inserted;
   }
@@ -2774,6 +2784,7 @@ export class DbStorage implements IStorage {
       SELECT
         cs.id, cs.name, cs.slug, cs.series, cs.release_date, cs.total_cards,
         cs.logo_url, cs.symbol_url, cs.is_active,
+        cs.seo_title, cs.seo_description, cs.seo_h1, cs.seo_intro, cs.seo_no_index,
         cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug,
         COUNT(DISTINCT c.id)::int AS card_count,
         COUNT(DISTINCT cl.id) FILTER (WHERE cl.is_active = true AND cl.stock > 0)::int AS active_listings
@@ -2788,7 +2799,14 @@ export class DbStorage implements IStorage {
     return result.rows as any[];
   }
 
-  async updateAdminCardSet(id: string, patch: { isActive?: boolean }): Promise<any> {
+  async updateAdminCardSet(id: string, patch: {
+    isActive?: boolean;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    seoH1?: string | null;
+    seoIntro?: string | null;
+    seoNoIndex?: boolean;
+  }): Promise<any> {
     const [updated] = await db.update(cardSets)
       .set({ ...patch, updatedAt: new Date() })
       .where(eq(cardSets.id, id))
@@ -2805,6 +2823,11 @@ export class DbStorage implements IStorage {
     symbolUrl?: string | null;
     releaseDate?: string | null;
     isActive: boolean;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    seoH1?: string | null;
+    seoIntro?: string | null;
+    seoNoIndex?: boolean;
   }): Promise<any> {
     let slug = data.slug;
     const [collision] = await db.select({ id: cardSets.id }).from(cardSets).where(eq(cardSets.slug, slug));
@@ -2818,6 +2841,11 @@ export class DbStorage implements IStorage {
       symbolUrl: data.symbolUrl ?? null,
       releaseDate: data.releaseDate ?? null,
       isActive: data.isActive,
+      seoTitle: data.seoTitle ?? null,
+      seoDescription: data.seoDescription ?? null,
+      seoH1: data.seoH1 ?? null,
+      seoIntro: data.seoIntro ?? null,
+      seoNoIndex: data.seoNoIndex ?? false,
     }).returning();
     return inserted;
   }
@@ -2828,6 +2856,20 @@ export class DbStorage implements IStorage {
 
   async getAdminCardGames(): Promise<any[]> {
     return db.select().from(cardGames).orderBy(cardGames.name);
+  }
+
+  async updateCardGame(id: string, patch: {
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    seoH1?: string | null;
+    seoIntro?: string | null;
+    seoNoIndex?: boolean;
+  }): Promise<any> {
+    const [updated] = await db.update(cardGames)
+      .set(patch)
+      .where(eq(cardGames.id, id))
+      .returning();
+    return updated;
   }
 
   async getCardPriceReference(cardId: string): Promise<any | null> {

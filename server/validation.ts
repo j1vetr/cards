@@ -83,6 +83,11 @@ export const categoryUpdateSchema = z.object({
   imageUrl: z.string().url().optional().nullable(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
+  seoTitle: z.string().max(200).optional().nullable(),
+  seoDescription: z.string().max(500).optional().nullable(),
+  seoH1: z.string().max(200).optional().nullable(),
+  seoIntro: z.string().max(2000).optional().nullable(),
+  seoNoIndex: z.boolean().optional(),
 });
 
 // ─── Admin: Products ─────────────────────────────────────────────────────────
@@ -102,6 +107,8 @@ export const productUpdateSchema = z.object({
   availableSizes: z.array(z.string()).optional(),
   availableColors: z.array(z.unknown()).optional(),
   attributes: z.record(z.unknown()).optional().nullable(),
+  seoTitle: z.string().max(200).optional().nullable(),
+  seoDescription: z.string().max(500).optional().nullable(),
 }).passthrough();
 
 export const bulkPriceSchema = z.object({

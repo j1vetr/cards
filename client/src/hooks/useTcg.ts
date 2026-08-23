@@ -14,6 +14,11 @@ export interface CardSetPublic {
   game_name: string;
   game_slug: string;
   listed_cards: number;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_h1?: string | null;
+  seo_intro?: string | null;
+  seo_no_index?: boolean;
 }
 
 export interface CardGame {
@@ -22,6 +27,11 @@ export interface CardGame {
   slug: string;
   logo_url: string | null;
   is_active: boolean;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoH1?: string | null;
+  seoIntro?: string | null;
+  seoNoIndex?: boolean;
 }
 
 export interface CardFilters {

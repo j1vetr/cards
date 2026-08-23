@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
-import { useCardSets, useCards } from '@/hooks/useTcg';
+import { useCardSets, useCards, useCardGames } from '@/hooks/useTcg';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Package, Layers, HelpCircle, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -60,6 +60,8 @@ export default function PokemonPage() {
   const { data: sets = [], isLoading: setsLoading } = useCardSets('pokemon');
   const { data: cardsData, isLoading: cardsLoading } = useCards({ game: 'pokemon', limit: 8, sort: 'newest' });
   const { data: boxes = [], isLoading: boxesLoading } = useBoxProducts('pokemon');
+  const { data: games = [] } = useCardGames();
+  const game = games.find((g) => g.slug === 'pokemon');
 
   const cards = cardsData?.cards ?? [];
 
@@ -71,10 +73,12 @@ export default function PokemonPage() {
   return (
     <>
       <SEO
-        title="Pokémon TCG Kartları ve Setleri"
-        description="Türkiye'nin Pokémon TCG mağazası Go|Cards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."
+        title={game?.seoTitle || "Pokémon TCG Kartları ve Setleri"}
+        description={game?.seoDescription || "Türkiye'nin Pokémon TCG mağazası Go|Cards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."}
         url="/pokemon"
         type="website"
+        noIndex={Boolean(game?.seoNoIndex)}
+        noIndexFollow={Boolean(game?.seoNoIndex)}
         breadcrumbs={breadcrumbs}
       />
 
@@ -108,13 +112,18 @@ export default function PokemonPage() {
 
               <div>
                 {/* H1 — primary SEO target */}
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
-                  Pokémon TCG<br />
-                  <span style={{ color: ACCENT }}>Kartları ve Setleri</span>
-                </h1>
+                {game?.seoH1 ? (
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
+                    {game.seoH1}
+                  </h1>
+                ) : (
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
+                    Pokémon TCG<br />
+                    <span style={{ color: ACCENT }}>Kartları ve Setleri</span>
+                  </h1>
+                )}
                 <p className="mt-3 text-sm sm:text-base text-white/55 max-w-2xl leading-relaxed">
-                  Pokémon TCG'nin güncel ve klasik setlerine ait tüm booster paketlerini, kapalı kutularını
-                  ve tekli kartlarını Go|Cards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo.
+                  {game?.seoIntro || "Pokémon TCG'nin güncel ve klasik setlerine ait tüm booster paketlerini, kapalı kutularını ve tekli kartlarını Go|Cards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo."}
                 </p>
 
                 <div className="flex flex-wrap gap-3 mt-5">

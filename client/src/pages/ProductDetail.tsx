@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { stripHtmlToText } from '@shared/seoText';
 
 interface TurnstileApi {
   render: (
@@ -652,10 +653,12 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <SEO
-        title={product.name}
+        title={(product as any).seoTitle || product.name}
         description={
-          product.description?.replace(/<[^>]*>/g, '').slice(0, 160) ||
-          `${product.name}${category ? ` — ${category.name}` : ''}. Go|Cards TCG'de ${isOutOfStock ? 'yakında stokta' : 'gerçek stok ve güncel fiyatla'} satışta.`
+          (product as any).seoDescription ||
+          (product.description
+            ? stripHtmlToText(product.description)
+            : `${product.name}${category ? ` — ${category.name}` : ''}. Go|Cards TCG'de ${isOutOfStock ? 'yakında stokta' : 'gerçek stok ve güncel fiyatla'} satışta.`)
         }
         image={images[0]}
         url={`/urun/${product.slug}`}

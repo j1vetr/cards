@@ -34,11 +34,9 @@ export const sanitizeRichHtml = (html: string | null | undefined): string =>
     },
   });
 
-export const stripHtml = (str: string): string =>
-  String(str ?? "")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+// SPA (client/src/pages) ile SSR arasında birebir aynı sonucu garanti etmek
+// için tek kaynak shared/seoText.ts'tir — burayı değil onu güncelleyin.
+export { stripHtmlToText as stripHtml } from "../../shared/seoText";
 
 export const truncate = (str: string, max: number): string => {
   const clean = str.trim();

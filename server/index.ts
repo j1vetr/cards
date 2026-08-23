@@ -158,6 +158,50 @@ app.use((req, res, next) => {
     console.error("[migrate] cards attacks/abilities migration failed:", err);
   }
 
+  // SEO alanlarını categories/products/card_games/card_sets/cards tablolarına idempotent ekle
+  // (aksesuar kategori seed'inden önce çalışmalı, aksi halde categories.seo_title henüz yokken select hata verir)
+  try {
+    const { db } = await import("./db");
+    const { sql: sqlTag } = await import("drizzle-orm");
+    await db.execute(sqlTag`
+      ALTER TABLE categories
+        ADD COLUMN IF NOT EXISTS seo_title TEXT,
+        ADD COLUMN IF NOT EXISTS seo_description TEXT,
+        ADD COLUMN IF NOT EXISTS seo_h1 TEXT,
+        ADD COLUMN IF NOT EXISTS seo_intro TEXT,
+        ADD COLUMN IF NOT EXISTS seo_no_index BOOLEAN NOT NULL DEFAULT false
+    `);
+    await db.execute(sqlTag`
+      ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS seo_title TEXT,
+        ADD COLUMN IF NOT EXISTS seo_description TEXT
+    `);
+    await db.execute(sqlTag`
+      ALTER TABLE card_games
+        ADD COLUMN IF NOT EXISTS seo_title TEXT,
+        ADD COLUMN IF NOT EXISTS seo_description TEXT,
+        ADD COLUMN IF NOT EXISTS seo_h1 TEXT,
+        ADD COLUMN IF NOT EXISTS seo_intro TEXT,
+        ADD COLUMN IF NOT EXISTS seo_no_index BOOLEAN NOT NULL DEFAULT false
+    `);
+    await db.execute(sqlTag`
+      ALTER TABLE card_sets
+        ADD COLUMN IF NOT EXISTS seo_title TEXT,
+        ADD COLUMN IF NOT EXISTS seo_description TEXT,
+        ADD COLUMN IF NOT EXISTS seo_h1 TEXT,
+        ADD COLUMN IF NOT EXISTS seo_intro TEXT,
+        ADD COLUMN IF NOT EXISTS seo_no_index BOOLEAN NOT NULL DEFAULT false
+    `);
+    await db.execute(sqlTag`
+      ALTER TABLE cards
+        ADD COLUMN IF NOT EXISTS seo_title TEXT,
+        ADD COLUMN IF NOT EXISTS seo_description TEXT
+    `);
+    console.log("[migrate] seo_title/seo_description/seo_h1/seo_intro/seo_no_index ensured");
+  } catch (err) {
+    console.error("[migrate] SEO fields migration failed:", err);
+  }
+
   // Aksesuar kategorilerini idempotent olarak seed et
   try {
     const { db } = await import("./db");

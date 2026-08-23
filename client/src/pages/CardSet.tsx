@@ -183,10 +183,10 @@ export default function CardSet() {
   return (
     <div className="min-h-screen" style={{ background: '#09090f' }}>
       <SEO
-        title={`${set.name} — ${set.game_name} | Go|Cards`}
-        description={`${set.name} setindeki kartları satın al. ${set.game_name}.`}
+        title={set.seo_title || `${set.name} Seti Kartları`}
+        description={set.seo_description || `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla Go|Cards TCG'de.`}
         url={`/set/${set.slug}${(search || typeFilter) ? (searchStr ? `?${searchStr}` : '') : (page > 1 ? `?page=${page}` : '')}`}
-        noIndex={Boolean(search || typeFilter)}
+        noIndex={Boolean(set.seo_no_index) || Boolean(search || typeFilter)}
         noIndexFollow
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },
@@ -241,8 +241,11 @@ export default function CardSet() {
                 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight tracking-tight mb-3"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                {set.name}
+                {set.seo_h1 || `${set.name} Seti`}
               </h1>
+              {set.seo_intro && (
+                <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed mb-3">{set.seo_intro}</p>
+              )}
               <div className="flex items-center gap-3 flex-wrap">
                 {set.series && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400">

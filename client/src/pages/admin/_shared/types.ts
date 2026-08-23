@@ -18,6 +18,8 @@ export interface Product {
   linkedSetId?: string | null;
   productType?: string;
   stock: number;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -33,6 +35,11 @@ export interface Category {
   slug: string;
   image: string;
   displayOrder: number;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoH1?: string | null;
+  seoIntro?: string | null;
+  seoNoIndex?: boolean;
 }
 
 export interface Order {

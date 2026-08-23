@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import { escapeHtml, stripHtml, truncate, normalizeImageUrl, formatTRY, sanitizeRichHtml } from "./htmlUtils";
+import { resolveSeoTitle, resolveSeoDescription, resolveSeoH1, resolveSeoIntro } from "./seoDefaults";
 import { SITE_NAME } from "../../shared/siteConfig";
 
 export interface RenderResult {
@@ -175,14 +176,18 @@ async function renderGame(gameSlug: string, baseUrl: string): Promise<RenderResu
     .map((p: any) => `<li><a href="/urun/${escapeHtml(p.slug)}">${escapeHtml(p.name)} — ${formatTRY(p.basePrice)} — ${p.stock > 0 ? "Stokta" : "Tükendi"}</a></li>`)
     .join("");
 
-  const description = `${game.name} setleri, tekli kartlar, booster pack ve kapalı kutular Go|Cards TCG'de gerçek stok ve güncel fiyatla satışta.`;
+  const defaultDescription = `${game.name} setleri, tekli kartlar, booster pack ve kapalı kutular Go|Cards TCG'de gerçek stok ve güncel fiyatla satışta.`;
+  const title = resolveSeoTitle(game.seoTitle, `${game.name} Kartları ve Setleri`);
+  const description = resolveSeoDescription(game.seoDescription, defaultDescription);
+  const h1 = resolveSeoH1(game.seoH1, `${game.name} Kartları ve Setleri`);
+  const intro = resolveSeoIntro(game.seoIntro, description);
 
   return {
     status: 200,
-    title: `${game.name} Kartları ve Setleri | ${SITE_NAME}`,
-    description: truncate(description, 160),
+    title: `${title} | ${SITE_NAME}`,
+    description,
     canonical: `${baseUrl}${canonicalPath}`,
-    robots: "index, follow",
+    robots: game.seoNoIndex ? "noindex, follow" : "index, follow",
     ogType: "website",
     ogImage: game.logoUrl ? normalizeImageUrl(baseUrl, game.logoUrl) : `${baseUrl}/logo.png`,
     jsonLd: [
@@ -190,7 +195,7 @@ async function renderGame(gameSlug: string, baseUrl: string): Promise<RenderResu
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        name: `${game.name} | ${SITE_NAME}`,
+        name: `${title} | ${SITE_NAME}`,
         url: `${baseUrl}${canonicalPath}`,
       },
       breadcrumbSchema(baseUrl, [
@@ -201,8 +206,8 @@ async function renderGame(gameSlug: string, baseUrl: string): Promise<RenderResu
     bodyHtml: `
       <main>
         ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: game.name, path }])}
-        <h1>${escapeHtml(game.name)} Kartları ve Setleri</h1>
-        <p>${escapeHtml(description)}</p>
+        <h1>${escapeHtml(h1)}</h1>
+        <p>${escapeHtml(intro)}</p>
         ${canonicalPath !== path ? `<p><a href="${escapeHtml(canonicalPath)}">${escapeHtml(game.name)} hakkında detaylı bilgi ve SSS</a></p>` : ""}
         <section>
           <h2>Setler</h2>
@@ -333,13 +338,19 @@ async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promis
     .join("");
 
   const ogImage = game?.logoUrl ? normalizeImageUrl(baseUrl, game.logoUrl) : `${baseUrl}/logo.png`;
+  const title = resolveSeoTitle(game?.seoTitle, config.title);
+  const description = resolveSeoDescription(game?.seoDescription, config.description);
+  const h1 = resolveSeoH1(game?.seoH1, config.h1);
+  // Admin bir giriş metni girdiyse tek paragraf olarak, girmediyse zengin
+  // varsayılan FAQ/tanıtım paragrafları kullanılır.
+  const introHtmlResolved = game?.seoIntro ? `<p>${escapeHtml(game.seoIntro)}</p>` : introHtml;
 
   return {
     status: 200,
-    title: `${config.title} | ${SITE_NAME}`,
-    description: truncate(config.description, 160),
+    title: `${title} | ${SITE_NAME}`,
+    description,
     canonical: `${baseUrl}${path}`,
-    robots: "index, follow",
+    robots: game?.seoNoIndex ? "noindex, follow" : "index, follow",
     ogType: "website",
     ogImage,
     jsonLd: [
@@ -347,7 +358,7 @@ async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promis
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        name: `${config.title} | ${SITE_NAME}`,
+        name: `${title} | ${SITE_NAME}`,
         url: `${baseUrl}${path}`,
       },
       {
@@ -378,8 +389,8 @@ async function renderGameOwner(config: GameOwnerConfig, baseUrl: string): Promis
     bodyHtml: `
       <main>
         ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: config.keyword, path }])}
-        <h1>${escapeHtml(config.h1)}</h1>
-        ${introHtml}
+        <h1>${escapeHtml(h1)}</h1>
+        ${introHtmlResolved}
         <section>
           <h2>${escapeHtml(config.keyword)} Kart Setleri</h2>
           <ul>${setItems}</ul>
@@ -414,13 +425,18 @@ async function renderSet(setSlug: string, baseUrl: string, search: string = ""):
     })
     .join("");
 
-  const description = `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla Go|Cards TCG'de.`;
-  const { robots, canonical } = listingRobotsAndCanonical(baseUrl, path, search, SET_FILTER_KEYS);
+  const defaultDescription = `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla Go|Cards TCG'de.`;
+  const { robots: listingRobots, canonical } = listingRobotsAndCanonical(baseUrl, path, search, SET_FILTER_KEYS);
+  const title = resolveSeoTitle(set.seo_title, `${set.name} Seti Kartları`);
+  const description = resolveSeoDescription(set.seo_description, defaultDescription);
+  const h1 = resolveSeoH1(set.seo_h1, `${set.name} Seti`);
+  const intro = resolveSeoIntro(set.seo_intro, description);
+  const robots = set.seo_no_index ? "noindex, follow" : listingRobots;
 
   return {
     status: 200,
-    title: `${set.name} Seti Kartları | ${SITE_NAME}`,
-    description: truncate(description, 160),
+    title: `${title} | ${SITE_NAME}`,
+    description,
     canonical,
     robots,
     ogType: "website",
@@ -430,7 +446,7 @@ async function renderSet(setSlug: string, baseUrl: string, search: string = ""):
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        name: `${set.name} | ${SITE_NAME}`,
+        name: `${title} | ${SITE_NAME}`,
         url: `${baseUrl}${path}`,
       },
       breadcrumbSchema(baseUrl, [
@@ -446,8 +462,8 @@ async function renderSet(setSlug: string, baseUrl: string, search: string = ""):
           { name: set.game_name, path: `/oyun/${set.game_slug}` },
           { name: set.name, path },
         ])}
-        <h1>${escapeHtml(set.name)} Seti</h1>
-        <p>${escapeHtml(description)}</p>
+        <h1>${escapeHtml(h1)}</h1>
+        <p>${escapeHtml(intro)}</p>
         ${set.total_cards ? `<p>Toplam kart sayısı: ${escapeHtml(String(set.total_cards))}</p>` : ""}
         <section>
           <h2>Kartlar</h2>
@@ -467,9 +483,11 @@ async function renderCard(cardSlug: string, baseUrl: string): Promise<RenderResu
   const lowestListing = card.listings?.[0];
   const inStock = Array.isArray(card.listings) && card.listings.some((l: any) => l.stock > 0);
   const availability = inStock ? "InStock" : "OutOfStock";
-  const description = card.description
-    ? truncate(stripHtml(card.description), 160)
-    : truncate(`${card.name} — ${card.set_name} seti, ${card.rarity || "TCG"} kart. Go|Cards TCG'de gerçek stok ve güncel fiyatla.`, 160);
+  const defaultDescription = card.description
+    ? stripHtml(card.description)
+    : `${card.name} — ${card.set_name} seti, ${card.rarity || "TCG"} kart. Go|Cards TCG'de gerçek stok ve güncel fiyatla.`;
+  const description = resolveSeoDescription(card.seo_description, defaultDescription);
+  const title = resolveSeoTitle(card.seo_title, `${card.name} (${card.set_name})`);
 
   const listingsHtml = (card.listings || [])
     .map((l: any) => `<li>${escapeHtml(l.condition)}: ${formatTRY(l.price)} — ${l.stock > 0 ? `${l.stock} adet stokta` : "Tükendi"}</li>`)
@@ -502,7 +520,7 @@ async function renderCard(cardSlug: string, baseUrl: string): Promise<RenderResu
 
   return {
     status: 200,
-    title: `${truncate(`${card.name} (${card.set_name})`, 70)} | ${SITE_NAME}`,
+    title: `${title} | ${SITE_NAME}`,
     description,
     canonical: `${baseUrl}${path}`,
     robots: "index, follow",
@@ -556,9 +574,11 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
   const category = product.categoryId ? await storage.getCategory(product.categoryId).catch(() => null) : null;
   const rating = await storage.getProductAverageRating(product.id).catch(() => ({ average: 0, count: 0 }));
 
-  const description = product.description
-    ? truncate(stripHtml(product.description), 160)
-    : truncate(`${product.name}${category ? ` — ${category.name}` : ""}. Go|Cards TCG'de ${inStock ? "gerçek stok ve güncel fiyatla" : "yakında stokta"} satışta.`, 160);
+  const defaultDescription = product.description
+    ? stripHtml(product.description)
+    : `${product.name}${category ? ` — ${category.name}` : ""}. Go|Cards TCG'de ${inStock ? "gerçek stok ve güncel fiyatla" : "yakında stokta"} satışta.`;
+  const description = resolveSeoDescription((product as any).seoDescription, defaultDescription);
+  const title = resolveSeoTitle((product as any).seoTitle, product.name);
 
   const breadcrumbItems = category
     ? [
@@ -598,7 +618,7 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
 
   return {
     status: 200,
-    title: `${truncate(product.name, 70)} | ${SITE_NAME}`,
+    title: `${title} | ${SITE_NAME}`,
     description,
     canonical: `${baseUrl}${path}`,
     robots: "index, follow",
@@ -853,17 +873,26 @@ async function renderLegacyCategory(categorySlug: string, baseUrl: string, searc
     .map((p: any) => `<li><a href="/urun/${escapeHtml(p.slug)}">${escapeHtml(p.name)} — ${formatTRY(p.basePrice)}</a></li>`)
     .join("");
 
-  const description = `${category.name} — Go|Cards TCG mağazasında gerçek stok ve güncel fiyatla satışta.`;
+  const defaultDescription = `${category.name} — Go|Cards TCG mağazasında gerçek stok ve güncel fiyatla satışta.`;
   const listingResult = listingRobotsAndCanonical(baseUrl, path, search, CATEGORY_FILTER_KEYS);
+  const title = resolveSeoTitle((category as any).seoTitle, category.name);
+  const description = resolveSeoDescription((category as any).seoDescription, defaultDescription);
+  const h1 = resolveSeoH1((category as any).seoH1, category.name);
+  const intro = resolveSeoIntro((category as any).seoIntro, description);
   // Boş kategori (henüz hiç ürün yok) düşük değerli sayılır ve indexlenmez —
   // ürün eklenince bir sonraki render'da otomatik index,follow'a döner.
-  const robots = products.length === 0 ? "noindex, follow" : listingResult.robots;
+  // Admin seoNoIndex ise her koşulda noindex kalır.
+  const robots = (category as any).seoNoIndex
+    ? "noindex, follow"
+    : products.length === 0
+      ? "noindex, follow"
+      : listingResult.robots;
   const canonical = listingResult.canonical;
 
   return {
     status: 200,
-    title: `${category.name} | ${SITE_NAME}`,
-    description: truncate(description, 160),
+    title: `${title} | ${SITE_NAME}`,
+    description,
     canonical,
     robots,
     ogType: "website",
@@ -873,7 +902,7 @@ async function renderLegacyCategory(categorySlug: string, baseUrl: string, searc
       {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        name: `${category.name} | ${SITE_NAME}`,
+        name: `${title} | ${SITE_NAME}`,
         url: `${baseUrl}${path}`,
       },
       breadcrumbSchema(baseUrl, [{ name: "Ana Sayfa", path: "/" }, { name: category.name, path }]),
@@ -881,8 +910,8 @@ async function renderLegacyCategory(categorySlug: string, baseUrl: string, searc
     bodyHtml: `
       <main>
         ${breadcrumbHtml([{ name: "Ana Sayfa", path: "/" }, { name: category.name, path }])}
-        <h1>${escapeHtml(category.name)}</h1>
-        <p>${escapeHtml(description)}</p>
+        <h1>${escapeHtml(h1.toLocaleUpperCase("tr-TR"))}</h1>
+        <p>${escapeHtml(intro)}</p>
         <ul>${items}</ul>
       </main>
     `,

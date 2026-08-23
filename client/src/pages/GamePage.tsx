@@ -170,13 +170,20 @@ export default function GamePage() {
 
   const gameName = game?.name ?? (gameSlug === 'pokemon' ? 'Pokémon TCG' : gameSlug === 'riftbound' ? 'Riftbound' : gameSlug);
   const ownerPath = GAME_OWNER_PATHS[gameSlug];
+  const defaultDescription = `${gameName} setleri, tekli kartlar, booster pack ve kapalı kutular Go|Cards TCG'de gerçek stok ve güncel fiyatla satışta.`;
+  const seoTitle = game?.seoTitle || `${gameName} Kartları ve Setleri`;
+  const seoDescription = game?.seoDescription || defaultDescription;
+  const seoH1 = game?.seoH1 || `${gameName} Kartları ve Setleri`;
+  const seoIntro = game?.seoIntro || null;
 
   return (
     <div className="min-h-screen" style={{ background: '#09090f' }}>
       <SEO
-        title={`${gameName} Kartları | Go|Cards`}
-        description={`${gameName} single kart ve koleksiyon ürünleri. Go|Cards TCG marketplace.`}
+        title={seoTitle}
+        description={seoDescription}
         url={ownerPath || `/oyun/${gameSlug}`}
+        noIndex={Boolean(game?.seoNoIndex)}
+        noIndexFollow={Boolean(game?.seoNoIndex)}
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },
           { name: gameName, url: `/oyun/${gameSlug}` },
@@ -208,8 +215,11 @@ export default function GamePage() {
             <div className="flex flex-col gap-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight"
                 style={{ fontFamily: 'var(--font-display)' }}>
-                {gameName}
+                {seoH1}
               </h1>
+              {seoIntro && (
+                <p className="text-sm text-white/55 max-w-2xl leading-relaxed">{seoIntro}</p>
+              )}
               <div className="flex items-center gap-3 flex-wrap">
                 {sets.length > 0 && (
                   <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold"

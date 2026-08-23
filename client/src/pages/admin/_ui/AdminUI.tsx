@@ -295,9 +295,11 @@ export function SectionHeading({
 export function InlineAlert({
   tone = 'neutral',
   children,
+  onDismiss,
 }: {
   tone?: 'neutral' | 'success' | 'warning' | 'error';
   children: ReactNode;
+  onDismiss?: () => void;
 }) {
   const toneClass =
     tone === 'success'
@@ -309,10 +311,20 @@ export function InlineAlert({
       : 'bg-neutral-50 border-neutral-200 text-neutral-700';
   return (
     <div
-      className={`px-3 py-2 rounded-md border text-[12px] ${toneClass}`}
+      className={`px-3 py-2 rounded-md border text-[12px] flex items-start justify-between gap-2 ${toneClass}`}
       role={tone === 'error' || tone === 'warning' ? 'alert' : undefined}
     >
-      {children}
+      <span className="flex-1">{children}</span>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 opacity-60 hover:opacity-100 transition-opacity leading-none text-sm"
+          aria-label="Kapat"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

@@ -43,6 +43,11 @@ export interface Category {
   slug: string;
   image?: string;
   displayOrder: number;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoH1?: string | null;
+  seoIntro?: string | null;
+  seoNoIndex?: boolean;
 }
 
 export interface ProductFilters {

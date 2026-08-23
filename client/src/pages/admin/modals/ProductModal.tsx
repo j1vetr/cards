@@ -104,6 +104,8 @@ export default function ProductModal({
     productType: (product as any)?.productType || 'other',
     gameId: (product as any)?.gameId || '',
     initialStock: '',
+    seoTitle: product?.seoTitle || '',
+    seoDescription: product?.seoDescription || '',
   });
 
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -141,6 +143,8 @@ export default function ProductModal({
       productType: (product as any)?.productType || 'other',
       gameId: (product as any)?.gameId || '',
       initialStock: '',
+      seoTitle: product?.seoTitle || '',
+      seoDescription: product?.seoDescription || '',
     });
     setPendingFiles([]);
     setUploadError(null);
@@ -651,10 +655,39 @@ export default function ProductModal({
             </div>
           </section>
 
-          {/* Section 6 — Görünürlük */}
+          {/* Section 6 — SEO */}
           <section>
             <SectionHeading
               number={6}
+              title="SEO"
+              description="Boş bırakılırsa ürün adından ve açıklamasından otomatik üretilir."
+            />
+            <div className="grid grid-cols-1 gap-3">
+              <FormField label="SEO Başlığı" hint="Boşsa ürün adı kullanılır.">
+                <TextInput
+                  type="text"
+                  value={formData.seoTitle}
+                  onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                  placeholder="Örn. Ürün Adı (site adı otomatik eklenir)"
+                  data-testid="input-product-seo-title"
+                />
+              </FormField>
+              <FormField label="Meta Açıklama" hint="Boşsa ürün açıklamasından otomatik üretilir, yaklaşık 160 karakter önerilir.">
+                <TextArea
+                  value={formData.seoDescription}
+                  onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+                  rows={2}
+                  placeholder="Arama sonuçlarında görünecek kısa açıklama"
+                  data-testid="input-product-seo-description"
+                />
+              </FormField>
+            </div>
+          </section>
+
+          {/* Section 7 — Görünürlük */}
+          <section>
+            <SectionHeading
+              number={7}
               title="Görünürlük"
               description="Ürünün mağazadaki yerini kontrol edin."
             />

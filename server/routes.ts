@@ -379,17 +379,21 @@ export async function registerRoutes(
         { loc: "/kvkk", priority: "0.4", changefreq: "yearly" },
       ];
 
-      const [categories, allProducts, productCategoryLinks, cardSetRows, cardRows, blogPosts] = await Promise.all([
+      const [categories, allProducts, productCategoryLinks, cardSetRows, cardRows, blogPosts, cardGameRows] = await Promise.all([
         storage.getCategories().catch(() => []),
         storage.getAllProducts().catch(() => []),
         db.select({ categoryId: productCategories.categoryId, productId: productCategories.productId })
           .from(productCategories).catch(() => []),
-        db.select({ slug: cardSets.slug, updatedAt: cardSets.updatedAt })
+        db.select({ slug: cardSets.slug, updatedAt: cardSets.updatedAt, seoNoIndex: cardSets.seoNoIndex })
           .from(cardSets).where(eq(cardSets.isActive, true)).catch(() => []),
         db.select({ slug: cardsTable.slug, updatedAt: cardsTable.updatedAt })
           .from(cardsTable).where(eq(cardsTable.isActive, true)).catch(() => []),
         storage.getBlogPosts({ status: "published" }).catch(() => []),
+        storage.listCardGames().catch(() => []),
       ]);
+      const noIndexGameSlugs = new Set(
+        (cardGameRows as any[]).filter((g) => g?.seoNoIndex).map((g) => g.slug)
+      );
 
       const escapeXml = (str: string) =>
         str
@@ -424,7 +428,10 @@ export async function registerRoutes(
         urls.push(entry);
       };
 
+      const gameOwnerPathSlugs: Record<string, string> = { "/pokemon": "pokemon", "/riftbound": "riftbound" };
       for (const page of staticPages) {
+        const gameSlug = gameOwnerPathSlugs[page.loc];
+        if (gameSlug && noIndexGameSlugs.has(gameSlug)) continue;
         pushUrl(page.loc, { changefreq: page.changefreq, priority: page.priority });
       }
 
@@ -445,7 +452,7 @@ export async function registerRoutes(
         }
       }
       for (const cat of categories as any[]) {
-        if (!cat?.slug || !activeCategoryIds.has(cat.id)) continue;
+        if (!cat?.slug || !activeCategoryIds.has(cat.id) || cat.seoNoIndex) continue;
         pushUrl(`/kategori/${cat.slug}`, { changefreq: "weekly", priority: "0.8" });
       }
 
@@ -461,7 +468,7 @@ export async function registerRoutes(
       }
 
       for (const set of cardSetRows as any[]) {
-        if (!set?.slug) continue;
+        if (!set?.slug || set.seoNoIndex) continue;
         pushUrl(`/set/${set.slug}`, { lastmod: lastmodOf(set.updatedAt), changefreq: "weekly", priority: "0.6" });
       }
 
@@ -5946,7 +5953,7 @@ ${sections.join("\n\n")}
       const {
         isActive, isFeatured, isNew, isManuallyEdited,
         name, setId, cardNumber, rarity, cardTypes, hp, artist,
-        imageUrl, imageUrlHiRes, description,
+        imageUrl, imageUrlHiRes, description, seoTitle, seoDescription,
       } = req.body;
       const patch: Record<string, unknown> = {};
       if (isActive !== undefined) patch.isActive = isActive;
@@ -5962,6 +5969,10 @@ ${sections.join("\n\n")}
       if (imageUrl !== undefined) patch.imageUrl = imageUrl;
       if (imageUrlHiRes !== undefined) patch.imageUrlHiRes = imageUrlHiRes;
       if (description !== undefined) patch.description = description;
+      // SEO alanları senkronizasyon koruması (isManuallyEdited) tetiklemez —
+      // fiyat/API senkronu bu alanlara hiç dokunmaz.
+      if (seoTitle !== undefined) patch.seoTitle = seoTitle || null;
+      if (seoDescription !== undefined) patch.seoDescription = seoDescription || null;
 
       // Any metadata change marks the card as manually edited (protected from sync).
       const touchesMetadata = [name, setId, cardNumber, rarity, cardTypes, hp, artist, imageUrl, imageUrlHiRes, description]
@@ -6079,8 +6090,15 @@ ${sections.join("\n\n")}
 
   app.put("/api/admin/card-sets/:id", requireAdmin, async (req, res) => {
     try {
-      const { isActive } = req.body;
-      const updated = await storage.updateAdminCardSet(req.params.id, { isActive });
+      const { isActive, seoTitle, seoDescription, seoH1, seoIntro, seoNoIndex } = req.body;
+      const patch: Record<string, unknown> = {};
+      if (isActive !== undefined) patch.isActive = isActive;
+      if (seoTitle !== undefined) patch.seoTitle = seoTitle || null;
+      if (seoDescription !== undefined) patch.seoDescription = seoDescription || null;
+      if (seoH1 !== undefined) patch.seoH1 = seoH1 || null;
+      if (seoIntro !== undefined) patch.seoIntro = seoIntro || null;
+      if (seoNoIndex !== undefined) patch.seoNoIndex = seoNoIndex;
+      const updated = await storage.updateAdminCardSet(req.params.id, patch as any);
       if (!updated) return res.status(404).json({ error: "Set bulunamadı" });
       res.json(updated);
     } catch (err) {
@@ -6112,6 +6130,23 @@ ${sections.join("\n\n")}
       res.json(games);
     } catch (err) {
       res.status(500).json({ error: "Oyunlar yüklenemedi" });
+    }
+  });
+
+  app.patch("/api/admin/card-games/:id", requireAdmin, async (req, res) => {
+    try {
+      const { seoTitle, seoDescription, seoH1, seoIntro, seoNoIndex } = req.body;
+      const patch: Record<string, unknown> = {};
+      if (seoTitle !== undefined) patch.seoTitle = seoTitle || null;
+      if (seoDescription !== undefined) patch.seoDescription = seoDescription || null;
+      if (seoH1 !== undefined) patch.seoH1 = seoH1 || null;
+      if (seoIntro !== undefined) patch.seoIntro = seoIntro || null;
+      if (seoNoIndex !== undefined) patch.seoNoIndex = seoNoIndex;
+      const updated = await storage.updateCardGame(req.params.id, patch as any);
+      if (!updated) return res.status(404).json({ error: "Oyun bulunamadı" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Oyun güncellenemedi" });
     }
   });
 

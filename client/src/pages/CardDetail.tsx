@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { stripHtmlToText } from '@shared/seoText';
 import { Header } from '@/components/Header';
 import { SEO } from '@/components/SEO';
 import { useCardDetail, useSimilarCards } from '@/hooks/useTcg';
@@ -807,8 +808,13 @@ export default function CardDetail() {
   return (
     <div style={{ background: '#09090f' }} className="min-h-screen">
       <SEO
-        title={`${card.name} — ${card.set_name}`}
-        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name} seti${card.card_number ? `, #${card.card_number}` : ''}. Go|Cards TCG'de ${stock !== null && stock > 0 ? 'gerçek stok ve güncel fiyatla' : 'yakında stokta'} satışta.`}
+        title={card.seo_title || `${card.name} (${card.set_name})`}
+        description={
+          card.seo_description ||
+          (card.description
+            ? stripHtmlToText(card.description)
+            : `${card.name} — ${card.set_name} seti, ${card.rarity || 'TCG'} kart. Go|Cards TCG'de gerçek stok ve güncel fiyatla.`)
+        }
         image={imgSrc}
         url={`/kart/${card.slug}`}
         type="product"

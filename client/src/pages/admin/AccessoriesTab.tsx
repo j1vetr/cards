@@ -130,6 +130,7 @@ export default function AccessoriesTab() {
       isActive: true,
       isFeatured: false,
       isNew: false,
+      stock: 0,
     } as ProductDraft);
     setShowModal(true);
   };

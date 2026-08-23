@@ -78,6 +78,11 @@ export const categories = pgTable("categories", {
   slug: text("slug").notNull().unique(),
   image: text("image"),
   displayOrder: integer("display_order").default(0).notNull(),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoH1: text("seo_h1"),
+  seoIntro: text("seo_intro"),
+  seoNoIndex: boolean("seo_no_index").default(false).notNull(),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -108,6 +113,8 @@ export const products = pgTable("products", {
   productType: text("product_type").default('other').notNull(),
   stock: integer("stock").default(1).notNull(),
   linkedSetId: varchar("linked_set_id").references(() => cardSets.id),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -168,6 +175,11 @@ export const cardGames = pgTable("card_games", {
   slug: text("slug").notNull().unique(),
   logoUrl: text("logo_url"),
   isActive: boolean("is_active").default(true).notNull(),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoH1: text("seo_h1"),
+  seoIntro: text("seo_intro"),
+  seoNoIndex: boolean("seo_no_index").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -189,6 +201,11 @@ export const cardSets = pgTable("card_sets", {
   apiId: text("api_id"),           // external API ID (e.g. 'sv8' for Pokemon)
   apiSource: text("api_source"),   // 'pokemon_tcg' | 'riftbound'
   isActive: boolean("is_active").default(true).notNull(),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoH1: text("seo_h1"),
+  seoIntro: text("seo_intro"),
+  seoNoIndex: boolean("seo_no_index").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -231,6 +248,8 @@ export const cards = pgTable("cards", {
   // Manual-edit protection: when true, card sync must not overwrite metadata with API data
   isManuallyEdited: boolean("is_manually_edited").default(false).notNull(),
   manuallyEditedAt: timestamp("manually_edited_at"),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => ({

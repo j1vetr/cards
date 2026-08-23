@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { CANONICAL_SITE_URL, SITE_NAME } from '@shared/siteConfig';
+import { truncateSeoText } from '@shared/seoText';
 
 interface SEOProps {
   title?: string;
@@ -60,7 +61,13 @@ export function SEO({
   product,
   breadcrumbs
 }: SEOProps) {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
+  // SSR (server/seo/seoDefaults.ts) ile birebir aynı kırpma sözleşmesi:
+  // sayfaya özgü başlık/açıklama 70/160 karaktere kırpılır, site adı eki
+  // (" | SITE_NAME") bundan SONRA ve yalnızca burada eklenir — admin SEO
+  // override alanlarına site adını dahil etmek gerekmez.
+  const clampedTitle = title ? truncateSeoText(title, 70) : undefined;
+  const clampedDescription = truncateSeoText(description, 160);
+  const fullTitle = clampedTitle ? `${clampedTitle} | ${SITE_NAME}` : DEFAULT_TITLE;
   // `url` verilmediğinde de mevcut host yerine canonical domain + gerçek
   // pathname kullanılır (window.location.href asla host kaynağı olarak
   // kullanılmaz — bkz. BASE_URL notu).
@@ -77,7 +84,7 @@ export function SEO({
       }
     };
 
-    updateMetaTag('meta[name="description"]', description);
+    updateMetaTag('meta[name="description"]', clampedDescription);
     updateMetaTag('meta[name="robots"]', noIndex ? (noIndexFollow ? 'noindex, follow' : 'noindex, nofollow') : 'index, follow');
 
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -90,12 +97,12 @@ export function SEO({
     canonical.setAttribute('href', fullUrl);
 
     updateMetaTag('meta[property="og:title"]', fullTitle);
-    updateMetaTag('meta[property="og:description"]', description);
+    updateMetaTag('meta[property="og:description"]', clampedDescription);
     updateMetaTag('meta[property="og:url"]', fullUrl);
     updateMetaTag('meta[property="og:type"]', type);
     updateMetaTag('meta[property="og:image"]', imageUrl);
     updateMetaTag('meta[name="twitter:title"]', fullTitle);
-    updateMetaTag('meta[name="twitter:description"]', description);
+    updateMetaTag('meta[name="twitter:description"]', clampedDescription);
     updateMetaTag('meta[name="twitter:image"]', imageUrl);
 
     const existingSchema = document.querySelector('script[data-schema="seo"]');
@@ -143,7 +150,7 @@ export function SEO({
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
-        description: description,
+        description: clampedDescription,
         image: productImages,
         offers: {
           '@type': 'Offer',

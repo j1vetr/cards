@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
-import { useCardSets, useCards } from '@/hooks/useTcg';
+import { useCardSets, useCards, useCardGames } from '@/hooks/useTcg';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Package, Layers, HelpCircle, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -56,6 +56,8 @@ const FAQ_ITEMS = [
 export default function RiftboundPage() {
   const { data: sets = [], isLoading: setsLoading } = useCardSets('riftbound');
   const { data: cardsData, isLoading: cardsLoading } = useCards({ game: 'riftbound', limit: 8, sort: 'newest' });
+  const { data: games = [] } = useCardGames();
+  const game = games.find((g) => g.slug === 'riftbound');
   const { data: boxes = [], isLoading: boxesLoading } = useBoxProducts('riftbound');
 
   const cards = cardsData?.cards ?? [];
@@ -68,10 +70,12 @@ export default function RiftboundPage() {
   return (
     <>
       <SEO
-        title="League of Legends Riftbound TCG Ürünleri ve Kartları"
-        description="Türkiye'nin LoL TCG mağazası Go|Cards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."
+        title={game?.seoTitle || "League of Legends Riftbound TCG Ürünleri ve Kartları"}
+        description={game?.seoDescription || "Türkiye'nin LoL TCG mağazası Go|Cards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."}
         url="/riftbound"
         type="website"
+        noIndex={Boolean(game?.seoNoIndex)}
+        noIndexFollow={Boolean(game?.seoNoIndex)}
         breadcrumbs={breadcrumbs}
       />
 
@@ -105,13 +109,18 @@ export default function RiftboundPage() {
 
               <div>
                 {/* H1 — primary SEO target */}
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
-                  League of Legends Riftbound TCG<br />
-                  <span style={{ color: ACCENT }}>Ürünleri ve Kartları</span>
-                </h1>
+                {game?.seoH1 ? (
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
+                    {game.seoH1}
+                  </h1>
+                ) : (
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
+                    League of Legends Riftbound TCG<br />
+                    <span style={{ color: ACCENT }}>Ürünleri ve Kartları</span>
+                  </h1>
+                )}
                 <p className="mt-3 text-sm sm:text-base text-white/55 max-w-2xl leading-relaxed">
-                  Riot Games'in resmi League of Legends kart oyunu Riftbound TCG'nin tüm booster paketleri,
-                  kapalı kutuları ve tek kartlarını Go|Cards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo.
+                  {game?.seoIntro || "Riot Games'in resmi League of Legends kart oyunu Riftbound TCG'nin tüm booster paketleri, kapalı kutuları ve tek kartlarını Go|Cards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo."}
                 </p>
 
                 <div className="flex flex-wrap gap-3 mt-5">

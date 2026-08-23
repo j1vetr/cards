@@ -32,6 +32,7 @@ interface AdminCard {
   card_number: string | null; rarity: string | null; image_url: string | null;
   image_url_hi_res: string | null; card_types: string[] | null; hp: number | null;
   artist: string | null; description: string | null;
+  seo_title: string | null; seo_description: string | null;
   is_active: boolean; is_featured: boolean; is_new: boolean;
   is_manually_edited: boolean;
   set_id: string; set_name: string; game_id: string; game_name: string;
@@ -521,6 +522,8 @@ function EditCardModal({ card, games, allSets, onClose }: {
   const [imageUrl, setImageUrl] = useState(card.image_url ?? '');
   const [imageUrlHiRes, setImageUrlHiRes] = useState(card.image_url_hi_res ?? '');
   const [description, setDescription] = useState(card.description ?? '');
+  const [seoTitle, setSeoTitle] = useState((card as any).seo_title ?? '');
+  const [seoDescription, setSeoDescription] = useState((card as any).seo_description ?? '');
   const [error, setError] = useState('');
 
   const filteredSets = gameId ? allSets.filter((s) => s.game_id === gameId) : allSets;
@@ -540,6 +543,8 @@ function EditCardModal({ card, games, allSets, onClose }: {
         imageUrl: imageUrl || null,
         imageUrlHiRes: imageUrlHiRes || null,
         description: description || null,
+        seoTitle: seoTitle || null,
+        seoDescription: seoDescription || null,
       }),
     }),
     onSuccess: () => {
@@ -661,6 +666,23 @@ function EditCardModal({ card, games, allSets, onClose }: {
             <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
               className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400 resize-none"
               data-testid="textarea-edit-description" />
+          </div>
+          <div className="pt-2 border-t border-neutral-100">
+            <p className="text-[11px] font-medium text-neutral-500 uppercase tracking-wide mb-2">SEO</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-medium text-neutral-600 mb-1">SEO Başlığı</label>
+                <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)}
+                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
+                  placeholder="Boşsa otomatik üretilir" data-testid="input-edit-seo-title" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-neutral-600 mb-1">Meta Açıklama</label>
+                <textarea rows={2} value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)}
+                  className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400 resize-none"
+                  placeholder="Boşsa otomatik üretilir" data-testid="textarea-edit-seo-description" />
+              </div>
+            </div>
           </div>
           {error && <p className="text-[12px] text-red-600">{error}</p>}
         </div>

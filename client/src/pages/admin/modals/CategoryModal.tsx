@@ -9,6 +9,7 @@ import {
   SectionHeading,
   FormField,
   TextInput,
+  TextArea,
   InlineAlert,
 } from '../_ui/AdminUI';
 
@@ -55,6 +56,11 @@ export default function CategoryModal({
     slug: category?.slug || '',
     image: category?.image || '',
     displayOrder: category?.displayOrder ?? 0,
+    seoTitle: category?.seoTitle || '',
+    seoDescription: category?.seoDescription || '',
+    seoH1: category?.seoH1 || '',
+    seoIntro: category?.seoIntro || '',
+    seoNoIndex: category?.seoNoIndex ?? false,
   });
   const [slugAuto, setSlugAuto] = useState<boolean>(!category);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -78,6 +84,11 @@ export default function CategoryModal({
       slug: category?.slug || '',
       image: category?.image || '',
       displayOrder: category?.displayOrder ?? 0,
+      seoTitle: category?.seoTitle || '',
+      seoDescription: category?.seoDescription || '',
+      seoH1: category?.seoH1 || '',
+      seoIntro: category?.seoIntro || '',
+      seoNoIndex: category?.seoNoIndex ?? false,
     });
     setSlugAuto(!category);
     setPendingFile(null);
@@ -158,6 +169,11 @@ export default function CategoryModal({
       slug: finalSlug,
       image: imageUrl,
       displayOrder: formData.displayOrder,
+      seoTitle: formData.seoTitle.trim() || null,
+      seoDescription: formData.seoDescription.trim() || null,
+      seoH1: formData.seoH1.trim() || null,
+      seoIntro: formData.seoIntro.trim() || null,
+      seoNoIndex: formData.seoNoIndex,
     });
   };
 
@@ -347,6 +363,77 @@ export default function CategoryModal({
           <p className="text-[11px] text-neutral-500">
             Liste ekranından sürükle-bırak ile de yeniden sıralayabilirsiniz.
           </p>
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeading
+            number={4}
+            title="SEO"
+            description="Boş bırakılırsa otomatik SEO değerleri kullanılır."
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="SEO Başlığı" hint="Boşsa kategori adından otomatik üretilir.">
+              <TextInput
+                id="category-seo-title"
+                value={formData.seoTitle}
+                onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                placeholder="Örn. Üst Giyim Koleksiyonu (site adı otomatik eklenir)"
+                data-testid="input-category-seo-title"
+              />
+            </FormField>
+            <FormField label="SEO H1" hint="Boşsa kategori adı kullanılır.">
+              <TextInput
+                id="category-seo-h1"
+                value={formData.seoH1}
+                onChange={(e) => setFormData({ ...formData, seoH1: e.target.value })}
+                placeholder="Örn. Üst Giyim Koleksiyonu"
+                data-testid="input-category-seo-h1"
+              />
+            </FormField>
+          </div>
+          <FormField label="Meta Açıklama" hint="Boşsa otomatik oluşturulur, yaklaşık 160 karakter önerilir.">
+            <TextArea
+              id="category-seo-description"
+              value={formData.seoDescription}
+              onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+              rows={2}
+              placeholder="Arama sonuçlarında görünecek kısa açıklama"
+              data-testid="input-category-seo-description"
+            />
+          </FormField>
+          <FormField label="Giriş Metni" hint="Sayfa üstünde H1'in altında gösterilir.">
+            <TextArea
+              id="category-seo-intro"
+              value={formData.seoIntro}
+              onChange={(e) => setFormData({ ...formData, seoIntro: e.target.value })}
+              rows={2}
+              placeholder="Kategori sayfasında kısa bir tanıtım metni"
+              data-testid="input-category-seo-intro"
+            />
+          </FormField>
+          <label className="flex items-center justify-between p-3 border border-neutral-200 rounded-md bg-white cursor-pointer hover:bg-neutral-50">
+            <div>
+              <p className="text-[13px] font-medium text-neutral-900">Arama Motorlarından Gizle</p>
+              <p className="text-[11px] text-neutral-500 mt-0.5">
+                Açıksa bu kategori arama sonuçlarında indexlenmez.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, seoNoIndex: !formData.seoNoIndex })}
+              className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
+                formData.seoNoIndex ? 'bg-emerald-500' : 'bg-neutral-300'
+              }`}
+              aria-pressed={formData.seoNoIndex}
+              data-testid="toggle-category-seo-noindex"
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow ${
+                  formData.seoNoIndex ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </label>
         </section>
 
         <div className="sm:hidden flex flex-col gap-2 pt-2">
