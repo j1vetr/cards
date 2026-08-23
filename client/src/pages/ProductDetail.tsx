@@ -655,7 +655,7 @@ export default function ProductDetail() {
         title={product.name}
         description={
           product.description?.replace(/<[^>]*>/g, '').slice(0, 160) ||
-          `${product.name}. Marka güncel giyim koleksiyonundan.`
+          `${product.name}${category ? ` — ${category.name}` : ''}. Go|Cards TCG'de ${isOutOfStock ? 'yakında stokta' : 'gerçek stok ve güncel fiyatla'} satışta.`
         }
         image={images[0]}
         url={`/urun/${product.slug}`}
@@ -666,9 +666,9 @@ export default function ProductDetail() {
           currency: 'TRY',
           availability: isOutOfStock ? 'OutOfStock' : 'InStock',
           sku: product.sku || undefined,
-          brand: 'GoCards TCG',
           category: category?.name,
           images,
+          rating: ratingData && ratingData.count > 0 ? { average: ratingData.average, count: ratingData.count } : undefined,
         }}
         breadcrumbs={[
           { name: 'Ana Sayfa', url: '/' },

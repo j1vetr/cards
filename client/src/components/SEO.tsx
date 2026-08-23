@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { CANONICAL_SITE_URL } from '@shared/siteConfig';
+import { CANONICAL_SITE_URL, SITE_NAME } from '@shared/siteConfig';
 
 interface SEOProps {
   title?: string;
@@ -10,22 +10,25 @@ interface SEOProps {
   noIndex?: boolean;
   product?: {
     name: string;
-    price: number;
+    /** null/undefined = gerçek bir fiyat verisi yok (ör. hiç aktif liste yok); alan şemadan tamamen çıkarılır */
+    price?: number | null;
     currency?: string;
     availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
     sku?: string;
+    /** Sadece gerçek bir üretici/marka verisi varsa doldurulur — mağaza adı marka olarak kullanılmaz */
     brand?: string;
     category?: string;
     images?: string[];
     /** TCG card condition, e.g. 'NM' | 'LP' | 'MP' | 'HP' | 'DMG' | 'PSA10' */
     condition?: string;
+    /** Gerçek onaylı değerlendirme verisi varsa doldurulur (sahte veri üretilmez) */
+    rating?: { average: number; count: number };
   };
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
 const DEFAULT_TITLE = 'Go|Cards — Riftbound & Pokémon TCG Kart Oyunları';
 const DEFAULT_DESCRIPTION = 'Go|Cards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
-const SITE_NAME = 'Go|Cards';
 // NOT: window.location.origin KULLANILMAZ — eski domain (gocards.toov.com.tr),
 // www ön eki veya bir replit.dev önizleme host'undan JS mount olduğunda
 // canonical/OG URL'lerin yanlış host'u reklam etmesini önlemek için sabit
@@ -130,32 +133,41 @@ export function SEO({
         : [imageUrl];
       
       const schemaCondition = toSchemaCondition(product.condition);
+      const hasPrice = typeof product.price === 'number' && !Number.isNaN(product.price);
       const productSchema: any = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
         description: description,
         image: productImages,
-        brand: {
-          '@type': 'Brand',
-          name: product.brand || 'GoCards TCG'
-        },
         offers: {
           '@type': 'Offer',
           url: fullUrl,
           priceCurrency: product.currency || 'TRY',
-          price: product.price,
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
             name: 'GoCards TCG',
             url: CANONICAL_SITE_URL
           },
+          ...(hasPrice ? { price: product.price } : {}),
           ...(schemaCondition ? { itemCondition: schemaCondition } : {}),
         }
       };
+      // Marka sadece gerçek bir üretici/yayıncı verisi varsa eklenir — mağaza adı marka olarak kullanılmaz
+      if (product.brand) {
+        productSchema.brand = { '@type': 'Brand', name: product.brand };
+      }
       if (product.sku) productSchema.sku = product.sku;
       if (product.category) productSchema.category = product.category;
+      // Sahte/varsayılan puan üretilmez — sadece gerçek onaylı değerlendirme verisi varsa eklenir
+      if (product.rating && product.rating.count > 0) {
+        productSchema.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: product.rating.average,
+          reviewCount: product.rating.count,
+        };
+      }
       schemas.push(productSchema);
     }
 

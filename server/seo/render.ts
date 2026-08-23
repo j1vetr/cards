@@ -501,7 +501,7 @@ async function renderCard(cardSlug: string, baseUrl: string): Promise<RenderResu
 
   return {
     status: 200,
-    title: `${card.name} (${card.set_name}) | ${SITE_NAME}`,
+    title: `${truncate(`${card.name} (${card.set_name})`, 70)} | ${SITE_NAME}`,
     description,
     canonical: `${baseUrl}${path}`,
     robots: "index, follow",
@@ -551,11 +551,13 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
   const image = product.images && product.images.length > 0 ? normalizeImageUrl(baseUrl, product.images[0]) : `${baseUrl}/logo.png`;
   const price = parseFloat(product.basePrice || "0");
   const inStock = (product.stock ?? 0) > 0;
-  const description = product.description
-    ? truncate(stripHtml(product.description), 160)
-    : truncate(`${product.name} — ${SITE_NAME} mağazasında satın al.`, 160);
 
   const category = product.categoryId ? await storage.getCategory(product.categoryId).catch(() => null) : null;
+  const rating = await storage.getProductAverageRating(product.id).catch(() => ({ average: 0, count: 0 }));
+
+  const description = product.description
+    ? truncate(stripHtml(product.description), 160)
+    : truncate(`${product.name}${category ? ` — ${category.name}` : ""}. Go|Cards TCG'de ${inStock ? "gerçek stok ve güncel fiyatla" : "yakında stokta"} satışta.`, 160);
 
   const breadcrumbItems = category
     ? [
@@ -568,39 +570,45 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
         { name: product.name, path },
       ];
 
+  const productSchema: any = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description,
+    image: [image],
+    sku: product.id,
+    offers: {
+      "@type": "Offer",
+      url: `${baseUrl}${path}`,
+      priceCurrency: "TRY",
+      price,
+      availability: `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`,
+      seller: { "@type": "Organization", name: "GoCards TCG", url: baseUrl },
+    },
+  };
+  // Sahte/varsayılan puan üretilmez — sadece gerçek onaylı değerlendirme verisi varsa eklenir
+  if (rating && rating.count > 0) {
+    productSchema.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: rating.average,
+      reviewCount: rating.count,
+    };
+  }
+
   return {
     status: 200,
-    title: `${product.name} | ${SITE_NAME}`,
+    title: `${truncate(product.name, 70)} | ${SITE_NAME}`,
     description,
     canonical: `${baseUrl}${path}`,
     robots: "index, follow",
     ogType: "product",
     ogImage: image,
-    jsonLd: [
-      orgSchema(baseUrl),
-      {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        name: product.name,
-        description,
-        image: [image],
-        sku: product.id,
-        offers: {
-          "@type": "Offer",
-          url: `${baseUrl}${path}`,
-          priceCurrency: "TRY",
-          price,
-          availability: `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`,
-          seller: { "@type": "Organization", name: "GoCards TCG", url: baseUrl },
-        },
-      },
-      breadcrumbSchema(baseUrl, breadcrumbItems),
-    ],
+    jsonLd: [orgSchema(baseUrl), productSchema, breadcrumbSchema(baseUrl, breadcrumbItems)],
     bodyHtml: `
       <main>
         ${breadcrumbHtml(breadcrumbItems)}
         <h1>${escapeHtml(product.name)}</h1>
-        <img src="${escapeHtml(image)}" alt="${escapeHtml(product.name)}" width="600" height="600">
+        <img src="${escapeHtml(image)}" alt="${escapeHtml(product.name)} ürün görseli" width="600" height="600">
         <p>${escapeHtml(description)}</p>
         <p>Fiyat: ${formatTRY(price)}</p>
         <p>${inStock ? `Stokta (${product.stock} adet)` : "Tükendi"}</p>

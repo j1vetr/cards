@@ -213,7 +213,7 @@ function HoloCard({ src, alt, accent }: { src: string; alt: string; accent?: str
         filter: 'blur(52px)', transform: 'scale(1.6)',
       }} />
       <motion.div style={{ rotateX: springX, rotateY: springY, transformStyle: 'preserve-3d' }} className="relative z-10">
-        <img src={imgSrc} alt={alt} onError={() => setImgSrc(FALLBACK)} draggable={false}
+        <img src={imgSrc} alt={alt} width={400} height={558} onError={() => setImgSrc(FALLBACK)} draggable={false}
           className="h-auto"
           style={{
             width: 'clamp(260px, 85%, 400px)',
@@ -807,19 +807,18 @@ export default function CardDetail() {
   return (
     <div style={{ background: '#09090f' }} className="min-h-screen">
       <SEO
-        title={`${card.name} — ${card.set_name} | Go|Cards`}
-        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name}. Go|Cards Türkiye'nin TCG mağazasında satın al.`}
+        title={`${card.name} — ${card.set_name}`}
+        description={`${card.name}${card.rarity ? ' (' + card.rarity + ')' : ''} — ${card.set_name} seti${card.card_number ? `, #${card.card_number}` : ''}. Go|Cards TCG'de ${stock !== null && stock > 0 ? 'gerçek stok ve güncel fiyatla' : 'yakında stokta'} satışta.`}
         image={imgSrc}
         url={`/kart/${card.slug}`}
         type="product"
         product={{
           name: card.name,
-          price: price ?? 0,
+          price: sortedListings.length > 0 ? price : null,
           currency: 'TRY',
           availability: (stock !== null && stock > 0) ? 'InStock' : 'OutOfStock',
-          sku: card.api_id || undefined,
-          brand: card.game_name || 'Go|Cards',
-          category: card.rarity || undefined,
+          sku: card.id || undefined,
+          category: card.set_name || undefined,
           images: imgSrc ? [imgSrc] : [],
           condition: selectedListing?.condition || undefined,
         }}
@@ -862,7 +861,7 @@ export default function CardDetail() {
 
           {/* LEFT — card image column */}
           <div className="flex flex-col items-center">
-            <HoloCard src={imgSrc} alt={card.name} accent={glowAccent} />
+            <HoloCard src={imgSrc} alt={`${card.name} kart görseli — ${card.set_name}`} accent={glowAccent} />
             {(card.set_logo_url || card.set_symbol_url) && (
               <div className="flex items-center gap-3 mt-1 opacity-40 hover:opacity-70 transition-opacity">
                 {card.set_logo_url && <img src={card.set_logo_url} alt={card.set_name} className="h-8 object-contain" />}
@@ -912,7 +911,7 @@ export default function CardDetail() {
           </div>
 
           {/* Mobile card image */}
-          <HoloCard src={imgSrc} alt={card.name} accent={glowAccent} />
+          <HoloCard src={imgSrc} alt={`${card.name} kart görseli — ${card.set_name}`} accent={glowAccent} />
 
           {/* Mobile: Riftbound card type chips */}
           {!isPokemon && cardTypes.length > 0 && (
