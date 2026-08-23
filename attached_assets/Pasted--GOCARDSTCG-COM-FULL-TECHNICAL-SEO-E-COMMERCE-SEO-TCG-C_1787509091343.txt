@@ -1,0 +1,2575 @@
+# GOCARDSTCG.COM FULL TECHNICAL SEO + E-COMMERCE SEO + TCG CATEGORY SEO + PRODUCT SEO + LLM / AI SEARCH OPTIMIZATION
+
+Website:
+
+https://gocardstcg.com
+
+Primary Brand:
+
+GoCards TCG
+
+Primary Market:
+
+Türkiye
+
+Primary Business:
+
+Trading Card Game ürünleri satan e-ticaret / marketplace yapısı.
+
+IMPORTANT:
+
+Bu çalışma birkaç meta tag değiştirme çalışması değildir.
+
+Mevcut GoCards TCG projesini baştan sona incele ve mevcut tasarımı, kullanıcı hesaplarını, sepeti, ödeme sistemini, stok yapısını, ürünleri, sipariş sistemini ve çalışan fonksiyonları BOZMADAN tam kapsamlı SEO altyapısı oluştur.
+
+Sadece SEO raporu hazırlama.
+
+DOĞRUDAN UYGULA.
+
+---
+
+# 1. EN ÖNEMLİ SEO HEDEFLERİ
+
+GoCards için en önemli ana keyword cluster'ları:
+
+## PRIMARY RIFTBOUND KEYWORDS
+
+* riftbound
+* riftbound cards
+* riftbound tcg
+* riftbound kartları
+* riftbound kart
+* riftbound türkiye
+* riftbound tcg türkiye
+* riftbound kart satın al
+* riftbound cards turkey
+* league of legends tcg
+* league of legends kartları
+* lol tcg
+* lol kartları
+
+## PRIMARY POKEMON KEYWORDS
+
+* pokemon tcg
+* pokemon cards
+* pokemon kartları
+* pokemon kart
+* pokemon kart satın al
+* pokemon tcg türkiye
+* pokemon cards turkey
+* pokemon booster
+* pokemon booster pack
+* pokemon booster box
+* pokemon elite trainer box
+* pokemon etb
+
+Bu iki ana topic:
+
+RIFTBOUND
+
+ve
+
+POKEMON TCG
+
+site SEO mimarisinin merkezinde olacak.
+
+---
+
+# 2. SECONDARY RIFTBOUND COMMERCIAL KEYWORDS
+
+Inventory gerçekten mevcutsa aşağıdaki commercial intent'leri hedefle:
+
+* riftbound booster pack
+* riftbound booster
+* riftbound booster box
+* riftbound booster display
+* riftbound starter deck
+* riftbound champion deck
+* riftbound proving grounds
+* riftbound sealed products
+* riftbound single cards
+* riftbound tekli kart
+* riftbound kart fiyatları
+* riftbound card prices
+* riftbound preorder
+* riftbound ön sipariş
+
+Set bazlı sorgular:
+
+* riftbound origins
+
+* riftbound origins cards
+
+* riftbound origins booster
+
+* riftbound origins booster box
+
+* riftbound spiritforged
+
+* riftbound spiritforged cards
+
+* riftbound spiritforged booster
+
+* riftbound spiritforged booster box
+
+* riftbound unleashed
+
+* riftbound unleashed cards
+
+* riftbound unleashed booster
+
+* riftbound unleashed booster box
+
+* riftbound vendetta
+
+* riftbound vendetta cards
+
+* riftbound vendetta booster
+
+* riftbound vendetta booster box
+
+Yeni setler çıktığında hardcode edilmiş SEO mimarisini tekrar yazmak zorunda kalmayalım.
+
+Set/category sistemi DATA DRIVEN olsun.
+
+Yeni bir gerçek Riftbound set'i sisteme eklendiğinde uygun SEO category/landing metadata üretilebilsin.
+
+Ancak olmayan veya satılmayan ürün/set için boş SEO landing page oluşturma.
+
+---
+
+# 3. SECONDARY POKEMON COMMERCIAL KEYWORDS
+
+Gerçek inventory'ye göre:
+
+* pokemon booster pack
+* pokemon booster box
+* pokemon etb
+* pokemon elite trainer box
+* pokemon collection box
+* pokemon blister
+* pokemon tin
+* pokemon single cards
+* pokemon tekli kart
+* pokemon card prices
+* pokemon kart fiyatları
+* pokemon tcg booster
+* pokemon tcg cards
+* pokemon trading cards
+* pokemon sealed products
+
+Karakter bazlı commercial search intent ancak gerçek inventory varsa değerlendir:
+
+* pikachu cards
+* pikachu pokemon cards
+* charizard cards
+* charizard pokemon cards
+
+Sırf keyword almak için boş Pikachu veya Charizard landing page oluşturma.
+
+Gerçek ürün sayısı yeterliyse curated collection page kullanılabilir.
+
+---
+
+# 4. CURRENT PROJECT FIRST AUDIT
+
+Kod değişikliğine başlamadan önce mevcut projeyi analiz et:
+
+* framework
+* React / Next / Vite / Express vb.
+* routing
+* backend
+* database
+* product database
+* category model
+* brand model
+* stock system
+* pricing
+* campaign pricing
+* variants
+* images
+* user account
+* favorites
+* cart
+* checkout
+* payment
+* order system
+* search
+* filters
+* pagination
+* API
+* admin panel
+* SSR / CSR state
+* sitemap
+* robots
+* canonical
+* existing metadata
+* JSON-LD
+* current redirects
+* current 404 behavior
+
+SEO için çalışan ecommerce sistemini yeniden yazma.
+
+---
+
+# 5. DO NOT BREAK EXISTING FEATURES
+
+Kesinlikle bozma:
+
+* login
+* register
+* cart
+* checkout
+* favorites
+* payment
+* orders
+* inventory
+* pricing
+* campaign pricing
+* admin
+* stock tracking
+* product images
+* product variants
+* search
+* category filters
+* WhatsApp
+* existing legal pages
+* responsive design
+* existing product URLs unless redirect strategy exists
+
+---
+
+# 6. BUSINESS FACT SAFETY
+
+SEO uğruna bilgi UYDURMA.
+
+Aşağıdakileri project/database/site doğrulamıyorsa yazma:
+
+* resmi distribütör
+* yetkili satıcı
+* Riot Games partner
+* Pokémon official partner
+* Türkiye'nin en büyük mağazası
+* Türkiye'nin ilk mağazası
+* en ucuz fiyat garantisi
+* orijinallik garantisi
+* teslimat süresi
+* müşteri sayısı
+* satış adedi
+* stok
+* rating
+* reviews
+* awards
+
+GoCards'ın Riot Games, Riftbound, Pokémon veya ilgili hak sahipleriyle resmi bir ticari bağlantısı project data içinde açıkça doğrulanmıyorsa:
+
+"official distributor"
+
+"official Riot Games partner"
+
+"authorized Pokémon retailer"
+
+gibi ifadeler KULLANMA.
+
+---
+
+# 7. BRAND ENTITY
+
+Primary organization:
+
+GoCards TCG
+
+Mevcut yasal şirket adı doğrulanmışsa Organization schema içinde kullanılabilir.
+
+Current domain:
+
+https://gocardstcg.com/
+
+Tek source of truth oluştur:
+
+* business name
+* domain
+* email
+* telephone
+* company information
+* social profiles
+
+Site genelinde farklı eski domainler kullanılmamalı.
+
+---
+
+# 8. LEGACY DOMAIN CLEANUP
+
+Mevcut legal/content pages içinde eski:
+
+gocards.toov.com.tr
+
+referansları bulunuyor olabilir.
+
+Tüm project'i ara.
+
+Eğer production canonical domain artık:
+
+https://gocardstcg.com
+
+ise kullanıcıya gösterilen domain referanslarını güncelle.
+
+ANCAK:
+
+KVKK, Mesafeli Satış Sözleşmesi veya diğer legal metinlerin hukuki içeriğini kendi başına yeniden yazma.
+
+Sadece açıkça eski/staging website URL'si ise source-of-truth'a göre düzelt.
+
+Legal değişiklik gerekiyorsa final report'ta manual verification olarak belirt.
+
+---
+
+# 9. KEYWORD OWNERSHIP STRATEGY
+
+Cannibalization istemiyorum.
+
+Her ana keyword'in TEK güçlü commercial owner URL'si olmalı.
+
+Beklenen yapı:
+
+RIFTBOUND:
+canonical commercial category / hub
+
+POKEMON TCG:
+canonical commercial category / hub
+
+Aynı keyword için:
+
+homepage
+category
+guide
+tag
+search result page
+
+birbirleriyle yarışmasın.
+
+---
+
+# 10. RIFTBOUND PRIMARY OWNER PAGE
+
+Mevcut category routing sistemini önce incele.
+
+Tercih edilen temiz yapı örneği:
+
+/kategori/riftbound
+
+veya project'in mevcut kategori standardı neyse onu kullan.
+
+PRIMARY:
+
+riftbound
+
+SECONDARY:
+
+* riftbound tcg
+* riftbound cards
+* riftbound kartları
+* riftbound türkiye
+* league of legends tcg
+
+Örnek TITLE:
+
+Riftbound TCG Kartları & Ürünleri | GoCards TCG
+
+Alternatif:
+
+Riftbound Cards Türkiye | Riftbound TCG | GoCards
+
+H1:
+
+Riftbound TCG
+
+veya:
+
+Riftbound Kartları ve TCG Ürünleri
+
+Category page yalnızca product grid olmasın.
+
+İçerisinde:
+
+* kısa commercial intro
+* available product types
+* available sets
+* featured products
+* booster products
+* decks
+* related categories
+* FAQ
+* guides
+
+bulunabilir.
+
+300-700 kelimelik faydalı kategori metni yeterli olabilir.
+
+2.000 kelimelik AI spam istemiyorum.
+
+---
+
+# 11. EXACT KEYWORD "RIFTBOUND"
+
+Exact `riftbound` bizim en değerli keyword'lerden biri.
+
+Google bu URL'yi Riftbound ile GoCards arasındaki en güçlü commercial page olarak anlamalı.
+
+Bu yüzden:
+
+* title'da Riftbound erken geçsin
+* H1 Riftbound içersin
+* first paragraph içinde doğal Riftbound açıklaması olsun
+* product names Riftbound olsun
+* internal links bu page'e authority aktarsın
+* product breadcrumbs Riftbound category'ye bağlansın
+* guides bu category'ye link versin
+
+Homepage exact Riftbound page ile cannibalize olmasın.
+
+Homepage GoCards brand + broader TCG marketplace intent'i taşıyabilir.
+
+---
+
+# 12. RIFTBOUND CARDS KEYWORD
+
+`riftbound cards` ve `riftbound kartları` için primary Riftbound category page desteklenebilir.
+
+Eğer site gerçekten tekli kart satıyorsa ve yeterli sayıda ürün varsa:
+
+/kategori/riftbound/tekli-kartlar
+
+veya mevcut routing standardına uygun bir single-card page oluştur.
+
+PRIMARY:
+
+riftbound single cards
+
+riftbound cards
+
+riftbound tekli kart
+
+Ancak single card inventory yoksa sırf keyword almak için page oluşturma.
+
+Bu durumda `riftbound cards` ana category tarafından hedeflensin.
+
+---
+
+# 13. RIFTBOUND PRODUCT TYPE ARCHITECTURE
+
+Inventory gerçekten varsa:
+
+/kategori/riftbound/booster-pack
+/kategori/riftbound/booster-box
+/kategori/riftbound/champion-deck
+/kategori/riftbound/proving-grounds
+/kategori/riftbound/tekli-kartlar
+
+gibi curated category structure kullanılabilir.
+
+Mevcut routing formatına adapte et.
+
+Do not create empty categories.
+
+Product taxonomy resmi ürün terminolojisi ve mevcut inventory ile uyumlu olsun.
+
+---
+
+# 14. RIFTBOUND SET ARCHITECTURE
+
+Riftbound için gerçek inventory bulunan setlere ayrı landing page verilebilir.
+
+Örnek:
+
+/kategori/riftbound/origins
+/kategori/riftbound/spiritforged
+/kategori/riftbound/unleashed
+/kategori/riftbound/vendetta
+
+Yeni setler database-driven eklenebilsin.
+
+Set landing:
+
+H1:
+Riftbound Spiritforged
+
+Title:
+Riftbound Spiritforged Kartları & Ürünleri | GoCards
+
+İçerisinde gerçek inventory:
+
+* booster packs
+* booster boxes
+* decks
+* bundles
+* singles
+
+hangileri gerçekten varsa listelensin.
+
+Set release dates veya set size gibi bilgiler project data'da doğrulanmıyorsa kendi bilginden uydurma.
+
+---
+
+# 15. POKEMON TCG PRIMARY OWNER PAGE
+
+Primary commercial URL:
+
+mevcut architecture'a göre örneğin:
+
+/kategori/pokemon-tcg
+
+PRIMARY:
+
+pokemon tcg
+
+SECONDARY:
+
+* pokemon cards
+* pokemon kartları
+* pokemon tcg türkiye
+* pokemon cards turkey
+
+TITLE:
+
+Pokemon TCG Kartları & Ürünleri | GoCards TCG
+
+H1:
+
+Pokemon TCG
+
+veya:
+
+Pokemon TCG Kartları ve Ürünleri
+
+Category body:
+
+* short intro
+* available current products
+* set/product type links
+* sealed products
+* related collections
+* FAQ
+* buying guide links
+
+---
+
+# 16. POKEMON CATEGORY ARCHITECTURE
+
+Gerçek inventory varsa:
+
+/kategori/pokemon-tcg/booster-pack
+/kategori/pokemon-tcg/booster-box
+/kategori/pokemon-tcg/elite-trainer-box
+/kategori/pokemon-tcg/collection-box
+/kategori/pokemon-tcg/blister
+/kategori/pokemon-tcg/tin
+/kategori/pokemon-tcg/tekli-kartlar
+
+gibi curated pages değerlendir.
+
+Bunların hepsini zorla oluşturma.
+
+Product count ve real search intent yoksa thin page oluşturma.
+
+---
+
+# 17. POKEMON SET PAGES
+
+Pokemon setleri sürekli değiştiği için hard-coded SEO istemiyorum.
+
+Database/category modelinde bir set gerçekten mevcut ve yeterli ürün içeriyorsa:
+
+search friendly set page üret.
+
+Set name:
+
+H1
+title
+description
+product listing
+breadcrumb
+ItemList
+
+ile işaretlenebilir.
+
+Old sets tamamen stoktan kalktı diye URL'yi otomatik silme.
+
+Page geçmişte backlink/index authority aldıysa:
+
+* products out of stock olabilir
+* archived set page bilgi sağlayabilir
+
+Ancak boş ve anlamsız thin page bırakma.
+
+---
+
+# 18. HOMEPAGE SEO
+
+Homepage'i sadece:
+
+GoCards
+
+gibi brand page yapma.
+
+Homepage broad positioning:
+
+Riftbound + Pokemon TCG + Trading Cards
+
+tarafını desteklemeli.
+
+Örnek title:
+
+Riftbound & Pokemon TCG Kartları | GoCards TCG
+
+Alternatif:
+
+GoCards TCG | Riftbound & Pokemon Kartları
+
+H1 örneği:
+
+Riftbound & Pokemon TCG Kartları
+
+veya tasarıma uygun doğal commercial heading.
+
+Homepage'de crawlable links:
+
+Riftbound
+Pokemon TCG
+
+ana kategori page'lerine güçlü şekilde link vermeli.
+
+---
+
+# 19. PRODUCT DETAIL SEO
+
+Her gerçek product page:
+
+* unique title
+* unique meta description
+* canonical
+* H1
+* product name
+* brand/game
+* set
+* product type
+* price
+* real stock
+* images
+* description
+* specifications
+* related categories
+* breadcrumb
+* related products
+
+SSR/raw HTML içinde bulunmalı.
+
+---
+
+# 20. PRODUCT TITLE STRATEGY
+
+Product title sadece product name olmamalı ancak spam de yapma.
+
+Örnek gerçek Riftbound ürün:
+
+Riftbound Spiritforged Booster Pack | GoCards
+
+Riftbound Vendetta Booster Box | GoCards
+
+Pokemon TCG [Set Name] Booster Pack | GoCards
+
+Pokemon TCG [Set Name] Elite Trainer Box | GoCards
+
+Product DB'deki gerçek product name'i source-of-truth olarak kullan.
+
+---
+
+# 21. PRODUCT URLS
+
+Mevcut:
+
+/urun/[slug]
+
+architecture varsa mümkün olduğunca koru.
+
+SEO uğruna bütün product URL'lerini değiştirme.
+
+URL değişmesi gerekiyorsa:
+
+old URL
+301
+new canonical URL
+
+şeklinde mapping zorunlu.
+
+---
+
+# 22. CURRENT INDEXED BROKEN PRODUCT URL AUDIT
+
+Google tarafından geçmişte bilinen örnek URL:
+
+/urun/riftbound-league-of-legends-tcg-set-2-spiritforged-booster-pack
+
+şu anda "Ürün Bulunamadı" gösterebilir.
+
+HTTP status'u test et.
+
+Eğer:
+
+HTTP 200 + Ürün Bulunamadı
+
+ise SOFT 404 problemidir.
+
+Eğer aynı ürünün yeni gerçek URL'si mevcutsa:
+
+301 -> new product canonical
+
+Eğer ürün tamamen kaldırılmış ve yakın equivalent yoksa:
+
+404 veya uygun durumda 410.
+
+Rastgele homepage'e redirect etme.
+
+---
+
+# 23. CURRENT INDEXED BROKEN CATEGORY AUDIT
+
+Örnek:
+
+/kategori/playmat
+
+Google tarafından "Kategori Bulunamadı" olarak görülebilir.
+
+HTTP status'u kontrol et.
+
+Eğer:
+
+HTTP 200
+Kategori Bulunamadı
+
+ise fix.
+
+Gerçek category yoksa:
+
+404.
+
+Yeni equivalent category varsa:
+
+301.
+
+Soft 404 bırakma.
+
+---
+
+# 24. TRUE 404
+
+Fake product:
+
+/urun/bu-urun-yok-918273
+
+Fake category:
+
+/kategori/bu-kategori-yok-918273
+
+şunları döndürmeli:
+
+HTTP/1.1 404 Not Found
+
+Page:
+
+noindex, nofollow
+
+olabilir.
+
+Her URL'ye 200 dönen SPA architecture istemiyorum.
+
+---
+
+# 25. FULL SSR / SSG / PRERENDER
+
+ÇOK KRİTİK.
+
+Test:
+
+curl -sL https://gocardstcg.com/
+
+curl -sL https://gocardstcg.com/kategori/[riftbound-owner]
+
+curl -sL https://gocardstcg.com/kategori/[pokemon-owner]
+
+curl -sL https://gocardstcg.com/urun/[real-product]
+
+JavaScript çalıştırılmadan raw HTML'de:
+
+* title
+* meta description
+* canonical
+* H1
+* body product/category content
+* price
+* stock status
+* internal links
+* product cards
+* breadcrumb
+* JSON-LD
+
+bulunmalı.
+
+Sadece:
+
+<div id="root"></div>
+
+loader
+
+veya hidden SEO H1 kabul edilmiyor.
+
+---
+
+# 26. PRODUCT PRICE AND STOCK SSR
+
+E-commerce SEO için gerçek:
+
+price
+currency
+availability
+
+ilk HTML response'ta bulunabilmeli.
+
+Ancak fiyat eski cache'de kalmayacak şekilde SSR/data architecture güvenli kurulmalı.
+
+Price veya stock ASLA hard-code edilmesin.
+
+Database source-of-truth.
+
+---
+
+# 27. PRODUCT SCHEMA
+
+Real product detail pages:
+
+Product JSON-LD.
+
+Fields mümkün olduğunda:
+
+@type Product
+name
+description
+image
+sku
+brand
+category
+url
+
+Eğer gerçek current commerce data mevcutsa:
+
+offers:
+Offer
+
+price
+priceCurrency
+availability
+url
+
+kullanılabilir.
+
+Stock durumuna göre:
+
+InStock
+OutOfStock
+PreOrder
+
+yalnızca gerçek data'dan.
+
+---
+
+# 28. FAKE PRODUCT SCHEMA YASAĞI
+
+Product rich result almak için:
+
+* fake review
+* fake rating
+* fake inventory
+* fake price
+* fake old price
+* fake SKU
+* fake GTIN
+
+üretme.
+
+AggregateRating sadece gerçekten kullanıcı review sistemi ve gerçek reviews varsa.
+
+---
+
+# 29. PRODUCT BRAND / MANUFACTURER
+
+GoCards mağaza markası ile product publisher/brand'i karıştırma.
+
+Örneğin:
+
+Riftbound product'un brand alanını sırf mağaza GoCards diye GoCards yapma.
+
+Product database'de gerçek manufacturer / publisher / brand bilgisi varsa kullan.
+
+Yoksa tahmin etme.
+
+seller/merchant ile manufacturer farklı kavramlardır.
+
+---
+
+# 30. CATEGORY SCHEMA
+
+Important commercial category pages:
+
+CollectionPage
+BreadcrumbList
+ItemList
+
+kullanabilir.
+
+ItemList gerçek product URLs içersin.
+
+Page'de 20 ürün varsa JSON-LD'de olmayan 200 fake product üretme.
+
+---
+
+# 31. BREADCRUMB
+
+Visible breadcrumbs.
+
+Örnek:
+
+Ana Sayfa
+
+>
+
+Riftbound
+
+>
+
+Spiritforged
+
+>
+
+Booster Pack
+
+Pokemon:
+
+Ana Sayfa
+
+>
+
+Pokemon TCG
+
+>
+
+[Set]
+
+>
+
+[Product]
+
+BreadcrumbList JSON-LD ile aynı hierarchy.
+
+---
+
+# 32. INTERNAL LINK ARCHITECTURE
+
+Riftbound category:
+
+-> Riftbound sets
+-> product types
+-> best/current products
+-> guide content
+
+Pokemon TCG:
+
+-> sets
+-> product types
+-> real collections
+-> guides
+
+Product:
+
+-> parent game
+-> set
+-> product type
+-> related products
+
+Guide:
+
+-> commercial category
+-> relevant products
+
+---
+
+# 33. ANCHOR TEXT
+
+Natural anchors:
+
+Riftbound TCG
+Riftbound kartları
+Riftbound booster paketleri
+Pokemon TCG
+Pokemon kartları
+Pokemon booster paketleri
+
+kullan.
+
+Her link exact keyword olmasın.
+
+Doğal brand/category variations kullan.
+
+---
+
+# 34. FILTER SEO
+
+TCG ecommerce sitelerinde en büyük index pollution kaynaklarından biri filtrelerdir.
+
+Örneğin:
+
+?sort=
+?price=
+?stock=
+?set=
+?rarity=
+?type=
+?page=
+?search=
+
+kontrol et.
+
+Search intent taşımayan filter combinations:
+
+noindex
+
+veya canonical strategy ile kontrol edilmeli.
+
+Google'ın:
+
+100.000 farklı filter URL
+
+crawl etmesine izin verme.
+
+---
+
+# 35. SITE SEARCH
+
+Internal search result pages:
+
+/arama?q=...
+
+indexlenmemeli.
+
+meta robots:
+
+noindex, follow
+
+veya uygun search architecture.
+
+Search result pages sitemap'e girmesin.
+
+---
+
+# 36. PAGINATION
+
+Category pagination:
+
+page=2
+page=3
+
+veya route based pages doğru crawl edilebilir olabilir.
+
+Infinite scroll kullanılıyorsa ürünlerin crawler tarafından keşfedilebilmesi için real links/page structure sağla.
+
+Canonical bütün pagination pages'i yanlışlıkla page 1'e vermek gibi kör strategy kullanma.
+
+Mevcut architecture'a göre SEO best practice uygula.
+
+---
+
+# 37. SOLD OUT PRODUCTS
+
+Bir ürün stock 0 olduğunda hemen 404 yapma.
+
+Ürün geri gelecekse:
+
+page 200 kalabilir
+OutOfStock schema
+alternative products
+related products
+
+gösterilebilir.
+
+Kalıcı discontinued ise historical SEO/backlinks değerlendirilerek:
+
+404
+410
+veya close equivalent'e 301
+
+kararı ver.
+
+---
+
+# 38. PREORDER PRODUCTS
+
+Gerçek preorder product ise:
+
+PreOrder availability
+
+kullanılabilir.
+
+Release date yalnızca real project data içinde varsa kullan.
+
+Tahmin etme.
+
+---
+
+# 39. GUIDE / KNOWLEDGE CENTER
+
+Topical authority için:
+
+/rehber
+
+veya mevcut content architecture.
+
+Priority Riftbound guides:
+
+/rehber/riftbound-nedir
+/rehber/riftbound-tcg-nedir
+/rehber/riftbound-nasil-oynanir
+/rehber/riftbound-kartlari
+/rehber/riftbound-booster-pack-nedir
+/rehber/riftbound-booster-box-nedir
+/rehber/riftbound-champion-deck-nedir
+/rehber/riftbound-setleri
+
+Priority Pokemon:
+
+/rehber/pokemon-tcg-nedir
+/rehber/pokemon-kartlari
+/rehber/pokemon-booster-pack-nedir
+/rehber/pokemon-booster-box-nedir
+/rehber/pokemon-etb-nedir
+/rehber/pokemon-karti-nasil-secilir
+
+ANCAK:
+
+rules/gameplay guide içeriklerinde kendi kafandan oyun kuralı uydurma.
+
+Official source veya doğrulanmış source data kullan.
+
+---
+
+# 40. COMMERCIAL VS INFORMATIONAL CANNIBALIZATION
+
+Commercial:
+
+/kategori/riftbound
+=> riftbound, riftbound cards, buy intent
+
+Guide:
+
+/rehber/riftbound-nedir
+=> riftbound nedir
+
+Commercial:
+
+/kategori/pokemon-tcg
+=> pokemon tcg, pokemon cards commercial
+
+Guide:
+
+/rehber/pokemon-tcg-nedir
+=> pokemon tcg nedir
+
+Guide'lar category page'lerle exact aynı intent için yarışmasın.
+
+---
+
+# 41. SET GUIDE VS SET CATEGORY
+
+Örneğin gerçek commercial set page:
+
+/kategori/riftbound/spiritforged
+
+buy intent.
+
+Guide:
+
+/rehber/riftbound-spiritforged-kartlari
+
+yalnızca gerçekten anlamlı informational content üretilebiliyorsa.
+
+Thin AI article üretme.
+
+---
+
+# 42. CONTENT QUALITY
+
+TCG kullanıcıları ürünü biliyor.
+
+Generic:
+
+"günümüzde kart oyunları oldukça popülerdir"
+
+gibi AI metni istemiyorum.
+
+Bunun yerine gerçek:
+
+* set
+* product format
+* pack count
+* included items
+* language
+* release
+* condition
+* edition
+* card type
+
+gibi project data kullan.
+
+---
+
+# 43. CARD / PRODUCT SPECS
+
+Her sealed product için project'te varsa:
+
+* game
+* set
+* product type
+* language
+* cards per pack
+* packs per box
+* edition
+* release
+* publisher
+* condition
+
+gibi bilgiler semantic HTML ile gösterilebilir.
+
+Ancak bir booster'da kaç kart olduğunu kendi bilginden tahmin etme.
+
+Database/current product content ne diyorsa onu kullan.
+
+---
+
+# 44. PRODUCT DESCRIPTION DUPLICATION
+
+Supplier description'ı yüzlerce sitede birebir aynıysa mümkün olduğunda GoCards'a özgü kısa factual summary eklenebilir.
+
+Ama ürün özelliklerini değiştirme.
+
+Her product'a 500 kelime AI article yazma.
+
+---
+
+# 45. HOMEPAGE INTERNAL AUTHORITY
+
+Homepage prominently link:
+
+Riftbound TCG
+Pokemon TCG
+
+Sonrasında inventory gerçekten varsa:
+
+Riftbound Booster
+Riftbound Booster Box
+Pokemon Booster
+Pokemon ETB
+
+gibi major categories.
+
+---
+
+# 46. RIFTBOUND DOMINANCE STRATEGY
+
+Riftbound GoCards'ın en önemli SEO konusu olduğu için site içinde gerçek topical cluster oluştur.
+
+Beklenen graph:
+
+RIFTBOUND
+|
+|-- Sets
+|   |-- Origins
+|   |-- Spiritforged
+|   |-- Unleashed
+|   |-- Vendetta
+|
+|-- Product Types
+|   |-- Booster Packs
+|   |-- Booster Boxes
+|   |-- Decks
+|   |-- Singles if real
+|
+|-- Products
+|
+|-- Guides
+
+Her node primary Riftbound category'ye doğal internal link aktarsın.
+
+---
+
+# 47. POKEMON TOPICAL CLUSTER
+
+POKEMON TCG
+|
+|-- Sets
+|
+|-- Booster Packs
+|-- Booster Boxes
+|-- ETB
+|-- Collections
+|-- Singles if real
+|
+|-- Products
+|
+|-- Guides
+
+---
+
+# 48. SEO FOR NEW RELEASES
+
+TCG sektörü release driven.
+
+Yeni product admin panelden eklendiğinde otomatik olarak:
+
+* clean slug
+* title base
+* canonical
+* Open Graph
+* Product JSON-LD
+* sitemap
+* category relationship
+
+hazırlanabilsin.
+
+Manual SEO kodu yazmak gerekmemeli.
+
+---
+
+# 49. NEW SET WORKFLOW
+
+Admin tarafında yeni Riftbound veya Pokemon set category eklendiğinde SEO fields desteklenebilir:
+
+* SEO title
+* meta description
+* H1
+* intro text
+* canonical
+* index toggle
+* image
+* game
+* set name
+
+Default üretilebilir ama admin override edebilsin.
+
+---
+
+# 50. OPEN GRAPH
+
+Important pages:
+
+og:title
+og:description
+og:url
+og:type
+og:image
+
+Product pages:
+
+og:type product destekleniyorsa uygun implementation.
+
+Social preview product image'i kullanabilir.
+
+---
+
+# 51. IMAGE SEO
+
+TCG'de görsel SEO önemli.
+
+Product main image:
+
+descriptive alt.
+
+Örnek:
+
+Riftbound Spiritforged Booster Pack
+
+Pokemon TCG [Set] Booster Box
+
+Thumbnail images duplicate alt spam yapmasın.
+
+width
+height
+
+tanımla.
+
+Below fold:
+lazy load.
+
+LCP product image:
+aggressive lazy kullanma.
+
+WebP/AVIF mümkünse.
+
+---
+
+# 52. IMAGE SITEMAP
+
+Product images sitemap'e eklenebilir.
+
+image:image
+image:loc
+image:title
+image:caption
+
+real product data.
+
+---
+
+# 53. CANONICAL HOST NORMALIZATION
+
+Tek primary host seç.
+
+Tercih:
+
+https://gocardstcg.com
+
+eğer mevcut infrastructure bunu primary olarak kullanıyorsa.
+
+Test:
+
+http://gocardstcg.com
+https://www.gocardstcg.com
+http://www.gocardstcg.com
+
+tek HTTPS canonical host'a 301.
+
+---
+
+# 54. TRAILING SLASH
+
+Tek standard.
+
+Örneğin:
+
+/kategori/riftbound
+
+canonical ise:
+
+/kategori/riftbound/
+
+server-side 301 ile normalize edilebilir.
+
+Internal links
+canonical
+sitemap
+
+aynı formatı kullansın.
+
+---
+
+# 55. QUERY PARAMETER CANONICAL
+
+UTM:
+
+utm_source
+utm_campaign
+fbclid
+gclid
+
+gibi tracking params duplicate page üretmesin.
+
+Canonical clean URL.
+
+---
+
+# 56. META TITLE UNIQUENESS
+
+Duplicate title audit yap.
+
+No:
+
+Ürün | GoCards
+
+Kategori | GoCards
+
+gibi yüzlerce generic result.
+
+Her indexable category/product anlamlı unique metadata almalı.
+
+---
+
+# 57. H1
+
+Her indexable page:
+
+1 primary H1.
+
+Product:
+real product name.
+
+Category:
+category name.
+
+Guide:
+question/topic.
+
+Hidden SEO H1 oluşturma.
+
+---
+
+# 58. STRUCTURED DATA HOMEPAGE
+
+Homepage:
+
+Organization
+WebSite
+
+Organization:
+
+@id:
+https://gocardstcg.com/#organization
+
+WebSite:
+
+@id:
+https://gocardstcg.com/#website
+
+SearchAction yalnızca internal search gerçekten doğru çalışıyorsa ve implementation uygun ise değerlendir.
+
+---
+
+# 59. ORGANIZATION SCHEMA
+
+Use verified:
+
+* company name
+* URL
+* logo
+* email
+* phone
+* sameAs
+* business identity
+
+Fake address veya social account ekleme.
+
+---
+
+# 60. OFFER SCHEMA
+
+Ecommerce olduğu için gerçek database price/stock varsa Product Offer kullan.
+
+priceCurrency:
+
+TRY
+
+yalnızca actual currency buys.
+
+price:
+
+current selling price.
+
+availability:
+
+actual.
+
+Sale price / list price semantic olarak yanlış işaretlenmemeli.
+
+---
+
+# 61. MERCHANT / SHIPPING DATA
+
+Shipping details, return policy structured data ancak mevcut gerçek shipping/return policies ile doğru şekilde üretilebiliyorsa eklenebilir.
+
+Fake:
+
+free shipping
+14 day return
+same day shipping
+
+gibi bilgi schema'ya yazma.
+
+---
+
+# 62. LEGAL PAGE SEO
+
+Legal pages Google search landing page olmak zorunda değil.
+
+KVKK
+Mesafeli Satış
+İade
+Teslimat
+
+gibi sayfaları koru.
+
+Legal data'da eski domain refs audit et.
+
+Thin legal pages'e keyword spam ekleme.
+
+---
+
+# 63. ROBOTS.TXT
+
+Root:
+
+/robots.txt
+
+HTTP 200
+
+Content-Type:
+text/plain; charset=utf-8
+
+General:
+
+User-agent: *
+Allow: /
+
+Disallow only real private/API routes if appropriate:
+
+/api/
+/admin/
+
+Search/filter/cart/checkout indexing strategy framework'e göre ayrıca ele alınabilir.
+
+Sitemap:
+
+Sitemap: https://gocardstcg.com/sitemap.xml
+
+---
+
+# 64. AI CRAWLERS
+
+Public pages için:
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+Googlebot/Bingbot de public product/category pages'i alabilmeli.
+
+Crawler allow ranking guarantee değildir.
+
+---
+
+# 65. LLMS.TXT
+
+Create:
+
+https://gocardstcg.com/llms.txt
+
+HTTP 200
+
+Content-Type:
+text/plain; charset=utf-8
+
+Factual.
+
+Örnek structure:
+
+# GoCards TCG
+
+> GoCards TCG is a Turkish trading card game ecommerce platform offering Riftbound and Pokemon TCG products.
+
+Only if this statement matches project/business reality.
+
+## Official Website
+
+https://gocardstcg.com/
+
+## Primary Categories
+
+### Riftbound TCG
+
+canonical category URL
+
+Short factual description.
+
+### Pokemon TCG
+
+canonical category URL
+
+## Riftbound Product Types
+
+ONLY ACTUAL categories:
+
+* Booster Packs
+* Booster Boxes
+* Champion Decks
+* Proving Grounds
+* Single Cards if available
+
+canonical URLs.
+
+## Riftbound Sets
+
+Only actual indexed set categories.
+
+## Pokemon TCG
+
+Actual product types / sets.
+
+## Product Information
+
+Explain:
+
+Current prices and availability must be obtained from canonical product pages.
+
+Inventory changes frequently.
+
+## Guides
+
+Relevant canonical guide URLs.
+
+## Contact
+
+Verified contact details.
+
+No keyword spam.
+
+---
+
+# 66. LLMS-FULL.TXT
+
+Optional:
+
+/llms-full.txt
+
+Create useful machine-readable index containing:
+
+* game
+* categories
+* sets
+* product types
+* canonical product/category URLs
+* current guide URLs
+
+Do not duplicate entire site HTML.
+
+Do not publish customer/order/private data.
+
+---
+
+# 67. AI FRIENDLY PRODUCT DATA
+
+AI/search system bir product page'i okuduğunda ilk raw HTML'den şunu anlayabilmeli:
+
+Product:
+[Name]
+
+Game:
+Riftbound / Pokemon TCG
+
+Set:
+if real
+
+Product Type:
+Booster Pack / Box / Deck etc.
+
+Price:
+current
+
+Availability:
+current
+
+Language:
+if known
+
+Canonical URL.
+
+---
+
+# 68. NO HIDDEN AI SEO
+
+AI crawler için hidden:
+
+keyword paragraphs
+display:none spam
+100 keyword footer
+
+oluşturma.
+
+LLM optimization = clean factual semantic content.
+
+---
+
+# 69. SITEMAP.XML
+
+Include only:
+
+* canonical
+* 200
+* indexable
+
+URLs.
+
+Include:
+
+homepage
+commercial categories
+set categories
+product type categories
+products
+guides
+important corporate/legal only if indexable
+
+Exclude:
+
+cart
+checkout
+account
+admin
+search
+filter URLs
+404
+redirect
+noindex
+empty categories
+
+---
+
+# 70. SITEMAP LASTMOD
+
+lastmod gerçek product/category update timestamp'tan gelsin.
+
+Her deployment'ta bütün sitemap'i bugün olarak değiştirme.
+
+Inventory stock değişikliği her zaman content modification sayılmak zorunda değil.
+
+Strategic handling use.
+
+---
+
+# 71. PRODUCT IMAGE SITEMAP
+
+Current indexable product pages'in primary images eklenebilir.
+
+---
+
+# 72. EMPTY CATEGORIES
+
+Category product count = 0 ise otomatik indexable thin page üretme.
+
+Options:
+
+* noindex
+* 404
+* archived informational page
+
+business context'e göre.
+
+Sadece SEO için fake content ile doldurma.
+
+---
+
+# 73. DUPLICATE CATEGORIES
+
+Audit:
+
+Riftbound
+Riftbound TCG
+League of Legends TCG
+LoL TCG
+
+aynı ürünleri listeleyen 4 duplicate category oluşturmuş olabilir.
+
+Bunları intent map ile konsolide et.
+
+`league of legends tcg` secondary keyword olarak Riftbound canonical page tarafından hedeflenebilir.
+
+Gereksiz duplicate category oluşturma.
+
+---
+
+# 74. POKEMON DUPLICATION
+
+Audit:
+
+Pokemon
+Pokemon TCG
+Pokemon Cards
+Pokemon Kartları
+
+aynı inventory'nin dört kopya category page'i olmasın.
+
+Tek canonical owner + natural secondary wording.
+
+---
+
+# 75. TAG PAGES
+
+Product tags otomatik public URL üretiyorsa:
+
+low-value tag archive pages noindex olabilir.
+
+Ancak gerçekten commercial curated collection olarak kullanılacak tag'ler category sistemine dönüştürülebilir.
+
+---
+
+# 76. BRAND PAGES
+
+Brand archive pages indexable olacaksa unique value sağlamalı.
+
+Empty/1-product brand pages mass index oluşturmasın.
+
+---
+
+# 77. SEARCH INTENT / CATEGORY DEPTH
+
+Do not generate 100 pages from every keyword.
+
+SEO landing page criteria:
+
+* real inventory
+* distinct user intent
+* enough products/content
+* sustainable URL
+
+sağlanmalı.
+
+---
+
+# 78. PAGE SPEED / CORE WEB VITALS
+
+Audit:
+
+LCP
+INP
+CLS
+TTFB
+JS bundles
+image sizes
+fonts
+third party scripts
+chat/analytics
+product sliders
+
+Main product/category performance priority.
+
+Image gallery full-resolution images initial load'da tamamı yüklenmesin.
+
+---
+
+# 79. MOBILE SEO
+
+TCG purchases mobile heavy olabilir.
+
+Ensure:
+
+product info visible
+price visible
+stock visible
+buy button usable
+filters fast
+category pages responsive
+tables if any responsive
+CLS low
+
+Mobile'da SEO content DOM'dan kaldırılmasın.
+
+---
+
+# 80. ACCESSIBILITY
+
+* product image alt
+* button labels
+* form labels
+* search label
+* navigation
+* modal
+* cart
+* breadcrumbs
+* filters
+* keyboard
+* aria
+
+uygun hale getir.
+
+---
+
+# 81. ENGLISH SEO
+
+Önce business hedefini ve mevcut language architecture'ı kontrol et.
+
+GoCards yalnızca Türkiye'ye satış yapıyor ve English site yoksa sırf `riftbound cards` keyword'ü için yüzlerce English page üretme.
+
+`Riftbound Cards`, `Pokemon TCG`, `Pokemon Cards` phrases Turkish commercial pages içinde doğal şekilde kullanılabilir.
+
+Eğer gerçek English ecommerce version ve international shipping business olarak mevcutsa:
+
+/en/
+
+architecture kurulabilir.
+
+Bu karar mevcut business/project reality'ye göre verilmeli.
+
+---
+
+# 82. RIFTBOUND TURKEY TARGET
+
+Turkish Riftbound page doğal şekilde:
+
+Riftbound Türkiye
+Riftbound TCG Türkiye
+
+semantic context oluşturabilir.
+
+Ancak:
+
+"Türkiye'nin resmi Riftbound mağazası"
+
+gibi false affiliation yazma.
+
+---
+
+# 83. PRODUCT FRESHNESS
+
+New release product sitesinde date freshness önemli.
+
+Product creation/update dates backend'de varsa search engines'e doğru şekilde expose edilebilir.
+
+Fake datePublished / dateModified oluşturma.
+
+---
+
+# 84. GUIDE ARTICLE SCHEMA
+
+Guide pages:
+
+Article
+BreadcrumbList
+
+headline
+description
+datePublished
+dateModified
+author
+publisher
+mainEntityOfPage
+
+real data.
+
+---
+
+# 85. FAQ
+
+Useful category FAQs.
+
+Riftbound examples:
+
+Riftbound nedir?
+Riftbound kartları nereden alınır?
+Riftbound booster pack nedir?
+Riftbound booster box nedir?
+
+Cevaplarda "GoCards'tan alınır" spam'ı yapma.
+
+Pokemon:
+
+Pokemon TCG nedir?
+Pokemon booster pack nedir?
+Pokemon ETB nedir?
+
+FAQ visible HTML'de bulunmalı.
+
+FAQPage schema only where appropriate.
+
+---
+
+# 86. TRUST / E-E-A-T
+
+Ecommerce trust:
+
+* legal company
+* contact
+* return
+* delivery
+* payment
+* real social accounts
+* customer support
+
+easy accessible olsun.
+
+Fake testimonials oluşturma.
+
+---
+
+# 87. ABOUT PAGE
+
+GoCards hakkında gerçek bilgiler:
+
+* business
+* TCG focus
+* company identity
+* contact
+
+net olsun.
+
+Riftbound/Pokemon category links verilebilir.
+
+---
+
+# 88. BROKEN LINKS
+
+Site-wide internal crawler audit yap.
+
+Find:
+
+* 404 product links
+* removed categories
+* old slugs
+* broken images
+* empty anchor links
+
+Fix.
+
+---
+
+# 89. OLD GOOGLE INDEX CLEANUP
+
+Known old indexed URLs için mapping oluştur.
+
+Output:
+
+OLD URL
+CURRENT STATUS
+ACTION
+FINAL URL
+
+Örneğin:
+
+/kategori/playmat
+old product URLs
+old staging links
+
+Audit.
+
+---
+
+# 90. REDIRECT QUALITY
+
+Avoid chains:
+
+old
+301
+old2
+301
+new
+
+Instead:
+
+old
+301
+final canonical
+
+mümkünse.
+
+---
+
+# 91. NO BROAD HOMEPAGE REDIRECT
+
+Removed old product'ı sırf SEO authority kalsın diye homepage'e redirect etme.
+
+Relevant category/product varsa redirect.
+
+Yoksa 404/410.
+
+---
+
+# 92. GOOGLE MERCHANT READINESS
+
+Current commerce data doğru ise Product schema ve crawlable product pages Google Merchant / organic shopping readiness sağlayacak şekilde hazırlanabilir.
+
+Ancak Merchant Center account/setup bu task kapsamı değilse otomatik claim yapma.
+
+---
+
+# 93. SEO ADMIN FIELDS
+
+Admin'de useful SEO overrides:
+
+Category:
+
+* SEO title
+* meta description
+* H1
+* intro
+* index toggle
+
+Product:
+
+* optional SEO title override
+* meta description override
+
+Default SEO values product/category data'dan üretilebilir.
+
+---
+
+# 94. AUTOMATED TITLE SAFETY
+
+Generated title length absurd olmasın.
+
+Extremely long official product names için sensible shortening.
+
+Product H1 full actual name kalabilir.
+
+Title concise.
+
+---
+
+# 95. SEO CONTENT NEVER BLOCK CHECKOUT
+
+Category SEO text product grid'i ekranın kilometrelerce altına itmesin.
+
+Commercial UX first.
+
+Short intro above products.
+
+Detailed content below product grid olabilir.
+
+---
+
+# 96. RIFTBOUND SEO BENCHMARK
+
+Competitors/reference sites analyze:
+
+* strong Riftbound ecommerce category pages
+* Turkish TCG retailers
+* Riftbound informational databases
+
+Ama içerik kopyalama.
+
+Benchmark:
+
+* taxonomy
+* internal linking
+* titles
+* content depth
+* product discoverability
+
+---
+
+# 97. COPYRIGHT / TRADEMARK
+
+Riftbound, League of Legends, Pokémon product names normal product identification için kullanılabilir.
+
+Ancak:
+
+* official logos
+* copyrighted rule text
+* card art
+* marketing copy
+
+mevcut licensed/project assets dışında web'den scrape edip kopyalama.
+
+Official site content'i copy-paste etme.
+
+---
+
+# 98. PRODUCT DATA SOURCE
+
+Product database GoCards için source-of-truth.
+
+Google/AI SEO yaparken external web'den product specs scrape edip database'e yazma.
+
+Missing specs manual verification gerektiriyorsa report et.
+
+---
+
+# 99. PRIMARY KEYWORD FINAL OWNERSHIP
+
+Implementation bitince raporda açıkça:
+
+RIFTBOUND
+=> owner URL
+
+RIFTBOUND CARDS
+=> owner URL
+
+RIFTBOUND TCG
+=> owner URL
+
+POKEMON TCG
+=> owner URL
+
+POKEMON CARDS
+=> owner URL
+
+LEAGUE OF LEGENDS TCG
+=> owner URL
+
+göster.
+
+Cannibalization listesi de ver.
+
+---
+
+# 100. EXPECTED OWNER STRATEGY
+
+Tercihen:
+
+Riftbound:
+main Riftbound commercial category
+
+Pokemon TCG:
+main Pokemon commercial category
+
+League of Legends TCG:
+Riftbound page secondary semantic target
+
+Riftbound Cards:
+Riftbound main category unless actual dedicated single-card inventory warrants separate page
+
+Pokemon Cards:
+Pokemon TCG main category unless actual single-card marketplace warrants distinct page.
+
+---
+
+# 101. RAW HTML FINAL TEST
+
+Implementation sonrası production/build preview test:
+
+curl -sL https://gocardstcg.com/
+
+curl -sL https://gocardstcg.com/[riftbound-owner-url]
+
+curl -sL https://gocardstcg.com/[pokemon-owner-url]
+
+curl -sL https://gocardstcg.com/[real-riftbound-product]
+
+curl -sL https://gocardstcg.com/[real-pokemon-product]
+
+Verify in raw HTML:
+
+title
+description
+canonical
+H1
+body
+product cards
+product title
+price
+stock
+internal links
+breadcrumbs
+JSON-LD
+
+---
+
+# 102. TRUE 404 FINAL TEST
+
+curl -I https://gocardstcg.com/urun/fake-product-918273
+
+Expected:
+
+404 Not Found
+
+curl -I https://gocardstcg.com/kategori/fake-category-918273
+
+Expected:
+
+404 Not Found
+
+---
+
+# 103. KNOWN OLD URL TEST
+
+Test:
+
+https://gocardstcg.com/kategori/playmat
+
+and:
+
+https://gocardstcg.com/urun/riftbound-league-of-legends-tcg-set-2-spiritforged-booster-pack
+
+Report:
+
+HTTP status
+redirect
+final URL
+canonical
+
+---
+
+# 104. ROBOTS TEST
+
+curl -sL https://gocardstcg.com/robots.txt
+
+---
+
+# 105. SITEMAP TEST
+
+curl -sL https://gocardstcg.com/sitemap.xml
+
+Check:
+
+* no 404
+* no redirect
+* no noindex
+* no cart
+* no search
+* no account
+* no duplicate filter URL
+
+---
+
+# 106. LLMS TEST
+
+curl -I https://gocardstcg.com/llms.txt
+
+curl -sL https://gocardstcg.com/llms.txt
+
+Expected:
+
+200
+text/plain
+
+---
+
+# 107. BOT ACCESS
+
+curl -A "Googlebot" -I https://gocardstcg.com/
+
+curl -A "Googlebot" -I https://gocardstcg.com/[riftbound-owner]
+
+curl -A "Bingbot" -I https://gocardstcg.com/
+
+curl -A "OAI-SearchBot" -I https://gocardstcg.com/
+
+curl -A "OAI-SearchBot" -I https://gocardstcg.com/[riftbound-owner]
+
+curl -A "GPTBot" -I https://gocardstcg.com/
+
+All public SEO pages should be accessible.
+
+---
+
+# 108. HOST REDIRECT TEST
+
+curl -I http://gocardstcg.com/
+
+curl -I https://www.gocardstcg.com/
+
+curl -I http://www.gocardstcg.com/
+
+All normalize to one HTTPS production host.
+
+---
+
+# 109. SECURITY HEADERS
+
+Existing secure headers should remain.
+
+Do not break payments or authentication while modifying SSR/SEO layer.
+
+---
+
+# 110. FINAL REPORT
+
+İş bitince bana aşağıdaki formatta detaylı final report ver:
+
+1. Framework
+2. SSR architecture
+3. Homepage final title
+4. Homepage H1
+5. Riftbound owner URL
+6. Riftbound Cards owner URL
+7. Pokemon TCG owner URL
+8. Pokemon Cards owner URL
+9. League of Legends TCG owner URL
+10. Riftbound categories
+11. Riftbound sets
+12. Pokemon categories
+13. Product type categories
+14. Number of products indexed
+15. Number of categories indexed
+16. Number of guides
+17. Redirects added
+18. Old broken URLs fixed
+19. 404 test
+20. Product schema
+21. Category schema
+22. Breadcrumb schema
+23. Organization schema
+24. sitemap URL count
+25. image sitemap count
+26. robots final
+27. llms final
+28. llms-full status
+29. Googlebot status
+30. Bingbot status
+31. OAI-SearchBot status
+32. raw SSR proof
+33. price/availability SSR proof
+34. remaining manual verification items
+
+---
+
+# 111. FINAL PRIORITY
+
+GoCards SEO priority order:
+
+1. Riftbound
+2. Riftbound Cards
+3. Riftbound TCG
+4. Pokemon TCG
+5. Pokemon Cards
+6. League of Legends TCG
+7. Riftbound Türkiye
+8. Riftbound product types
+9. Riftbound sets
+10. Pokemon product types
+11. Pokemon sets
+12. product long-tail keywords
+13. guides
+
+Technical priority:
+
+1. Full SSR
+2. True 404
+3. legacy URL redirects
+4. canonical
+5. category architecture
+6. product SEO
+7. internal linking
+8. structured data
+9. filter index control
+10. sitemap
+11. robots
+12. llms
+13. performance
+14. AI crawler access
+
+---
+
+# 112. FINAL GOAL
+
+Google GoCards'ı şu entity/topics ile net ilişkilendirebilmeli:
+
+GoCards TCG
+
+Riftbound
+Riftbound Cards
+Riftbound TCG
+League of Legends TCG
+
+Pokemon TCG
+Pokemon Cards
+
+Ana commercial category'ler site içi otoritenin merkezinde bulunmalı.
+
+Ürün sayfaları category'leri güçlendirmeli.
+
+Set pages category'leri güçlendirmeli.
+
+Guide pages commercial pages'e topical authority aktarmalı.
+
+Yeni TCG setleri ve ürünleri geldiğinde SEO sistemi otomatik ölçeklenebilmeli.
+
+SEO için sahte ürün, sahte stok, sahte review, sahte partnership veya keyword spam oluşturma.
+
+Mevcut ecommerce işlevlerini bozma.
+
+Şimdi projeyi baştan sona incele ve bu planı sadece raporlamak yerine DOĞRUDAN UYGULA.
