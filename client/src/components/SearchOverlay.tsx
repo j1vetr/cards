@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface SearchCard {
   id: string;
@@ -41,6 +42,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const [, navigate] = useLocation();
+  const panelRef = useFocusTrap<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -124,6 +126,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
           {/* Panel */}
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Kart arama"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -143,6 +149,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
                   placeholder="Kart adı, set, nadir ara… (örn: Charizard, Pikachu)"
+                  aria-label="Kart adı, set veya nadirlik ara"
                   className="flex-1 bg-transparent outline-none border-none text-[16px] lg:text-[19px] font-light text-white placeholder:text-white/25 tracking-tight"
                   data-testid="input-search"
                   autoComplete="off"
@@ -153,6 +160,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     onClick={() => { setQuery(''); setDebouncedQuery(''); inputRef.current?.focus(); }}
                     className="text-[10px] tracking-[0.18em] uppercase text-white/30 hover:text-[hsl(var(--polen-orange))] transition-colors px-2 shrink-0"
                     data-testid="button-clear-search"
+                    aria-label="Aramayı temizle"
                   >
                     Temizle
                   </button>

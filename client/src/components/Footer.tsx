@@ -80,7 +80,7 @@ export function Footer() {
           </div>
 
           {/* Middle: Legal links */}
-          <div className="flex flex-col gap-2.5">
+          <nav aria-label="Yasal bağlantılar" className="flex flex-col gap-2.5">
             <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-white/25 mb-1">Yasal</span>
             {LEGAL_LINKS.map(({ label, href }) => (
               <Link
@@ -92,7 +92,7 @@ export function Footer() {
                 {label}
               </Link>
             ))}
-          </div>
+          </nav>
 
           {/* Right: Company info */}
           <div className="flex flex-col gap-2.5">

@@ -204,6 +204,7 @@ export default function Category() {
         <div className="absolute inset-0 flex flex-col justify-end">
           <div className="max-w-[1400px] mx-auto px-5 lg:px-8 pb-4 lg:pb-5 w-full">
             <motion.nav
+              aria-label="Breadcrumb"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}

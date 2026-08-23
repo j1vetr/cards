@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, type ElementType } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
-import { motion, MotionConfig, AnimatePresence } from 'framer-motion';
+import { motion, MotionConfig, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
@@ -121,7 +121,7 @@ const CARD_BG_FALLBACK = [
   'from-purple-700 to-indigo-800',
 ];
 
-type LiveCard = { id: number; url: string; slug?: string; posIdx: number };
+type LiveCard = { id: number; url: string; slug?: string; name?: string; posIdx: number };
 
 function CardFan() {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -173,13 +173,13 @@ function CardFan() {
     staleTime: 120_000,
   });
 
-  type SlotItem = { url: string; slug?: string };
+  type SlotItem = { url: string; slug?: string; name?: string };
 
   const imagePool = useMemo<SlotItem[]>(() => {
     if (mode === 'manual') {
-      return (manualCards ?? []).map((c: any) => ({ url: c.image_url, slug: c.slug })).filter((s: SlotItem) => s.url);
+      return (manualCards ?? []).map((c: any) => ({ url: c.image_url, slug: c.slug, name: c.name })).filter((s: SlotItem) => s.url);
     }
-    return (poolData?.cards ?? []).filter(c => c.image_url).map(c => ({ url: c.image_url!, slug: c.slug }));
+    return (poolData?.cards ?? []).filter(c => c.image_url).map(c => ({ url: c.image_url!, slug: c.slug, name: c.name }));
   }, [mode, poolData, manualCards]);
 
   // ── Conveyor-belt state ────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ function CardFan() {
     const initial: LiveCard[] = [];
     for (let i = 0; i < count; i++) {
       const item = imagePool[i % imagePool.length];
-      initial.push({ id: cardIdCounter.current++, url: item.url, slug: item.slug, posIdx: i });
+      initial.push({ id: cardIdCounter.current++, url: item.url, slug: item.slug, name: item.name, posIdx: i });
     }
     poolCursorRef.current = count;
     setLiveCards(initial);
@@ -213,7 +213,7 @@ function CardFan() {
     const timer = setInterval(() => {
       const item = imagePool[poolCursorRef.current % imagePool.length];
       poolCursorRef.current++;
-      const newCard: LiveCard = { id: cardIdCounter.current++, url: item.url, slug: item.slug, posIdx: 0 };
+      const newCard: LiveCard = { id: cardIdCounter.current++, url: item.url, slug: item.slug, name: item.name, posIdx: 0 };
       setLiveCards(prev =>
         [newCard, ...prev
           .map(c => ({ ...c, posIdx: c.posIdx + 1 }))
@@ -315,7 +315,12 @@ function CardFan() {
                   {card.url ? (
                     <img
                       src={card.url}
-                      alt=""
+                      alt={card.name ? `${card.name} kartı` : ''}
+                      width={w}
+                      height={h}
+                      loading={isCenter ? 'eager' : 'lazy'}
+                      fetchPriority={isCenter ? 'high' : 'auto'}
+                      decoding="async"
                       style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a3e', display: 'block' }}
                     />
                   ) : (
@@ -339,6 +344,48 @@ const HERO_TRUST_ITEMS = [
   { icon: Package,     title: 'Güvenli Ödeme', sub: '256-bit SSL' },
 ];
 
+function HeroBackgroundVideo() {
+  // YouTube iframe is the single biggest third-party cost on the home page.
+  // Defer it until after first paint/idle so it never competes with LCP/TTI.
+  const [ready, setReady] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (prefersReducedMotion) return; // respect reduced-motion: skip the video entirely
+    const schedule = (cb: () => void) =>
+      'requestIdleCallback' in window ? (window as any).requestIdleCallback(cb, { timeout: 2000 }) : setTimeout(cb, 1200);
+    const cancel = schedule(() => setReady(true));
+    return () => {
+      if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(cancel);
+      else clearTimeout(cancel);
+    };
+  }, [prefersReducedMotion]);
+
+  if (!ready) return null;
+
+  return (
+    <iframe
+      src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocardstcg.com"
+      allow="autoplay; encrypted-media"
+      allowFullScreen={false}
+      title=""
+      loading="lazy"
+      style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: '100vw',
+        height: '56.25vw',
+        minHeight: '100%',
+        minWidth: '177.78vh',
+        transform: 'translate(-50%, -50%)',
+        border: 'none',
+        opacity: 0.45,
+      }}
+    />
+  );
+}
+
 function HeroSection() {
   return (
     <section
@@ -346,26 +393,9 @@ function HeroSection() {
       style={{ minHeight: 'calc(100vh - 120px)' }}
       data-testid="section-hero"
     >
-      {/* YouTube video background — all screens */}
+      {/* YouTube video background — deferred until idle, all screens */}
       <div className="absolute inset-0 pointer-events-none">
-        <iframe
-          src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocardstcg.com"
-          allow="autoplay; encrypted-media"
-          allowFullScreen={false}
-          title=""
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: '100vw',
-            height: '56.25vw',
-            minHeight: '100%',
-            minWidth: '177.78vh',
-            transform: 'translate(-50%, -50%)',
-            border: 'none',
-            opacity: 0.45,
-          }}
-        />
+        <HeroBackgroundVideo />
         {/* Dark overlay */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(13,20,39,0.82) 0%, rgba(13,20,39,0.55) 50%, rgba(13,20,39,0.75) 100%)' }} />
         {/* Bottom fade to next section */}
@@ -788,6 +818,8 @@ function BoxShowcaseSection() {
                         <img
                           src={img}
                           alt={product.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.05]"
                         />
                       ) : (

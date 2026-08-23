@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'wouter';
 import { useCart } from '@/hooks/useCart';
 import { useCartModal } from '@/hooks/useCartModal';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { CardPublic } from './CardCard';
 
 interface CardListing {
@@ -42,6 +43,14 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
   const [imgSrc, setImgSrc] = useState(card.image_url || FALLBACK_IMG);
   const { addToCart } = useCart();
   const { showModal } = useCartModal();
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -110,6 +119,10 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${card.name} hızlı görünüm`}
             className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden z-10"
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}

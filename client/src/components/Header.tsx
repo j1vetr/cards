@@ -7,6 +7,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { SearchOverlay } from '@/components/SearchOverlay';
 import { useCardSets, type CardSetPublic } from '@/hooks/useTcg';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -229,10 +230,19 @@ export function Header() {
   const { data: pokemonBoxes = [] } = useBoxesMini('pokemon');
   const { data: riftboundBoxes = [] } = useBoxesMini('riftbound');
 
+  const mobileDrawerRef = useFocusTrap<HTMLDivElement>(mobileOpen);
+
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [mobileOpen]);
 
   const openMega = (game: 'pokemon' | 'riftbound' | 'accessories') => {
@@ -383,21 +393,24 @@ export function Header() {
               >
                 <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
               </button>
-              <Link href="/sepet" data-testid="link-cart-mobile">
-                <button className="p-2 transition-colors relative text-white/60 hover:text-white" aria-label="Sepet">
-                  <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
-                  <AnimatePresence>
-                    {totalItems > 0 && (
-                      <motion.span
-                        key="badge-m"
-                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
-                      >
-                        {totalItems > 9 ? '9+' : totalItems}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </button>
+              <Link
+                href="/sepet"
+                data-testid="link-cart-mobile"
+                aria-label="Sepet"
+                className="p-2 inline-flex transition-colors relative text-white/60 hover:text-white"
+              >
+                <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
+                <AnimatePresence>
+                  {totalItems > 0 && (
+                    <motion.span
+                      key="badge-m"
+                      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                      className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
+                    >
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Link>
             </div>
           </div>
@@ -416,7 +429,7 @@ export function Header() {
             </Link>
 
             {/* Nav — absolutely centered */}
-            <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 xl:gap-10">
+            <nav aria-label="Ana menü" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 xl:gap-10">
               <Link href="/" className={navCls(isActive('/'))} data-testid="link-nav-home">
                 Ana Sayfa
               </Link>
@@ -487,21 +500,24 @@ export function Header() {
                 <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </button>
 
-              <Link href="/sepet" data-testid="link-cart">
-                <button className="p-2.5 transition-colors relative text-white/55 hover:text-white" aria-label="Sepet" data-testid="button-cart">
-                  <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.8} />
-                  <AnimatePresence>
-                    {totalItems > 0 && (
-                      <motion.span
-                        key="badge"
-                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
-                      >
-                        {totalItems > 9 ? '9+' : totalItems}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </button>
+              <Link
+                href="/sepet"
+                data-testid="link-cart"
+                aria-label="Sepet"
+                className="p-2.5 inline-flex transition-colors relative text-white/55 hover:text-white"
+              >
+                <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                <AnimatePresence>
+                  {totalItems > 0 && (
+                    <motion.span
+                      key="badge"
+                      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                      className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full leading-none"
+                    >
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Link>
 
               {/* Account */}
@@ -680,6 +696,10 @@ export function Header() {
               data-testid="overlay-mobile-menu"
             />
             <motion.div
+              ref={mobileDrawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mobil menü"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}

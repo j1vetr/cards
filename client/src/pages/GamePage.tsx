@@ -197,7 +197,7 @@ export default function GamePage() {
         <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(to right, transparent, ${cfg.accent}40, transparent)` }} />
 
         <div className="relative max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-          <nav className="flex items-center gap-1.5 text-xs text-zinc-500 mb-10">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-zinc-500 mb-10">
             <Link href="/" className="hover:text-zinc-300 transition-colors">Ana Sayfa</Link>
             <ChevronRight className="w-3 h-3" />
             <span className="font-semibold" style={{ color: cfg.accent }}>{gameName}</span>
@@ -378,6 +378,7 @@ export default function GamePage() {
               <input
                 type="text"
                 placeholder="Kart ara..."
+                aria-label={`${gameName} kartları içinde ara`}
                 value={localSearch}
                 onChange={e => {
                   setLocalSearch(e.target.value);
@@ -389,6 +390,7 @@ export default function GamePage() {
               />
               {localSearch && (
                 <button onClick={() => { setLocalSearch(''); applySearch(''); }}
+                  aria-label="Aramayı temizle"
                   className="absolute right-3 top-1/2 -translate-y-1/2">
                   <X className="w-3 h-3 text-zinc-500" />
                 </button>

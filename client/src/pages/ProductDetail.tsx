@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { stripHtmlToText } from '@shared/seoText';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface TurnstileApi {
   render: (
@@ -265,6 +266,7 @@ export default function ProductDetail() {
   // Refs
   const ctaSentinelRef = useRef<HTMLDivElement | null>(null);
   const heroImageRef = useRef<HTMLDivElement | null>(null);
+  const lightboxRef = useFocusTrap<HTMLDivElement>(lightboxOpen);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [lightboxEmblaRef, lightboxEmblaApi] = useEmblaCarousel({ loop: true });
@@ -686,6 +688,10 @@ export default function ProductDetail() {
       <AnimatePresence>
         {lightboxOpen && (
           <motion.div
+            ref={lightboxRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${product.name} görsel önizleme`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -801,7 +807,7 @@ export default function ProductDetail() {
       <main className="pt-20 lg:pt-12 pb-32 lg:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-[11px] text-black/45 mb-8 font-mono tracking-[0.18em] uppercase">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] text-black/45 mb-8 font-mono tracking-[0.18em] uppercase">
             <Link href="/" className="hover:text-black transition-colors">
               Ana Sayfa
             </Link>
@@ -902,6 +908,11 @@ export default function ProductDetail() {
                         key={selectedImage}
                         src={images[selectedImage]}
                         alt={product.name}
+                        // LCP: bu ürün detay sayfasındaki en büyük görsel, ilk boyamada
+                        // görünür olduğundan erken/öncelikli yüklenmeli.
+                        loading={selectedImage === 0 ? 'eager' : 'lazy'}
+                        fetchPriority={selectedImage === 0 ? 'high' : 'auto'}
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover will-change-transform"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -949,6 +960,9 @@ export default function ProductDetail() {
                           <img
                             src={img}
                             alt={product.name}
+                            loading={i === 0 ? 'eager' : 'lazy'}
+                            fetchPriority={i === 0 ? 'high' : 'auto'}
+                            decoding="async"
                             className="w-full h-full object-cover"
                             draggable={false}
                           />
@@ -1602,6 +1616,7 @@ export default function ProductDetail() {
                         type="text"
                         required
                         placeholder="Adınız *"
+                        aria-label="Adınız"
                         value={reviewGuestName}
                         onChange={(e) => setReviewGuestName(e.target.value)}
                         maxLength={100}
@@ -1612,6 +1627,7 @@ export default function ProductDetail() {
                         type="email"
                         required
                         placeholder="E-posta *"
+                        aria-label="E-posta adresiniz"
                         value={reviewGuestEmail}
                         onChange={(e) => setReviewGuestEmail(e.target.value)}
                         maxLength={200}
@@ -1624,6 +1640,7 @@ export default function ProductDetail() {
                   <input
                     type="text"
                     placeholder="Başlık (isteğe bağlı)"
+                    aria-label="Yorum başlığı (isteğe bağlı)"
                     value={reviewTitle}
                     onChange={(e) => setReviewTitle(e.target.value)}
                     maxLength={200}
@@ -1632,6 +1649,7 @@ export default function ProductDetail() {
                   />
                   <textarea
                     placeholder="Yorumunuz (isteğe bağlı)"
+                    aria-label="Yorumunuz (isteğe bağlı)"
                     value={reviewContent}
                     onChange={(e) => setReviewContent(e.target.value)}
                     rows={3}
