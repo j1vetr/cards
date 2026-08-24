@@ -14,7 +14,7 @@ const QUICK_LINKS = [
 export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#09090f' }}>
-      <SEO title="Sayfa Bulunamadı | Go|Cards TCG" description="Aradığınız sayfa mevcut değil." noIndex />
+      <SEO title="Sayfa Bulunamadı | Go|Cards TCG" description="Aradığınız sayfa mevcut değil." noIndex suppressCanonical />
       <Header />
 
       <main className="flex-1 flex items-center justify-center px-4 py-20">

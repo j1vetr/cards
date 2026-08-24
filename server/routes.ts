@@ -379,7 +379,7 @@ export async function registerRoutes(
         { loc: "/kvkk", priority: "0.4", changefreq: "yearly" },
       ];
 
-      const [categories, allProducts, productCategoryLinks, cardSetRows, cardRows, blogPosts, cardGameRows] = await Promise.all([
+      const [categories, allProducts, productCategoryLinks, cardSetRows, cardRows, blogPosts, cardGameRows, redirectRows] = await Promise.all([
         storage.getCategories().catch(() => []),
         storage.getAllProducts().catch(() => []),
         db.select({ categoryId: productCategories.categoryId, productId: productCategories.productId })
@@ -390,9 +390,15 @@ export async function registerRoutes(
           .from(cardsTable).where(eq(cardsTable.isActive, true)).catch(() => []),
         storage.getBlogPosts({ status: "published" }).catch(() => []),
         storage.listCardGames().catch(() => []),
+        storage.getRedirects().catch(() => []),
       ]);
       const noIndexGameSlugs = new Set(
         (cardGameRows as any[]).filter((g) => g?.seoNoIndex).map((g) => g.slug)
+      );
+      // Redirect kaynağı olan path'ler (301/302/410/404 fark etmez) sitemap'e
+      // asla giremez: sitemap yalnızca final canonical URL içermeli.
+      const redirectSourcePaths = new Set(
+        (redirectRows as any[]).map((r) => r?.fromPath).filter(Boolean)
       );
 
       const escapeXml = (str: string) =>
@@ -418,6 +424,7 @@ export async function registerRoutes(
       const urls: string[] = [];
 
       const pushUrl = (loc: string, opts: { lastmod?: string | null; changefreq: string; priority: string; images?: string[] }) => {
+        if (redirectSourcePaths.has(loc)) return;
         let entry = `  <url>\n    <loc>${escapeXml(baseUrl + loc)}</loc>\n`;
         if (opts.lastmod) entry += `    <lastmod>${opts.lastmod}</lastmod>\n`;
         entry += `    <changefreq>${opts.changefreq}</changefreq>\n    <priority>${opts.priority}</priority>\n`;
@@ -5312,20 +5319,28 @@ Sitemap: ${baseUrl}/sitemap.xml
   app.get("/llms.txt", async (req, res) => {
     try {
       const baseUrl = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
-      const [games, blogPosts] = await Promise.all([
+      const [games, blogPosts, redirectRows] = await Promise.all([
         storage.listCardGames().catch(() => []),
         storage.getBlogPosts({ status: "published" }).catch(() => []),
+        storage.getRedirects().catch(() => []),
       ]);
+      // Redirect kaynağı veya noindex olan URL'ler llms.txt'ye girmez;
+      // yalnızca final canonical URL'ler listelenir (sitemap ile aynı kural).
+      const redirectSources = new Set((redirectRows as any[]).map((r) => r?.fromPath).filter(Boolean));
 
       const gameLines = (games as any[])
+        .filter((g) => !g?.seoNoIndex)
         .map((g) => {
           const ownerPath = g.slug === "pokemon" ? "/pokemon" : g.slug === "riftbound" ? "/riftbound" : `/oyun/${g.slug}`;
-          return `- [${g.name}](${baseUrl}${ownerPath}): ${g.name} tekli kartları, setleri, booster paket ve kapalı kutuları.`;
+          return { ownerPath, line: `- [${g.name}](${baseUrl}${ownerPath}): ${g.name} tekli kartları, setleri, booster paket ve kapalı kutuları.` };
         })
+        .filter((g) => !redirectSources.has(g.ownerPath))
+        .map((g) => g.line)
         .join("\n");
 
       const guideLines = (blogPosts as any[])
         .slice(0, 30)
+        .filter((p) => !redirectSources.has(`/blog/${p.slug}`))
         .map((p) => `- [${p.title}](${baseUrl}/blog/${p.slug})${p.metaDescription ? `: ${p.metaDescription}` : ""}`)
         .join("\n");
 
@@ -5361,12 +5376,19 @@ ${guideLines || "- Rehber içerikleri yakında yayında olacak."}
   app.get("/llms-full.txt", async (req, res) => {
     try {
       const baseUrl = process.env.PUBLIC_BASE_URL || CANONICAL_SITE_URL;
-      const games = await storage.listCardGames().catch(() => []);
+      const [games, redirectRows] = await Promise.all([
+        storage.listCardGames().catch(() => []),
+        storage.getRedirects().catch(() => []),
+      ]);
+      // Sitemap ile aynı kural: redirect kaynağı veya noindex set URL'leri
+      // indekse girmez, yalnızca final canonical URL'ler listelenir.
+      const redirectSources = new Set((redirectRows as any[]).map((r) => r?.fromPath).filter(Boolean));
 
       const sections: string[] = [];
-      for (const game of games as any[]) {
+      for (const game of (games as any[]).filter((g) => !g?.seoNoIndex)) {
         const sets = await storage.getCardSetsPublic(game.slug).catch(() => []);
         const setLines = (sets as any[])
+          .filter((s) => !s?.seo_no_index && !s?.seoNoIndex && !redirectSources.has(`/set/${s.slug}`))
           .map((s) => `- [${s.name}](${baseUrl}/set/${s.slug})${s.total_cards ? ` — ${s.total_cards} kart` : ""}`)
           .join("\n");
         sections.push(`## ${game.name} Setleri\n${setLines || "- Set verisi şu anda mevcut değil."}`);

@@ -20,7 +20,8 @@ export interface RenderResult {
   status: 200 | 404 | 410;
   title: string;
   description: string;
-  canonical: string;
+  /** null: sayfaya canonical etiketi basılmaz (404/410 gibi hata sayfaları). */
+  canonical: string | null;
   robots: "index, follow" | "noindex, follow" | "noindex, nofollow";
   ogType: "website" | "product" | "article";
   ogImage: string;
@@ -70,7 +71,9 @@ function notFoundResult(baseUrl: string, pathname: string): RenderResult {
     status: 404,
     title: `Sayfa Bulunamadı | ${SITE_NAME}`,
     description: "Aradığınız sayfa bulunamadı. Bu ürün, kart veya kategori artık mevcut olmayabilir.",
-    canonical: `${baseUrl}${pathname}`,
+    // 404 sayfası kendine canonical vermez: var olmayan bir URL'yi
+    // canonical olarak işaretlemek arama motorlarına çelişkili sinyal verir.
+    canonical: null,
     robots: "noindex, nofollow",
     ogType: "website",
     ogImage: `${baseUrl}/logo.png`,
@@ -91,7 +94,8 @@ export function goneResult(baseUrl: string, pathname: string): RenderResult {
     status: 410,
     title: `Sayfa Kaldırıldı | ${SITE_NAME}`,
     description: "Bu sayfa kalıcı olarak kaldırılmıştır ve bir daha yayınlanmayacaktır.",
-    canonical: `${baseUrl}${pathname}`,
+    // 410 sayfası da 404 gibi kendine canonical vermez.
+    canonical: null,
     robots: "noindex, nofollow",
     ogType: "website",
     ogImage: `${baseUrl}/logo.png`,
@@ -512,16 +516,21 @@ async function renderCard(cardSlug: string, baseUrl: string): Promise<RenderResu
     image: [image],
     sku: card.id,
     category: card.set_name,
-    offers: {
+  };
+  // Offer yalnızca gerçek bir aktif satış kaydı ve geçerli pozitif fiyat
+  // varsa üretilir. Fiyatsız Offer + availability gibi yarım şema veya
+  // uydurma fiyat asla üretilmez: satış yoksa temiz Product şeması kalır.
+  const listingPrice = lowestListing ? parseFloat(String(lowestListing.price)) : NaN;
+  if (lowestListing && Number.isFinite(listingPrice) && listingPrice > 0) {
+    productSchema.offers = {
       "@type": "Offer",
       url: `${baseUrl}${path}`,
       priceCurrency: "TRY",
-      price: lowestListing ? lowestListing.price : undefined,
+      price: lowestListing.price,
       availability: `https://schema.org/${availability}`,
       seller: { "@type": "Organization", name: "GoCards TCG", url: baseUrl },
-    },
-  };
-  if (!lowestListing) delete productSchema.offers.price;
+    };
+  }
 
   return {
     status: 200,

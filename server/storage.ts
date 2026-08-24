@@ -2564,7 +2564,7 @@ export class DbStorage implements IStorage {
     const result = await db.execute(sql`
       SELECT
         cs.id, cs.name, cs.slug, cs.series, cs.release_date, cs.total_cards,
-        cs.logo_url, cs.symbol_url,
+        cs.logo_url, cs.symbol_url, cs.seo_no_index,
         cg.id AS game_id, cg.name AS game_name, cg.slug AS game_slug,
         COUNT(DISTINCT c.id) FILTER (
           WHERE c.is_active = true AND EXISTS (

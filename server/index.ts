@@ -334,6 +334,37 @@ app.use((req, res, next) => {
     console.error("[index] stale menu item cleanup failed:", err);
   }
 
+  // Redirect kaynağı olan /urun/<slug> path'lerine karşılık gelen aktif ürün
+  // kayıtlarını pasifleştir. Redirect'in kendisi silinmez (301 aynen çalışır);
+  // bu temizlik yalnızca eski slug'lı ürünün sitemap'e ve listeleme
+  // sayfalarındaki iç linklere sızmasını engeller. İdempotenttir: eşleşen
+  // aktif ürün kalmadığında hiçbir şey yapmaz.
+  try {
+    const { db } = await import("./db");
+    const { products, redirects } = await import("../shared/schema");
+    const { and, eq, inArray } = await import("drizzle-orm");
+
+    const redirectRows = await db.select({ fromPath: redirects.fromPath }).from(redirects);
+    const redirectedProductSlugs = redirectRows
+      .map((r) => r.fromPath)
+      .filter((p): p is string => typeof p === "string" && p.startsWith("/urun/"))
+      .map((p) => p.slice("/urun/".length))
+      .filter(Boolean);
+
+    if (redirectedProductSlugs.length > 0) {
+      const deactivated = await db
+        .update(products)
+        .set({ isActive: false })
+        .where(and(inArray(products.slug, redirectedProductSlugs), eq(products.isActive, true)))
+        .returning({ slug: products.slug });
+      if (deactivated.length > 0) {
+        console.log(`[migrate] deactivated ${deactivated.length} product(s) whose URL is a redirect source: ${deactivated.map((p) => p.slug).join(", ")}`);
+      }
+    }
+  } catch (err) {
+    console.error("[index] redirected-product deactivation failed:", err);
+  }
+
   // Pazaryeri senkron zamanlayıcısı (Trendyol delta saatlik / full 03:00)
   try {
     const { startScheduler } = await import("./scheduler");

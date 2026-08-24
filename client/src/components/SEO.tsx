@@ -13,6 +13,10 @@ interface SEOProps {
    * filtre/arama sonucu listeleme sayfaları gibi indexlenmemesi ama linkleri takip
    * edilmesi gereken sayfalar için kullanılır. */
   noIndexFollow?: boolean;
+  /** true: canonical etiketi hiç basılmaz, varsa kaldırılır. Yalnızca 404 gibi
+   * gerçek hata sayfaları için kullanılır. Normal noindex listeleme/filtre
+   * sayfaları self-canonical'larını korur (SSR paritesi). */
+  suppressCanonical?: boolean;
   product?: {
     name: string;
     /** null/undefined = gerçek bir fiyat verisi yok (ör. hiç aktif liste yok); alan şemadan tamamen çıkarılır */
@@ -61,6 +65,7 @@ export function SEO({
   type = 'website',
   noIndex = false,
   noIndexFollow = false,
+  suppressCanonical = false,
   product,
   breadcrumbs,
   faqItems
@@ -92,13 +97,19 @@ export function SEO({
     updateMetaTag('meta[name="robots"]', noIndex ? (noIndexFollow ? 'noindex, follow' : 'noindex, nofollow') : 'index, follow');
 
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.setAttribute('rel', 'canonical');
-      canonical.setAttribute('data-managed', 'seo');
-      document.head.appendChild(canonical);
+    if (suppressCanonical) {
+      // 404 gibi gerçek hata sayfaları kendine canonical vermez: var olmayan
+      // bir URL'yi canonical işaretlemek arama motorlarına çelişkili sinyaldir.
+      canonical?.remove();
+    } else {
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.setAttribute('rel', 'canonical');
+        canonical.setAttribute('data-managed', 'seo');
+        document.head.appendChild(canonical);
+      }
+      canonical.setAttribute('href', fullUrl);
     }
-    canonical.setAttribute('href', fullUrl);
 
     updateMetaTag('meta[property="og:title"]', fullTitle);
     updateMetaTag('meta[property="og:description"]', clampedDescription);
@@ -149,27 +160,32 @@ export function SEO({
         : [imageUrl];
       
       const schemaCondition = toSchemaCondition(product.condition);
-      const hasPrice = typeof product.price === 'number' && !Number.isNaN(product.price);
+      // Offer yalnızca gerçek pozitif bir fiyat varsa üretilir (SSR renderCard
+      // ile aynı kural): fiyatsız Offer + availability gibi yarım şema veya
+      // sıfır/uydurma fiyat asla basılmaz. Satış yoksa temiz Product kalır.
+      const hasPrice = typeof product.price === 'number' && Number.isFinite(product.price) && product.price > 0;
       const productSchema: any = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
         description: clampedDescription,
         image: productImages,
-        offers: {
+      };
+      if (hasPrice) {
+        productSchema.offers = {
           '@type': 'Offer',
           url: fullUrl,
           priceCurrency: product.currency || 'TRY',
+          price: product.price,
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
             name: 'GoCards TCG',
             url: CANONICAL_SITE_URL
           },
-          ...(hasPrice ? { price: product.price } : {}),
           ...(schemaCondition ? { itemCondition: schemaCondition } : {}),
-        }
-      };
+        };
+      }
       // Marka sadece gerçek bir üretici/yayıncı verisi varsa eklenir — mağaza adı marka olarak kullanılmaz
       if (product.brand) {
         productSchema.brand = { '@type': 'Brand', name: product.brand };

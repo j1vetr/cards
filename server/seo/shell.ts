@@ -9,7 +9,8 @@ import { escapeHtml } from "./htmlUtils";
 export function injectSeo(template: string, seo: RenderResult | null, reqPath: string, baseUrl: string): string {
   let html = template;
 
-  const canonical = seo?.canonical || `${baseUrl}${reqPath}`;
+  // canonical === null: hata sayfası (404/410), canonical etiketi hiç basılmaz.
+  const canonical = seo && seo.canonical === null ? null : seo?.canonical || `${baseUrl}${reqPath}`;
   const robots = seo?.robots || "index, follow";
 
   if (seo?.title) {
@@ -22,7 +23,7 @@ export function injectSeo(template: string, seo: RenderResult | null, reqPath: s
 
   html = replaceMetaContent(html, 'name="robots"', robots);
 
-  html = replaceOrInsertCanonical(html, canonical);
+  html = canonical === null ? removeCanonical(html) : replaceOrInsertCanonical(html, canonical);
 
   if (seo?.title) {
     html = replaceMetaContent(html, 'property="og:title"', seo.title);
@@ -32,7 +33,7 @@ export function injectSeo(template: string, seo: RenderResult | null, reqPath: s
     html = replaceMetaContent(html, 'property="og:description"', seo.description);
     html = replaceMetaContent(html, 'name="twitter:description"', seo.description);
   }
-  html = replaceMetaContent(html, 'property="og:url"', canonical);
+  html = replaceMetaContent(html, 'property="og:url"', canonical ?? `${baseUrl}${reqPath}`);
   if (seo?.ogType) {
     html = replaceMetaContent(html, 'property="og:type"', seo.ogType);
   }
@@ -79,4 +80,10 @@ function replaceOrInsertCanonical(html: string, canonical: string): string {
     return html.replace(re, `$1${escaped}$2`);
   }
   return html.replace("</head>", `  <link rel="canonical" href="${escaped}">\n  </head>`);
+}
+
+function removeCanonical(html: string): string {
+  // 404/410 sayfalarında template'ten gelen canonical etiketi de kaldırılır:
+  // hata sayfası kendine (veya ana sayfaya) canonical vermemeli.
+  return html.replace(/[ \t]*<link rel="canonical"[^>]*>\n?/gi, "");
 }
