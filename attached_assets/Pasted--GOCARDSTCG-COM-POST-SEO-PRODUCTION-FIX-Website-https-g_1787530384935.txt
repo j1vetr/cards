@@ -1,0 +1,684 @@
+# GOCARDSTCG.COM POST-SEO PRODUCTION FIX
+
+Website:
+
+https://gocardstcg.com
+
+IMPORTANT:
+
+FULL SEO IMPLEMENTATION'I TEKRAR YAPMA.
+
+Mevcut SEO altyapısı büyük ölçüde doğru çalışıyor.
+
+Özellikle aşağıdaki çalışan yapıları BOZMA:
+
+* homepage SSR
+* `/riftbound`
+* `/pokemon`
+* `/kartlar`
+* product pages
+* card pages
+* set pages
+* Organization schema
+* WebSite schema
+* Product schema
+* CollectionPage schema
+* BreadcrumbList
+* FAQPage
+* robots.txt
+* llms.txt
+* llms-full.txt
+* sitemap architecture
+* checkout
+* sepet
+* kullanıcı hesapları
+* ödeme
+* admin
+* product database
+* card database
+* mevcut URL yapısı
+
+Bu task sadece production audit sırasında tespit edilen küçük SEO hatalarını düzeltmek içindir.
+
+20.000+ kartı tek tek HTTP request ile crawl ETME.
+
+Production üzerinde curl, HTTP crawl veya toplu test yapma.
+
+Database, sitemap generator, route logic, redirect mapping ve template üzerinden düzeltmeleri uygula.
+
+Testleri ayrıca manuel olarak yapacağız.
+
+---
+
+# 1. SITEMAP İÇİNDE REDIRECT URL OLMASIN
+
+Production audit'te sitemap içerisinde redirect olan URL bulundu.
+
+Örnek:
+
+https://gocardstcg.com/urun/riftbound-league-of-legends-tcg-set-2-spiritforged-booster-pack
+
+şu anda:
+
+https://gocardstcg.com/set/riftbound-sfd
+
+adresine yönleniyor.
+
+Eski URL sitemap içerisinde bulunmamalı.
+
+Sitemap için temel kural:
+
+Sadece şu URL'ler dahil edilsin:
+
+* final canonical URL
+* indexable URL
+* aktif route
+* doğrudan içerik sağlayan URL
+
+Sitemap'ten çıkar:
+
+* 301 URL
+* 302 URL
+* 404 URL
+* 410 URL
+* noindex URL
+* duplicate URL
+* obsolete URL
+* eski slug
+* redirect edilen URL
+
+Eğer sistemde:
+
+OLD URL
+→ NEW URL
+
+mapping'i varsa sitemap doğrudan NEW URL üretmeli.
+
+---
+
+# 2. 22.000 URL İÇİN HTTP REQUEST ATMA
+
+Sistemde yaklaşık 20.000+ kart URL'si bulunuyor.
+
+Her URL'yi production üzerinden ziyaret ederek kontrol etme.
+
+Bu gereksiz yük oluşturur.
+
+Sitemap temizliğini mümkün olduğunca:
+
+* database
+* route definitions
+* redirect map
+* slug mapping
+* canonical generator
+* sitemap generator
+
+üzerinden yap.
+
+Generator zaten redirect olduğu bilinen eski URL'leri sitemap'e eklememeli.
+
+Duplicate `<loc>` üretme.
+
+---
+
+# 3. INTERNAL LINKLER REDIRECT URL'YE GİTMESİN
+
+Site içerisinde eski bir URL final URL'ye redirect ediyorsa internal linklerde eski URL kullanılmamalı.
+
+Örneğin:
+
+/urun/riftbound-league-of-legends-tcg-set-2-spiritforged-booster-pack
+
+yerine final destination:
+
+/set/riftbound-sfd
+
+kullanılmalı.
+
+İdeal yapı:
+
+internal link
+→ final canonical URL
+
+İstemediğimiz:
+
+internal link
+→ 301
+→ final URL
+
+Bu kontrolü template, database ve route mapping üzerinden yap.
+
+Tüm siteyi HTTP ile crawl etme.
+
+---
+
+# 4. CARD PRODUCT / OFFER SCHEMA MANTIĞINI DÜZELT
+
+Production audit'te bazı Pokemon card detail sayfalarında:
+
+* Product
+* Offer
+* availability
+
+schema üretildiği halde gerçek `price` bulunmadığı görüldü.
+
+Bu problem 20.000 karta ayrı ayrı müdahale edilerek çözülmeyecek.
+
+Card detail JSON-LD template veya schema generator logic'i düzeltilecek.
+
+---
+
+# 5. KART GERÇEKTEN SATIŞTA İSE
+
+Bir kartın gerçek aktif satış kaydı ve gerçek fiyatı varsa Product JSON-LD içerisinde:
+
+Product
+
+ve:
+
+Offer
+
+oluştur.
+
+Offer mümkün olduğunda gerçek database verisinden:
+
+* price
+* priceCurrency
+* availability
+* url
+
+alanlarını kullansın.
+
+Currency gerçekten TRY ise:
+
+`priceCurrency: TRY`
+
+kullan.
+
+Availability gerçek satış/stok durumundan gelsin.
+
+Örneğin uygun durumda:
+
+* InStock
+* OutOfStock
+* PreOrder
+
+kullanılabilir.
+
+Tahmin etme.
+
+---
+
+# 6. KARTIN GERÇEK SATIŞ FİYATI YOKSA
+
+Kart sadece katalog/database kaydı olarak mevcutsa ve aktif satış teklifi yoksa:
+
+fake Offer oluşturma.
+
+Bu durumda temiz:
+
+Product
+
+schema kullanılabilir.
+
+Ancak şu tip yarım schema istemiyorum:
+
+Offer
++
+availability
++
+no price
+
+Aktif satış ve gerçek fiyat yoksa Offer oluşturulmamalı.
+
+Logic kabaca:
+
+IF active sale AND valid real price exists:
+
+Product
++
+Offer
++
+price
++
+priceCurrency
++
+availability
++
+url
+
+ELSE:
+
+Product only
+
+Fake fiyat ASLA üretme.
+
+---
+
+# 7. NORMAL /URUN/ PRODUCT PAGES'İ BOZMA
+
+Normal commerce product pages şu anda gerçek:
+
+* Product
+* Offer
+* price
+* availability
+
+verisi üretiyor.
+
+Bu çalışan yapı korunmalı.
+
+Card schema üzerinde yapılan değişiklik `/urun/` product template'ini bozmasın.
+
+---
+
+# 8. TRUE 404 SAYFALARINDAN CANONICAL KALDIR
+
+Fake card, product ve set route'ları HTTP 404 dönmeye devam etmeli.
+
+Bu davranışı bozma.
+
+Örnek route tipleri:
+
+/kart/[unknown-slug]
+
+/urun/[unknown-slug]
+
+/set/[unknown-slug]
+
+404 page:
+
+* HTTP 404
+* noindex
+* nofollow
+* kullanıcıya anlamlı 404 içeriği
+
+üretebilir.
+
+Ancak 404 sayfalarında:
+
+`<link rel="canonical">`
+
+üretme.
+
+404 URL'nin kendisine self-canonical verme.
+
+Product, CollectionPage veya benzeri içerik schema'ları da 404 sayfasında oluşturulmasın.
+
+Global Organization schema gerekiyorsa kalabilir.
+
+---
+
+# 9. WWW / HTTP REDIRECT CHAIN'İ TEK HOP YAP
+
+Canonical production host:
+
+https://gocardstcg.com
+
+olmalı.
+
+Aşağıdaki hostlar doğrudan tek 301 ile canonical host'a gitmeli:
+
+http://gocardstcg.com
+
+http://www.gocardstcg.com
+
+https://www.gocardstcg.com
+
+İstemediğimiz:
+
+http://www.gocardstcg.com
+→ https://www.gocardstcg.com
+→ https://gocardstcg.com
+
+İstediğimiz:
+
+http://www.gocardstcg.com
+→ https://gocardstcg.com
+
+Path ve query string korunmalı.
+
+Örneğin:
+
+http://www.gocardstcg.com/riftbound?source=test
+
+doğrudan:
+
+https://gocardstcg.com/riftbound?source=test
+
+olmalı.
+
+---
+
+# 10. NGINX ÜZERİNDEN NORMALIZE ET
+
+Production nginx config'i kullanılıyorsa host normalization mümkünse nginx seviyesinde çöz.
+
+Mevcut:
+
+* SSL
+* reverse proxy
+* PM2
+* Express
+* static files
+
+yapısını bozma.
+
+Nginx configuration değişikliği yapılırken mevcut server block yapısını incele.
+
+Yeni gereksiz server block oluşturma.
+
+Canonical host dışındaki bütün varyasyonlar tek redirect ile:
+
+https://gocardstcg.com$request_uri
+
+adresine yönlenmeli.
+
+---
+
+# 11. /RIFTBOUND OWNER PAGE'İ ELLEME
+
+Primary Riftbound owner:
+
+https://gocardstcg.com/riftbound
+
+Mevcut title:
+
+League of Legends Riftbound TCG Ürünleri ve Kartları | Go|Cards TCG
+
+Mevcut H1:
+
+League of Legends Riftbound TCG Ürünleri ve Kartları
+
+Bu sayfayı yeniden yazma.
+
+Mevcut çalışan:
+
+* CollectionPage
+* ItemList
+* BreadcrumbList
+* FAQPage
+* Organization
+
+schema mimarisini koru.
+
+Riftbound content rewrite yapma.
+
+---
+
+# 12. /POKEMON OWNER PAGE'İ ELLEME
+
+Primary Pokemon owner:
+
+https://gocardstcg.com/pokemon
+
+Mevcut title:
+
+Pokémon TCG Kartları ve Setleri | Go|Cards TCG
+
+Mevcut H1:
+
+Pokémon TCG Kartları ve Setleri
+
+Bu yapıyı değiştirme.
+
+Schema ve mevcut SSR yapısını bozma.
+
+---
+
+# 13. HOMEPAGE'İ ELLEME
+
+Homepage şu anda:
+
+* SSR
+* single H1
+* Riftbound link
+* Pokemon link
+* product links
+* Organization
+* WebSite
+
+yapısı ile çalışıyor.
+
+Homepage title, H1 veya içerik mimarisini bu task kapsamında yeniden optimize etme.
+
+---
+
+# 14. ROBOTS.TXT'Yİ GEREKSİZ DEĞİŞTİRME
+
+Mevcut robots yapısını koru.
+
+Public content erişilebilir kalmalı.
+
+Private alanlar:
+
+* sepet
+* ödeme
+* kullanıcı hesabı
+* admin
+* API
+
+mevcut mantıkta korunabilir.
+
+SEO düzeltmesi yaparken public category/product/card/set pages'i yanlışlıkla disallow etme.
+
+---
+
+# 15. LLMS.TXT VE LLMS-FULL.TXT'Yİ BOZMA
+
+Mevcut:
+
+/llms.txt
+
+ve:
+
+/llms-full.txt
+
+dosyalarını yeniden tasarlama.
+
+Sadece eski redirect URL veya obsolete URL içeriyorsa final canonical URL ile değiştir.
+
+Mevcut Riftbound ve Pokemon entity mimarisini koru.
+
+---
+
+# 16. SET PAGES'İ BOZMA
+
+Pokemon ve Riftbound set pages mevcut yapıda korunmalı.
+
+Mevcut:
+
+* canonical
+* H1
+* CollectionPage
+* BreadcrumbList
+
+mimarisini değiştirme.
+
+Bu task set SEO redesign işi değildir.
+
+---
+
+# 17. NO MASS REWRITE
+
+Kesinlikle yapma:
+
+* 20.000+ card title'ını yeniden üretme
+* 20.000 karta AI description oluşturma
+* card slug'larını değiştirme
+* bütün set URL'lerini değiştirme
+* bütün product URL'lerini değiştirme
+* category architecture yeniden kurma
+* database'i yeniden tasarlama
+* site tasarımını değiştirme
+* full SEO yeniden uygulama
+
+Bu task sadece generator ve template bazlı küçük production fix'leri içindir.
+
+---
+
+# 18. SITEMAP GENERATOR KURALI
+
+Sitemap generator'ın kaynak mantığını düzelt.
+
+Sitemap içerisinde bulunmaması gerekenler:
+
+* redirect source URL
+* duplicate URL
+* obsolete slug
+* 404 route
+* noindex page
+* admin
+* account
+* checkout
+* cart
+* internal search
+* query parameter page
+
+Canonical URL üretimi ile sitemap URL üretimi aynı source-of-truth'u kullanmalı.
+
+---
+
+# 19. OLD URL REDIRECTLERİNİ SİLME
+
+Eski URL'leri sitemap'ten kaldırmak:
+
+redirect'i silmek anlamına gelmez.
+
+Eski URL geçmişte Google tarafından biliniyor olabilir.
+
+Dolayısıyla:
+
+OLD URL
+→ 301
+→ FINAL RELEVANT URL
+
+mapping'i korunabilir.
+
+Sadece:
+
+* sitemap
+* internal links
+* canonical
+
+tarafında final URL kullanılmalı.
+
+---
+
+# 20. /KARTLAR SAYFASINI BU TASK'TA DEĞİŞTİRME
+
+`/kartlar` sayfası bu task kapsamında rewrite edilmeyecek.
+
+Title veya H1 değişikliği yapma.
+
+Bunu daha sonra ayrıca değerlendireceğiz.
+
+---
+
+# 21. CARD DETAIL TEMPLATE SOURCE OF TRUTH
+
+Card detail page'lerde schema bilgisi şu kaynaklardan gelmeli:
+
+* card database
+* active listing
+* actual inventory
+* actual price
+* actual availability
+
+Schema üretmek için frontend text scrape etme.
+
+Database/backend source-of-truth kullan.
+
+---
+
+# 22. SCHEMA SAFETY
+
+ASLA üretme:
+
+* fake price
+* fake inventory
+* fake rating
+* fake review
+* fake SKU
+* fake GTIN
+* fake availability
+* fake seller information
+
+Sadece doğrulanmış mevcut project data kullan.
+
+---
+
+# 23. DEĞİŞİKLİKLERİ MİNİMUM TUT
+
+Bu çalışma sırasında mümkün olduğunca az dosya değiştir.
+
+Var olan architecture'ı yeniden yazmak yerine:
+
+* sitemap generator
+* card schema generator
+* global 404 metadata
+* redirect / nginx config
+* affected internal link mapping
+
+üzerinden lokal düzeltmeler yap.
+
+---
+
+# 24. PRODUCTION TEST YAPMA
+
+Bu task kapsamında:
+
+* curl çalıştırma
+* production URL crawl etme
+* sitemap içindeki 22.000 URL'yi request etme
+* bot testleri yapma
+* external SEO scanner çalıştırma
+* production load test yapma
+
+gerekmiyor.
+
+Testleri ayrıca manuel gerçekleştireceğiz.
+
+Sen sadece kod ve configuration düzeltmelerini uygula.
+
+---
+
+# 25. İŞ BİTİNCE SADECE DEĞİŞİKLİK RAPORU VER
+
+Uygulama tamamlandıktan sonra bana kısa ve net olarak şunları bildir:
+
+1. Sitemap generator'da ne değiştirildi?
+2. Redirect source URL'ler sitemap'ten nasıl engellendi?
+3. Internal link redirect problemi için ne değiştirildi?
+4. Card Offer schema logic'i nasıl değiştirildi?
+5. Fiyatı olmayan kartlarda hangi schema üretiliyor?
+6. Fiyatlı kartlarda hangi Offer alanları üretiliyor?
+7. 404 canonical hangi dosyada kaldırıldı?
+8. Host redirect hangi configuration üzerinden düzeltildi?
+9. Değiştirilen dosyaların listesi
+10. Manuel test etmemiz gereken noktaların listesi
+
+Production testi yapma.
+
+Test sonuçları uydurma.
+
+Sadece gerçekten yaptığın kod değişikliklerini raporla.
+
+---
+
+# FINAL INSTRUCTION
+
+FULL SEO REBUILD YAPMA.
+
+Mevcut çalışan GoCards SEO altyapısını koru.
+
+Sadece şu dört ana problemi düzelt:
+
+1. Sitemap içerisinde redirect URL bulunması
+2. Kartlarda eksik / yanlış Offer schema logic'i
+3. 404 sayfalarında canonical bulunması
+4. www / HTTP host redirect chain'i
+
+Bunların dışında çalışan SEO yapısına gereksiz müdahale etme.
+
+Şimdi mevcut kodu incele ve bu düzeltmeleri uygula.
