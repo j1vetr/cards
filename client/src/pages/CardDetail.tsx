@@ -385,8 +385,8 @@ function InfoRow({ Icon, label, value }: { Icon: any; label: string; value: stri
 }
 
 /* ─── Pokémon Desktop Info Panel ─────────────────────────────────────── */
-function PokemonInfoPanel({ card, cardTypes, attacks, abilities, purchaseBox, trustRow }: {
-  card: any; cardTypes: string[]; attacks: any[]; abilities: any[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode;
+function PokemonInfoPanel({ card, cardTypes, attacks, abilities, purchaseBox, trustRow, isFoilSelected }: {
+  card: any; cardTypes: string[]; attacks: any[]; abilities: any[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode; isFoilSelected?: boolean;
 }) {
   return (
     <div className="space-y-5 pt-2">
@@ -413,9 +413,10 @@ function PokemonInfoPanel({ card, cardTypes, attacks, abilities, purchaseBox, tr
 
       {/* Card name */}
       <div>
-        <h1 className="text-[36px] xl:text-[44px] font-bold text-white leading-[1.0] tracking-[-0.025em]"
+        <h1 className={`text-[36px] xl:text-[44px] font-bold leading-[1.0] tracking-[-0.025em] flex items-center gap-2.5 ${isFoilSelected ? 'foil-title-shimmer' : 'text-white'}`}
           style={{ fontFamily: 'var(--font-display)' }}>
           {card.name}
+          {isFoilSelected && <Sparkles className="w-7 h-7 xl:w-8 xl:h-8 text-fuchsia-300 shrink-0" />}
         </h1>
         {card.set_series && (
           <p className="text-sm text-zinc-500 mt-1">{card.set_series}</p>
@@ -480,8 +481,8 @@ function PokemonInfoPanel({ card, cardTypes, attacks, abilities, purchaseBox, tr
 }
 
 /* ─── Riftbound Desktop Info Panel ───────────────────────────────────── */
-function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
-  card: any; cardTypes: string[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode;
+function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow, isFoilSelected }: {
+  card: any; cardTypes: string[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode; isFoilSelected?: boolean;
 }) {
   return (
     <div className="space-y-5 pt-2">
@@ -507,9 +508,10 @@ function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow }: {
 
       {/* Card name */}
       <div>
-        <h1 className="text-[36px] xl:text-[44px] font-bold text-white leading-[1.0] tracking-[-0.025em]"
+        <h1 className={`text-[36px] xl:text-[44px] font-bold leading-[1.0] tracking-[-0.025em] flex items-center gap-2.5 ${isFoilSelected ? 'foil-title-shimmer' : 'text-white'}`}
           style={{ fontFamily: 'var(--font-display)' }}>
           {card.name}
+          {isFoilSelected && <Sparkles className="w-7 h-7 xl:w-8 xl:h-8 text-fuchsia-300 shrink-0" />}
         </h1>
       </div>
 
@@ -736,6 +738,7 @@ export default function CardDetail() {
   const price = selectedListing ? parseFloat(selectedListing.price) : null;
   const stock: number | null = selectedListing?.stock ?? null;
   const lowStock = stock !== null && stock <= 10 && stock > 0;
+  const isFoilSelected = selectedListing?.finish === 'foil';
 
   const cardTypes = parseCardTypes(card?.card_types);
   const isPokemon = card?.game_slug === 'pokemon';
@@ -885,9 +888,9 @@ export default function CardDetail() {
 
           {/* RIGHT — game-specific info panel */}
           {isPokemon ? (
-            <PokemonInfoPanel card={card} cardTypes={cardTypes} attacks={attacks} abilities={abilities} purchaseBox={purchaseBox} trustRow={trustRow} />
+            <PokemonInfoPanel card={card} cardTypes={cardTypes} attacks={attacks} abilities={abilities} purchaseBox={purchaseBox} trustRow={trustRow} isFoilSelected={isFoilSelected} />
           ) : (
-            <RiftboundInfoPanel card={card} cardTypes={cardTypes} purchaseBox={purchaseBox} trustRow={trustRow} />
+            <RiftboundInfoPanel card={card} cardTypes={cardTypes} purchaseBox={purchaseBox} trustRow={trustRow} isFoilSelected={isFoilSelected} />
           )}
         </div>
 
@@ -914,9 +917,10 @@ export default function CardDetail() {
                 </span>
               )}
             </div>
-            <h1 className="text-[26px] font-bold text-white leading-[1.08] tracking-tight"
+            <h1 className={`text-[26px] font-bold leading-[1.08] tracking-tight flex items-center gap-2 ${isFoilSelected ? 'foil-title-shimmer' : 'text-white'}`}
               style={{ fontFamily: 'var(--font-display)' }}>
               {card.name}
+              {isFoilSelected && <Sparkles className="w-5 h-5 text-fuchsia-300 shrink-0" />}
             </h1>
             <p className="text-xs text-zinc-500">
               {card.set_name}{card.set_series ? ` · ${card.set_series}` : ''}

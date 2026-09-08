@@ -152,8 +152,9 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
 
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-zinc-400 mb-1">{card.set_name}</p>
-                <h3 className="font-semibold text-zinc-900 text-base leading-tight mb-1">
+                <h3 className={`font-semibold text-base leading-tight mb-1 flex items-center gap-1.5 ${selectedListing?.finish === 'foil' ? 'foil-title-shimmer-light' : 'text-zinc-900'}`}>
                   {card.name}
+                  {selectedListing?.finish === 'foil' && <Sparkles className="w-3.5 h-3.5 text-fuchsia-500 shrink-0" />}
                 </h3>
                 {card.rarity && (
                   <span className="inline-block text-[11px] text-indigo-600 font-medium mb-3">

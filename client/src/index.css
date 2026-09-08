@@ -215,6 +215,55 @@
   display: inline-block;
 }
 
+@keyframes foil-title-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.foil-title-shimmer {
+  background: linear-gradient(90deg,
+    #ff8fd6 0%,
+    #ffe08a 16%,
+    #9dffb0 33%,
+    #8ad6ff 50%,
+    #c39bff 66%,
+    #ffe08a 83%,
+    #ff8fd6 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: foil-title-shimmer 3.5s linear infinite;
+  display: inline-block;
+}
+
+.foil-title-shimmer-light {
+  background: linear-gradient(90deg,
+    #d6389c 0%,
+    #d69a1f 16%,
+    #1fae54 33%,
+    #1a8fd6 50%,
+    #8a4fe0 66%,
+    #d69a1f 83%,
+    #d6389c 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: foil-title-shimmer 3.5s linear infinite;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foil-title-shimmer,
+  .foil-title-shimmer-light {
+    animation: none;
+    background-position: 0% center;
+  }
+}
+
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
