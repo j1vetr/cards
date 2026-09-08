@@ -53,7 +53,7 @@ async function createTransporter() {
 // ─────────────────────────────────────────────────────────────────────────────
 // EMAIL TEMPLATE SYSTEM
 // Outlook + Gmail + Apple Mail uyumlu, table-based, inline-style.
-// Marka: GoCards TCG — denim indigo aksanı, soğuk beyaz/mavi palet.
+// Marka: GoCards — denim indigo aksanı, soğuk beyaz/mavi palet.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BRAND = {
@@ -141,7 +141,7 @@ function brandHeader(): string {
         <tr>
           <td align="center" style="line-height:0;font-size:0;">
             <a href="${CONTACT.siteUrl}" style="text-decoration:none;color:${BRAND.ink};">
-              <img src="${LOGO_URL}" alt="GoCards TCG" width="160" height="64" style="display:block;width:160px;height:auto;max-width:160px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;" />
+              <img src="${LOGO_URL}" alt="GoCards" width="160" height="64" style="display:block;width:160px;height:auto;max-width:160px;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;" />
             </a>
           </td>
         </tr>
@@ -198,7 +198,7 @@ function brandFooter(opts?: { unsubscribeEmail?: string }): string {
         <tr>
           <td align="center" style="padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
             <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.4);line-height:1.6;">
-              © ${new Date().getFullYear()} GoCards TCG. Tüm hakları saklıdır.<br>
+              © ${new Date().getFullYear()} GoCards. Tüm hakları saklıdır.<br>
               Bu e-postayı, hesabınızla ilgili bir işlem nedeniyle aldınız.
             </p>
           </td>
@@ -211,7 +211,7 @@ function brandFooter(opts?: { unsubscribeEmail?: string }): string {
 
 function wrapTemplate(content: string, opts?: { preheader?: string; title?: string; unsubscribeEmail?: string }): string {
   const preheader = opts?.preheader ?? '';
-  const title = opts?.title ?? 'GoCards TCG';
+  const title = opts?.title ?? 'GoCards';
   const unsubscribeEmail = opts?.unsubscribeEmail;
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
@@ -283,7 +283,7 @@ function welcomeEmailTemplate(userName: string): string {
   const safeName = escapeHtml(userName);
   return wrapTemplate(`
     ${H1(`Hoş geldiniz, ${safeName}.`)}
-    ${Lede('GoCards TCG ailesine katıldığınız için çok mutluyuz. Pokemon TCG ve Riftbound koleksiyonları artık sizin için bir tık uzakta.')}
+    ${Lede('GoCards ailesine katıldığınız için çok mutluyuz. Pokemon TCG ve Riftbound koleksiyonları artık sizin için bir tık uzakta.')}
 
     ${infoCard(`
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -314,7 +314,7 @@ function welcomeEmailTemplate(userName: string): string {
     ${emailButton(CONTACT.siteUrl, 'Koleksiyona Göz At')}
 
     ${Small(`Sorularınız için <a href="mailto:${CONTACT.email}" style="color:${BRAND.primaryDeep};text-decoration:none;">${CONTACT.email}</a> adresinden bize ulaşabilirsiniz.`)}
-  `, { preheader: `Hoş geldiniz ${safeName} — GoCards TCG ailesine katıldınız!`, title: 'Hoş geldiniz' });
+  `, { preheader: `Hoş geldiniz ${safeName} — GoCards ailesine katıldınız!`, title: 'Hoş geldiniz' });
 }
 
 type OrderItemForEmail = OrderItem & { productImage?: string | null };
@@ -818,7 +818,7 @@ export async function sendAbandonedCartEmail(
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     const html = abandonedCartTemplate(userName, cartItems as any, cartTotal, siteUrl, email);
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: email,
       subject: 'Sepetiniz sizi bekliyor 🛒',
       html,
@@ -845,9 +845,9 @@ export async function sendWelcomeEmail(user: User): Promise<EmailResult> {
     const userName = user.firstName || 'Değerli Müşterimiz';
     
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: user.email,
-      subject: 'GoCards TCG\'e Hoş Geldiniz!',
+      subject: 'GoCards\'e Hoş Geldiniz!',
       html: welcomeEmailTemplate(userName),
     });
     
@@ -887,7 +887,7 @@ export async function sendOrderConfirmationEmail(order: Order, items: OrderItem[
 
     const subjectPrefix = isWholesale ? '[TOPTAN] ' : '';
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `${subjectPrefix}Siparişiniz Alındı - #${order.orderNumber}`,
       html: orderConfirmationTemplate(order, enrichedItems, CONTACT.siteUrl, isWholesale),
@@ -912,7 +912,7 @@ export async function sendPreparingNotificationEmail(order: Order): Promise<Emai
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `Siparişiniz Hazırlanıyor - #${order.orderNumber}`,
       html: preparingNotificationTemplate(order),
@@ -937,7 +937,7 @@ export async function sendShippingNotificationEmail(order: Order): Promise<Email
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `Siparişiniz Kargoya Verildi - #${order.orderNumber}`,
       html: shippingNotificationTemplate(order),
@@ -979,7 +979,7 @@ export async function sendAdminOrderNotificationEmail(order: Order, items: Order
     const html = adminOrderNotificationTemplate(order, items, isWholesale);
 
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: adminEmail,
       subject: `${subjectPrefix}Yeni Sipariş - #${order.orderNumber} - ${order.total}₺`,
       html,
@@ -1072,7 +1072,7 @@ export async function sendAdminReviewNotificationEmail(
     });
 
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: adminEmail,
       subject: `Yeni yorum onay bekliyor — ${payload.productName}`,
       html,
@@ -1117,14 +1117,14 @@ export async function sendGuestReviewApprovedEmail(
 
       ${emailButton(productUrl, 'Ürün Sayfasını Gör')}
 
-      ${Small('GoCards TCG — TCG dünyasında güvenilir adresiniz.')}
+      ${Small('GoCards — TCG dünyasında güvenilir adresiniz.')}
     `, {
       preheader: `Yorumunuz yayında — ${payload.productName}`,
       title: 'Yorumunuz yayında',
     });
 
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: payload.to,
       subject: `Yorumunuz yayında — ${payload.productName}`,
       html,
@@ -1164,14 +1164,14 @@ export async function sendGuestReviewRejectedEmail(
         <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.5;">${escapeHtml(payload.reason)}</p>
       `)}
 
-      ${Small('GoCards TCG — TCG dünyasında güvenilir adresiniz.')}
+      ${Small('GoCards — TCG dünyasında güvenilir adresiniz.')}
     `, {
       preheader: `Yorumunuz onaylanmadı — ${payload.productName}`,
       title: 'Yorumunuz onaylanmadı',
     });
 
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: payload.to,
       subject: `Yorumunuz onaylanmadı — ${payload.productName}`,
       html,
@@ -1211,7 +1211,7 @@ export async function sendBankTransferPendingEmail(order: Order, items: OrderIte
     const isWholesale = items.some(i => (i as any).itemType === 'wholesale');
     const subjectPrefix = isWholesale ? '[TOPTAN] ' : '';
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: order.customerEmail,
       subject: `${subjectPrefix}Havalenizi Bekliyoruz - #${order.orderNumber}`,
       html: bankTransferPendingTemplate(order, enrichedItems, CONTACT.siteUrl, isWholesale),
@@ -1242,7 +1242,7 @@ export async function sendPasswordResetEmail(user: User, token: string): Promise
       ${Small('Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.')}
     `, { preheader: 'Şifre sıfırlama bağlantınız', title: 'Şifre Sıfırlama' });
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: user.email,
       subject: 'Şifre Sıfırlama',
       html,
@@ -1277,7 +1277,7 @@ export async function sendReviewRequestEmail(
       ${emailButton(reviewUrl, 'Yorum Yaz')}
     `, { preheader: 'Siparişiniz hakkında yorum yapın', title: 'Yorum Daveti' });
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to: email,
       subject: 'Siparişiniz hakkında ne düşünüyorsunuz?',
       html,
@@ -1300,9 +1300,9 @@ export async function sendTestEmail(to: string): Promise<EmailResult> {
       ${P('Bu bir test e-postasıdır. SMTP ayarlarınız doğru çalışıyor.')}
     `, { preheader: 'SMTP test', title: 'Test' });
     await transporter.sendMail({
-      from: `"GoCards TCG" <${fromEmail}>`,
+      from: `"GoCards" <${fromEmail}>`,
       to,
-      subject: 'E-posta Testi — GoCards TCG',
+      subject: 'E-posta Testi — GoCards',
       html,
     });
     return { success: true };
@@ -1367,7 +1367,7 @@ function quoteEmailTemplate(data: QuoteEmailData): string {
 
     ${emailButton(CONTACT.siteUrl, 'Web Sitemizi Ziyaret Edin')}
 
-    ${Small('Bizi tercih ettiğiniz için teşekkür ederiz — GoCards TCG Ekibi')}
+    ${Small('Bizi tercih ettiğiniz için teşekkür ederiz — GoCards Ekibi')}
   `, { preheader: `Teklif ${data.quoteNumber} hazır — toplam ${grandTotalFormatted} TL`, title: `Teklif ${data.quoteNumber}` });
 }
 
@@ -1386,9 +1386,9 @@ export async function sendQuoteEmail(
     const fromEmail = settings.smtp_user || 'no-reply@ecartejeans.com';
     
     await transporter.sendMail({
-      from: `"GoCards TCG B2B" <${fromEmail}>`,
+      from: `"GoCards B2B" <${fromEmail}>`,
       to: dealerEmail,
-      subject: `GoCards TCG Teklif - ${quoteData.quoteNumber}`,
+      subject: `GoCards Teklif - ${quoteData.quoteNumber}`,
       html: quoteEmailTemplate(quoteData),
       attachments: [
         {

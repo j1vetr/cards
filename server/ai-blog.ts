@@ -35,14 +35,14 @@ const TONE_BLOCKS: Record<string, string> = {
   enerjik: 'TON: Enerjik, heyecan verici ve motive edici bir ses kullan. Güçlü fiiller ve somut örnekler kullan; okuyucuyu harekete geçir.',
 };
 
-const SYSTEM_PROMPT = `Sen Go|Cards TCG mağazasının deneyimli bir blog yazarısın.
+const SYSTEM_PROMPT = `Sen GoCards mağazasının deneyimli bir blog yazarısın.
 Türkiye'deki TCG topluluğuna bilgilendirici ve okumaktan keyif alınan içerikler üretiyorsun.
 
 ${BASE_RULES}`;
 
 function buildSystemPrompt(tone?: string): string {
   const toneBlock = tone && TONE_BLOCKS[tone] ? TONE_BLOCKS[tone] : TONE_BLOCKS.samimi;
-  return `Sen Go|Cards TCG mağazasının deneyimli bir blog yazarısın.
+  return `Sen GoCards mağazasının deneyimli bir blog yazarısın.
 Türkiye'deki TCG topluluğuna bilgilendirici ve okumaktan keyif alınan içerikler üretiyorsun.
 
 ${toneBlock}
@@ -237,9 +237,9 @@ export async function aiSocialHandler(req: Request, res: Response) {
       messages: [
         {
           role: 'system',
-          content: `Sen Go|Cards TCG mağazasının sosyal medya yöneticisisin. Türkiye'deki TCG topluluğuna hitap ediyorsun.
+          content: `Sen GoCards mağazasının sosyal medya yöneticisisin. Türkiye'deki TCG topluluğuna hitap ediyorsun.
 Türkçe yazıyorsun. Samimi, enerjik ve markayla uyumlu bir ses kullanıyorsun.
-Go|Cards TCG markasının Instagram'ı: @gocards_tcg`,
+GoCards markasının Instagram'ı: @gocards_tcg`,
         },
         {
           role: 'user',

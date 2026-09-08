@@ -79,14 +79,14 @@ export default function BlogList() {
     <>
       <SEO
         title="Blog &amp; Rehber"
-        description="Pokémon TCG ve Riftbound hakkında rehberler, haberler ve stratejiler. Go|Cards blog ve rehber içerikleri."
+        description="Pokémon TCG ve Riftbound hakkında rehberler, haberler ve stratejiler. GoCards blog ve rehber içerikleri."
         url={activeCategory !== 'all' ? `/blog?category=${activeCategory}` : '/blog'}
         noIndex={activeCategory !== 'all'}
         noIndexFollow
         type="website"
       />
       <Header />
-      <main className="min-h-screen bg-[hsl(var(--polen-cream))]">
+      <main className="min-h-screen bg-[#080e1c]">
         {/* Hero bar */}
         <div className="bg-[hsl(var(--polen-stone))] text-white py-10 px-4">
           <div className="max-w-4xl mx-auto">
@@ -101,7 +101,7 @@ export default function BlogList() {
         </div>
 
         {/* Category filter */}
-        <div className="bg-white border-b border-neutral-200 sticky top-0 z-10 shadow-sm">
+        <div className="bg-[#0e1424] border-b border-white/10 sticky top-0 z-10 shadow-sm">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center gap-1 overflow-x-auto py-3" style={{ scrollbarWidth: 'none' }}>
               {CATEGORIES.filter(cat => cat.value === 'all' || isLoading || categoryCount(cat.value) > 0).map(cat => (
@@ -111,7 +111,7 @@ export default function BlogList() {
                   className={`shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${
                     activeCategory === cat.value
                       ? 'bg-indigo-600 text-white'
-                      : 'text-neutral-600 hover:bg-neutral-100'
+                      : 'text-white/65 hover:bg-[#0e1424]/5'
                   }`}
                   data-testid={`filter-category-${cat.value}`}
                 >
@@ -127,12 +127,12 @@ export default function BlogList() {
           {isLoading && (
             <div className="grid sm:grid-cols-2 gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl overflow-hidden border border-neutral-200 animate-pulse">
-                  <div className="h-44 bg-neutral-100" />
+                <div key={i} className="bg-[#0e1424] rounded-2xl overflow-hidden border border-white/10 animate-pulse">
+                  <div className="h-44 bg-[#0e1424]/5" />
                   <div className="p-5 space-y-2">
-                    <div className="h-3 bg-neutral-100 rounded w-1/4" />
-                    <div className="h-5 bg-neutral-100 rounded w-3/4" />
-                    <div className="h-3 bg-neutral-100 rounded w-full" />
+                    <div className="h-3 bg-[#0e1424]/5 rounded w-1/4" />
+                    <div className="h-5 bg-[#0e1424]/5 rounded w-3/4" />
+                    <div className="h-3 bg-[#0e1424]/5 rounded w-full" />
                   </div>
                 </div>
               ))}
@@ -140,15 +140,15 @@ export default function BlogList() {
           )}
 
           {isError && (
-            <div className="text-center py-20 text-neutral-500">
+            <div className="text-center py-20 text-white/55">
               Yazılar yüklenirken bir hata oluştu.
             </div>
           )}
 
           {!isLoading && !isError && filtered.length === 0 && (
             <div className="text-center py-20">
-              <BookOpen className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-              <p className="text-neutral-500 text-[14px]">
+              <BookOpen className="w-10 h-10 text-white/35 mx-auto mb-3" />
+              <p className="text-white/55 text-[14px]">
                 {activeCategory === 'all'
                   ? 'Henüz yayınlanmış yazı yok.'
                   : 'Bu kategoride yazı bulunamadı.'}
@@ -161,11 +161,11 @@ export default function BlogList() {
               {filtered.map(post => (
                 <Link key={post.id} href={`/blog/${post.slug}`}>
                   <article
-                    className="group bg-white rounded-2xl overflow-hidden border border-neutral-200 hover:border-neutral-300 hover:shadow-md transition-all duration-200 h-full flex flex-col"
+                    className="group bg-[#0e1424] rounded-2xl overflow-hidden border border-white/10 hover:border-white/20 hover:shadow-md transition-all duration-200 h-full flex flex-col"
                     data-testid={`card-blog-${post.id}`}
                   >
                     {/* Cover */}
-                    <div className="h-44 bg-neutral-100 overflow-hidden shrink-0">
+                    <div className="h-44 bg-[#0e1424]/5 overflow-hidden shrink-0">
                       {post.coverImageUrl ? (
                         <img
                           src={post.coverImageUrl}
@@ -186,23 +186,23 @@ export default function BlogList() {
                           {CATEGORY_LABELS[post.category] ?? post.category}
                         </span>
                         {post.publishedAt && (
-                          <span className="flex items-center gap-1 text-[11px] text-neutral-400">
+                          <span className="flex items-center gap-1 text-[11px] text-white/45">
                             <Calendar className="w-3 h-3" />
                             {formatDate(post.publishedAt)}
                           </span>
                         )}
-                        <span className="flex items-center gap-1 text-[11px] text-neutral-400 ml-auto">
+                        <span className="flex items-center gap-1 text-[11px] text-white/45 ml-auto">
                           <Clock className="w-3 h-3" />
                           {readingTime(post.content)} dk okuma
                         </span>
                       </div>
 
-                      <h2 className="text-[15px] font-bold text-neutral-900 leading-snug mb-2 group-hover:text-indigo-700 transition-colors line-clamp-2">
+                      <h2 className="text-[15px] font-bold text-white leading-snug mb-2 group-hover:text-indigo-700 transition-colors line-clamp-2">
                         {post.title}
                       </h2>
 
                       {post.summary && (
-                        <p className="text-[12px] text-neutral-500 line-clamp-2 flex-1">{post.summary}</p>
+                        <p className="text-[12px] text-white/55 line-clamp-2 flex-1">{post.summary}</p>
                       )}
 
                       <div className="mt-3 flex items-center gap-1 text-[12px] font-semibold text-indigo-600 group-hover:gap-2 transition-all">

@@ -35,7 +35,7 @@ export const RIFTBOUND_OWNER_FAQ: OwnerFaqItem[] = [
   },
   {
     q: "Riftbound tekli kart (single card) alabilir miyim?",
-    a: "Evet. Go|Cards olarak Riftbound tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece tournament destesi için ihtiyacınız olan belirli kartları satın alabilirsiniz.",
+    a: "Evet. GoCards olarak Riftbound tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece tournament destesi için ihtiyacınız olan belirli kartları satın alabilirsiniz.",
   },
 ];
 
@@ -58,7 +58,7 @@ export const POKEMON_OWNER_FAQ: OwnerFaqItem[] = [
   },
   {
     q: "Pokémon tekli kart (single card) alabilir miyim?",
-    a: "Evet. Go|Cards olarak Pokémon tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece destenizde eksik olan belirli kartları satın alabilirsiniz.",
+    a: "Evet. GoCards olarak Pokémon tekli kart (single card) satışı yapıyoruz. Her kart NM, LP, MP veya HP koşuluyla ayrı ayrı listelenmektedir, böylece destenizde eksik olan belirli kartları satın alabilirsiniz.",
   },
 ];
 

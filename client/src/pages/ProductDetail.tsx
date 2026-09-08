@@ -660,7 +660,7 @@ export default function ProductDetail() {
           (product as any).seoDescription ||
           (product.description
             ? stripHtmlToText(product.description)
-            : `${product.name}${category ? ` — ${category.name}` : ''}. Go|Cards TCG'de ${isOutOfStock ? 'yakında stokta' : 'gerçek stok ve güncel fiyatla'} satışta.`)
+            : `${product.name}${category ? ` — ${category.name}` : ''}. GoCards'de ${isOutOfStock ? 'yakında stokta' : 'gerçek stok ve güncel fiyatla'} satışta.`)
         }
         image={images[0]}
         url={`/urun/${product.slug}`}

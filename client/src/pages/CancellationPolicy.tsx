@@ -15,8 +15,8 @@ export default function CancellationPolicy() {
   return (
     <div className="min-h-screen" style={{ background: '#0b1120' }}>
       <SEO
-        title="İptal ve İade Politikası - GoCards TCG"
-        description="GoCards TCG ürün iade, değişim ve iptal koşulları."
+        title="İptal ve İade Politikası"
+        description="GoCards ürün iade, değişim ve iptal koşulları."
       />
       <Header />
 

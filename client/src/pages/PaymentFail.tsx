@@ -27,12 +27,12 @@ export default function PaymentFail() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#faf7f1] flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-[#080e1c] flex flex-col overflow-x-hidden">
       <SEO title="Ödeme Başarısız" description="Ödeme tamamlanamadı." url="/odeme-basarisiz" noIndex />
       <Header />
 
       {/* Üst — uyarı banneri */}
-      <section className="relative bg-white border-b border-black/[0.06]">
+      <section className="relative bg-[#0e1424] border-b border-white/[0.06]">
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent"
@@ -51,7 +51,7 @@ export default function PaymentFail() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
-            className="font-display text-2xl sm:text-3xl tracking-[0.14em] uppercase text-black mb-3"
+            className="font-display text-2xl sm:text-3xl tracking-[0.14em] uppercase text-white mb-3"
             data-testid="text-payment-failed"
           >
             Ödeme Tamamlanamadı
@@ -60,7 +60,7 @@ export default function PaymentFail() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.14 }}
-            className="text-sm text-black/60 max-w-md mx-auto"
+            className="text-sm text-white/60 max-w-md mx-auto"
           >
             Endişelenmeyin — kartınızdan herhangi bir tutar çekilmedi. Bilgilerinizi kontrol edip tekrar deneyebilirsiniz.
           </motion.p>
@@ -90,12 +90,12 @@ export default function PaymentFail() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22 }}
-              className="bg-white border border-black/[0.08] px-5 py-4 mb-5 flex items-center justify-between"
+              className="bg-[#0e1424] border border-white/[0.08] px-5 py-4 mb-5 flex items-center justify-between"
             >
-              <span className="text-[11px] tracking-[0.18em] uppercase text-black/50 font-medium">
+              <span className="text-[11px] tracking-[0.18em] uppercase text-white/50 font-medium">
                 İşlem No
               </span>
-              <span className="font-mono text-sm font-semibold text-black">{merchantOid}</span>
+              <span className="font-mono text-sm font-semibold text-white">{merchantOid}</span>
             </motion.div>
           )}
 
@@ -106,20 +106,20 @@ export default function PaymentFail() {
             transition={{ delay: 0.26 }}
             className="mb-5"
           >
-            <h3 className="text-[11px] tracking-[0.2em] uppercase text-black/55 font-semibold mb-3">
+            <h3 className="text-[11px] tracking-[0.2em] uppercase text-white/55 font-semibold mb-3">
               Olası Nedenler
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {reasons.map(({ icon: Icon, text }) => (
                 <div
                   key={text}
-                  className="bg-white border border-black/[0.08] p-4 sm:p-5 flex items-start gap-3 hover:border-polen-orange/40 transition-colors"
+                  className="bg-[#0e1424] border border-white/[0.08] p-4 sm:p-5 flex items-start gap-3 hover:border-polen-orange/40 transition-colors"
                   data-testid={`card-reason-${text.slice(0, 20)}`}
                 >
                   <span className="w-9 h-9 rounded-full bg-polen-orange/10 border border-polen-orange/20 flex items-center justify-center shrink-0">
                     <Icon className="w-4 h-4 text-polen-orange" strokeWidth={2} />
                   </span>
-                  <span className="text-[13px] text-black/75 leading-snug pt-1">{text}</span>
+                  <span className="text-[13px] text-white/75 leading-snug pt-1">{text}</span>
                 </div>
               ))}
             </div>
@@ -174,7 +174,7 @@ export default function PaymentFail() {
             <Link href="/sepet" className="flex-1">
               <Button
                 variant="outline"
-                className="w-full h-12 border-black/20 text-black hover:bg-black/[0.04] font-semibold tracking-[0.1em] uppercase text-[12px] rounded-none"
+                className="w-full h-12 border-white/20 text-white hover:bg-white/[0.08] font-semibold tracking-[0.1em] uppercase text-[12px] rounded-none"
                 data-testid="button-back-to-cart"
               >
                 Sepete Dön

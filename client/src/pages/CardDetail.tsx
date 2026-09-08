@@ -813,7 +813,7 @@ export default function CardDetail() {
           card.seo_description ||
           (card.description
             ? stripHtmlToText(card.description)
-            : `${card.name} — ${card.set_name} seti, ${card.rarity || 'TCG'} kart. Go|Cards TCG'de gerçek stok ve güncel fiyatla.`)
+            : `${card.name} — ${card.set_name} seti, ${card.rarity || 'TCG'} kart. GoCards'de gerçek stok ve güncel fiyatla.`)
         }
         image={imgSrc}
         url={`/kart/${card.slug}`}

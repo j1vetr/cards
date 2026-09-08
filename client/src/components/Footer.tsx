@@ -29,7 +29,7 @@ export function Footer() {
             <Link href="/" data-testid="link-footer-logo">
               <img
                 src="/gocards-logo-white.png"
-                alt="Go|Cards TCG"
+                alt="GoCards"
                 className="h-9 w-auto object-contain"
                 style={{ mixBlendMode: 'screen' }}
               />
@@ -115,7 +115,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <p className="text-[11px] text-white/25">
-            © 2026 Go|Cards TCG. Tüm Hakları Saklıdır.
+            © 2026 GoCards. Tüm Hakları Saklıdır.
           </p>
           <img
             src="/payment-logos.png"

@@ -163,38 +163,38 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
             role="dialog"
             aria-modal="true"
             aria-label="Beden Rehberi"
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[111] w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-white border border-black/8 shadow-2xl"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[111] w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0e1424] border border-white/10 shadow-2xl"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/8">
-              <h2 className="font-display text-xl tracking-wide text-black">Beden Rehberi</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h2 className="font-display text-xl tracking-wide text-white">Beden Rehberi</h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="w-9 h-9 flex items-center justify-center bg-black/6 hover:bg-black/12 transition-colors"
+                className="w-9 h-9 flex items-center justify-center bg-white/10 hover:bg-white/15 transition-colors"
                 aria-label="Kapat"
                 data-testid="button-size-guide-close"
               >
-                <X className="w-4 h-4 text-black/60" />
+                <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
 
             <div className="p-6">
               {/* Interactive size recommender */}
               {canRecommend && (
-                <div className="mb-6 border border-black/8 bg-stone-50/70 p-5" data-testid="panel-size-recommender">
+                <div className="mb-6 border border-white/10 bg-white/5 p-5" data-testid="panel-size-recommender">
                   <div className="flex items-center gap-2 mb-1">
                     <Ruler className="w-4 h-4 text-polen-orange" />
-                    <h3 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-black">
+                    <h3 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white">
                       Bedenimi Bul
                     </h3>
                   </div>
-                  <p className="text-[12px] text-black/50 mb-4 leading-relaxed">
+                  <p className="text-[12px] text-white/55 mb-4 leading-relaxed">
                     Bel ve kalça ölçünüzü santimetre cinsinden girin, size en uygun bedeni önerelim.
                   </p>
                   <form onSubmit={handleRecommend} className="flex flex-wrap items-end gap-3">
                     {cols.belIdx >= 0 && (
                       <div className="flex-1 min-w-[120px]">
-                        <label className="block text-[11px] uppercase tracking-[0.12em] text-black/50 mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-[0.12em] text-white/55 mb-1.5">
                           Bel (cm)
                         </label>
                         <input
@@ -205,14 +205,14 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
                           value={bel}
                           onChange={(e) => setBel(e.target.value)}
                           placeholder="Örn. 70"
-                          className="w-full px-3 py-2.5 border border-black/15 text-black focus:border-black outline-none text-sm"
+                          className="w-full px-3 py-2.5 border border-white/15 text-white focus:border-white outline-none text-sm"
                           data-testid="input-size-bel"
                         />
                       </div>
                     )}
                     {cols.kalcaIdx >= 0 && (
                       <div className="flex-1 min-w-[120px]">
-                        <label className="block text-[11px] uppercase tracking-[0.12em] text-black/50 mb-1.5">
+                        <label className="block text-[11px] uppercase tracking-[0.12em] text-white/55 mb-1.5">
                           Kalça (cm)
                         </label>
                         <input
@@ -223,14 +223,14 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
                           value={kalca}
                           onChange={(e) => setKalca(e.target.value)}
                           placeholder="Örn. 96"
-                          className="w-full px-3 py-2.5 border border-black/15 text-black focus:border-black outline-none text-sm"
+                          className="w-full px-3 py-2.5 border border-white/15 text-white focus:border-white outline-none text-sm"
                           data-testid="input-size-kalca"
                         />
                       </div>
                     )}
                     <button
                       type="submit"
-                      className="px-5 py-2.5 bg-black text-white hover:bg-polen-orange hover:text-black text-[12px] font-semibold uppercase tracking-[0.1em] transition-colors"
+                      className="px-5 py-2.5 bg-white text-black hover:bg-polen-orange hover:text-black text-[12px] font-semibold uppercase tracking-[0.1em] transition-colors"
                       data-testid="button-size-recommend"
                     >
                       Öner
@@ -250,12 +250,12 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
                           data-testid="text-size-recommendation"
                         >
                           <Sparkles className="w-4 h-4 text-polen-orange shrink-0" />
-                          <span className="text-sm text-black">
+                          <span className="text-sm text-white">
                             Sizin için önerilen beden:{' '}
                             <strong className="font-display text-lg tracking-wide">{recommendedSize}</strong>
                           </span>
                         </div>
-                        <p className="text-[11px] text-black/40 mt-2">
+                        <p className="text-[11px] text-white/40 mt-2">
                           Ölçüleriniz iki beden arasındaysa rahat kullanım için büyük beden önerilir.
                         </p>
                       </motion.div>
@@ -264,17 +264,17 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
                 </div>
               )}
 
-              <p className="text-[12px] text-black/50 mb-5 leading-relaxed">
+              <p className="text-[12px] text-white/55 mb-5 leading-relaxed">
                 Doğru bedeni bulmak için bel ve kalça ölçülerinizi alın. Ölçüleriniz iki beden arasındaysa büyük bedeni tercih edin.
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse" data-testid="table-size-guide">
                   <thead>
-                    <tr className="bg-stone-50">
+                    <tr className="bg-white/5">
                       {displayChart.columns.map((col, i) => (
                         <th
                           key={i}
-                          className="text-left px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-black/55 border border-black/8 whitespace-nowrap"
+                          className="text-left px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/55 border border-white/10 whitespace-nowrap"
                         >
                           {col}
                         </th>
@@ -292,17 +292,17 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
                               ? 'bg-polen-orange/15'
                               : i % 2 === 0
                                 ? 'bg-white'
-                                : 'bg-stone-50'
+                                : 'bg-white/5'
                           }
                           data-testid={isRecommended ? 'row-size-recommended' : undefined}
                         >
                           {row.map((cell, j) => (
                             <td
                               key={j}
-                              className={`px-3 py-2.5 border border-black/8 ${
+                              className={`px-3 py-2.5 border border-white/10 ${
                                 j === 0
-                                  ? `font-semibold ${isRecommended ? 'text-polen-orange' : 'text-black'}`
-                                  : 'text-black/65'
+                                  ? `font-semibold ${isRecommended ? "text-polen-orange" : "text-white"}`
+                                  : 'text-white/65'
                               }`}
                             >
                               {cell}
@@ -314,7 +314,7 @@ export function SizeGuideModal({ isOpen, onClose, categoryId }: SizeGuideModalPr
                   </tbody>
                 </table>
               </div>
-              <p className="text-[11px] text-black/35 mt-4">
+              <p className="text-[11px] text-white/35 mt-4">
                 * Ölçüler vücut ölçülerinizi yansıtmaktadır, giysi ölçüleri değildir.
               </p>
             </div>

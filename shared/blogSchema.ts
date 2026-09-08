@@ -39,7 +39,7 @@ export function resolveBlogDescription(
     (post.metaDescription ?? "").trim() ||
     (post.summary ?? "").trim() ||
     stripHtmlToText(post.content) ||
-    `Go|Cards blog: ${post.title}`;
+    `GoCards blog: ${post.title}`;
   return truncateSeoText(base, 160);
 }
 
@@ -68,10 +68,10 @@ export function buildBlogPostingSchema(post: BlogPostForSchema): Record<string, 
     mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
     datePublished,
     dateModified,
-    author: { "@type": "Organization", name: "Go|Cards", url: CANONICAL_SITE_URL },
+    author: { "@type": "Organization", name: "GoCards", url: CANONICAL_SITE_URL },
     publisher: {
       "@type": "Organization",
-      name: "Go|Cards",
+      name: "GoCards",
       logo: { "@type": "ImageObject", url: PUBLISHER_LOGO_URL },
     },
   };

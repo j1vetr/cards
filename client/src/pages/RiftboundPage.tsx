@@ -55,7 +55,7 @@ export default function RiftboundPage() {
     <>
       <SEO
         title={game?.seoTitle || "League of Legends Riftbound TCG Ürünleri ve Kartları"}
-        description={game?.seoDescription || "Türkiye'nin LoL TCG mağazası Go|Cards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."}
+        description={game?.seoDescription || "Türkiye'nin LoL TCG mağazası GoCards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."}
         url="/riftbound"
         type="website"
         noIndex={Boolean(game?.seoNoIndex)}
@@ -105,7 +105,7 @@ export default function RiftboundPage() {
                   </h1>
                 )}
                 <p className="mt-3 text-sm sm:text-base text-white/55 max-w-2xl leading-relaxed">
-                  {game?.seoIntro || "Riot Games'in resmi League of Legends kart oyunu Riftbound TCG'nin tüm booster paketleri, kapalı kutuları ve tek kartlarını Go|Cards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo."}
+                  {game?.seoIntro || "Riot Games'in resmi League of Legends kart oyunu Riftbound TCG'nin tüm booster paketleri, kapalı kutuları ve tek kartlarını GoCards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo."}
                 </p>
 
                 <div className="flex flex-wrap gap-3 mt-5">
@@ -345,7 +345,7 @@ export default function RiftboundPage() {
                 meydan okur.
               </p>
               <p>
-                Go|Cards olarak Riftbound TCG'nin tüm setlerini ve ürünlerini Türkiye'ye getiriyoruz.
+                GoCards olarak Riftbound TCG'nin tüm setlerini ve ürünlerini Türkiye'ye getiriyoruz.
                 <strong className="text-white/80"> Booster paket</strong>,{' '}
                 <strong className="text-white/80">kapalı kutu (Display Box)</strong> ve{' '}
                 <strong className="text-white/80">single kart</strong> seçenekleriyle koleksiyonunuzu

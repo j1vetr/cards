@@ -39,8 +39,8 @@ interface SEOProps {
   faqItems?: Array<{ q: string; a: string }>;
 }
 
-const DEFAULT_TITLE = 'Go|Cards — Riftbound & Pokémon TCG Kart Oyunları';
-const DEFAULT_DESCRIPTION = 'Go|Cards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
+const DEFAULT_TITLE = 'GoCards — Riftbound & Pokémon TCG Kart Oyunları';
+const DEFAULT_DESCRIPTION = 'GoCards — Türkiye\'nin TCG mağazası. Pokémon TCG ve Riftbound booster pack, kapalı kutu, tekli kart satışı. Hızlı kargo, güvenli alışveriş.';
 // NOT: window.location.origin KULLANILMAZ — eski domain (gocards.toov.com.tr),
 // www ön eki veya bir replit.dev önizleme host'undan JS mount olduğunda
 // canonical/OG URL'lerin yanlış host'u reklam etmesini önlemek için sabit
@@ -131,7 +131,7 @@ export function SEO({
       '@context': 'https://schema.org',
       '@type': 'Organization',
       '@id': `${CANONICAL_SITE_URL}/#organization`,
-      name: 'GoCards TCG',
+      name: 'GoCards',
       legalName: 'GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.',
       url: CANONICAL_SITE_URL,
       logo: `${CANONICAL_SITE_URL}/gocards-logo-white.png`,
@@ -180,7 +180,7 @@ export function SEO({
           availability: `https://schema.org/${product.availability || 'InStock'}`,
           seller: {
             '@type': 'Organization',
-            name: 'GoCards TCG',
+            name: 'GoCards',
             url: CANONICAL_SITE_URL
           },
           ...(schemaCondition ? { itemCondition: schemaCondition } : {}),
@@ -233,7 +233,7 @@ export function SEO({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         '@id': `${BASE_URL}/#website`,
-        name: 'Go|Cards',
+        name: 'GoCards',
         url: BASE_URL,
         publisher: { '@id': `${BASE_URL}/#organization` },
         potentialAction: {

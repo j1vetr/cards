@@ -5,7 +5,7 @@
  * sonucu üretir (kırpma uzunluğu, boşsa otomatik değere düşme davranışı).
  *
  * Admin panelindeki başlık/açıklama alanları YALNIZCA sayfaya özgü kısmı
- * içermelidir (site adı eki değil) — site adı eki (" | Go|Cards TCG") hem
+ * içermelidir (site adı eki değil) — site adı eki (" | GoCards") hem
  * SSR hem SPA tarafında ayrıca ve tek seferde eklenir.
  */
 

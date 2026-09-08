@@ -378,7 +378,7 @@ export function Header() {
             <Link href="/" data-testid="link-logo-mobile" className="absolute left-1/2 -translate-x-1/2">
               <img
                 src="/gocards-logo-white.png"
-                alt="Go|Cards"
+                alt="GoCards"
                 className="h-11 w-auto object-contain"
                 data-testid="img-logo-mobile"
               />
@@ -422,7 +422,7 @@ export function Header() {
             <Link href="/" data-testid="link-logo" className="shrink-0 z-10">
               <img
                 src="/gocards-logo-white.png"
-                alt="Go|Cards"
+                alt="GoCards"
                 className="h-14 w-auto object-contain"
                 data-testid="img-logo"
               />
@@ -711,7 +711,7 @@ export function Header() {
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                 <Link href="/" onClick={() => setMobileOpen(false)} data-testid="link-mobile-logo">
-                  <img src="/gocards-logo-white.png" alt="Go|Cards" className="h-10 w-auto object-contain" />
+                  <img src="/gocards-logo-white.png" alt="GoCards" className="h-10 w-auto object-contain" />
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}

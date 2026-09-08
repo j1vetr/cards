@@ -16,8 +16,8 @@ export default function KVKK() {
   return (
     <div className="min-h-screen" style={{ background: '#0b1120' }}>
       <SEO
-        title="KVKK Aydınlatma Metni - GoCards TCG"
-        description="GoCards TCG kişisel verilerin korunması kanunu aydınlatma metni."
+        title="KVKK Aydınlatma Metni"
+        description="GoCards kişisel verilerin korunması kanunu aydınlatma metni."
       />
       <Header />
 
@@ -82,7 +82,7 @@ export default function KVKK() {
                 <p>
                   KVKK (Kişisel Verilerin Korunması Kanunu) kapsamında kişisel verilerinizi işleyen veri sorumlusu aşağıdaki şekildedir:
                 </p>
-                <p><strong>GoCards TCG</strong> (Go Cards TCG İç ve Dış Tic. Ltd. Şti.)</p>
+                <p><strong>GoCards</strong> (Go Cards TCG İç ve Dış Tic. Ltd. Şti.)</p>
                 <p><strong>Web Sitesi:</strong> <a href="https://gocardstcg.com">gocardstcg.com</a></p>
                 <p><strong>E-posta:</strong> <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a></p>
                 <p><strong>Telefon:</strong> <a href="tel:+905389216780">0538 921 67 80</a></p>
@@ -130,7 +130,7 @@ export default function KVKK() {
 
                 <h2>7) Kişisel Verilerin Güvenliği</h2>
                 <p>
-                  GoCards TCG, kişisel verilerinizi korumak için gerekli tüm teknik ve idari tedbirleri almaktadır. Verileriniz SSL sertifikaları, güvenli sunucular ve erişim yetkilendirme sistemleriyle korunmaktadır.
+                  GoCards, kişisel verilerinizi korumak için gerekli tüm teknik ve idari tedbirleri almaktadır. Verileriniz SSL sertifikaları, güvenli sunucular ve erişim yetkilendirme sistemleriyle korunmaktadır.
                 </p>
 
                 <h2>8) İlgili Kişi Olarak Haklarınız</h2>

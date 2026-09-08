@@ -170,7 +170,7 @@ export default function GamePage() {
 
   const gameName = game?.name ?? (gameSlug === 'pokemon' ? 'Pokémon TCG' : gameSlug === 'riftbound' ? 'Riftbound' : gameSlug);
   const ownerPath = GAME_OWNER_PATHS[gameSlug];
-  const defaultDescription = `${gameName} setleri, tekli kartlar, booster pack ve kapalı kutular Go|Cards TCG'de gerçek stok ve güncel fiyatla satışta.`;
+  const defaultDescription = `${gameName} setleri, tekli kartlar, booster pack ve kapalı kutular GoCards'de gerçek stok ve güncel fiyatla satışta.`;
   const seoTitle = game?.seoTitle || `${gameName} Kartları ve Setleri`;
   const seoDescription = game?.seoDescription || defaultDescription;
   const seoH1 = game?.seoH1 || `${gameName} Kartları ve Setleri`;

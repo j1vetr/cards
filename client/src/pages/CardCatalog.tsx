@@ -342,7 +342,7 @@ export default function CardCatalog() {
   return (
     <div className="min-h-screen" style={{ background: '#080e1c' }}>
       <SEO
-        title="Tüm Kartlar — Go|Cards TCG Marketplace"
+        title="Tüm Kartlar"
         description="Pokemon TCG ve Riftbound single kartları fiyat, nadirlik, kondisyon ve sete göre filtrele. Türkiye'nin TCG marketplace'i."
         url={`/kartlar${hasActiveFilters ? searchStr ? `?${searchStr}` : '' : page > 1 ? `?page=${page}` : ''}`}
         noIndex={hasActiveFilters}

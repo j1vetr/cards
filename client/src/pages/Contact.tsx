@@ -45,7 +45,7 @@ export default function Contact() {
     <div className="min-h-screen" style={{ background: '#0c1220' }}>
       <SEO
         title="İletişim"
-        description="Go Cards TCG ile iletişime geçin. Telefon, WhatsApp ve e-posta ile bize ulaşabilirsiniz."
+        description="GoCards ile iletişime geçin. Telefon, WhatsApp ve e-posta ile bize ulaşabilirsiniz."
       />
       <Header />
 

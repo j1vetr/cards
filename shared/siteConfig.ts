@@ -9,7 +9,7 @@
  */
 export const CANONICAL_SITE_URL = "https://gocardstcg.com";
 export const CANONICAL_SITE_HOST = "gocardstcg.com";
-export const SITE_NAME = "Go|Cards TCG";
+export const SITE_NAME = "GoCards";
 
 /**
  * Emekliye ayrılmış eski üretim host'ları. Bunlara gelen istekler HTTPS

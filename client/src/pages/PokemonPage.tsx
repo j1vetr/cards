@@ -55,7 +55,7 @@ export default function PokemonPage() {
     <>
       <SEO
         title={game?.seoTitle || "Pokémon TCG Kartları ve Setleri"}
-        description={game?.seoDescription || "Türkiye'nin Pokémon TCG mağazası Go|Cards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."}
+        description={game?.seoDescription || "Türkiye'nin Pokémon TCG mağazası GoCards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş."}
         url="/pokemon"
         type="website"
         noIndex={Boolean(game?.seoNoIndex)}
@@ -105,7 +105,7 @@ export default function PokemonPage() {
                   </h1>
                 )}
                 <p className="mt-3 text-sm sm:text-base text-white/55 max-w-2xl leading-relaxed">
-                  {game?.seoIntro || "Pokémon TCG'nin güncel ve klasik setlerine ait tüm booster paketlerini, kapalı kutularını ve tekli kartlarını Go|Cards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo."}
+                  {game?.seoIntro || "Pokémon TCG'nin güncel ve klasik setlerine ait tüm booster paketlerini, kapalı kutularını ve tekli kartlarını GoCards'ta bulabilirsiniz. Türkiye'ye hızlı ve güvenli kargo."}
                 </p>
 
                 <div className="flex flex-wrap gap-3 mt-5">
@@ -346,7 +346,7 @@ export default function PokemonPage() {
                 toplayarak kazanmayı hedefler.
               </p>
               <p>
-                Go|Cards olarak Pokémon TCG'nin güncel ve klasik setlerine ait ürünlerini Türkiye'ye getiriyoruz.
+                GoCards olarak Pokémon TCG'nin güncel ve klasik setlerine ait ürünlerini Türkiye'ye getiriyoruz.
                 <strong className="text-white/80"> Booster paket</strong>,{' '}
                 <strong className="text-white/80">kapalı kutu (Elite Trainer Box, Booster Box)</strong> ve{' '}
                 <strong className="text-white/80">single kart</strong> seçenekleriyle koleksiyonunuzu

@@ -125,20 +125,20 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto bg-white border border-black/8"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto bg-[#0e1424] border border-white/10"
           >
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/6 flex items-center justify-center hover:bg-black/12 transition-colors"
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors"
               aria-label="Kapat"
             >
-              <X className="w-5 h-5 text-black/60" />
+              <X className="w-5 h-5 text-white/60" />
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2">
               {/* Image */}
-              <div className="relative aspect-square md:aspect-auto md:h-full bg-stone-100">
+              <div className="relative aspect-square md:aspect-auto md:h-full bg-white/5">
                 <img
                   src={product.images[currentImageIndex] || '/placeholder.jpg'}
                   alt={product.name}
@@ -153,7 +153,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                         onClick={() => setCurrentImageIndex(index)}
                         className={`w-12 h-12 overflow-hidden border-2 transition-colors ${
                           currentImageIndex === index
-                            ? 'border-black'
+                            ? 'border-white'
                             : 'border-transparent opacity-50 hover:opacity-100'
                         }`}
                       >
@@ -166,17 +166,17 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
 
               {/* Info */}
               <div className="p-6 md:p-8 flex flex-col">
-                <h2 className="font-display text-2xl md:text-3xl tracking-wide mb-2 text-black">
+                <h2 className="font-display text-2xl md:text-3xl tracking-wide mb-2 text-white">
                   {product.name}
                 </h2>
 
                 <div className="flex items-baseline gap-3 mb-6">
                   {originalPrice && (
-                    <span className="text-lg text-black/30 line-through">
+                    <span className="text-lg text-white/35 line-through">
                       {originalPrice.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
                     </span>
                   )}
-                  <p className="text-2xl font-bold text-black">
+                  <p className="text-2xl font-bold text-white">
                     {price.toLocaleString('tr-TR')} ₺
                   </p>
                 </div>
@@ -184,10 +184,10 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 {/* Beden seçici */}
                 {sizes.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black mb-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white mb-2">
                       Beden
                       {selectedSize && (
-                        <span className="ml-2 text-black/50 normal-case font-normal tracking-normal">
+                        <span className="ml-2 text-white/55 normal-case font-normal tracking-normal">
                           {selectedSize}
                         </span>
                       )}
@@ -219,10 +219,10 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                             disabled={!isAvailable}
                             className={`min-w-[40px] flex flex-col items-center justify-center px-3 py-1.5 text-[11px] font-medium border transition-all leading-none ${
                               isSelected
-                                ? 'border-black bg-black text-white'
+                                ? 'border-white bg-white text-black'
                                 : isAvailable
-                                  ? 'border-black/20 text-black hover:border-black'
-                                  : 'border-black/10 text-black/25 line-through cursor-not-allowed'
+                                  ? 'border-white/20 text-white hover:border-white'
+                                  : 'border-white/10 text-white/30 line-through cursor-not-allowed'
                             }`}
                             data-testid={`qv-size-${size}`}
                           >
@@ -242,10 +242,10 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 {/* Renk seçici */}
                 {colors.length > 0 && (
                   <div className="mb-6">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black mb-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white mb-2">
                       Renk
                       {selectedColor && (
-                        <span className="ml-2 text-black/50 normal-case font-normal tracking-normal">
+                        <span className="ml-2 text-white/55 normal-case font-normal tracking-normal">
                           {selectedColor}
                         </span>
                       )}
@@ -280,23 +280,23 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                             title={color}
                             className={`relative h-8 px-3 text-[11px] font-medium border transition-all flex items-center gap-2 ${
                               isSelected
-                                ? 'border-black bg-black text-white'
+                                ? 'border-white bg-white text-black'
                                 : isAvailable
-                                  ? 'border-black/20 text-black hover:border-black'
-                                  : 'border-black/10 text-black/25 cursor-not-allowed'
+                                  ? 'border-white/20 text-white hover:border-white'
+                                  : 'border-white/10 text-white/30 cursor-not-allowed'
                             }`}
                             data-testid={`qv-color-${color}`}
                           >
                             {hex && (
                               <span
-                                className="w-4 h-4 rounded-full border border-black/15 shrink-0"
+                                className="w-4 h-4 rounded-full border border-white/15 shrink-0"
                                 style={{ backgroundColor: hex }}
                               />
                             )}
                             {color}
                             {!isAvailable && (
                               <span className="absolute inset-0 flex items-center justify-center">
-                                <span className="w-full h-px bg-black/25 rotate-45 absolute" />
+                                <span className="w-full h-px bg-white/25 rotate-45 absolute" />
                               </span>
                             )}
                           </button>
@@ -309,42 +309,42 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 {/* Quantity */}
                 {!hasVariants && (
                   <div className="mb-6">
-                    <p className="text-xs text-black/45 mb-3 uppercase tracking-wider">Adet</p>
+                    <p className="text-xs text-white/45 mb-3 uppercase tracking-wider">Adet</p>
                     <div className="flex items-center gap-4">
                       <button
                         type="button"
                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        className="w-10 h-10 border border-black/15 flex items-center justify-center hover:border-black/50 transition-colors"
+                        className="w-10 h-10 border border-white/15 flex items-center justify-center hover:border-white/50 transition-colors"
                         aria-label="Azalt"
                       >
-                        <Minus className="w-4 h-4 text-black/60" />
+                        <Minus className="w-4 h-4 text-white/60" />
                       </button>
-                      <span className="text-xl font-medium w-8 text-center text-black tabular-nums">
+                      <span className="text-xl font-medium w-8 text-center text-white tabular-nums">
                         {quantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => setQuantity((q) => q + 1)}
-                        className="w-10 h-10 border border-black/15 flex items-center justify-center hover:border-black/50 transition-colors"
+                        className="w-10 h-10 border border-white/15 flex items-center justify-center hover:border-white/50 transition-colors"
                         aria-label="Artır"
                       >
-                        <Plus className="w-4 h-4 text-black/60" />
+                        <Plus className="w-4 h-4 text-white/60" />
                       </button>
                     </div>
                   </div>
                 )}
 
-                <div className="mt-auto pt-4 border-t border-black/8">
+                <div className="mt-auto pt-4 border-t border-white/10">
                   <button
                     type="button"
                     onClick={handleAddToCart}
                     disabled={isAdding || isOutOfStock || needsSelection}
                     className={`w-full py-4 font-bold tracking-wider uppercase flex items-center justify-center gap-3 transition-colors ${
                       isOutOfStock
-                        ? 'bg-black/8 text-black/35 cursor-not-allowed'
+                        ? 'bg-white/10 text-white/35 cursor-not-allowed'
                         : needsSelection
-                          ? 'bg-black/8 text-black/35 cursor-not-allowed'
-                          : 'bg-black text-white hover:bg-polen-orange'
+                          ? 'bg-white/10 text-white/35 cursor-not-allowed'
+                          : 'bg-white text-black hover:bg-polen-orange hover:text-black'
                     } disabled:cursor-not-allowed`}
                     data-testid="qv-button-add-to-cart"
                   >
@@ -364,7 +364,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
 
                   <a
                     href={`/urun/${product.slug}`}
-                    className="block text-center text-sm text-black/50 hover:text-polen-orange mt-4 transition-colors"
+                    className="block text-center text-sm text-white/55 hover:text-polen-orange mt-4 transition-colors"
                   >
                     Ürün Detaylarını Gör →
                   </a>

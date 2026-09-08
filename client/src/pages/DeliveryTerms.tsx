@@ -16,8 +16,8 @@ export default function DeliveryTerms() {
   return (
     <div className="min-h-screen" style={{ background: '#0b1120' }}>
       <SEO
-        title="Teslimat Koşulları - GoCards TCG"
-        description="GoCards TCG teslimat koşulları, kargo süreleri ve ücretsiz kargo bilgileri."
+        title="Teslimat Koşulları"
+        description="GoCards teslimat koşulları, kargo süreleri ve ücretsiz kargo bilgileri."
       />
       <Header />
 
@@ -81,7 +81,7 @@ export default function DeliveryTerms() {
               <div className="prose max-w-none prose-headings:text-white prose-h2:text-base prose-h2:font-semibold prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-3 prose-h2:mb-4 prose-p:text-white/60 prose-li:text-white/60 prose-strong:text-white/90 prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline prose-ol:text-white/60 prose-ul:text-white/60">
                 <h2>1) Genel Bilgiler</h2>
                 <p>
-                  GoCards TCG olarak siparişlerinizi güvenli, hızlı ve eksiksiz şekilde teslim etmeyi hedefliyoruz.
+                  GoCards olarak siparişlerinizi güvenli, hızlı ve eksiksiz şekilde teslim etmeyi hedefliyoruz.
                   Web sitemiz üzerinden yapılan tüm alışverişlerde aşağıdaki koşullar geçerlidir.
                 </p>
 

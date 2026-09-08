@@ -28,7 +28,7 @@ const features = [
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#0b0f1a]">
       <SEO
         title="Hakkımızda"
         description="Ecarte — Pokemon TCG ve Riftbound trading card oyunları için Türkiye'nin önde gelen kart marketi."
@@ -37,16 +37,16 @@ export default function About() {
 
       <main className="pt-20 lg:pt-6 pb-12">
         {/* HERO */}
-        <section className="px-4 sm:px-6 py-12 lg:py-16 bg-white border-b border-black/[0.06]">
+        <section className="px-4 sm:px-6 py-12 lg:py-16 bg-[#0e1424] border-b border-white/[0.06]">
           <div className="max-w-6xl mx-auto">
             <motion.nav
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 text-xs text-black/55 mb-8"
+              className="flex items-center gap-2 text-xs text-white/55 mb-8"
             >
               <Link href="/" data-testid="link-home" className="hover:text-polen-orange transition-colors">Ana Sayfa</Link>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-black">Hakkımızda</span>
+              <span className="text-white">Hakkımızda</span>
             </motion.nav>
 
             <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -58,11 +58,11 @@ export default function About() {
                 <span className="text-xs tracking-[0.3em] uppercase text-polen-orange mb-4 block font-semibold">
                   Türkiye'nin TCG Kart Marketi
                 </span>
-                <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-wider mb-6 text-black leading-tight">
+                <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-wider mb-6 text-white leading-tight">
                   ECARTE<br />
-                  <span className="text-black/45 text-2xl sm:text-3xl lg:text-4xl">TCG & Riftbound Marketplace</span>
+                  <span className="text-white/45 text-2xl sm:text-3xl lg:text-4xl">TCG & Riftbound Marketplace</span>
                 </h1>
-                <p className="text-lg text-black/65 leading-relaxed mb-8">
+                <p className="text-lg text-white/65 leading-relaxed mb-8">
                   Pokemon TCG ve Riftbound oyun kartları için güvenilir alışveriş noktası.
                   Single kart, booster box ve sealed ürünleri kondisyon garantisiyle sunuyoruz.
                 </p>
@@ -74,11 +74,11 @@ export default function About() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="bg-stone-50 border border-black/[0.08] rounded-xl px-4 py-3 flex items-center gap-2 hover:border-polen-orange/40 transition-colors"
+                      className="bg-[#0b0f1a] border border-white/[0.08] rounded-xl px-4 py-3 flex items-center gap-2 hover:border-polen-orange/40 transition-colors"
                       data-testid={`value-${value.label}`}
                     >
                       <value.icon className="w-5 h-5 text-polen-orange" strokeWidth={1.75} />
-                      <span className="font-medium text-black">{value.label}</span>
+                      <span className="font-medium text-white">{value.label}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -96,11 +96,11 @@ export default function About() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.3 + index * 0.1 }}
-                    className="bg-stone-50 border border-black/[0.08] rounded-2xl p-6 text-center hover:border-polen-orange/40 transition-colors"
+                    className="bg-[#0b0f1a] border border-white/[0.08] rounded-2xl p-6 text-center hover:border-polen-orange/40 transition-colors"
                     data-testid={`stat-${stat.label}`}
                   >
-                    <p className="font-display text-4xl lg:text-5xl tracking-wide text-black mb-2">{stat.number}</p>
-                    <p className="text-sm text-black/60">{stat.label}</p>
+                    <p className="font-display text-4xl lg:text-5xl tracking-wide text-white mb-2">{stat.number}</p>
+                    <p className="text-sm text-white/60">{stat.label}</p>
                   </motion.div>
                 ))}
               </motion.div>
@@ -118,7 +118,7 @@ export default function About() {
               className="text-center mb-12"
             >
               <span className="text-xs tracking-[0.3em] uppercase text-polen-orange mb-4 block font-semibold">Neden Ecarte?</span>
-              <h2 className="font-display text-3xl sm:text-4xl tracking-wider text-black">FARK Yaratan Özellikler</h2>
+              <h2 className="font-display text-3xl sm:text-4xl tracking-wider text-white">FARK Yaratan Özellikler</h2>
             </motion.div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -129,14 +129,14 @@ export default function About() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="group bg-white border border-black/[0.08] rounded-2xl p-6 hover:border-polen-orange/40 transition-colors shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
+                  className="group bg-[#0e1424] border border-white/[0.08] rounded-2xl p-6 hover:border-polen-orange/40 transition-colors shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
                   data-testid={`feature-${feature.title}`}
                 >
                   <div className="w-14 h-14 rounded-xl bg-polen-orange/10 flex items-center justify-center mb-4 group-hover:bg-polen-orange/20 transition-colors">
                     <feature.icon className="w-7 h-7 text-polen-orange" strokeWidth={1.75} />
                   </div>
-                  <h3 className="font-display text-xl tracking-wide mb-2 text-black">{feature.title}</h3>
-                  <p className="text-sm text-black/60">{feature.desc}</p>
+                  <h3 className="font-display text-xl tracking-wide mb-2 text-white">{feature.title}</h3>
+                  <p className="text-sm text-white/60">{feature.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -144,7 +144,7 @@ export default function About() {
         </section>
 
         {/* VISION & MISSION */}
-        <section className="py-16 lg:py-24 px-4 sm:px-6 bg-stone-50 border-y border-black/[0.06]">
+        <section className="py-16 lg:py-24 px-4 sm:px-6 bg-[#0b0f1a] border-y border-white/[0.06]">
           <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -153,7 +153,7 @@ export default function About() {
               className="text-center mb-12"
             >
               <span className="text-xs tracking-[0.3em] uppercase text-polen-orange mb-4 block font-semibold">Hikâyemiz</span>
-              <h2 className="font-display text-3xl sm:text-4xl tracking-wider text-black mb-4">Vizyon & Misyon</h2>
+              <h2 className="font-display text-3xl sm:text-4xl tracking-wider text-white mb-4">Vizyon & Misyon</h2>
             </motion.div>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -161,13 +161,13 @@ export default function About() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-white border border-black/[0.08] rounded-2xl p-8 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
+                className="bg-[#0e1424] border border-white/[0.08] rounded-2xl p-8 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
               >
                 <div className="w-12 h-12 rounded-xl bg-polen-orange/10 flex items-center justify-center mb-5">
                   <Star className="w-6 h-6 text-polen-orange" strokeWidth={1.75} />
                 </div>
-                <h3 className="font-display text-2xl tracking-wide mb-4 text-black">Vizyonumuz</h3>
-                <p className="text-black/65 leading-relaxed">
+                <h3 className="font-display text-2xl tracking-wide mb-4 text-white">Vizyonumuz</h3>
+                <p className="text-white/65 leading-relaxed">
                   Türkiye'deki TCG topluluğunun en güvenilir alışveriş noktası olmak.
                   Pokemon TCG ve Riftbound oyuncularına geniş stok, adil fiyat ve
                   kondisyon garantisiyle hizmet vermek.
@@ -178,13 +178,13 @@ export default function About() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-white border border-black/[0.08] rounded-2xl p-8 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
+                className="bg-[#0e1424] border border-white/[0.08] rounded-2xl p-8 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
               >
                 <div className="w-12 h-12 rounded-xl bg-polen-orange/10 flex items-center justify-center mb-5">
                   <ShieldCheck className="w-6 h-6 text-polen-orange" strokeWidth={1.75} />
                 </div>
-                <h3 className="font-display text-2xl tracking-wide mb-4 text-black">Misyonumuz</h3>
-                <p className="text-black/65 leading-relaxed">
+                <h3 className="font-display text-2xl tracking-wide mb-4 text-white">Misyonumuz</h3>
+                <p className="text-white/65 leading-relaxed">
                   Her kartı titizlikle sınıflandırıp güvenli paketleyerek kapınıza ulaştırmak.
                   Oyuncuların ihtiyaç duydukları kartlara kolayca ve güvenle erişmelerini sağlamak.
                 </p>
@@ -201,13 +201,13 @@ export default function About() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-white border border-polen-orange/30 rounded-3xl p-8 lg:p-10 text-center shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
+                className="bg-[#0e1424] border border-polen-orange/30 rounded-3xl p-8 lg:p-10 text-center shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
               >
                 <div className="w-16 h-16 rounded-2xl bg-polen-orange/10 flex items-center justify-center mx-auto mb-6">
                   <Instagram className="w-8 h-8 text-polen-orange" strokeWidth={1.75} />
                 </div>
-                <h3 className="font-display text-2xl tracking-wider mb-4 text-black">Bizi Takip Edin</h3>
-                <p className="text-black/65 mb-6">
+                <h3 className="font-display text-2xl tracking-wider mb-4 text-white">Bizi Takip Edin</h3>
+                <p className="text-white/65 mb-6">
                   Yeni setler, restok duyuruları ve turnuva haberleri için
                   Instagram'da bizi takip edin.
                 </p>
@@ -228,17 +228,17 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="bg-white border border-black/[0.08] rounded-3xl p-8 lg:p-10 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
+                className="bg-[#0e1424] border border-white/[0.08] rounded-3xl p-8 lg:p-10 shadow-[0_2px_24px_-12px_rgba(0,0,0,0.08)]"
               >
-                <h3 className="font-display text-2xl tracking-wider mb-8 text-black">İletişim Bilgileri</h3>
+                <h3 className="font-display text-2xl tracking-wider mb-8 text-white">İletişim Bilgileri</h3>
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-lg bg-polen-orange/10 flex items-center justify-center shrink-0">
                       <MapPin className="w-5 h-5 text-polen-orange" strokeWidth={1.75} />
                     </div>
                     <div>
-                      <p className="text-sm text-black/55 mb-1">Adres</p>
-                      <p className="font-medium text-black" data-testid="text-address">
+                      <p className="text-sm text-white/55 mb-1">Adres</p>
+                      <p className="font-medium text-white" data-testid="text-address">
                         İstanbul, Türkiye
                       </p>
                     </div>
@@ -249,8 +249,8 @@ export default function About() {
                       <Mail className="w-5 h-5 text-polen-orange" strokeWidth={1.75} />
                     </div>
                     <div>
-                      <p className="text-sm text-black/55 mb-1">E-posta</p>
-                      <a href="mailto:info@ecartejeans.com" className="font-medium text-black hover:text-polen-orange transition-colors" data-testid="link-email">
+                      <p className="text-sm text-white/55 mb-1">E-posta</p>
+                      <a href="mailto:info@ecartejeans.com" className="font-medium text-white hover:text-polen-orange transition-colors" data-testid="link-email">
                         info@ecartejeans.com
                       </a>
                     </div>
@@ -261,8 +261,8 @@ export default function About() {
                       <Phone className="w-5 h-5 text-polen-orange" strokeWidth={1.75} />
                     </div>
                     <div>
-                      <p className="text-sm text-black/55 mb-1">Telefon / WhatsApp</p>
-                      <a href="tel:+905312171130" className="font-medium text-black hover:text-polen-orange transition-colors" data-testid="link-phone">
+                      <p className="text-sm text-white/55 mb-1">Telefon / WhatsApp</p>
+                      <a href="tel:+905312171130" className="font-medium text-white hover:text-polen-orange transition-colors" data-testid="link-phone">
                         0531 217 11 30
                       </a>
                     </div>

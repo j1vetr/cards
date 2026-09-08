@@ -184,7 +184,7 @@ export default function CardSet() {
     <div className="min-h-screen" style={{ background: '#09090f' }}>
       <SEO
         title={set.seo_title || `${set.name} Seti Kartları`}
-        description={set.seo_description || `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla Go|Cards TCG'de.`}
+        description={set.seo_description || `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla GoCards'de.`}
         url={`/set/${set.slug}${(search || typeFilter) ? (searchStr ? `?${searchStr}` : '') : (page > 1 ? `?page=${page}` : '')}`}
         noIndex={Boolean(set.seo_no_index) || Boolean(search || typeFilter)}
         noIndexFollow

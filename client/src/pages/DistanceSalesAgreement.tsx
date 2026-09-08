@@ -16,8 +16,8 @@ export default function DistanceSalesAgreement() {
   return (
     <div className="min-h-screen" style={{ background: '#0b1120' }}>
       <SEO
-        title="Mesafeli Satış Sözleşmesi - GoCards TCG"
-        description="GoCards TCG mesafeli satış sözleşmesi ve alışveriş koşulları."
+        title="Mesafeli Satış Sözleşmesi"
+        description="GoCards mesafeli satış sözleşmesi ve alışveriş koşulları."
       />
       <Header />
 
@@ -79,7 +79,7 @@ export default function DistanceSalesAgreement() {
             >
               <div className="prose max-w-none prose-headings:text-white prose-h2:text-base prose-h2:font-semibold prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-3 prose-h2:mb-4 prose-p:text-white/60 prose-li:text-white/60 prose-strong:text-white/90 prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline prose-ol:text-white/60 prose-ul:text-white/60">
                 <h2>1) Taraflar</h2>
-                <p><strong>Satıcı:</strong> GoCards TCG (Go Cards TCG İç ve Dış Tic. Ltd. Şti.)</p>
+                <p><strong>Satıcı:</strong> GoCards (Go Cards TCG İç ve Dış Tic. Ltd. Şti.)</p>
                 <p><strong>Vergi Dairesi:</strong> Beykoz V.D. — Vergi No: 396 175 96 05</p>
                 <p><strong>Telefon:</strong> <a href="tel:+905389216780">0538 921 67 80</a></p>
                 <p><strong>E-posta:</strong> <a href="mailto:gocardshub@gmail.com">gocardshub@gmail.com</a></p>
@@ -127,7 +127,7 @@ export default function DistanceSalesAgreement() {
 
                 <h2>8) İade Süreci</h2>
                 <p>
-                  Alıcı cayma hakkını kullandığında, ürün fatura ve aksesuarlarıyla birlikte eksiksiz olarak GoCards TCG'ye iade edilmesi gerekir. Ürün tarafımıza ulaştıktan sonra <strong>en geç 7 iş günü</strong> içinde, alıcının ödeme yaptığı yönteme ücret iadesi yapılır.
+                  Alıcı cayma hakkını kullandığında, ürün fatura ve aksesuarlarıyla birlikte eksiksiz olarak GoCards'ye iade edilmesi gerekir. Ürün tarafımıza ulaştıktan sonra <strong>en geç 7 iş günü</strong> içinde, alıcının ödeme yaptığı yönteme ücret iadesi yapılır.
                 </p>
 
                 <h2>9) Garanti ve Ürün Sorumluluğu</h2>

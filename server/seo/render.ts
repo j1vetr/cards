@@ -34,7 +34,7 @@ function orgSchema(baseUrl: string) {
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": `${baseUrl}/#organization`,
-    name: "GoCards TCG",
+    name: "GoCards",
     legalName: "GO CARDS TCG İÇ VE DIŞ TİC. LTD. ŞTİ.",
     url: baseUrl,
     logo: `${baseUrl}/gocards-logo-white.png`,
@@ -143,7 +143,7 @@ async function renderHome(baseUrl: string): Promise<RenderResult> {
   return {
     status: 200,
     title: `Riftbound & Pokémon TCG Kartları | ${SITE_NAME}`,
-    description: "Go|Cards TCG — Türkiye'nin TCG mağazası. Riftbound ve Pokémon TCG için single kartlar, booster paketler ve kapalı kutular. Gerçek stok, güncel fiyat, güvenli alışveriş.",
+    description: "GoCards — Türkiye'nin TCG mağazası. Riftbound ve Pokémon TCG için single kartlar, booster paketler ve kapalı kutular. Gerçek stok, güncel fiyat, güvenli alışveriş.",
     canonical: `${baseUrl}/`,
     robots: "index, follow",
     ogType: "website",
@@ -214,7 +214,7 @@ async function renderGame(gameSlug: string, baseUrl: string): Promise<RenderResu
     .map((p: any) => `<li><a href="/urun/${escapeHtml(p.slug)}">${escapeHtml(p.name)} — ${formatTRY(p.basePrice)} — ${p.stock > 0 ? "Stokta" : "Tükendi"}</a></li>`)
     .join("");
 
-  const defaultDescription = `${game.name} setleri, tekli kartlar, booster pack ve kapalı kutular Go|Cards TCG'de gerçek stok ve güncel fiyatla satışta.`;
+  const defaultDescription = `${game.name} setleri, tekli kartlar, booster pack ve kapalı kutular GoCards'de gerçek stok ve güncel fiyatla satışta.`;
   const title = resolveSeoTitle(game.seoTitle, `${game.name} Kartları ve Setleri`);
   const description = resolveSeoDescription(game.seoDescription, defaultDescription);
   const h1 = resolveSeoH1(game.seoH1, `${game.name} Kartları ve Setleri`);
@@ -281,11 +281,11 @@ const GAME_OWNER_CONFIGS: Record<string, GameOwnerConfig> = {
     path: "/riftbound",
     keyword: "Riftbound",
     title: "League of Legends Riftbound TCG Ürünleri ve Kartları",
-    description: "Türkiye'nin LoL TCG mağazası Go|Cards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş.",
+    description: "Türkiye'nin LoL TCG mağazası GoCards. Riftbound booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş.",
     h1: "League of Legends Riftbound TCG Ürünleri ve Kartları",
     introParagraphs: [
       "Riftbound TCG, Riot Games tarafından geliştirilen ve dünya genelinde milyonlarca oyuncuya hitap eden League of Legends evreninin resmi kart oyunudur. Oyuncular tanıdık şampiyonları ve yeteneklerini kullanarak stratejik desteler kurar, sıra tabanlı bir sistemle rakiplerine meydan okur. League of Legends kart oyunu (LoL TCG) hem yeni başlayanlar için öğrenmesi kolay hem de rekabetçi oyuncular için derinlikli bir sistem sunar.",
-      "Go|Cards olarak Riftbound TCG'nin ürünlerini Türkiye'ye getiriyoruz. Booster paket, kapalı kutu (Display Box) ve tekli kart (single card) seçenekleriyle koleksiyonunuzu büyütebilir ya da tournament destesi için ihtiyacınız olan belirli kartları tek tek satın alabilirsiniz. Riftbound kartları setlere göre listelenir; her set kendi sayfasında toplam kart sayısı ve stoktaki kart adediyle birlikte görüntülenir, böylece hangi setten hangi kartların satışta olduğunu kolayca görebilirsiniz.",
+      "GoCards olarak Riftbound TCG'nin ürünlerini Türkiye'ye getiriyoruz. Booster paket, kapalı kutu (Display Box) ve tekli kart (single card) seçenekleriyle koleksiyonunuzu büyütebilir ya da tournament destesi için ihtiyacınız olan belirli kartları tek tek satın alabilirsiniz. Riftbound kartları setlere göre listelenir; her set kendi sayfasında toplam kart sayısı ve stoktaki kart adediyle birlikte görüntülenir, böylece hangi setten hangi kartların satışta olduğunu kolayca görebilirsiniz.",
       "Tüm Riftbound tekli kartlarımız gerçek stok durumuyla ve koşul bilgisiyle (NM, LP, MP, HP) listelenmiştir; fiyatlar güncel piyasa verisine göre düzenli olarak takip edilir. Kapalı kutu ve booster pack ürünlerinde stok adedi ve fiyat her ürün sayfasında açıkça belirtilir. 500₺ ve üzeri siparişlerde kargo ücretsizdir, siparişler güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir.",
       "Riftbound TCG'ye yeni başlıyorsanız önce bir başlangıç destesi (starter deck) veya birkaç booster pack ile setleri tanımanızı, ardından tournament için ihtiyaç duyduğunuz belirli şampiyon ve birim kartlarını tekli kart olarak tamamlamanızı öneririz. Koleksiyonculuk odaklı alışveriş yapıyorsanız ultra rare ve secret rare nadirlikteki kartlar setler sayfasında ayrı ayrı incelenebilir.",
     ],
@@ -297,11 +297,11 @@ const GAME_OWNER_CONFIGS: Record<string, GameOwnerConfig> = {
     path: "/pokemon",
     keyword: "Pokémon TCG",
     title: "Pokémon TCG Kartları ve Setleri",
-    description: "Türkiye'nin Pokémon TCG mağazası Go|Cards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş.",
+    description: "Türkiye'nin Pokémon TCG mağazası GoCards. Pokémon booster pack, kapalı kutu ve tekli kart satışı. NM/LP/MP koşullu single card stoğu. Hızlı kargo, güvenli alışveriş.",
     h1: "Pokémon TCG Kartları ve Setleri",
     introParagraphs: [
       "Pokémon TCG (Trading Card Game), Pokémon evrenindeki canlıları ve eğitmenleri temsil eden kartlarla oynanan, dünya genelinde en çok oynanan koleksiyonluk kart oyunlarından biridir. Oyuncular kendi destelerini kurar, enerji kartlarıyla Pokémon'larını güçlendirir ve rakip oyuncunun tüm Pokémon'larını yenerek ya da ödül kartlarını toplayarak kazanmayı hedefler.",
-      "Go|Cards olarak Pokémon TCG'nin güncel ve klasik setlerine ait ürünleri Türkiye'ye getiriyoruz. Booster paket, kapalı kutu (Elite Trainer Box, Booster Box) ve tekli kart (single card) seçenekleriyle koleksiyonunuzu büyütebilir ya da destenizi tamamlamak için ihtiyacınız olan belirli kartları tek tek satın alabilirsiniz. Pokémon kartları setlere göre listelenir, her set sayfasında toplam kart sayısı ve stoktaki kart adedi görüntülenir.",
+      "GoCards olarak Pokémon TCG'nin güncel ve klasik setlerine ait ürünleri Türkiye'ye getiriyoruz. Booster paket, kapalı kutu (Elite Trainer Box, Booster Box) ve tekli kart (single card) seçenekleriyle koleksiyonunuzu büyütebilir ya da destenizi tamamlamak için ihtiyacınız olan belirli kartları tek tek satın alabilirsiniz. Pokémon kartları setlere göre listelenir, her set sayfasında toplam kart sayısı ve stoktaki kart adedi görüntülenir.",
       "Tüm Pokémon tekli kartlarımız gerçek stok durumuyla ve koşul bilgisiyle (NM, LP, MP, HP) listelenmiştir, fiyatlar güncel piyasa verisine göre düzenli olarak takip edilir. Kapalı kutu ve booster pack ürünlerinde stok adedi ve fiyat her ürün sayfasında açıkça belirtilir. 500₺ ve üzeri siparişlerde kargo ücretsizdir, siparişler güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir.",
       "Pokémon TCG koleksiyonuna yeni başlıyorsanız güncel bir setten birkaç booster pack açarak setleri tanımanızı, ardından deste için ihtiyaç duyduğunuz belirli kartları tekli kart olarak tamamlamanızı öneririz. Koleksiyonculuk odaklı alışveriş yapıyorsanız ultra rare, secret rare ve full art nadirlikteki kartlar ilgili set sayfasında ayrı ayrı incelenebilir.",
     ],
@@ -434,7 +434,7 @@ async function renderSet(setSlug: string, baseUrl: string, search: string = ""):
     })
     .join("");
 
-  const defaultDescription = `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla Go|Cards TCG'de.`;
+  const defaultDescription = `${set.name} (${set.game_name}) setine ait tüm kartlar, gerçek stok ve güncel fiyatlarla GoCards'de.`;
   const { robots: listingRobots, canonical } = listingRobotsAndCanonical(baseUrl, path, search, SET_FILTER_KEYS);
   const title = resolveSeoTitle(set.seo_title, `${set.name} Seti Kartları`);
   const description = resolveSeoDescription(set.seo_description, defaultDescription);
@@ -494,7 +494,7 @@ async function renderCard(cardSlug: string, baseUrl: string): Promise<RenderResu
   const availability = inStock ? "InStock" : "OutOfStock";
   const defaultDescription = card.description
     ? stripHtml(card.description)
-    : `${card.name} — ${card.set_name} seti, ${card.rarity || "TCG"} kart. Go|Cards TCG'de gerçek stok ve güncel fiyatla.`;
+    : `${card.name} — ${card.set_name} seti, ${card.rarity || "TCG"} kart. GoCards'de gerçek stok ve güncel fiyatla.`;
   const description = resolveSeoDescription(card.seo_description, defaultDescription);
   const title = resolveSeoTitle(card.seo_title, `${card.name} (${card.set_name})`);
 
@@ -528,7 +528,7 @@ async function renderCard(cardSlug: string, baseUrl: string): Promise<RenderResu
       priceCurrency: "TRY",
       price: lowestListing.price,
       availability: `https://schema.org/${availability}`,
-      seller: { "@type": "Organization", name: "GoCards TCG", url: baseUrl },
+      seller: { "@type": "Organization", name: "GoCards", url: baseUrl },
     };
   }
 
@@ -590,7 +590,7 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
 
   const defaultDescription = product.description
     ? stripHtml(product.description)
-    : `${product.name}${category ? ` — ${category.name}` : ""}. Go|Cards TCG'de ${inStock ? "gerçek stok ve güncel fiyatla" : "yakında stokta"} satışta.`;
+    : `${product.name}${category ? ` — ${category.name}` : ""}. GoCards'de ${inStock ? "gerçek stok ve güncel fiyatla" : "yakında stokta"} satışta.`;
   const description = resolveSeoDescription((product as any).seoDescription, defaultDescription);
   const title = resolveSeoTitle((product as any).seoTitle, product.name);
 
@@ -618,7 +618,7 @@ async function renderProduct(productSlug: string, baseUrl: string): Promise<Rend
       priceCurrency: "TRY",
       price,
       availability: `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`,
-      seller: { "@type": "Organization", name: "GoCards TCG", url: baseUrl },
+      seller: { "@type": "Organization", name: "GoCards", url: baseUrl },
     },
   };
   // Sahte/varsayılan puan üretilmez — sadece gerçek onaylı değerlendirme verisi varsa eklenir
@@ -763,42 +763,42 @@ const STATIC_INFO_PAGES: ReadonlyArray<StaticInfoPageConfig> = [
     path: "/hakkimizda",
     h1: "Hakkımızda",
     title: `Hakkımızda | ${SITE_NAME}`,
-    description: "Pokemon TCG ve Riftbound trading card oyunları için Türkiye'nin TCG kart pazaryeri Go|Cards TCG hakkında.",
-    intro: "Go|Cards TCG, Pokemon TCG ve Riftbound tekli kartlarını, booster paketlerini ve kapalı kutularını gerçek stok ve güncel fiyatla sunan Türkiye merkezli bir TCG pazaryeridir.",
+    description: "Pokemon TCG ve Riftbound trading card oyunları için Türkiye'nin TCG kart pazaryeri GoCards hakkında.",
+    intro: "GoCards, Pokemon TCG ve Riftbound tekli kartlarını, booster paketlerini ve kapalı kutularını gerçek stok ve güncel fiyatla sunan Türkiye merkezli bir TCG pazaryeridir.",
   },
   {
     path: "/teslimat-kosullari",
     h1: "Teslimat Koşulları",
     title: `Teslimat Koşulları | ${SITE_NAME}`,
-    description: "Go|Cards TCG teslimat koşulları, kargo süreleri ve ücretsiz kargo bilgileri.",
+    description: "GoCards teslimat koşulları, kargo süreleri ve ücretsiz kargo bilgileri.",
     intro: "Siparişleriniz güvenli paketleme ile anlaşmalı kargo firmaları üzerinden gönderilir. Kargo süreleri ve ücretsiz kargo koşulları için detaylı bilgiyi bu sayfada bulabilirsiniz.",
   },
   {
     path: "/mesafeli-satis-sozlesmesi",
     h1: "Mesafeli Satış Sözleşmesi",
     title: `Mesafeli Satış Sözleşmesi | ${SITE_NAME}`,
-    description: "Go|Cards TCG mesafeli satış sözleşmesi ve alışveriş koşulları.",
-    intro: "6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca Go|Cards TCG üzerinden yapılan alışverişlerin şartlarını düzenleyen sözleşme metni.",
+    description: "GoCards mesafeli satış sözleşmesi ve alışveriş koşulları.",
+    intro: "6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca GoCards üzerinden yapılan alışverişlerin şartlarını düzenleyen sözleşme metni.",
   },
   {
     path: "/iptal-ve-iade",
     h1: "İptal ve İade Politikası",
     title: `İptal ve İade Politikası | ${SITE_NAME}`,
-    description: "Go|Cards TCG ürün iade, değişim ve iptal koşulları.",
+    description: "GoCards ürün iade, değişim ve iptal koşulları.",
     intro: "Ürün iade, değişim ve sipariş iptali süreçleriyle ilgili koşulları ve süreleri bu sayfada bulabilirsiniz.",
   },
   {
     path: "/kvkk",
     h1: "KVKK Aydınlatma Metni",
     title: `KVKK Aydınlatma Metni | ${SITE_NAME}`,
-    description: "Go|Cards TCG kişisel verilerin korunması kanunu aydınlatma metni.",
-    intro: "6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında Go|Cards TCG'nin kişisel verilerinizi hangi amaçlarla işlediğine dair aydınlatma metni.",
+    description: "GoCards kişisel verilerin korunması kanunu aydınlatma metni.",
+    intro: "6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında GoCards'ın kişisel verilerinizi hangi amaçlarla işlediğine dair aydınlatma metni.",
   },
   {
     path: "/iletisim",
     h1: "İletişim",
     title: `İletişim | ${SITE_NAME}`,
-    description: "Go|Cards TCG ile iletişime geçin. Telefon, WhatsApp ve e-posta ile bize ulaşabilirsiniz.",
+    description: "GoCards ile iletişime geçin. Telefon, WhatsApp ve e-posta ile bize ulaşabilirsiniz.",
     intro: "Sorularınız ve siparişlerinizle ilgili bize telefon, WhatsApp veya e-posta üzerinden ulaşabilirsiniz.",
   },
 ];
@@ -845,7 +845,7 @@ async function renderAccessories(baseUrl: string): Promise<RenderResult> {
     .map((p: any) => `<li><a href="/urun/${escapeHtml(p.slug)}">${escapeHtml(p.name)} — ${formatTRY(p.basePrice)}</a></li>`)
     .join("");
 
-  const description = "Kart koruma ve saklama aksesuarları: binder, sleeve ve playmat. Go|Cards TCG'de gerçek stok ve güncel fiyatla.";
+  const description = "Kart koruma ve saklama aksesuarları: binder, sleeve ve playmat. GoCards'de gerçek stok ve güncel fiyatla.";
   const path = "/aksesuarlar";
 
   return {
@@ -887,7 +887,7 @@ async function renderLegacyCategory(categorySlug: string, baseUrl: string, searc
     .map((p: any) => `<li><a href="/urun/${escapeHtml(p.slug)}">${escapeHtml(p.name)} — ${formatTRY(p.basePrice)}</a></li>`)
     .join("");
 
-  const defaultDescription = `${category.name} — Go|Cards TCG mağazasında gerçek stok ve güncel fiyatla satışta.`;
+  const defaultDescription = `${category.name} — GoCards mağazasında gerçek stok ve güncel fiyatla satışta.`;
   const listingResult = listingRobotsAndCanonical(baseUrl, path, search, CATEGORY_FILTER_KEYS);
   const title = resolveSeoTitle((category as any).seoTitle, category.name);
   const description = resolveSeoDescription((category as any).seoDescription, defaultDescription);

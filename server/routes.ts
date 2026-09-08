@@ -571,7 +571,7 @@ export async function registerRoutes(
         const condLabel = conditionLabel[row.condition] || row.condition;
         const title = escXml(`${row.cardName} — ${condLabel} — ${row.setName}`);
         const desc = escXml(
-          `${row.cardName}${row.cardRarity ? ' (' + row.cardRarity + ')' : ''} — ${condLabel} koşulunda ${row.setName} seti kartı. Go|Cards'da satın al.`
+          `${row.cardName}${row.cardRarity ? ' (' + row.cardRarity + ')' : ''} — ${condLabel} koşulunda ${row.setName} seti kartı. GoCards'da satın al.`
         );
         const link = `${baseUrl}/kart/${escXml(row.cardSlug)}`;
         const image = row.cardImageHiRes || row.cardImageUrl || '';
@@ -617,7 +617,7 @@ export async function registerRoutes(
       <g:link>${link}</g:link>${normalizedImage ? `\n      <g:image_link>${escXml(normalizedImage)}</g:image_link>` : ''}
       <g:availability>${prodAvailability}</g:availability>
       <g:price>${price} TRY</g:price>
-      <g:brand>GoCards TCG</g:brand>
+      <g:brand>GoCards</g:brand>
       <g:condition>new</g:condition>
       <g:google_product_category>5710</g:google_product_category>
     </item>`);
@@ -626,9 +626,9 @@ export async function registerRoutes(
       const feed = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
   <channel>
-    <title>Go|Cards — Pokémon TCG &amp; Riftbound</title>
+    <title>GoCards — Pokémon TCG &amp; Riftbound</title>
     <link>${baseUrl}</link>
-    <description>Go|Cards Türkiye TCG mağazası — Pokémon TCG ve Riftbound tekli kart ve sealed ürünler</description>
+    <description>GoCards Türkiye TCG mağazası — Pokémon TCG ve Riftbound tekli kart ve sealed ürünler</description>
 ${items.join('\n')}
   </channel>
 </rss>`;
@@ -5344,9 +5344,9 @@ Sitemap: ${baseUrl}/sitemap.xml
         .map((p) => `- [${p.title}](${baseUrl}/blog/${p.slug})${p.metaDescription ? `: ${p.metaDescription}` : ""}`)
         .join("\n");
 
-      const content = `# Go|Cards TCG
+      const content = `# GoCards
 
-> Go|Cards TCG, Pokémon TCG ve Riftbound tekli kartlarını, booster paketlerini ve kapalı kutularını gerçek stok ve güncel fiyatla sunan Türkiye merkezli bir trading card game (TCG) pazaryeridir.
+> GoCards, Pokémon TCG ve Riftbound tekli kartlarını, booster paketlerini ve kapalı kutularını gerçek stok ve güncel fiyatla sunan Türkiye merkezli bir trading card game (TCG) pazaryeridir.
 
 ## Kategoriler
 ${gameLines || "- Kategori verisi şu anda mevcut değil."}
@@ -5394,9 +5394,9 @@ ${guideLines || "- Rehber içerikleri yakında yayında olacak."}
         sections.push(`## ${game.name} Setleri\n${setLines || "- Set verisi şu anda mevcut değil."}`);
       }
 
-      const content = `# Go|Cards TCG — Katalog İndeksi
+      const content = `# GoCards — Katalog İndeksi
 
-> Bu dosya, Go|Cards TCG kataloğundaki gerçek oyun ve set verisinin makine okunur bir indeksidir. Müşteri veya sipariş verisi içermez.
+> Bu dosya, GoCards kataloğundaki gerçek oyun ve set verisinin makine okunur bir indeksidir. Müşteri veya sipariş verisi içermez.
 
 ${sections.join("\n\n")}
 `;

@@ -1433,8 +1433,8 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="Riftbound & Pokémon TCG Kartları | Go|Cards TCG"
-        description="Go|Cards TCG — Türkiye'nin TCG mağazası. Riftbound ve Pokémon TCG için single kartlar, booster paketler ve kapalı kutular. Gerçek stok, güncel fiyat, güvenli alışveriş."
+        title="Riftbound & Pokémon TCG Kartları | GoCards"
+        description="GoCards — Türkiye'nin TCG mağazası. Riftbound ve Pokémon TCG için single kartlar, booster paketler ve kapalı kutular. Gerçek stok, güncel fiyat, güvenli alışveriş."
         url="/"
       />
       <Header />
