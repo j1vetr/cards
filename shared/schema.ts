@@ -315,6 +315,7 @@ export const cardListings = pgTable("card_listings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   cardId: varchar("card_id").references(() => cards.id, { onDelete: "cascade" }).notNull(),
   condition: text("condition").notNull(), // 'NM' | 'LP' | 'MP' | 'HP' | 'DMG' | 'PSA10' | 'PSA9' | 'PSA8' | 'PSA7'
+  finish: text("finish").notNull().default("normal"), // 'normal' | 'foil'
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   stock: integer("stock").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),

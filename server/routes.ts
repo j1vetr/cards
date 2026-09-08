@@ -153,7 +153,9 @@ async function expandCartLinesToOrderItems(
         cardListingId: listing.id,
         quantity: cartItem.quantity,
         productName: card ? card.name : 'Kart',
-        variantDetails: listing.condition || null,
+        variantDetails: listing.condition
+          ? `${listing.condition}${listing.finish === 'foil' ? ' · Foil' : ''}`
+          : null,
         price: listing.price as string,
       });
       continue;
@@ -5914,9 +5916,10 @@ ${sections.join("\n\n")}
   // Auto-list cards from PriceCharting prices × multiplier
   app.post("/api/admin/tcg/auto-list", requireAdmin, async (req, res) => {
     try {
-      const { multiplier = 1.9, condition = "NM", stock = 1, gameSlug } = req.body as {
+      const { multiplier = 1.9, condition = "NM", finish = "normal", stock = 1, gameSlug } = req.body as {
         multiplier?: number;
         condition?: string;
+        finish?: string;
         stock?: number;
         gameSlug?: string;
       };
@@ -5931,6 +5934,7 @@ ${sections.join("\n\n")}
       const result = await storage.bulkAutoListFromPrices({
         multiplier: Number(multiplier),
         condition: condition || "NM",
+        finish: finish || "normal",
         stock: Number(stock),
         gameSlug: gameSlug || undefined,
       });
@@ -6091,13 +6095,17 @@ ${sections.join("\n\n")}
 
   app.post("/api/admin/cards/:id/listings", requireAdmin, async (req, res) => {
     try {
-      const { condition, price, stock, isActive } = req.body;
+      const { condition, finish, price, stock, isActive } = req.body;
       if (!condition || price == null || stock == null) {
         return res.status(400).json({ error: "condition, price ve stock gerekli" });
+      }
+      if (finish && !["normal", "foil"].includes(finish)) {
+        return res.status(400).json({ error: "finish 'normal' veya 'foil' olmalı" });
       }
       const listing = await storage.createAdminCardListing({
         cardId: req.params.id,
         condition,
+        finish: finish || "normal",
         price: String(price),
         stock: Number(stock),
         isActive: isActive !== false,
@@ -6110,14 +6118,18 @@ ${sections.join("\n\n")}
 
   app.put("/api/admin/cards/:id/listings/:listingId", requireAdmin, async (req, res) => {
     try {
-      const { price, stock, isActive } = req.body;
+      const { price, stock, isActive, finish } = req.body;
       if (price == null || stock == null) {
         return res.status(400).json({ error: "price ve stock gerekli" });
+      }
+      if (finish && !["normal", "foil"].includes(finish)) {
+        return res.status(400).json({ error: "finish 'normal' veya 'foil' olmalı" });
       }
       const listing = await storage.updateAdminCardListingById(req.params.listingId, {
         price: String(price),
         stock: Number(stock),
         isActive: isActive !== false,
+        ...(finish ? { finish } : {}),
       });
       if (!listing) return res.status(404).json({ error: "Listing bulunamadı" });
       res.json(listing);

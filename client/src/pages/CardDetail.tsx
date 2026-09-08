@@ -11,7 +11,7 @@ import { useCartModal } from '@/hooks/useCartModal';
 import { useToast } from '@/hooks/use-toast';
 import {
   ChevronRight, ChevronLeft, ShoppingCart, Minus, Plus, Loader2,
-  Shield, Zap, Package, Pencil, Calendar, Hash, CheckCircle2,
+  Shield, Zap, Package, Pencil, Calendar, Hash, CheckCircle2, Sparkles,
 } from 'lucide-react';
 
 /* ─── Constants ──────────────────────────────────────────────────────── */
@@ -269,16 +269,22 @@ function PurchaseBox({
           </div>
           {sortedListings.map((listing: any) => {
             const isSel = (selectedListingId ?? sortedListings[0]?.id) === listing.id;
+            const isFoil = listing.finish === 'foil';
             return (
               <button key={listing.id}
-                data-testid={`btn-condition-${listing.condition}`}
+                data-testid={`btn-condition-${listing.condition}${isFoil ? '-foil' : ''}`}
                 onClick={() => { setSelectedListingId(listing.id); setQuantity(() => 1); }}
                 className={`w-full flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] last:border-0 transition-all duration-150 text-left ${
                   isSel ? 'bg-indigo-600/25' : 'hover:bg-white/[0.04]'
                 }`}
               >
-                <span className={`text-sm ${isSel ? 'text-white font-medium' : 'text-zinc-400'}`}>
+                <span className={`text-sm flex items-center gap-1.5 ${isSel ? 'text-white font-medium' : 'text-zinc-400'}`}>
                   {CONDITION_LABELS[listing.condition] ?? listing.condition}
+                  {isFoil && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500/20 via-sky-400/20 to-emerald-400/20 text-fuchsia-300 border border-fuchsia-400/30">
+                      <Sparkles className="w-2.5 h-2.5" /> Foil
+                    </span>
+                  )}
                 </span>
                 <span className={`text-sm font-semibold tabular-nums ${isSel ? 'text-indigo-300' : 'text-zinc-400'}`}>
                   ₺{parseFloat(listing.price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
@@ -717,7 +723,8 @@ export default function CardDetail() {
 
   const sortedListings: any[] = card?.listings
     ? [...card.listings].sort((a: any, b: any) =>
-        CONDITION_ORDER.indexOf(a.condition) - CONDITION_ORDER.indexOf(b.condition))
+        CONDITION_ORDER.indexOf(a.condition) - CONDITION_ORDER.indexOf(b.condition)
+        || (a.finish === 'foil' ? 1 : 0) - (b.finish === 'foil' ? 1 : 0))
     : [];
 
   useEffect(() => {
@@ -745,7 +752,7 @@ export default function CardDetail() {
       showModal({ name: card.name, image: imgSrc, price: price ?? 0, quantity });
       toast({
         title: 'Sepete eklendi',
-        description: `${card.name} — ${CONDITION_LABELS[selectedListing.condition] ?? selectedListing.condition}`,
+        description: `${card.name} — ${CONDITION_LABELS[selectedListing.condition] ?? selectedListing.condition}${selectedListing.finish === 'foil' ? ' · Foil' : ''}`,
       });
     } catch (err: any) {
       toast({ title: 'Hata', description: err?.message ?? 'Sepete eklenemedi', variant: 'destructive' });

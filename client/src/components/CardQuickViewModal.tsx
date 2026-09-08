@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ShoppingCart, Loader2, Minus, Plus, ExternalLink } from 'lucide-react';
+import { X, ShoppingCart, Loader2, Minus, Plus, ExternalLink, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'wouter';
 import { useCart } from '@/hooks/useCart';
@@ -10,6 +10,7 @@ import type { CardPublic } from './CardCard';
 interface CardListing {
   id: string;
   condition: string;
+  finish?: string;
   price: string;
   stock: number;
 }
@@ -22,6 +23,10 @@ interface CardQuickViewModalProps {
 }
 
 const CONDITION_ORDER = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10', 'PSA9', 'PSA8', 'PSA7'];
+const sortListings = (list: CardListing[]) => list.slice().sort((a, b) =>
+  CONDITION_ORDER.indexOf(a.condition) - CONDITION_ORDER.indexOf(b.condition)
+  || (a.finish === 'foil' ? 1 : 0) - (b.finish === 'foil' ? 1 : 0)
+);
 const CONDITION_LABELS: Record<string, string> = {
   NM: 'Near Mint (NM)', LP: 'Lightly Played (LP)', MP: 'Moderately Played (MP)',
   HP: 'Heavily Played (HP)', DMG: 'Damaged (DMG)',
@@ -61,9 +66,7 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
         fetch(`/api/cards/${card.slug}`)
           .then(r => r.json())
           .then(data => {
-            const l: CardListing[] = (data.listings ?? [])
-              .slice()
-              .sort((a: any, b: any) => CONDITION_ORDER.indexOf(a.condition) - CONDITION_ORDER.indexOf(b.condition));
+            const l: CardListing[] = sortListings(data.listings ?? []);
             setListings(l);
             const firstInStock = l.find(x => x.stock > 0);
             setSelectedListingId(firstInStock?.id ?? l[0]?.id ?? null);
@@ -71,9 +74,7 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
           .catch(() => {})
           .finally(() => setLoadingListings(false));
       } else {
-        const sorted = propListings.slice().sort(
-          (a, b) => CONDITION_ORDER.indexOf(a.condition) - CONDITION_ORDER.indexOf(b.condition)
-        );
+        const sorted = sortListings(propListings);
         setListings(sorted);
         const first = sorted.find(x => x.stock > 0);
         setSelectedListingId(first?.id ?? sorted[0]?.id ?? null);
@@ -171,26 +172,30 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Kondisyon Seçin</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {listings.map(l => (
-                        <button
-                          key={l.id}
-                          data-testid={`btn-condition-${l.condition}`}
-                          onClick={() => { setSelectedListingId(l.id); setQuantity(1); }}
-                          disabled={l.stock === 0}
-                          className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors ${
-                            selectedListingId === l.id
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : l.stock === 0
-                              ? 'bg-zinc-50 text-zinc-300 border-zinc-200 cursor-not-allowed line-through'
-                              : 'bg-white text-zinc-700 border-zinc-200 hover:border-indigo-300 hover:text-indigo-700'
-                          }`}
-                        >
-                          {CONDITION_SHORT[l.condition] ?? l.condition}
-                          <span className="ml-1 opacity-60">
-                            {parseFloat(l.price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}₺
-                          </span>
-                        </button>
-                      ))}
+                      {listings.map(l => {
+                        const isFoil = l.finish === 'foil';
+                        return (
+                          <button
+                            key={l.id}
+                            data-testid={`btn-condition-${l.condition}${isFoil ? '-foil' : ''}`}
+                            onClick={() => { setSelectedListingId(l.id); setQuantity(1); }}
+                            disabled={l.stock === 0}
+                            className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors inline-flex items-center gap-1 ${
+                              selectedListingId === l.id
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : l.stock === 0
+                                ? 'bg-zinc-50 text-zinc-300 border-zinc-200 cursor-not-allowed line-through'
+                                : 'bg-white text-zinc-700 border-zinc-200 hover:border-indigo-300 hover:text-indigo-700'
+                            }`}
+                          >
+                            {CONDITION_SHORT[l.condition] ?? l.condition}
+                            {isFoil && <Sparkles className="w-2.5 h-2.5" />}
+                            <span className="ml-1 opacity-60">
+                              {parseFloat(l.price).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}₺
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -201,7 +206,14 @@ export function CardQuickViewModal({ card, isOpen, onClose, listings: propListin
               <div className="border-t border-zinc-100 px-5 py-4 bg-zinc-50">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-xs text-zinc-500">{CONDITION_LABELS[selectedListing.condition] ?? selectedListing.condition}</p>
+                    <p className="text-xs text-zinc-500 flex items-center gap-1">
+                      {CONDITION_LABELS[selectedListing.condition] ?? selectedListing.condition}
+                      {selectedListing.finish === 'foil' && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-100 via-sky-100 to-emerald-100 text-fuchsia-700">
+                          <Sparkles className="w-2.5 h-2.5" /> Foil
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xl font-bold text-indigo-700">
                       {price?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
                     </p>

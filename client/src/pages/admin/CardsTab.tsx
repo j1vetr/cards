@@ -21,6 +21,17 @@ const CONDITION_COLORS: Record<string, string> = {
   PSA7: 'bg-purple-100 text-purple-800',
 };
 
+const TCG_FINISHES = ['normal', 'foil'];
+
+const FINISH_LABELS: Record<string, string> = {
+  normal: 'Normal', foil: 'Foil',
+};
+
+const FINISH_COLORS: Record<string, string> = {
+  normal: 'bg-neutral-100 text-neutral-600',
+  foil: 'bg-gradient-to-r from-fuchsia-100 via-sky-100 to-emerald-100 text-fuchsia-700',
+};
+
 async function adminFetch(url: string, opts?: RequestInit) {
   const res = await fetch(url, { credentials: 'include', ...opts });
   if (!res.ok) throw new Error(await res.text());
@@ -40,7 +51,7 @@ interface AdminCard {
 }
 
 interface CardListing {
-  id: string; cardId: string; condition: string;
+  id: string; cardId: string; condition: string; finish: string;
   price: string; stock: number; isActive: boolean;
 }
 
@@ -53,12 +64,13 @@ function ExistingListingRow({ listing, cardId }: { listing: CardListing; cardId:
   const [price, setPrice] = useState(listing.price);
   const [stock, setStock] = useState(String(listing.stock));
   const [isActive, setIsActive] = useState(listing.isActive);
+  const [finish, setFinish] = useState(listing.finish || 'normal');
 
   const saveMut = useMutation({
     mutationFn: () => adminFetch(`/api/admin/cards/${cardId}/listings/${listing.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ price, stock: parseInt(stock), isActive }),
+      body: JSON.stringify({ price, stock: parseInt(stock), isActive, finish }),
     }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-card-listings', cardId] }),
   });
@@ -78,6 +90,13 @@ function ExistingListingRow({ listing, cardId }: { listing: CardListing; cardId:
           {listing.condition}
         </span>
         <span className="ml-1.5 text-[10px] text-neutral-400">{CONDITION_LABELS[listing.condition]}</span>
+      </td>
+      <td className="px-3 py-2">
+        <select value={finish} onChange={(e) => setFinish(e.target.value)}
+          className={`text-[11px] font-semibold rounded px-2 py-1 border-0 focus:outline-none focus:ring-1 focus:ring-neutral-300 ${FINISH_COLORS[finish] ?? 'bg-neutral-100 text-neutral-700'}`}
+          data-testid={`select-finish-${listing.id}`}>
+          {TCG_FINISHES.map((f) => <option key={f} value={f}>{FINISH_LABELS[f]}</option>)}
+        </select>
       </td>
       <td className="px-3 py-2">
         <div className="flex items-center gap-1">
@@ -124,6 +143,7 @@ function ExistingListingRow({ listing, cardId }: { listing: CardListing; cardId:
 function NewListingRow({ cardId, onSave, onCancel }: { cardId: string; onSave: () => void; onCancel: () => void }) {
   const qc = useQueryClient();
   const [condition, setCondition] = useState('');
+  const [finish, setFinish] = useState('normal');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
   const [isActive, setIsActive] = useState(true);
@@ -132,7 +152,7 @@ function NewListingRow({ cardId, onSave, onCancel }: { cardId: string; onSave: (
     mutationFn: () => adminFetch(`/api/admin/cards/${cardId}/listings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ condition, price, stock: parseInt(stock), isActive }),
+      body: JSON.stringify({ condition, finish, price, stock: parseInt(stock), isActive }),
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-card-listings', cardId] });
@@ -149,6 +169,13 @@ function NewListingRow({ cardId, onSave, onCancel }: { cardId: string; onSave: (
           data-testid="select-new-condition">
           <option value="">Koşul seçin</option>
           {TCG_CONDITIONS.map((c) => <option key={c} value={c}>{c} — {CONDITION_LABELS[c]}</option>)}
+        </select>
+      </td>
+      <td className="px-3 py-2">
+        <select value={finish} onChange={(e) => setFinish(e.target.value)}
+          className="w-full text-[12px] border border-neutral-200 rounded px-2 py-1 focus:outline-none focus:border-neutral-400"
+          data-testid="select-new-finish">
+          {TCG_FINISHES.map((f) => <option key={f} value={f}>{FINISH_LABELS[f]}</option>)}
         </select>
       </td>
       <td className="px-3 py-2">
@@ -244,6 +271,7 @@ function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () =>
           <thead>
             <tr className="text-[10px] uppercase tracking-wide text-neutral-500">
               <th className="px-3 py-1.5 font-medium">Koşul</th>
+              <th className="px-3 py-1.5 font-medium">Yüzey</th>
               <th className="px-3 py-1.5 font-medium">Fiyat</th>
               <th className="px-3 py-1.5 font-medium">Stok</th>
               <th className="px-3 py-1.5 font-medium">Aktif</th>
@@ -259,7 +287,7 @@ function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () =>
             )}
             {listings.length === 0 && !showNewRow && (
               <tr>
-                <td colSpan={5} className="px-3 py-3 text-center text-[12px] text-neutral-400">
+                <td colSpan={6} className="px-3 py-3 text-center text-[12px] text-neutral-400">
                   Henüz listing yok — Koşul Ekle ile başlayın
                 </td>
               </tr>
@@ -274,7 +302,7 @@ function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () =>
 // ── Create Card Modal ──────────────────────────────────────────────────────
 const CONDITION_OPTIONS = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10'];
 
-interface InitialListing { condition: string; price: string; stock: string; }
+interface InitialListing { condition: string; finish: string; price: string; stock: string; }
 
 function CreateCardModal({ games, allSets, onClose, onCreated }: {
   games: Game[];
@@ -295,12 +323,12 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
   const [description, setDescription] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [isNew, setIsNew] = useState(false);
-  const [listings, setListings] = useState<InitialListing[]>([{ condition: 'NM', price: '', stock: '1' }]);
+  const [listings, setListings] = useState<InitialListing[]>([{ condition: 'NM', finish: 'normal', price: '', stock: '1' }]);
   const [error, setError] = useState('');
 
   const filteredSets = gameId ? allSets.filter((s) => s.game_id === gameId) : allSets;
 
-  const addRow = () => setListings((prev) => [...prev, { condition: 'NM', price: '', stock: '1' }]);
+  const addRow = () => setListings((prev) => [...prev, { condition: 'NM', finish: 'normal', price: '', stock: '1' }]);
   const removeRow = (i: number) => setListings((prev) => prev.filter((_, idx) => idx !== i));
   const updateRow = (i: number, field: keyof InitialListing, val: string) =>
     setListings((prev) => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
@@ -331,6 +359,7 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             condition: l.condition,
+            finish: l.finish || 'normal',
             price: parseFloat(l.price),
             stock: parseInt(l.stock) || 1,
             isActive: true,
@@ -460,11 +489,16 @@ function CreateCardModal({ games, allSets, onClose, onCreated }: {
             </div>
             <div className="space-y-2">
               {listings.map((row, i) => (
-                <div key={i} className="grid grid-cols-[120px_1fr_80px_24px] gap-2 items-center">
+                <div key={i} className="grid grid-cols-[90px_84px_1fr_70px_24px] gap-2 items-center">
                   <select value={row.condition} onChange={(e) => updateRow(i, 'condition', e.target.value)}
                     className="text-[12px] border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none"
                     data-testid={`select-listing-condition-${i}`}>
                     {CONDITION_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={row.finish} onChange={(e) => updateRow(i, 'finish', e.target.value)}
+                    className="text-[12px] border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none"
+                    data-testid={`select-listing-finish-${i}`}>
+                    {TCG_FINISHES.map((f) => <option key={f} value={f}>{FINISH_LABELS[f]}</option>)}
                   </select>
                   <input type="number" min="0" step="0.01" placeholder="Fiyat (₺)" value={row.price}
                     onChange={(e) => updateRow(i, 'price', e.target.value)}

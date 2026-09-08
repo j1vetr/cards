@@ -2522,7 +2522,7 @@ export class DbStorage implements IStorage {
     const card = result.rows[0] as any;
 
     const listingsResult = await db.execute(sql`
-      SELECT id, condition, price::numeric AS price, stock
+      SELECT id, condition, finish, price::numeric AS price, stock
       FROM card_listings
       WHERE card_id = ${card.id} AND is_active = true
       ORDER BY price::numeric ASC
@@ -2756,11 +2756,15 @@ export class DbStorage implements IStorage {
   async createAdminCardListing(data: {
     cardId: string;
     condition: string;
+    finish?: string;
     price: string;
     stock: number;
     isActive: boolean;
   }): Promise<any> {
-    const [inserted] = await db.insert(cardListings).values(data).returning();
+    const [inserted] = await db.insert(cardListings).values({
+      ...data,
+      finish: data.finish || "normal",
+    }).returning();
     return inserted;
   }
 
@@ -2768,9 +2772,16 @@ export class DbStorage implements IStorage {
     price: string;
     stock: number;
     isActive: boolean;
+    finish?: string;
   }): Promise<any> {
     const [updated] = await db.update(cardListings)
-      .set({ price: data.price, stock: data.stock, isActive: data.isActive, updatedAt: new Date() })
+      .set({
+        price: data.price,
+        stock: data.stock,
+        isActive: data.isActive,
+        ...(data.finish ? { finish: data.finish } : {}),
+        updatedAt: new Date(),
+      })
       .where(eq(cardListings.id, id))
       .returning();
     return updated;
@@ -2891,9 +2902,11 @@ export class DbStorage implements IStorage {
   async bulkAutoListFromPrices(opts: {
     multiplier: number;
     condition: string;
+    finish?: string;
     stock: number;
     gameSlug?: string;
   }): Promise<{ created: number; updated: number; noPrice: number }> {
+    const finish = opts.finish || "normal";
     const gameFilter = opts.gameSlug ? sql`AND cg.slug = ${opts.gameSlug}` : sql``;
 
     const rows = await db.execute(sql`
@@ -2919,7 +2932,11 @@ export class DbStorage implements IStorage {
       const [existing] = await db
         .select({ id: cardListings.id })
         .from(cardListings)
-        .where(and(eq(cardListings.cardId, row.card_id), eq(cardListings.condition, opts.condition)));
+        .where(and(
+          eq(cardListings.cardId, row.card_id),
+          eq(cardListings.condition, opts.condition),
+          eq(cardListings.finish, finish),
+        ));
 
       if (existing) {
         await db.update(cardListings)
@@ -2930,6 +2947,7 @@ export class DbStorage implements IStorage {
         await db.insert(cardListings).values({
           cardId: row.card_id,
           condition: opts.condition,
+          finish,
           price,
           stock: opts.stock,
           isActive: true,

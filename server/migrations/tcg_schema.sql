@@ -168,5 +168,11 @@ INSERT INTO card_games (name, slug, is_active) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- ============================================================
+-- 10. Card finish (foil / normal) on listings
+-- ============================================================
+
+ALTER TABLE card_listings ADD COLUMN IF NOT EXISTS finish TEXT NOT NULL DEFAULT 'normal';
+
+-- ============================================================
 -- Done
 -- ============================================================
