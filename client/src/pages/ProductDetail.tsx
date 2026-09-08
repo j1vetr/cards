@@ -96,7 +96,7 @@ function StarRating({
           <Star
             style={{ width: size, height: size }}
             className={`${
-              star <= (hover || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-black/15'
+              star <= (hover || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-white/15'
             } transition-colors`}
           />
         </button>
@@ -129,19 +129,19 @@ function BoxCardsSection({ gameId, linkedSetId }: { gameId: string; linkedSetId?
   if (!linkedSetId || !gameSlug || cards.length === 0) return null;
 
   return (
-    <section className="mt-16 pt-12 border-t border-black/8">
+    <section className="mt-16 pt-12 border-t border-white/8">
       <div className="flex items-end justify-between mb-6">
         <div>
-          <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-black">
+          <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-white">
             Bu Kutuda Çıkabilecek Kartlar
           </h2>
-          <p className="text-sm text-black/40 mt-1">
+          <p className="text-sm text-white/40 mt-1">
             {game?.name} koleksiyonundan örnek kartlar
           </p>
         </div>
         <a
           href={`/oyun/${gameSlug}`}
-          className="text-xs font-semibold text-black/45 hover:text-black transition-colors flex items-center gap-1 uppercase tracking-[0.15em]"
+          className="text-xs font-semibold text-white/45 hover:text-white transition-colors flex items-center gap-1 uppercase tracking-[0.15em]"
           data-testid="link-view-all-cards"
         >
           Tüm Kartlar
@@ -156,7 +156,7 @@ function BoxCardsSection({ gameId, linkedSetId }: { gameId: string; linkedSetId?
             className="group block"
             data-testid={`link-sample-card-${card.id}`}
           >
-            <div className="aspect-[63/88] rounded-lg overflow-hidden bg-stone-100 border border-black/6 group-hover:border-black/20 transition-all group-hover:shadow-md">
+            <div className="aspect-[63/88] rounded-lg overflow-hidden bg-white/8 border border-white/6 group-hover:border-white/20 transition-all group-hover:shadow-md">
               <img
                 src={card.image_url || 'https://images.pokemontcg.io/sv3pt5/logo.png'}
                 alt={card.name}
@@ -164,7 +164,7 @@ function BoxCardsSection({ gameId, linkedSetId }: { gameId: string; linkedSetId?
                 className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
-            <p className="text-[10px] text-black/50 mt-1.5 truncate text-center group-hover:text-black transition-colors leading-tight">
+            <p className="text-[10px] text-white/50 mt-1.5 truncate text-center group-hover:text-white transition-colors leading-tight">
               {card.name}
             </p>
           </a>
@@ -561,12 +561,12 @@ export default function ProductDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="dark min-h-screen text-white" style={{ background: '#0c1220' }}>
         <Header />
         <main className="pt-24 pb-20 px-6">
           <div className="max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh]">
-            <Loader2 className="w-10 h-10 text-black/25 animate-spin" />
-            <p className="mt-4 text-sm text-black/40">Ürün yükleniyor...</p>
+            <Loader2 className="w-10 h-10 text-white/25 animate-spin" />
+            <p className="mt-4 text-sm text-white/40">Ürün yükleniyor...</p>
           </div>
         </main>
       </div>
@@ -575,19 +575,19 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="dark min-h-screen text-white" style={{ background: '#0c1220' }}>
         <Header />
         <main className="pt-24 pb-20 px-6">
           <div className="max-w-7xl mx-auto text-center min-h-[60vh] flex flex-col items-center justify-center">
-            <div className="w-24 h-24 border border-black/8 flex items-center justify-center mb-6">
-              <Package className="w-12 h-12 text-black/20" />
+            <div className="w-24 h-24 border border-white/8 flex items-center justify-center mb-6">
+              <Package className="w-12 h-12 text-white/20" />
             </div>
-            <h1 className="font-display text-3xl mb-4 text-black">Ürün Bulunamadı</h1>
-            <p className="text-black/40 mb-8">
+            <h1 className="font-display text-3xl mb-4 text-white">Ürün Bulunamadı</h1>
+            <p className="text-white/40 mb-8">
               Aradığınız ürün mevcut değil veya kaldırılmış olabilir.
             </p>
             <Link href="/">
-              <span className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-semibold hover:bg-polen-orange transition-colors text-xs tracking-[0.18em] uppercase">
+              <span className="inline-flex items-center gap-2 px-6 py-3 bg-[hsl(var(--polen-orange))] text-white font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors text-xs tracking-[0.18em] uppercase">
                 Ana Sayfaya Dön
               </span>
             </Link>
@@ -653,7 +653,7 @@ export default function ProductDetail() {
       };
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="dark min-h-screen overflow-x-hidden text-white" style={{ background: '#0c1220' }}>
       <SEO
         title={(product as any).seoTitle || product.name}
         description={
@@ -787,7 +787,7 @@ export default function ProductDetail() {
                       setSelectedImage(i);
                     }}
                     className={`h-1.5 rounded-full transition-all ${
-                      i === selectedImage ? 'bg-white w-6' : 'bg-white/30 w-1.5'
+                      i === selectedImage ? 'bg-white/5 w-6' : 'bg-white/30 w-1.5'
                     }`}
                     aria-label={`Görsel ${i + 1}`}
                   />
@@ -807,23 +807,23 @@ export default function ProductDetail() {
       <main className="pt-20 lg:pt-12 pb-32 lg:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] text-black/45 mb-8 font-mono tracking-[0.18em] uppercase">
-            <Link href="/" className="hover:text-black transition-colors">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] text-white/45 mb-8 font-mono tracking-[0.18em] uppercase">
+            <Link href="/" className="hover:text-white transition-colors">
               Ana Sayfa
             </Link>
             {category && (
               <>
-                <ChevronRight className="w-3 h-3 text-black/25" />
+                <ChevronRight className="w-3 h-3 text-white/25" />
                 <Link
                   href={`/kategori/${category.slug}`}
-                  className="hover:text-black transition-colors"
+                  className="hover:text-white transition-colors"
                 >
                   {category.name}
                 </Link>
               </>
             )}
-            <ChevronRight className="w-3 h-3 text-black/25" />
-            <span className="text-black truncate max-w-[280px] normal-case font-sans tracking-normal text-xs">
+            <ChevronRight className="w-3 h-3 text-white/25" />
+            <span className="text-white truncate max-w-[280px] normal-case font-sans tracking-normal text-xs">
               {product.name}
             </span>
           </nav>
@@ -840,9 +840,9 @@ export default function ProductDetail() {
                       key={i}
                       type="button"
                       onClick={() => setSelectedImage(i)}
-                      className={`relative aspect-[4/5] overflow-hidden bg-stone-100 transition-all ${
+                      className={`relative aspect-[4/5] overflow-hidden bg-white/8 transition-all ${
                         i === selectedImage
-                          ? 'ring-1 ring-black opacity-100'
+                          ? 'ring-1 ring-white/70 opacity-100'
                           : 'opacity-50 hover:opacity-100'
                       }`}
                       data-testid={`button-thumbnail-${i}`}
@@ -860,9 +860,9 @@ export default function ProductDetail() {
                     <button
                       type="button"
                       onClick={() => setSelectedImage(images.length)}
-                      className={`relative aspect-[4/5] overflow-hidden bg-stone-900 transition-all flex items-center justify-center ${
+                      className={`relative aspect-[4/5] overflow-hidden bg-white/10 transition-all flex items-center justify-center ${
                         selectedImage === images.length
-                          ? 'ring-1 ring-black opacity-100'
+                          ? 'ring-1 ring-white/70 opacity-100'
                           : 'opacity-50 hover:opacity-100'
                       }`}
                       data-testid="button-thumbnail-video"
@@ -896,7 +896,7 @@ export default function ProductDetail() {
                   ) : (
                   <div
                     ref={heroImageRef}
-                    className="relative aspect-[4/5] bg-stone-100 overflow-hidden cursor-zoom-in group"
+                    className="relative aspect-[4/5] bg-white/8 overflow-hidden cursor-zoom-in group"
                     onMouseEnter={() => setIsZooming(true)}
                     onMouseLeave={() => setIsZooming(false)}
                     onMouseMove={handleHeroMove}
@@ -945,7 +945,7 @@ export default function ProductDetail() {
                 {/* Mobile carousel */}
                 <div className="sm:hidden">
                   <div
-                    className="relative aspect-[4/5] bg-stone-100 overflow-hidden"
+                    className="relative aspect-[4/5] bg-white/8 overflow-hidden"
                     ref={emblaRef}
                   >
                     <div className="flex h-full">
@@ -1038,7 +1038,7 @@ export default function ProductDetail() {
 
               {/* Title */}
               <h1
-                className="font-display text-3xl sm:text-4xl tracking-wide text-black leading-[1.1] mb-3"
+                className="font-display text-3xl sm:text-4xl tracking-wide text-white leading-[1.1] mb-3"
                 data-testid="text-product-name"
               >
                 {product.name}
@@ -1048,24 +1048,24 @@ export default function ProductDetail() {
               {ratingData && ratingData.count > 0 && (
                 <div className="flex items-center gap-2 mb-5">
                   <StarRating rating={Math.round(ratingData.average)} size={14} />
-                  <span className="text-xs text-black/45">
+                  <span className="text-xs text-white/45">
                     {ratingData.average.toFixed(1)} · {ratingData.count} değerlendirme
                   </span>
                 </div>
               )}
 
               {/* Price */}
-              <div className="flex items-baseline gap-3 mb-6 pb-6 border-b border-black/8">
+              <div className="flex items-baseline gap-3 mb-6 pb-6 border-b border-white/8">
                 {originalPrice && (
                   <span
-                    className="text-base text-black/35 line-through"
+                    className="text-base text-white/35 line-through"
                     data-testid="text-original-price"
                   >
                     {originalPrice.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
                   </span>
                 )}
                 <span
-                  className="font-display text-3xl text-black tabular-nums"
+                  className="font-display text-3xl text-white tabular-nums"
                   data-testid="text-product-price"
                 >
                   {price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
@@ -1075,7 +1075,7 @@ export default function ProductDetail() {
               {/* Toptan (wholesale) panel */}
               {wholesaleActive && (
                 <div
-                  className="mb-6 pb-6 border-b border-black/8"
+                  className="mb-6 pb-6 border-b border-white/8"
                   data-testid="panel-wholesale"
                 >
                   <div className="border border-polen-orange/30 bg-polen-orange/[0.04] rounded-lg overflow-hidden">
@@ -1091,7 +1091,7 @@ export default function ProductDetail() {
                       </span>
                       <span className="flex items-center gap-2">
                         {wholesaleSeries && !wholesaleOpen && (
-                          <span className="text-[11px] font-medium text-black/55">
+                          <span className="text-[11px] font-medium text-white/55">
                             {wholesaleSeries.name} · {wholesalePiecesPerSeries} Adet/Seri
                           </span>
                         )}
@@ -1109,7 +1109,7 @@ export default function ProductDetail() {
                         >
                           {parseFloat(product.wholesalePrice || '0').toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                         </span>
-                        <span className="text-[12px] text-black/50">/ Adet</span>
+                        <span className="text-[12px] text-white/50">/ Adet</span>
                       </div>
 
                       {wholesaleSeries ? (
@@ -1122,17 +1122,17 @@ export default function ProductDetail() {
                             {wholesaleSeries.sizeDistribution.map((d) => (
                               <span
                                 key={d.size}
-                                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-black/10 bg-white text-[11px] text-black/70"
+                                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-white/10 bg-white/5 text-[11px] text-white/70"
                               >
-                                <span className="font-semibold text-black">{d.size}</span>
-                                <span className="text-black/40">×</span>
+                                <span className="font-semibold text-white">{d.size}</span>
+                                <span className="text-white/40">×</span>
                                 <span>{d.quantity}</span>
                               </span>
                             ))}
                           </div>
-                          <div className="flex items-center justify-between text-[13px] mb-3 pt-2 border-t border-black/5">
-                            <span className="text-black/55">Seri Toplamı ({wholesalePiecesPerSeries} Adet)</span>
-                            <span className="font-display text-base text-black tabular-nums" data-testid="text-wholesale-series-total">
+                          <div className="flex items-center justify-between text-[13px] mb-3 pt-2 border-t border-white/5">
+                            <span className="text-white/55">Seri Toplamı ({wholesalePiecesPerSeries} Adet)</span>
+                            <span className="font-display text-base text-white tabular-nums" data-testid="text-wholesale-series-total">
                               {(parseFloat(product.wholesalePrice || '0') * wholesalePiecesPerSeries).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
                             </span>
                           </div>
@@ -1148,7 +1148,7 @@ export default function ProductDetail() {
                               {isAddingWholesale ? 'Ekleniyor…' : 'Toptan Sepete Ekle'}
                             </button>
                           ) : user ? (
-                            <p className="text-[12px] text-black/55 leading-relaxed" data-testid="text-wholesale-account-needed">
+                            <p className="text-[12px] text-white/55 leading-relaxed" data-testid="text-wholesale-account-needed">
                               Seri olarak sipariş vermek için toptan (kurumsal) hesabı gereklidir.{' '}
                               <Link href="/iletisim" className="text-polen-orange-deep font-semibold underline">
                                 Bizimle iletişime geçin
@@ -1156,7 +1156,7 @@ export default function ProductDetail() {
                               .
                             </p>
                           ) : (
-                            <p className="text-[12px] text-black/55 leading-relaxed" data-testid="text-wholesale-login-needed">
+                            <p className="text-[12px] text-white/55 leading-relaxed" data-testid="text-wholesale-login-needed">
                               Toptan fiyatlarla seri sipariş için{' '}
                               <Link href="/giris" className="text-polen-orange-deep font-semibold underline">
                                 toptan hesabıyla giriş yapın
@@ -1166,7 +1166,7 @@ export default function ProductDetail() {
                           )}
                         </>
                       ) : (
-                        <p className="text-[12px] text-black/55">Toptan seri bilgisi yükleniyor…</p>
+                        <p className="text-[12px] text-white/55">Toptan seri bilgisi yükleniyor…</p>
                       )}
                     </div>}
                   </div>
@@ -1182,17 +1182,17 @@ export default function ProductDetail() {
                     }`}
                   >
                     <div
-                      className="text-sm text-black/60 leading-relaxed prose prose-sm max-w-none [&_p]:mb-3 [&_ul]:my-3 [&_li]:mb-1 [&_strong]:text-black [&_h3]:text-black [&_h4]:text-black"
+                      className="text-sm text-white/60 leading-relaxed prose prose-sm max-w-none [&_p]:mb-3 [&_ul]:my-3 [&_li]:mb-1 [&_strong]:text-white [&_h3]:text-white [&_h4]:text-white"
                       dangerouslySetInnerHTML={{ __html: product.description }}
                     />
                     {!showFullDesc && (
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0c1220] to-transparent" />
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowFullDesc((v) => !v)}
-                    className="mt-2 text-[11px] font-semibold text-black/55 hover:text-polen-orange uppercase tracking-[0.18em] transition-colors"
+                    className="mt-2 text-[11px] font-semibold text-white/55 hover:text-polen-orange uppercase tracking-[0.18em] transition-colors"
                     data-testid="button-toggle-description"
                   >
                     {showFullDesc ? 'Gizle ↑' : 'Devamını Oku ↓'}
@@ -1202,9 +1202,9 @@ export default function ProductDetail() {
 
               {/* Ürün Özellikleri (attributes) */}
               {product.attributes && Object.keys(product.attributes).length > 0 && (
-                <div className="mb-6 border border-black/8">
-                  <div className="px-4 py-2.5 border-b border-black/8 bg-stone-50">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/50">
+                <div className="mb-6 border border-white/8">
+                  <div className="px-4 py-2.5 border-b border-white/8 bg-white/5">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                       Ürün Özellikleri
                     </span>
                   </div>
@@ -1215,12 +1215,12 @@ export default function ProductDetail() {
                         .map(([key, val], i) => (
                           <tr
                             key={key}
-                            className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}
+                            className={i % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent'}
                           >
-                            <td className="px-4 py-2.5 font-medium text-black/55 w-2/5 border-r border-black/5">
+                            <td className="px-4 py-2.5 font-medium text-white/55 w-2/5 border-r border-white/5">
                               {key}
                             </td>
-                            <td className="px-4 py-2.5 text-black">{val}</td>
+                            <td className="px-4 py-2.5 text-white">{val}</td>
                           </tr>
                         ))}
                     </tbody>
@@ -1243,10 +1243,10 @@ export default function ProductDetail() {
                     {sizes.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black">
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
                             Beden
                             {selectedSize && (
-                              <span className="ml-2 text-black/50 normal-case font-normal tracking-normal">
+                              <span className="ml-2 text-white/50 normal-case font-normal tracking-normal">
                                 {selectedSize}
                               </span>
                             )}
@@ -1254,7 +1254,7 @@ export default function ProductDetail() {
                           <button
                             type="button"
                             onClick={() => setSizeGuideOpen(true)}
-                            className="text-[10px] text-black/40 hover:text-polen-orange underline underline-offset-2 transition-colors uppercase tracking-[0.12em]"
+                            className="text-[10px] text-white/40 hover:text-polen-orange underline underline-offset-2 transition-colors uppercase tracking-[0.12em]"
                             data-testid="button-size-guide"
                           >
                             Beden Rehberi
@@ -1288,10 +1288,10 @@ export default function ProductDetail() {
                                 }}
                                 className={`min-w-[44px] flex flex-col items-center justify-center px-3 py-1.5 text-[12px] font-medium border transition-all leading-none ${
                                   isSelected
-                                    ? 'border-black bg-black text-white'
+                                    ? 'border-[hsl(var(--polen-orange))] bg-[hsl(var(--polen-orange))] text-white'
                                     : isAvailable
-                                      ? 'border-black/20 text-black hover:border-black'
-                                      : 'border-black/10 text-black/25 line-through cursor-not-allowed'
+                                      ? 'border-white/20 text-white hover:border-white/15'
+                                      : 'border-white/10 text-white/25 line-through cursor-not-allowed'
                                 }`}
                                 disabled={!isAvailable}
                                 data-testid={`button-size-${size}`}
@@ -1313,10 +1313,10 @@ export default function ProductDetail() {
                     {colors.length > 0 && (
                       <div>
                         <div className="flex items-center mb-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black">
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
                             Renk
                             {selectedColor && (
-                              <span className="ml-2 text-black/50 normal-case font-normal tracking-normal">
+                              <span className="ml-2 text-white/50 normal-case font-normal tracking-normal">
                                 {selectedColor}
                               </span>
                             )}
@@ -1353,17 +1353,17 @@ export default function ProductDetail() {
                                 title={color}
                                 className={`relative h-8 px-3 text-[11px] font-medium border transition-all flex items-center gap-2 ${
                                   isSelected
-                                    ? 'border-black bg-black text-white'
+                                    ? 'border-[hsl(var(--polen-orange))] bg-[hsl(var(--polen-orange))] text-white'
                                     : isAvailable
-                                      ? 'border-black/20 text-black hover:border-black'
-                                      : 'border-black/10 text-black/25 cursor-not-allowed'
+                                      ? 'border-white/20 text-white hover:border-white/15'
+                                      : 'border-white/10 text-white/25 cursor-not-allowed'
                                 }`}
                                 disabled={!isAvailable}
                                 data-testid={`button-color-${color}`}
                               >
                                 {hex && (
                                   <span
-                                    className="w-4 h-4 rounded-full border border-black/15 shrink-0"
+                                    className="w-4 h-4 rounded-full border border-white/15 shrink-0"
                                     style={{ backgroundColor: hex }}
                                   />
                                 )}
@@ -1386,18 +1386,18 @@ export default function ProductDetail() {
               {/* Quantity + Add to cart */}
               <div className="space-y-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center border border-black/15">
+                  <div className="flex items-center border border-white/15">
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-11 h-11 flex items-center justify-center hover:bg-black/5 transition-colors text-black"
+                      className="w-11 h-11 flex items-center justify-center hover:bg-black/5 transition-colors text-white"
                       aria-label="Azalt"
                       data-testid="button-decrease-quantity"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
                     <span
-                      className="w-10 text-center text-sm font-medium text-black tabular-nums"
+                      className="w-10 text-center text-sm font-medium text-white tabular-nums"
                       data-testid="text-quantity"
                     >
                       {quantity}
@@ -1405,7 +1405,7 @@ export default function ProductDetail() {
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => q + 1)}
-                      className="w-11 h-11 flex items-center justify-center hover:bg-black/5 transition-colors text-black"
+                      className="w-11 h-11 flex items-center justify-center hover:bg-black/5 transition-colors text-white"
                       aria-label="Artır"
                       data-testid="button-increase-quantity"
                     >
@@ -1424,8 +1424,8 @@ export default function ProductDetail() {
                     disabled={isAdding || isOutOfStock}
                     className={`group flex-1 h-12 font-semibold text-xs uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2 ${
                       isOutOfStock
-                        ? 'bg-black/8 text-black/35 cursor-not-allowed'
-                        : 'bg-black hover:bg-polen-orange text-white'
+                        ? 'bg-white/8 text-white/35 cursor-not-allowed'
+                        : 'bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] text-white'
                     } disabled:cursor-not-allowed`}
                     data-testid="button-add-to-cart"
                   >
@@ -1445,7 +1445,7 @@ export default function ProductDetail() {
                     className={`w-12 h-12 border flex items-center justify-center transition-colors ${
                       isLiked
                         ? 'bg-polen-orange border-polen-orange text-white'
-                        : 'border-black/15 hover:border-black text-black'
+                        : 'border-white/15 hover:border-white/15 text-white'
                     } ${isFavoriteLoading ? 'opacity-50' : ''}`}
                     aria-label="Favorilere ekle"
                     data-testid="button-like"
@@ -1464,7 +1464,7 @@ export default function ProductDetail() {
                       className={`w-12 h-12 border flex items-center justify-center transition-colors ${
                         showShareMenu
                           ? 'bg-polen-orange border-polen-orange text-white'
-                          : 'border-black/15 hover:border-black text-black'
+                          : 'border-white/15 hover:border-white/15 text-white'
                       }`}
                       aria-label="Paylaş"
                       data-testid="button-share"
@@ -1477,7 +1477,7 @@ export default function ProductDetail() {
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 8 }}
-                          className="absolute bottom-full right-0 mb-2 bg-white border border-black/10 shadow-xl min-w-[180px] z-30"
+                          className="absolute bottom-full right-0 mb-2 bg-white/5 border border-white/10 shadow-xl min-w-[180px] z-30"
                         >
                           {socialLinks.map((s) => (
                             <a
@@ -1486,7 +1486,7 @@ export default function ProductDetail() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={() => setShowShareMenu(false)}
-                              className="block px-4 py-2.5 text-sm text-black hover:bg-black/5 hover:text-polen-orange transition-colors"
+                              className="block px-4 py-2.5 text-sm text-white hover:bg-black/5 hover:text-polen-orange transition-colors"
                             >
                               {s.name}
                             </a>
@@ -1494,7 +1494,7 @@ export default function ProductDetail() {
                           <button
                             type="button"
                             onClick={copyLink}
-                            className="w-full text-left px-4 py-2.5 text-sm text-black hover:bg-black/5 hover:text-polen-orange transition-colors flex items-center gap-2 border-t border-black/8"
+                            className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-black/5 hover:text-polen-orange transition-colors flex items-center gap-2 border-t border-white/8"
                           >
                             <Copy className="w-3.5 h-3.5" />
                             Bağlantıyı Kopyala
@@ -1510,20 +1510,20 @@ export default function ProductDetail() {
               <div ref={ctaSentinelRef} aria-hidden="true" className="h-px" />
 
               {/* Trust strip */}
-              <div className="grid grid-cols-3 gap-3 py-5 border-t border-b border-black/8 mb-6">
+              <div className="grid grid-cols-3 gap-3 py-5 border-t border-b border-white/8 mb-6">
                 {[
                   { icon: Truck, title: 'Ücretsiz Kargo', sub: `${freeShippingThreshold.toLocaleString('tr-TR')} ₺ üzeri` },
                   { icon: RotateCcw, title: 'Kolay İade', sub: '14 gün içinde' },
                   { icon: Shield, title: 'Güvenli Ödeme', sub: 'SSL korumalı' },
                 ].map((it) => (
                   <div key={it.title} className="text-center">
-                    <div className="w-9 h-9 mx-auto mb-2 border border-black/10 flex items-center justify-center">
-                      <it.icon className="w-4 h-4 text-black/45" />
+                    <div className="w-9 h-9 mx-auto mb-2 border border-white/10 flex items-center justify-center">
+                      <it.icon className="w-4 h-4 text-white/45" />
                     </div>
-                    <p className="text-[11px] font-medium text-black leading-tight">
+                    <p className="text-[11px] font-medium text-white leading-tight">
                       {it.title}
                     </p>
-                    <p className="text-[10px] text-black/40">{it.sub}</p>
+                    <p className="text-[10px] text-white/40">{it.sub}</p>
                   </div>
                 ))}
               </div>
@@ -1531,10 +1531,10 @@ export default function ProductDetail() {
               {/* SKU */}
               {product.sku && (
                 <p
-                  className="text-[11px] text-black/40 font-mono tracking-[0.12em] uppercase"
+                  className="text-[11px] text-white/40 font-mono tracking-[0.12em] uppercase"
                   data-testid="text-sku"
                 >
-                  Stok Kodu: <span className="text-black/70">{product.sku}</span>
+                  Stok Kodu: <span className="text-white/70">{product.sku}</span>
                 </p>
               )}
             </motion.aside>
@@ -1556,14 +1556,14 @@ export default function ProductDetail() {
             transition={{ duration: 0.5 }}
             className="mt-20 lg:mt-28"
           >
-            <div className="flex items-end justify-between mb-8 border-b border-black/8 pb-4">
-              <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-black">
+            <div className="flex items-end justify-between mb-8 border-b border-white/8 pb-4">
+              <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-white">
                 Değerlendirmeler
               </h2>
               {ratingData && ratingData.count > 0 && (
                 <div className="flex items-center gap-2">
                   <StarRating rating={Math.round(ratingData.average)} size={16} />
-                  <span className="text-sm text-black/50">
+                  <span className="text-sm text-white/50">
                     {ratingData.average.toFixed(1)} · {ratingData.count}
                   </span>
                 </div>
@@ -1583,11 +1583,11 @@ export default function ProductDetail() {
             )}
 
             {!userReview && !reviewSubmitted && (
-              <div className="bg-stone-50 border border-black/8 p-6 mb-8">
+              <div className="bg-white/5 border border-white/8 p-6 mb-8">
                 <div className="flex items-baseline justify-between mb-4 gap-3 flex-wrap">
-                  <h3 className="font-semibold text-black">Değerlendirme Yaz</h3>
+                  <h3 className="font-semibold text-white">Değerlendirme Yaz</h3>
                   {!user && (
-                    <p className="text-[11px] text-black/55">
+                    <p className="text-[11px] text-white/55">
                       Üye misin?{' '}
                       <Link href="/giris">
                         <span className="underline hover:text-polen-orange cursor-pointer">
@@ -1599,7 +1599,7 @@ export default function ProductDetail() {
                 </div>
                 <form onSubmit={handleSubmitReview} className="space-y-4">
                   <div>
-                    <label className="block text-xs text-black/45 mb-2 uppercase tracking-wider">
+                    <label className="block text-xs text-white/45 mb-2 uppercase tracking-wider">
                       Puanınız
                     </label>
                     <StarRating
@@ -1620,7 +1620,7 @@ export default function ProductDetail() {
                         value={reviewGuestName}
                         onChange={(e) => setReviewGuestName(e.target.value)}
                         maxLength={100}
-                        className="w-full px-4 py-3 bg-white border border-black/12 text-black placeholder:text-black/30 focus:outline-none focus:border-black transition-colors"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/12 text-white placeholder:text-white/30 focus:outline-none focus:border-white/15 transition-colors"
                         data-testid="input-review-guest-name"
                       />
                       <input
@@ -1631,7 +1631,7 @@ export default function ProductDetail() {
                         value={reviewGuestEmail}
                         onChange={(e) => setReviewGuestEmail(e.target.value)}
                         maxLength={200}
-                        className="w-full px-4 py-3 bg-white border border-black/12 text-black placeholder:text-black/30 focus:outline-none focus:border-black transition-colors"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/12 text-white placeholder:text-white/30 focus:outline-none focus:border-white/15 transition-colors"
                         data-testid="input-review-guest-email"
                       />
                     </div>
@@ -1644,7 +1644,7 @@ export default function ProductDetail() {
                     value={reviewTitle}
                     onChange={(e) => setReviewTitle(e.target.value)}
                     maxLength={200}
-                    className="w-full px-4 py-3 bg-white border border-black/12 text-black placeholder:text-black/30 focus:outline-none focus:border-black transition-colors"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/12 text-white placeholder:text-white/30 focus:outline-none focus:border-white/15 transition-colors"
                     data-testid="input-review-title"
                   />
                   <textarea
@@ -1654,7 +1654,7 @@ export default function ProductDetail() {
                     onChange={(e) => setReviewContent(e.target.value)}
                     rows={3}
                     maxLength={4000}
-                    className="w-full px-4 py-3 bg-white border border-black/12 text-black placeholder:text-black/30 focus:outline-none focus:border-black transition-colors resize-none"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/12 text-white placeholder:text-white/30 focus:outline-none focus:border-white/15 transition-colors resize-none"
                     data-testid="input-review-content"
                   />
 
@@ -1663,7 +1663,7 @@ export default function ProductDetail() {
                   )}
 
                   {!user && (
-                    <p className="text-[11px] text-black/45 leading-relaxed">
+                    <p className="text-[11px] text-white/45 leading-relaxed">
                       E-postanız sadece yorum doğrulama için kullanılır, yayınlanmaz.
                       Yorumlar yayınlanmadan önce yönetici onayından geçer.
                     </p>
@@ -1672,7 +1672,7 @@ export default function ProductDetail() {
                   <button
                     type="submit"
                     disabled={createReviewMutation.isPending}
-                    className="px-6 py-3 bg-black text-white font-semibold hover:bg-polen-orange transition-colors disabled:opacity-50 flex items-center gap-2 text-xs tracking-[0.18em] uppercase"
+                    className="px-6 py-3 bg-[hsl(var(--polen-orange))] text-white font-semibold hover:bg-[hsl(var(--polen-orange-deep))] transition-colors disabled:opacity-50 flex items-center gap-2 text-xs tracking-[0.18em] uppercase"
                     data-testid="button-submit-review"
                   >
                     {createReviewMutation.isPending ? (
@@ -1687,7 +1687,7 @@ export default function ProductDetail() {
             )}
 
             {userReview && (
-              <div className="bg-stone-50 border border-black/8 p-6 mb-8">
+              <div className="bg-white/5 border border-white/8 p-6 mb-8">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <StarRating rating={userReview.rating} size={14} />
                   {userReview.isApproved ? (
@@ -1706,10 +1706,10 @@ export default function ProductDetail() {
                   )}
                 </div>
                 {userReview.title && (
-                  <h4 className="font-semibold text-black">{userReview.title}</h4>
+                  <h4 className="font-semibold text-white">{userReview.title}</h4>
                 )}
                 {userReview.content && (
-                  <p className="text-black/55 mt-1 text-sm">{userReview.content}</p>
+                  <p className="text-white/55 mt-1 text-sm">{userReview.content}</p>
                 )}
                 {!userReview.isApproved && !userReview.rejectionReason && (
                   <p className="text-[12px] text-amber-700 mt-3 leading-snug">
@@ -1734,29 +1734,29 @@ export default function ProductDetail() {
                     return (
                       <div
                         key={review.id}
-                        className="bg-stone-50 border border-black/8 p-5"
+                        className="bg-white/5 border border-white/8 p-5"
                       >
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-9 h-9 bg-black/8 flex items-center justify-center text-sm font-bold text-black">
+                          <div className="w-9 h-9 bg-black/8 flex items-center justify-center text-sm font-bold text-white">
                             {review.user.firstName?.charAt(0)?.toUpperCase() || 'A'}
                           </div>
                           <div>
-                            <p className="font-medium text-sm text-black">
+                            <p className="font-medium text-sm text-white">
                               {mask(review.user.firstName)} {mask(review.user.lastName)}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <StarRating rating={review.rating} size={11} />
-                              <span className="text-xs text-black/40">
+                              <span className="text-xs text-white/40">
                                 {new Date(review.createdAt).toLocaleDateString('tr-TR')}
                               </span>
                             </div>
                           </div>
                         </div>
                         {review.title && (
-                          <h4 className="font-semibold text-sm text-black">{review.title}</h4>
+                          <h4 className="font-semibold text-sm text-white">{review.title}</h4>
                         )}
                         {review.content && (
-                          <p className="text-black/55 text-sm mt-2 leading-relaxed">
+                          <p className="text-white/55 text-sm mt-2 leading-relaxed">
                             {review.content}
                           </p>
                         )}
@@ -1767,8 +1767,8 @@ export default function ProductDetail() {
             ) : (
               !userReview && (
                 <div className="text-center py-12">
-                  <Star className="w-10 h-10 mx-auto mb-3 text-black/15" />
-                  <p className="text-black/45">
+                  <Star className="w-10 h-10 mx-auto mb-3 text-white/15" />
+                  <p className="text-white/45">
                     Henüz değerlendirme yok. İlk değerlendirmeyi siz yapın.
                   </p>
                 </div>
@@ -1785,8 +1785,8 @@ export default function ProductDetail() {
               transition={{ duration: 0.5 }}
               className="mt-20 lg:mt-28"
             >
-              <div className="flex items-end justify-between mb-8 border-b border-black/8 pb-4">
-                <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-black">
+              <div className="flex items-end justify-between mb-8 border-b border-white/8 pb-4">
+                <h2 className="font-display text-2xl sm:text-3xl tracking-wide text-white">
                   Beğenebileceğiniz Ürünler
                 </h2>
               </div>
@@ -1810,14 +1810,14 @@ export default function ProductDetail() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.25 }}
-            className="lg:hidden fixed bottom-0 inset-x-0 z-[90] bg-white border-t border-black/10 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3"
+            className="lg:hidden fixed bottom-0 inset-x-0 z-[90] bg-white/5 border-t border-white/10 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3"
             data-testid="mobile-sticky-cta"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-black/45 leading-tight">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/45 leading-tight">
                 {product.name}
               </p>
-              <p className="font-display text-lg text-black tabular-nums leading-tight">
+              <p className="font-display text-lg text-white tabular-nums leading-tight">
                 {price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
               </p>
             </div>
@@ -1827,8 +1827,8 @@ export default function ProductDetail() {
               disabled={isAdding || isOutOfStock}
               className={`h-11 px-5 font-semibold text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 ${
                 isOutOfStock
-                  ? 'bg-black/8 text-black/35 cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-polen-orange'
+                  ? 'bg-white/8 text-white/35 cursor-not-allowed'
+                  : 'bg-[hsl(var(--polen-orange))] text-white hover:bg-[hsl(var(--polen-orange-deep))]'
               }`}
               data-testid="button-add-to-cart-mobile"
             >

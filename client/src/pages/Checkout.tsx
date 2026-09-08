@@ -497,7 +497,7 @@ export default function Checkout() {
 
   if (orderComplete) {
     return (
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="dark min-h-screen overflow-x-hidden text-white" style={{ background: '#0c1220' }}>
         <SEO title="Ödeme" description="Marka güvenli ödeme sayfası." url="/odeme" noIndex />
         <Header />
         <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6">
@@ -517,29 +517,29 @@ export default function Checkout() {
             <h1 className="font-display text-3xl tracking-wider mb-4" data-testid="text-order-success">
               SİPARİŞİNİZ ALINDI!
             </h1>
-            <p className="text-muted-foreground mb-2">
+            <p className="text-white/40 mb-2">
               Siparişiniz başarıyla oluşturuldu.
             </p>
-            <p className="text-lg font-mono font-bold text-black mb-8">
+            <p className="text-lg font-mono font-bold text-white mb-8">
               Sipariş No: #{orderNumber}
             </p>
             
-            <div className="bg-stone-50 border border-black/8 p-6 mb-8 text-left">
-              <h3 className="font-semibold text-black mb-4">Sipariş Detayları</h3>
+            <div className="bg-white/5 border border-white/8 p-6 mb-8 text-left">
+              <h3 className="font-semibold text-white mb-4">Sipariş Detayları</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">E-posta</span>
+                  <span className="text-white/40">E-posta</span>
                   <span>{formData.customerEmail}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Teslimat Adresi</span>
+                  <span className="text-white/40">Teslimat Adresi</span>
                   <span className="text-right">{formData.district}, {formData.city}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ödeme Yöntemi</span>
+                  <span className="text-white/40">Ödeme Yöntemi</span>
                   <span>Kredi Kartı</span>
                 </div>
-                <div className="h-px bg-black/8 my-3" />
+                <div className="h-px bg-white/8 my-3" />
                 <div className="flex justify-between font-semibold">
                   <span>Toplam</span>
                   <span>{(savedOrderTotal || total).toLocaleString('tr-TR')} ₺</span>
@@ -547,20 +547,20 @@ export default function Checkout() {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-white/40 mb-6">
               Sipariş onayı <strong>{formData.customerEmail}</strong> adresine gönderilecektir.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3">
               {user ? (
                 <Link href="/hesabim" className="flex-1">
-                  <Button className="w-full h-12 bg-black hover:bg-black/85 text-white font-bold tracking-wide rounded-none">
+                  <Button className="w-full h-12 bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] text-white font-bold tracking-wide rounded-none">
                     SİPARİŞLERİM
                   </Button>
                 </Link>
               ) : null}
               <Link href="/" className="flex-1">
-                <Button className="w-full h-12 bg-black text-white hover:bg-black/85 font-bold tracking-wide group rounded-none">
+                <Button className="w-full h-12 bg-[hsl(var(--polen-orange))] text-white hover:bg-[hsl(var(--polen-orange-deep))] font-bold tracking-wide group rounded-none">
                   ALIŞVERİŞE DEVAM ET
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -574,7 +574,7 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background overflow-x-hidden w-full">
+      <div className="dark min-h-screen overflow-x-hidden w-full text-white" style={{ background: '#0c1220' }}>
         <Header />
         <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6 w-full box-border">
           <motion.div 
@@ -582,17 +582,17 @@ export default function Checkout() {
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-md mx-auto text-center"
           >
-            <div className="w-20 h-20 mx-auto mb-6 bg-stone-100 flex items-center justify-center">
-              <ShoppingBag className="w-8 h-8 text-muted-foreground" />
+            <div className="w-20 h-20 mx-auto mb-6 bg-white/8 flex items-center justify-center">
+              <ShoppingBag className="w-8 h-8 text-white/40" />
             </div>
             <h1 className="font-display text-3xl tracking-wider mb-4">
               SEPETİNİZ BOŞ
             </h1>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-white/40 mb-8">
               Ödeme yapabilmek için önce sepetinize ürün eklemelisiniz.
             </p>
             <Link href="/">
-              <Button className="h-12 px-8 bg-white text-black hover:bg-white/90 font-bold tracking-wide group">
+              <Button className="h-12 px-8 bg-white/5 text-white hover:bg-white/90 font-bold tracking-wide group">
                 ALIŞVERİŞE BAŞLA
                 <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -604,7 +604,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden w-full">
+    <div className="dark min-h-screen overflow-x-hidden w-full text-white" style={{ background: '#0c1220' }}>
       <Header />
       
       <main className="pt-20 lg:pt-8 pb-12 px-4 sm:px-6 w-full box-border overflow-hidden">
@@ -641,7 +641,7 @@ export default function Checkout() {
                             ? 'bg-polen-orange text-white border-polen-orange shadow-[0_4px_14px_-4px_rgba(217,127,42,0.6)]'
                             : isDone
                               ? 'bg-green-500 text-white border-green-500'
-                              : 'bg-white text-black/40 border-black/15 group-hover:border-black/40'
+                              : 'bg-white/5 text-white/40 border-white/15 group-hover:border-white/40'
                         }`}
                       >
                         {isDone ? (
@@ -652,7 +652,7 @@ export default function Checkout() {
                       </div>
                       <span
                         className={`text-[10px] sm:text-xs font-medium whitespace-nowrap transition-colors ${
-                          isActive ? 'text-black' : isDone ? 'text-green-700' : 'text-black/45'
+                          isActive ? 'text-white' : isDone ? 'text-green-700' : 'text-white/45'
                         }`}
                       >
                         {step.title}
@@ -661,7 +661,7 @@ export default function Checkout() {
                     {!isLast && (
                       <div
                         className={`flex-1 h-px mt-5 transition-colors ${
-                          isDone ? 'bg-green-500' : 'bg-black/15'
+                          isDone ? 'bg-green-500' : 'bg-white/15'
                         }`}
                       />
                     )}
@@ -681,18 +681,18 @@ export default function Checkout() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="bg-white border border-black/8 rounded-none p-4 sm:p-6 overflow-hidden"
+                      className="bg-white/5 border border-white/8 rounded-none p-4 sm:p-6 overflow-hidden"
                     >
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-stone-100 flex items-center justify-center">
-                          <User className="w-5 h-5 text-black/50" />
+                        <div className="w-10 h-10 bg-white/8 flex items-center justify-center">
+                          <User className="w-5 h-5 text-white/50" />
                         </div>
                         <div>
                           <h2 className="font-display text-xl tracking-wide">
                             İLETİŞİM BİLGİLERİ
                           </h2>
                           {!user && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-xs text-white/40 mt-0.5">
                               Hesap oluşturmadan devam edebilirsiniz
                             </p>
                           )}
@@ -700,13 +700,13 @@ export default function Checkout() {
                       </div>
 
                       {!user && (
-                        <div className="mb-6 p-4 bg-stone-50 border border-black/8 rounded-lg">
+                        <div className="mb-6 p-4 bg-white/5 border border-white/8 rounded-lg">
                           <div className="flex items-start gap-3">
-                            <UserPlus className="w-5 h-5 text-black/40 shrink-0 mt-0.5" />
+                            <UserPlus className="w-5 h-5 text-white/40 shrink-0 mt-0.5" />
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-black/70">Zaten üye misiniz?</p>
-                              <p className="text-xs text-black/40 mt-1">
-                                <Link href="/giris" className="text-black font-semibold hover:underline underline-offset-2">Giriş yapın</Link> ve bilgilerinizi otomatik doldurun.
+                              <p className="text-sm font-medium text-white/70">Zaten üye misiniz?</p>
+                              <p className="text-xs text-white/40 mt-1">
+                                <Link href="/giris" className="text-white font-semibold hover:underline underline-offset-2">Giriş yapın</Link> ve bilgilerinizi otomatik doldurun.
                               </p>
                             </div>
                           </div>
@@ -728,14 +728,14 @@ export default function Checkout() {
                         <div className="space-y-2">
                           <Label htmlFor="customerName" className="text-sm font-medium">Ad Soyad *</Label>
                           <div className="relative">
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                             <Input
                               id="customerName"
                               name="customerName"
                               value={formData.customerName}
                               onChange={handleChange}
                               data-testid="input-customerName"
-                              className="h-12 pl-11 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                              className="h-12 pl-11 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                               placeholder="Adınız Soyadınız"
                             />
                           </div>
@@ -745,7 +745,7 @@ export default function Checkout() {
                           <div className="space-y-2">
                             <Label htmlFor="customerEmail" className="text-sm font-medium">E-posta *</Label>
                             <div className="relative">
-                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                               <Input
                                 id="customerEmail"
                                 name="customerEmail"
@@ -753,7 +753,7 @@ export default function Checkout() {
                                 value={formData.customerEmail}
                                 onChange={handleChange}
                                 data-testid="input-customerEmail"
-                                className="h-12 pl-11 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                                className="h-12 pl-11 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                                 placeholder="ornek@email.com"
                               />
                             </div>
@@ -761,7 +761,7 @@ export default function Checkout() {
                           <div className="space-y-2">
                             <Label htmlFor="customerPhone" className="text-sm font-medium">Telefon *</Label>
                             <div className="relative">
-                              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                               <Input
                                 id="customerPhone"
                                 name="customerPhone"
@@ -769,7 +769,7 @@ export default function Checkout() {
                                 value={formData.customerPhone}
                                 onChange={handleChange}
                                 data-testid="input-customerPhone"
-                                className="h-12 pl-11 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                                className="h-12 pl-11 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                                 placeholder="05XX XXX XX XX"
                               />
                             </div>
@@ -781,7 +781,7 @@ export default function Checkout() {
                         <Button 
                           type="button" 
                           onClick={handleNextStep}
-                          className="w-full h-12 bg-white text-black hover:bg-white/90 font-bold tracking-wide group rounded-lg"
+                          className="w-full h-12 bg-white/5 text-white hover:bg-white/90 font-bold tracking-wide group rounded-lg"
                           data-testid="button-next-step1"
                         >
                           DEVAM ET
@@ -797,11 +797,11 @@ export default function Checkout() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="bg-white border border-black/8 rounded-none p-4 sm:p-6 overflow-hidden"
+                      className="bg-white/5 border border-white/8 rounded-none p-4 sm:p-6 overflow-hidden"
                     >
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-stone-100 flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-black/50" />
+                        <div className="w-10 h-10 bg-white/8 flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-white/50" />
                         </div>
                         <h2 className="font-display text-xl tracking-wide">
                           TESLİMAT ADRESİ
@@ -822,7 +822,7 @@ export default function Checkout() {
                       {/* Saved Addresses Section */}
                       {user && savedAddresses.length > 0 && !showNewAddressForm && (
                         <div className="space-y-3 mb-6">
-                          <Label className="text-sm font-medium text-muted-foreground">Kayıtlı Adreslerim</Label>
+                          <Label className="text-sm font-medium text-white/40">Kayıtlı Adreslerim</Label>
                           <div className="space-y-2">
                             {savedAddresses.map((addr) => (
                               <button
@@ -831,8 +831,8 @@ export default function Checkout() {
                                 onClick={() => handleSelectAddress(addr)}
                                 className={`w-full text-left p-4 border transition-all ${
                                   selectedAddressId === addr.id 
-                                    ? 'border-black bg-stone-50' 
-                                    : 'border-black/10 hover:border-black/25 bg-white'
+                                    ? 'border-white/15 bg-white/5' 
+                                    : 'border-white/10 hover:border-white/25 bg-white/5'
                                 }`}
                                 data-testid={`address-option-${addr.id}`}
                               >
@@ -844,13 +844,13 @@ export default function Checkout() {
                                         <span className="text-xs bg-white/10 px-2 py-0.5 rounded">Varsayılan</span>
                                       )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground truncate">
+                                    <p className="text-sm text-white/40 truncate">
                                       {addr.firstName} {addr.lastName}
                                     </p>
-                                    <p className="text-sm text-muted-foreground truncate">
+                                    <p className="text-sm text-white/40 truncate">
                                       {addr.address}
                                     </p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-sm text-white/40">
                                       {addr.district}, {addr.city}
                                     </p>
                                   </div>
@@ -875,7 +875,7 @@ export default function Checkout() {
                                 country: 'Türkiye',
                               }));
                             }}
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-black transition-colors"
+                            className="flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors"
                             data-testid="button-new-address"
                           >
                             <UserPlus className="w-4 h-4" />
@@ -897,7 +897,7 @@ export default function Checkout() {
                                   if (defaultAddr) handleSelectAddress(defaultAddr);
                                 }
                               }}
-                              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-black transition-colors mb-4"
+                              className="flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors mb-4"
                             >
                               <ArrowRight className="w-4 h-4 rotate-180" />
                               Kayıtlı Adreslerime Dön
@@ -912,7 +912,7 @@ export default function Checkout() {
                               onChange={handleChange}
                               placeholder="Sokak, Mahalle, Bina No, Daire No"
                               data-testid="input-address"
-                              className="h-12 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                              className="h-12 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                             />
                           </div>
 
@@ -925,7 +925,7 @@ export default function Checkout() {
                                 value={formData.city}
                                 onChange={handleChange}
                                 data-testid="input-city"
-                                className="h-12 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                                className="h-12 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                                 placeholder="İstanbul"
                               />
                             </div>
@@ -937,7 +937,7 @@ export default function Checkout() {
                                 value={formData.district}
                                 onChange={handleChange}
                                 data-testid="input-district"
-                                className="h-12 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                                className="h-12 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                                 placeholder="Kadıköy"
                               />
                             </div>
@@ -952,7 +952,7 @@ export default function Checkout() {
                                 value={formData.postalCode}
                                 onChange={handleChange}
                                 data-testid="input-postalCode"
-                                className="h-12 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                                className="h-12 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                                 placeholder="34000"
                               />
                             </div>
@@ -964,10 +964,10 @@ export default function Checkout() {
                                 value={formData.country}
                                 onChange={handleChange}
                                 data-testid="select-country"
-                                className="w-full h-12 bg-stone-50 border border-black/12 focus:border-black/40 focus:outline-none rounded-none px-4 text-black"
+                                className="w-full h-12 bg-white/5 border border-white/12 focus:border-white/40 focus:outline-none rounded-none px-4 text-white"
                               >
                                 {COUNTRIES.map(country => (
-                                  <option key={country} value={country} className="bg-white">
+                                  <option key={country} value={country} className="bg-white/5">
                                     {country}
                                   </option>
                                 ))}
@@ -993,15 +993,15 @@ export default function Checkout() {
                               type="checkbox"
                               checked={createAccount}
                               onChange={(e) => setCreateAccount(e.target.checked)}
-                              className="mt-1 w-5 h-5 border-black/20 bg-white text-black focus:ring-black focus:ring-offset-0 rounded-none"
+                              className="mt-1 w-5 h-5 border-white/20 bg-white/5 text-white focus:ring-white/40 focus:ring-offset-0 rounded-none"
                               data-testid="checkbox-create-account"
                             />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <UserPlus className="w-4 h-4 text-blue-400" />
-                                <span className="font-medium text-black">Üye olmak ister misiniz?</span>
+                                <span className="font-medium text-white">Üye olmak ister misiniz?</span>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-xs text-white/40 mt-1">
                                 Siparişlerinizi kolayca takip edin, adreslerinizi kaydedin ve özel kampanyalardan haberdar olun.
                               </p>
                             </div>
@@ -1018,7 +1018,7 @@ export default function Checkout() {
                                 <div className="space-y-2">
                                   <Label htmlFor="accountPassword" className="text-sm font-medium">Şifre Belirleyin *</Label>
                                   <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                                     <Input
                                       id="accountPassword"
                                       type="password"
@@ -1026,11 +1026,11 @@ export default function Checkout() {
                                       onChange={(e) => setAccountPassword(e.target.value)}
                                       placeholder="En az 6 karakter"
                                       data-testid="input-account-password"
-                                      className="h-12 pl-12 bg-stone-50 border-black/12 focus:border-black/40 rounded-none text-black placeholder:text-black/25"
+                                      className="h-12 pl-12 bg-white/5 border-white/12 focus:border-white/40 rounded-none text-white placeholder:text-white/25"
                                       minLength={6}
                                     />
                                   </div>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-white/40">
                                     Sipariş tamamlandığında hesabınız otomatik oluşturulacak.
                                   </p>
                                 </div>
@@ -1045,7 +1045,7 @@ export default function Checkout() {
                           type="button" 
                           variant="outline"
                           onClick={() => setCurrentStep(1)}
-                          className="flex-1 h-12 border-black/15 hover:bg-black/4 text-black rounded-none"
+                          className="flex-1 h-12 border-white/15 hover:bg-white/5 text-white rounded-none"
                         >
                           Geri
                         </Button>
@@ -1053,7 +1053,7 @@ export default function Checkout() {
                           <Button 
                             type="button" 
                             onClick={handleNextStep}
-                            className="w-full h-12 bg-black text-white hover:bg-black/85 font-bold tracking-wide group rounded-none"
+                            className="w-full h-12 bg-[hsl(var(--polen-orange))] text-white hover:bg-[hsl(var(--polen-orange-deep))] font-bold tracking-wide group rounded-none"
                             data-testid="button-next-step2"
                           >
                             DEVAM ET
@@ -1070,11 +1070,11 @@ export default function Checkout() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="bg-white border border-black/8 rounded-none p-4 sm:p-6 overflow-hidden"
+                      className="bg-white/5 border border-white/8 rounded-none p-4 sm:p-6 overflow-hidden"
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-stone-100 flex items-center justify-center">
-                          <CreditCard className="w-5 h-5 text-black/50" />
+                        <div className="w-10 h-10 bg-white/8 flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-white/50" />
                         </div>
                         <h2 className="font-display text-xl tracking-wide">
                           ÖDEME YÖNTEMİ
@@ -1092,7 +1092,7 @@ export default function Checkout() {
 
                       {paymentPageUrl ? (
                         <div className="space-y-4">
-                          <div className="bg-white border border-black/8 rounded-none overflow-hidden">
+                          <div className="bg-white/5 border border-white/8 rounded-none overflow-hidden">
                             <iframe
                               src={paymentPageUrl}
                               title="iyzico Güvenli Ödeme"
@@ -1104,7 +1104,7 @@ export default function Checkout() {
                           </div>
 
                           <div className="flex items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-2 text-black/60">
+                            <div className="flex items-center gap-2 text-white/60">
                               <Lock className="w-3.5 h-3.5" />
                               <span>256-bit SSL · iyzico güvencesiyle</span>
                             </div>
@@ -1112,7 +1112,7 @@ export default function Checkout() {
                               href={paymentPageUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-black/70 hover:text-black underline underline-offset-2"
+                              className="text-white/70 hover:text-white underline underline-offset-2"
                               data-testid="link-iyzico-newtab"
                             >
                               Yeni sekmede aç →
@@ -1129,7 +1129,7 @@ export default function Checkout() {
                               setPaymentError(null);
                               setCurrentStep(2);
                             }}
-                            className="w-full h-12 border-black/15 hover:bg-black/4 text-black rounded-none"
+                            className="w-full h-12 border-white/15 hover:bg-white/5 text-white rounded-none"
                           >
                             Bilgilerimi Düzenle
                           </Button>
@@ -1138,7 +1138,7 @@ export default function Checkout() {
                         <div className="space-y-4">
                           <div
                             ref={checkoutFormRef}
-                            className="bg-white rounded-xl overflow-hidden"
+                            className="bg-white/5 rounded-xl overflow-hidden"
                             style={{ minHeight: '500px' }}
                             data-testid="iyzico-checkout-form"
                           />
@@ -1148,7 +1148,7 @@ export default function Checkout() {
                               <Lock className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
                               <div>
                                 <p className="text-sm font-medium text-green-400">256-bit SSL Güvenlik</p>
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-xs text-white/40 mt-1">
                                   Kart bilgileriniz iyzico güvencesiyle şifrelenmektedir.
                                 </p>
                               </div>
@@ -1165,15 +1165,15 @@ export default function Checkout() {
                               setPaymentError(null);
                               setCurrentStep(2);
                             }}
-                            className="w-full h-12 border-black/15 hover:bg-black/4 text-black rounded-none"
+                            className="w-full h-12 border-white/15 hover:bg-white/5 text-white rounded-none"
                           >
                             Bilgilerimi Düzenle
                           </Button>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center py-12">
-                          <Loader2 className="w-8 h-8 animate-spin text-black/30 mb-4" />
-                          <p className="text-muted-foreground">Ödeme formu yükleniyor...</p>
+                          <Loader2 className="w-8 h-8 animate-spin text-white/30 mb-4" />
+                          <p className="text-white/40">Ödeme formu yükleniyor...</p>
                         </div>
                       )}
                     </motion.div>
@@ -1187,17 +1187,17 @@ export default function Checkout() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-stone-50 border border-black/8 p-4 sm:p-6 sticky top-24 overflow-hidden"
+                className="bg-white/5 border border-white/8 p-4 sm:p-6 sticky top-24 overflow-hidden"
               >
                 
                 <h2 className="font-display text-lg tracking-wide mb-4 relative">
                   SİPARİŞ ÖZETİ
                 </h2>
 
-                <div className="space-y-3 pb-4 border-b border-black/8 relative max-h-48 overflow-y-auto">
+                <div className="space-y-3 pb-4 border-b border-white/8 relative max-h-48 overflow-y-auto">
                   {cartItemsWithProducts.map((item) => (
                     <div key={item.id} className="flex gap-3">
-                      <div className="w-14 h-16 bg-stone-200 overflow-hidden shrink-0">
+                      <div className="w-14 h-16 bg-white/10 overflow-hidden shrink-0">
                         {item.product?.images?.[0] && (
                           <img 
                             src={item.product.images[0]} 
@@ -1209,9 +1209,9 @@ export default function Checkout() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{item.product?.name || 'Ürün'}</p>
                         {item.variant?.condition && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{item.variant.condition}</p>
+                          <p className="text-xs text-white/40 mt-0.5">{item.variant.condition}</p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-0.5">Adet: {item.quantity}</p>
+                        <p className="text-xs text-white/40 mt-0.5">Adet: {item.quantity}</p>
                         <p className="text-sm font-bold mt-1">
                           {(item.cardListingId && item.listing
                             ? parseFloat(item.listing.price) * item.quantity
@@ -1225,7 +1225,7 @@ export default function Checkout() {
 
                 {/* Coupon Input Section — hidden for wholesale (no coupons) */}
                 {!hasWholesale && (
-                <div className="py-4 border-b border-black/8 relative">
+                <div className="py-4 border-b border-white/8 relative">
                   {appliedCoupon ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
@@ -1235,7 +1235,7 @@ export default function Checkout() {
                         </div>
                         <button
                           onClick={handleRemoveCoupon}
-                          className="text-muted-foreground hover:text-black transition-colors"
+                          className="text-white/40 hover:text-white transition-colors"
                           data-testid="button-remove-coupon"
                         >
                           <X className="w-4 h-4" />
@@ -1259,7 +1259,7 @@ export default function Checkout() {
                           >
                             {appliedCoupon.influencerInstagram}
                           </a>
-                          <span className="text-muted-foreground">influencer koduyla alışveriş yapıyorsunuz</span>
+                          <span className="text-white/40">influencer koduyla alışveriş yapıyorsunuz</span>
                         </div>
                       )}
                     </div>
@@ -1267,7 +1267,7 @@ export default function Checkout() {
                     <div className="space-y-2">
                       <div className="flex gap-2">
                         <div className="relative flex-1">
-                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                           <Input
                             value={couponCode}
                             onChange={(e) => {
@@ -1275,7 +1275,7 @@ export default function Checkout() {
                               setCouponError('');
                             }}
                             placeholder="Kupon kodu"
-                            className="pl-10 bg-stone-50 border-black/12 h-10 uppercase text-black placeholder:text-black/25 rounded-none"
+                            className="pl-10 bg-white/5 border-white/12 h-10 uppercase text-white placeholder:text-white/25 rounded-none"
                             data-testid="input-coupon-code"
                           />
                         </div>
@@ -1283,7 +1283,7 @@ export default function Checkout() {
                           type="button"
                           onClick={handleApplyCoupon}
                           disabled={couponLoading || !couponCode.trim()}
-                          className="h-10 px-4 bg-white text-black hover:bg-white/90 font-bold"
+                          className="h-10 px-4 bg-white/5 text-white hover:bg-white/90 font-bold"
                           data-testid="button-apply-coupon"
                         >
                           {couponLoading ? (
@@ -1306,7 +1306,7 @@ export default function Checkout() {
 
                 <div className="space-y-3 text-sm py-4 relative">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Ara Toplam</span>
+                    <span className="text-white/40">Ara Toplam</span>
                     <span data-testid="text-subtotal">{subtotal.toLocaleString('tr-TR')} ₺</span>
                   </div>
                   {discount > 0 && (
@@ -1319,7 +1319,7 @@ export default function Checkout() {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kargo</span>
+                    <span className="text-white/40">Kargo</span>
                     <span data-testid="text-shipping" className={shippingCost === 0 ? 'text-green-400 font-medium' : ''}>
                       {shippingCost === 0 ? 'ÜCRETSİZ' : `${shippingCost.toFixed(2)} ₺`}
                     </span>
@@ -1332,7 +1332,7 @@ export default function Checkout() {
                           <span className="font-bold text-amber-400">{remainingForFreeShipping.toFixed(0)} TL</span> daha harcayın, kargo ücretsiz!
                         </p>
                       </div>
-                      <div className="h-2 bg-black/30 rounded-full overflow-hidden">
+                      <div className="h-2 bg-white/15 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${shippingProgress}%` }}
@@ -1348,23 +1348,23 @@ export default function Checkout() {
                       <p className="text-xs text-white font-medium">Ücretsiz Kargo Kazandınız!</p>
                     </div>
                   )}
-                  <div className="h-px bg-black/8" />
+                  <div className="h-px bg-white/8" />
                   <div className="flex justify-between text-base">
                     <span className="font-bold">Toplam</span>
                     <span className="font-bold text-xl" data-testid="text-total">{finalTotal.toLocaleString('tr-TR')} ₺</span>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-black/8 relative">
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="space-y-3 pt-4 border-t border-white/8 relative">
+                  <div className="flex items-center gap-3 text-xs text-white/40">
                     <Shield className="w-4 h-4 shrink-0 text-green-400" />
                     <span>Güvenli Ödeme</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 text-xs text-white/40">
                     <Truck className="w-4 h-4 shrink-0" />
                     <span>Hızlı Teslimat (1 İş Günü)</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 text-xs text-white/40">
                     <RotateCcw className="w-4 h-4 shrink-0" />
                     <span>14 Gün Ücretsiz İade</span>
                   </div>
