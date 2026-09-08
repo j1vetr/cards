@@ -1,0 +1,170 @@
+Bu eklediğim referans görsele göre ana sayfadaki Hero bölümünden sonra gelen "Satışta Olan Kartlar" section'unu yeniden tasarla.
+
+ÖNEMLİ:
+Projede ürün kartları, ürün görselleri, fiyatlar, rarity bilgileri, set bilgileri ve Riftbound / Pokémon TCG için kullandığımız gerçek icon-logo assetleri zaten mevcut.
+Yeni sahte kart görseli, yeni logo veya placeholder üretme.
+Mevcut sistemdeki gerçek verileri ve assetleri kullan.
+Backend, API ve ürün veri yapısını değiştirme. Sadece frontend tasarımını ve gerekiyorsa mevcut component yapısını düzenle.
+
+REFERANS TASARIM MANTIĞI:
+
+- Mevcut sitenin koyu lacivert / siyah tasarım dilini koru.
+- Section siteye sonradan eklenmiş bir kutu gibi değil, ana tasarımın doğal devamı gibi görünmeli.
+- Fazla gradient, glow ve yapay zeka tasarımı hissi verme.
+- Premium TCG marketplace görünümü istiyorum.
+
+ÜST ALAN:
+
+Sol tarafta:
+
+CANLI STOK
+Satışta Olan Kartlar
+
+Alt açıklama:
+"Şu anda satışta olan kartları oyuna göre keşfet, koleksiyonuna ekle."
+
+Sağ tarafta mevcut:
+"Tüm Satıştaki Kartlar"
+butonu olsun.
+
+OYUN SEÇİMİ:
+
+Başlığın altında yatay oyun seçim alanı oluştur.
+
+3 seçenek:
+
+Tümü
+Riftbound
+Pokémon TCG
+
+Riftbound ve Pokémon TCG için projede mevcut olan gerçek icon/logo assetlerini kullan.
+
+Her tab içerisinde mümkünse mevcut veriden ürün adedi göster:
+
+Riftbound
+1.236 kart
+
+gibi.
+
+Aktif tab belirgin olsun fakat aşırı parlak neon kullanma.
+İnce border, hafif mor/mavi vurgu yeterli.
+
+ÜRÜN ALANI:
+
+Referans görseldeki gibi büyük tek bir container içerisinde ürün kartlarını yatay şekilde göster.
+
+Desktop:
+5 ürün kartı aynı anda görünsün.
+
+Büyük ekranlarda container'ın genişliğine göre 5-6 olabilir fakat kartlar gereğinden fazla büyümesin.
+
+Ürün kartlarının mevcut tasarımını tamamen çöpe atma.
+Mevcut ProductCard componentini kullanarak daha premium hale getir.
+
+Her kartta mevcut sistemde hangi bilgiler varsa onları kullan:
+
+- Gerçek kart görseli
+- Rarity
+- Kart adı
+- Oyun adı / set bilgisi
+- Condition varsa condition
+- Fiyat
+- Stok bilgisi
+- Sepete ekle butonu
+- Favori sistemi varsa favori butonu
+
+Kart görseli ürün kartının ana odağı olsun.
+
+Kart yapısı yaklaşık:
+
+[ Büyük kart görseli ]
+
+RARITY BADGE
+
+Kart Adı
+Riftbound / Pokémon TCG
+
+Fiyat                     [Sepet]
+
+Stok: X                    ♡
+
+şeklinde olabilir.
+
+Kartların arasında yeterli boşluk bırak.
+Border-radius mevcut sitenin tasarım sistemine uygun olsun.
+Border çok hafif olsun.
+Hover durumunda kart 2-4px yukarı kalkabilir ve border biraz belirginleşebilir.
+Aşırı glow kullanma.
+
+CAROUSEL:
+
+Desktop üzerinde ürünler yatay carousel şeklinde hareket edebilsin.
+
+Sol ve sağ tarafta minimal ok butonları olsun.
+
+Browser'ın default scrollbar'ını KESİNLİKLE gösterme.
+Şu an mevcut section'daki beyaz yatay/dikey scrollbar görüntüsü tamamen kaldırılmalı.
+
+Mouse wheel / trackpad ile yatay scroll çalışabilir.
+Drag/swipe destekle.
+Mobilde swipe ile kullanılabilsin.
+
+Alt tarafta çok minimal pagination indicator kullanılabilir.
+
+FİLTRELEME:
+
+Tümü seçilince bütün satıştaki kartlar gelsin.
+
+Riftbound seçilince sadece Riftbound ürünleri.
+
+Pokémon TCG seçilince sadece Pokémon ürünleri.
+
+Bunun için mevcut ürün datasındaki game/category bilgisini kullan.
+Backend'e yeni yapı ekleme.
+
+Eğer mevcut sistemde zaten filtre fonksiyonu varsa onu kullan.
+
+RESPONSIVE:
+
+Desktop:
+5 kart civarı göster.
+
+Tablet:
+3 kart.
+
+Mobil:
+1.2 - 1.5 kart görünsün ki kullanıcı yana kaydırılabileceğini anlayabilsin.
+
+Mobilde oyun tabları yatay scroll olabilir.
+Scrollbar görünmesin.
+
+Section'ın padding ve max-width değerlerini sitenin diğer bölümleriyle aynı hizaya getir.
+
+ÇOK ÖNEMLİ:
+
+Referans görseli birebir resim olarak koyma.
+Görseldeki UI mantığını mevcut React componentleri ve mevcut site assetleri ile kodla.
+
+Mevcut gerçek:
+- Riftbound iconu
+- Pokémon TCG iconu
+- ürün kart görselleri
+- ürün bilgileri
+- fiyatlar
+- stoklar
+
+kullanılacak.
+
+Fake/demo ürün üretme.
+
+Önce mevcut projede:
+- ProductCard componentini
+- products datasının geldiği yeri
+- Riftbound/Pokémon assetlerini
+- mevcut design token / Tailwind renklerini
+
+bul ve bunları yeniden kullan.
+
+Mevcut çalışan fonksiyonları bozma.
+
+Sonuç olarak hero'nun hemen altında kaliteli bir TCG marketplace vitrini gibi duran, temiz, modern ve satış odaklı bir "Satışta Olan Kartlar" alanı istiyorum.

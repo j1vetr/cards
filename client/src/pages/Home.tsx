@@ -13,6 +13,7 @@ import {
   Truck,
   Package,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   Layers,
   Zap,
@@ -20,6 +21,7 @@ import {
   BookOpen,
   Calendar,
   Sparkles,
+  LayoutGrid,
 } from 'lucide-react';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -567,86 +569,99 @@ function HeroSection() {
 
 // ── Available cards showcase ────────────────────────────────────────────────
 
-const SALES_GAME_STYLE = {
-  riftbound: {
-    accent: '#818cf8',
-    glow: 'rgba(99,102,241,0.26)',
-    label: 'Riftbound',
-    logo: '/logo-riftbound.png',
-  },
-  pokemon: {
-    accent: '#f59e0b',
-    glow: 'rgba(245,158,11,0.22)',
-    label: 'Pokémon TCG',
-    logo: '/logo-pokemon-tcg.webp',
-  },
-} as const;
+type OnSaleTabKey = 'all' | 'riftbound' | 'pokemon';
 
-function OnSaleGameRail({ game }: { game: keyof typeof SALES_GAME_STYLE }) {
-  const style = SALES_GAME_STYLE[game];
-  const { data, isLoading } = useCards({ game, limit: 8, inStock: true, sort: 'newest' });
-  const cards = data?.cards ?? [];
-
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl border p-4 sm:p-5"
-      style={{
-        background: `linear-gradient(135deg, ${style.glow} 0%, rgba(10,15,30,0.94) 38%, rgba(6,13,31,0.98) 100%)`,
-        borderColor: `${style.accent}35`,
-      }}
-    >
-      <div className="absolute -right-16 -top-20 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: style.glow }} />
-      <div className="relative flex items-center justify-between gap-3 mb-4">
-          <Link href={`/kartlar?game=${game}&inStock=true`} className="flex items-center min-w-0 gap-3 group">
-          <div className="h-9 w-20 rounded-lg bg-black/20 border border-white/10 px-2 flex items-center justify-center">
-            <img src={style.logo} alt="" className="max-h-6 max-w-full object-contain" />
-          </div>
-          <div>
-            <p className="text-[10px] text-white/45 uppercase font-bold tracking-[0.18em]">Şimdi satışta</p>
-            <h3 className="text-base font-bold text-white group-hover:text-white/80 transition-colors">{style.label}</h3>
-          </div>
-        </Link>
-        <Link href={`/kartlar?game=${game}&inStock=true`}>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap transition-colors" style={{ color: style.accent }}>
-            Tümü <ChevronRight className="w-3.5 h-3.5" />
-          </span>
-        </Link>
-      </div>
-
-      {isLoading ? (
-        <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="shrink-0 w-32 sm:w-36 aspect-[63/88] rounded-xl animate-pulse bg-white/[0.08]" />
-          ))}
-        </div>
-      ) : cards.length > 0 ? (
-        <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2 -mb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          {cards.map((card, index) => (
-            <motion.div
-              key={card.id}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-30px' }}
-              transition={{ duration: 0.32, delay: Math.min(index * 0.05, 0.3) }}
-              className="w-32 sm:w-36 shrink-0"
-            >
-              <CardCard card={card} />
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        <div className="min-h-36 flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-white/10 bg-black/10 px-4">
-          <p className="text-sm font-semibold text-white/65">{style.label} için yeni kartlar yakında</p>
-          <p className="text-xs text-white/35 mt-1">Stok eklendiğinde burada görünecek.</p>
-        </div>
-      )}
-    </div>
-  );
-}
+const ON_SALE_TABS: Array<{ key: OnSaleTabKey; label: string; logo?: string }> = [
+  { key: 'all', label: 'Tümü' },
+  { key: 'riftbound', label: 'Riftbound', logo: '/logo-riftbound.png' },
+  { key: 'pokemon', label: 'Pokémon TCG', logo: '/logo-pokemon-tcg.webp' },
+];
 
 function OnSaleCardsSection() {
+  const [activeTab, setActiveTab] = useState<OnSaleTabKey>('all');
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState({ ratio: 0, canScroll: false, atStart: true, atEnd: false });
+
+  const activeGame = activeTab === 'all' ? undefined : activeTab;
+  const { data, isLoading } = useCards({ game: activeGame, inStock: true, sort: 'newest', limit: 18 });
+  const cards = data?.cards ?? [];
+
+  // Tab sayaçları — mevcut /api/cards uç noktasının döndürdüğü gerçek toplam
+  // sayıdan gelir (limit:1 ile sadece total okunur, sahte/yuvarlanmış sayı yok).
+  const { data: allCount } = useCards({ inStock: true, limit: 1 });
+  const { data: riftboundCount } = useCards({ game: 'riftbound', inStock: true, limit: 1 });
+  const { data: pokemonCount } = useCards({ game: 'pokemon', inStock: true, limit: 1 });
+  const tabCounts: Record<OnSaleTabKey, number | undefined> = {
+    all: allCount?.total,
+    riftbound: riftboundCount?.total,
+    pokemon: pokemonCount?.total,
+  };
+
+  const updateScrollProgress = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 4) {
+      setScrollProgress({ ratio: 0, canScroll: false, atStart: true, atEnd: true });
+      return;
+    }
+    const ratio = el.scrollLeft / maxScroll;
+    setScrollProgress({
+      ratio,
+      canScroll: true,
+      atStart: el.scrollLeft <= 4,
+      atEnd: el.scrollLeft >= maxScroll - 4,
+    });
+  };
+
+  useEffect(() => {
+    // Sekme değişince veya veri gelince yeni içeriğin gerçek genişliğine göre
+    // ok butonları/ilerleme çubuğu tekrar hesaplanır.
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ left: 0 });
+    const id = requestAnimationFrame(updateScrollProgress);
+    return () => cancelAnimationFrame(id);
+  }, [activeTab, cards.length]);
+
+  const scrollByPage = (dir: 1 | -1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: el.clientWidth * 0.85 * dir, behavior: 'smooth' });
+  };
+
+  // Trackpad/mouse wheel dikey hareketini yatay kaydırmaya çevirir, böylece
+  // fare tekerleği ile de vitrin gezilebilir (spesifikasyon gereği).
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      el.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  };
+
+  // Basit mouse-drag desteği (masaüstünde tıkla-sürükle ile kaydırma).
+  const dragState = useRef<{ startX: number; startScroll: number; dragging: boolean } | null>(null);
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return; // dokunmatik zaten native scroll ile çalışıyor
+    const el = scrollRef.current;
+    if (!el) return;
+    dragState.current = { startX: e.clientX, startScroll: el.scrollLeft, dragging: true };
+    el.setPointerCapture(e.pointerId);
+  };
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    const state = dragState.current;
+    if (!el || !state?.dragging) return;
+    el.scrollLeft = state.startScroll - (e.clientX - state.startX);
+  };
+  const endDrag = () => {
+    if (dragState.current) dragState.current.dragging = false;
+  };
+
   return (
     <section
+      id="satista-olan-kartlar"
       data-testid="section-cards-on-sale"
       className="relative overflow-hidden py-16 sm:py-20"
       style={{ background: '#080e1c' }}
@@ -660,7 +675,7 @@ function OnSaleCardsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-70px' }}
           transition={{ duration: 0.45 }}
-          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 mb-8"
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 mb-6"
         >
           <div>
             <div className="flex items-center gap-2 mb-2 text-emerald-300">
@@ -673,12 +688,12 @@ function OnSaleCardsSection() {
             <h2 className="text-3xl sm:text-4xl font-bold text-white leading-none" style={{ fontFamily: "'Oswald', sans-serif" }}>
               Satışta Olan Kartlar
             </h2>
-            <p className="text-sm text-white/45 mt-3 max-w-xl">Şu anda stokta olan kartları oyuna göre keşfet, koleksiyonuna ekle.</p>
+            <p className="text-sm text-white/45 mt-3 max-w-xl">Şu anda satışta olan kartları oyuna göre keşfet, koleksiyonuna ekle.</p>
           </div>
           <Link href="/kartlar?inStock=true">
             <button
               data-testid="btn-on-sale-all"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold text-white/80 hover:text-white hover:bg-white/[0.07] transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold text-white/80 hover:text-white hover:bg-white/[0.07] transition-colors shrink-0"
               style={{ borderColor: 'rgba(129,140,248,0.38)' }}
             >
               <Sparkles className="w-4 h-4 text-indigo-300" />
@@ -687,9 +702,121 @@ function OnSaleCardsSection() {
             </button>
           </Link>
         </motion.div>
-        <div className="grid lg:grid-cols-2 gap-4 sm:gap-5">
-          <OnSaleGameRail game="riftbound" />
-          <OnSaleGameRail game="pokemon" />
+
+        {/* Oyun sekmeleri */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-hide -mx-1 px-1">
+          {ON_SALE_TABS.map(tab => {
+            const isActive = activeTab === tab.key;
+            const count = tabCounts[tab.key];
+            return (
+              <button
+                key={tab.key}
+                data-testid={`tab-on-sale-${tab.key}`}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-2.5 shrink-0 rounded-xl border px-3.5 py-2 transition-colors"
+                style={{
+                  borderColor: isActive ? 'rgba(129,140,248,0.5)' : 'rgba(255,255,255,0.08)',
+                  background: isActive ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.02)',
+                }}
+              >
+                {tab.logo ? (
+                  <span className="h-6 w-9 rounded-md bg-black/25 border border-white/10 flex items-center justify-center shrink-0">
+                    <img src={tab.logo} alt="" className="max-h-4 max-w-full object-contain" />
+                  </span>
+                ) : (
+                  <span className="h-6 w-9 rounded-md flex items-center justify-center shrink-0" style={{ background: isActive ? 'rgba(129,140,248,0.22)' : 'rgba(255,255,255,0.06)' }}>
+                    <LayoutGrid className="w-3.5 h-3.5" style={{ color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.4)' }} />
+                  </span>
+                )}
+                <span className="text-left">
+                  <span className={`block text-sm font-semibold ${isActive ? 'text-white' : 'text-white/65'}`}>{tab.label}</span>
+                  <span className="block text-[10px] text-white/35 tabular-nums">
+                    {count != null ? `${count.toLocaleString('tr-TR')} kart` : '\u00A0'}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Ürün vitrini */}
+        <div className="relative">
+          {scrollProgress.canScroll && (
+            <button
+              data-testid="btn-on-sale-prev"
+              onClick={() => scrollByPage(-1)}
+              disabled={scrollProgress.atStart}
+              aria-label="Önceki kartlar"
+              className="hidden sm:flex absolute -left-3 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#0b1226]/90 text-white/70 hover:text-white hover:border-white/25 transition-colors disabled:opacity-0 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          {scrollProgress.canScroll && (
+            <button
+              data-testid="btn-on-sale-next"
+              onClick={() => scrollByPage(1)}
+              disabled={scrollProgress.atEnd}
+              aria-label="Sonraki kartlar"
+              className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#0b1226]/90 text-white/70 hover:text-white hover:border-white/25 transition-colors disabled:opacity-0 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+
+          <div
+            ref={scrollRef}
+            onScroll={updateScrollProgress}
+            onWheel={handleWheel}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endDrag}
+            onPointerLeave={endDrag}
+            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide overscroll-x-contain pb-1 cursor-grab active:cursor-grabbing snap-x snap-mandatory sm:snap-none"
+          >
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shrink-0 rounded-2xl animate-pulse aspect-[63/88]"
+                  style={{ background: 'rgba(255,255,255,0.05)', width: 'clamp(132px, 30vw, 180px)' }}
+                />
+              ))
+            ) : cards.length > 0 ? (
+              cards.map((card, index) => (
+                <motion.div
+                  key={card.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.3) }}
+                  className="shrink-0 snap-start"
+                  style={{ width: 'clamp(132px, 30vw, 180px)' }}
+                >
+                  <CardCard card={card} />
+                </motion.div>
+              ))
+            ) : (
+              <div className="w-full min-h-40 flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-white/10 bg-black/10 px-4">
+                <p className="text-sm font-semibold text-white/65">Bu oyun için yeni kartlar yakında</p>
+                <p className="text-xs text-white/35 mt-1">Stok eklendiğinde burada görünecek.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Minimal ilerleme çubuğu */}
+          {scrollProgress.canScroll && (
+            <div className="mt-4 h-[3px] w-full max-w-[160px] mx-auto rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div
+                className="h-full rounded-full transition-transform duration-150"
+                style={{
+                  width: '40%',
+                  background: 'rgba(129,140,248,0.85)',
+                  transform: `translateX(${scrollProgress.ratio * 150}%)`,
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </section>
