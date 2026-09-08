@@ -840,10 +840,10 @@ export default function ProductDetail() {
                       key={i}
                       type="button"
                       onClick={() => setSelectedImage(i)}
-                      className={`relative aspect-[4/5] overflow-hidden bg-white/8 transition-all ${
+                      className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-white/8 transition-all ${
                         i === selectedImage
-                          ? 'ring-1 ring-white/70 opacity-100'
-                          : 'opacity-50 hover:opacity-100'
+                          ? 'ring-2 ring-[hsl(var(--polen-orange))] opacity-100'
+                          : 'opacity-50 hover:opacity-90'
                       }`}
                       data-testid={`button-thumbnail-${i}`}
                       aria-label={`Görsel ${i + 1}`}
@@ -860,10 +860,10 @@ export default function ProductDetail() {
                     <button
                       type="button"
                       onClick={() => setSelectedImage(images.length)}
-                      className={`relative aspect-[4/5] overflow-hidden bg-white/10 transition-all flex items-center justify-center ${
+                      className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-white/10 transition-all flex items-center justify-center ${
                         selectedImage === images.length
-                          ? 'ring-1 ring-white/70 opacity-100'
-                          : 'opacity-50 hover:opacity-100'
+                          ? 'ring-2 ring-[hsl(var(--polen-orange))] opacity-100'
+                          : 'opacity-50 hover:opacity-90'
                       }`}
                       data-testid="button-thumbnail-video"
                       aria-label="Video"
@@ -896,7 +896,7 @@ export default function ProductDetail() {
                   ) : (
                   <div
                     ref={heroImageRef}
-                    className="relative aspect-[4/5] bg-white/8 overflow-hidden cursor-zoom-in group"
+                    className="relative aspect-[4/5] rounded-2xl border border-white/10 shadow-2xl shadow-black/40 bg-white/8 overflow-hidden cursor-zoom-in group"
                     onMouseEnter={() => setIsZooming(true)}
                     onMouseLeave={() => setIsZooming(false)}
                     onMouseMove={handleHeroMove}
@@ -929,12 +929,12 @@ export default function ProductDetail() {
 
                     {/* Badges */}
                     {product.discountBadge && (
-                      <span className="absolute top-4 left-4 z-10 bg-black text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">
+                      <span className="absolute top-4 left-4 z-10 bg-[hsl(var(--polen-orange))] text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 rounded-full uppercase shadow-lg">
                         {product.discountBadge}
                       </span>
                     )}
                     {product.isNew && !product.discountBadge && (
-                      <span className="absolute top-4 left-4 z-10 bg-black text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">
+                      <span className="absolute top-4 left-4 z-10 bg-[hsl(var(--polen-orange))] text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 rounded-full uppercase shadow-lg">
                         Yeni
                       </span>
                     )}
@@ -945,7 +945,7 @@ export default function ProductDetail() {
                 {/* Mobile carousel */}
                 <div className="sm:hidden">
                   <div
-                    className="relative aspect-[4/5] bg-white/8 overflow-hidden"
+                    className="relative aspect-[4/5] rounded-2xl border border-white/10 shadow-xl shadow-black/40 bg-white/8 overflow-hidden"
                     ref={emblaRef}
                   >
                     <div className="flex h-full">
@@ -981,12 +981,12 @@ export default function ProductDetail() {
                     </div>
 
                     {product.discountBadge && (
-                      <span className="absolute top-4 left-4 z-10 bg-black text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">
+                      <span className="absolute top-4 left-4 z-10 bg-[hsl(var(--polen-orange))] text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 rounded-full uppercase shadow-lg">
                         {product.discountBadge}
                       </span>
                     )}
                     {product.isNew && !product.discountBadge && (
-                      <span className="absolute top-4 left-4 z-10 bg-black text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 uppercase">
+                      <span className="absolute top-4 left-4 z-10 bg-[hsl(var(--polen-orange))] text-white text-[10px] font-bold tracking-[0.2em] px-3 py-1.5 rounded-full uppercase shadow-lg">
                         Yeni
                       </span>
                     )}
@@ -1055,7 +1055,7 @@ export default function ProductDetail() {
               )}
 
               {/* Price */}
-              <div className="flex items-baseline gap-3 mb-6 pb-6 border-b border-white/8">
+              <div className="rounded-xl bg-white/[0.04] border border-white/8 px-5 py-4 mb-6 flex items-baseline gap-3">
                 {originalPrice && (
                   <span
                     className="text-base text-white/35 line-through"
@@ -1065,7 +1065,7 @@ export default function ProductDetail() {
                   </span>
                 )}
                 <span
-                  className="font-display text-3xl text-white tabular-nums"
+                  className="font-display text-3xl text-[hsl(var(--polen-orange))] tabular-nums"
                   data-testid="text-product-price"
                 >
                   {price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
@@ -1202,7 +1202,7 @@ export default function ProductDetail() {
 
               {/* Ürün Özellikleri (attributes) */}
               {product.attributes && Object.keys(product.attributes).length > 0 && (
-                <div className="mb-6 border border-white/8">
+                <div className="mb-6 rounded-xl overflow-hidden border border-white/8">
                   <div className="px-4 py-2.5 border-b border-white/8 bg-white/5">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                       Ürün Özellikleri
@@ -1386,11 +1386,11 @@ export default function ProductDetail() {
               {/* Quantity + Add to cart */}
               <div className="space-y-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center border border-white/15">
+                  <div className="flex items-center rounded-lg border border-white/15 overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-11 h-11 flex items-center justify-center hover:bg-black/5 transition-colors text-white"
+                      className="w-11 h-11 flex items-center justify-center hover:bg-white/8 transition-colors text-white"
                       aria-label="Azalt"
                       data-testid="button-decrease-quantity"
                     >
@@ -1405,14 +1405,14 @@ export default function ProductDetail() {
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => q + 1)}
-                      className="w-11 h-11 flex items-center justify-center hover:bg-black/5 transition-colors text-white"
+                      className="w-11 h-11 flex items-center justify-center hover:bg-white/8 transition-colors text-white"
                       aria-label="Artır"
                       data-testid="button-increase-quantity"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 rounded-lg bg-white/[0.04] border border-white/8 px-3 py-2">
                     <ShippingCountdown />
                   </div>
                 </div>
@@ -1422,10 +1422,10 @@ export default function ProductDetail() {
                     type="button"
                     onClick={handleAddToCart}
                     disabled={isAdding || isOutOfStock}
-                    className={`group flex-1 h-12 font-semibold text-xs uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2 ${
+                    className={`group flex-1 h-12 rounded-lg font-semibold text-xs uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2 ${
                       isOutOfStock
                         ? 'bg-white/8 text-white/35 cursor-not-allowed'
-                        : 'bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] text-white'
+                        : 'bg-[hsl(var(--polen-orange))] hover:bg-[hsl(var(--polen-orange-deep))] text-white shadow-lg shadow-[hsl(var(--polen-orange))]/20'
                     } disabled:cursor-not-allowed`}
                     data-testid="button-add-to-cart"
                   >
@@ -1442,10 +1442,10 @@ export default function ProductDetail() {
                       product && !isFavoriteLoading && toggleFavorite(product.id, isLiked)
                     }
                     disabled={isFavoriteLoading}
-                    className={`w-12 h-12 border flex items-center justify-center transition-colors ${
+                    className={`w-12 h-12 rounded-lg border flex items-center justify-center transition-colors ${
                       isLiked
                         ? 'bg-polen-orange border-polen-orange text-white'
-                        : 'border-white/15 hover:border-white/15 text-white'
+                        : 'border-white/15 hover:border-white/30 text-white'
                     } ${isFavoriteLoading ? 'opacity-50' : ''}`}
                     aria-label="Favorilere ekle"
                     data-testid="button-like"
@@ -1461,10 +1461,10 @@ export default function ProductDetail() {
                     <button
                       type="button"
                       onClick={() => setShowShareMenu((v) => !v)}
-                      className={`w-12 h-12 border flex items-center justify-center transition-colors ${
+                      className={`w-12 h-12 rounded-lg border flex items-center justify-center transition-colors ${
                         showShareMenu
                           ? 'bg-polen-orange border-polen-orange text-white'
-                          : 'border-white/15 hover:border-white/15 text-white'
+                          : 'border-white/15 hover:border-white/30 text-white'
                       }`}
                       aria-label="Paylaş"
                       data-testid="button-share"
@@ -1510,15 +1510,15 @@ export default function ProductDetail() {
               <div ref={ctaSentinelRef} aria-hidden="true" className="h-px" />
 
               {/* Trust strip */}
-              <div className="grid grid-cols-3 gap-3 py-5 border-t border-b border-white/8 mb-6">
+              <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
                   { icon: Truck, title: 'Ücretsiz Kargo', sub: `${freeShippingThreshold.toLocaleString('tr-TR')} ₺ üzeri` },
                   { icon: RotateCcw, title: 'Kolay İade', sub: '14 gün içinde' },
                   { icon: Shield, title: 'Güvenli Ödeme', sub: 'SSL korumalı' },
                 ].map((it) => (
-                  <div key={it.title} className="text-center">
-                    <div className="w-9 h-9 mx-auto mb-2 border border-white/10 flex items-center justify-center">
-                      <it.icon className="w-4 h-4 text-white/45" />
+                  <div key={it.title} className="text-center rounded-lg bg-white/[0.03] border border-white/8 py-4 px-2">
+                    <div className="w-9 h-9 mx-auto mb-2 rounded-full bg-white/8 flex items-center justify-center">
+                      <it.icon className="w-4 h-4 text-[hsl(var(--polen-orange))]" />
                     </div>
                     <p className="text-[11px] font-medium text-white leading-tight">
                       {it.title}
