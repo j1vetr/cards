@@ -6023,23 +6023,10 @@ ${sections.join("\n\n")}
         .where(and(gte(cardListings.stock, 1), eq(cardListings.isActive, true)))
         .orderBy(cardsTable.name);
 
-      const conditionLabels: Record<string, string> = {
-        NM: "Neredeyse Yeni",
-        LP: "Az Kullanılmış",
-        MP: "Orta Kullanılmış",
-        HP: "Çok Kullanılmış",
-        DMG: "Hasarlı",
-        PSA10: "PSA 10",
-        PSA9: "PSA 9",
-        PSA8: "PSA 8",
-        PSA7: "PSA 7",
-      };
-
       const data = rows.map((r) => {
-        const conditionLabel = conditionLabels[r.condition] || r.condition;
         const finishLabel = r.finish === "foil" ? " (Foil)" : "";
         return {
-          "Ürün Adı": `${r.cardName}${finishLabel} - ${conditionLabel}`,
+          "Ürün Adı": `${r.cardName}${finishLabel}`,
           "Kategori": `${r.gameName} - ${r.setName}`,
           "Fiyat (TL)": Number(r.price),
           "Stok": r.stock,
