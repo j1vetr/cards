@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ChevronDown, ChevronUp, Plus, Trash2, Save,
-  EyeOff, Star, Sparkles, Package, X, Pencil, Lock, RotateCcw,
+  EyeOff, Star, Sparkles, Package, X, Pencil, Lock, RotateCcw, Download,
 } from 'lucide-react';
 
 const TCG_CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG', 'PSA10', 'PSA9', 'PSA8', 'PSA7'];
@@ -893,6 +893,26 @@ export default function CardsTab() {
 
   const handleSearch = useCallback((q: string) => { setSearch(q); setPage(1); }, []);
 
+  const [exporting, setExporting] = useState(false);
+  const handleExportExcel = useCallback(async () => {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/admin/cards/export-excel', { credentials: 'include' });
+      if (!res.ok) throw new Error('Excel dosyası indirilemedi');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stoktaki-kartlar-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Excel indirme hatası: ' + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
   return (
     <div data-testid="tab-cards">
       {/* Header row with create button */}
@@ -921,6 +941,11 @@ export default function CardsTab() {
           className="text-[13px] border border-neutral-200 rounded-lg px-3 py-2 w-36 bg-white focus:outline-none focus:border-neutral-400"
           data-testid="input-filter-rarity" />
         <span className="text-[12px] text-neutral-500 ml-auto">{total.toLocaleString('tr-TR')} kart</span>
+        <button type="button" onClick={handleExportExcel} disabled={exporting}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] border border-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors shrink-0 disabled:opacity-50"
+          data-testid="button-export-excel">
+          <Download className="w-3.5 h-3.5" /> {exporting ? 'Hazırlanıyor...' : 'Excel\'e Aktar'}
+        </button>
         <button type="button" onClick={() => setShowCreateModal(true)}
           className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] bg-neutral-900 text-white rounded-lg hover:bg-neutral-700 transition-colors shrink-0"
           data-testid="button-new-card">

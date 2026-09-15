@@ -6003,6 +6003,71 @@ ${sections.join("\n\n")}
     }
   });
 
+  app.get("/api/admin/cards/export-excel", requireAdmin, async (req, res) => {
+    try {
+      const XLSX = await import("xlsx");
+      const rows = await db
+        .select({
+          cardName: cardsTable.name,
+          gameName: cardGames.name,
+          setName: cardSets.name,
+          condition: cardListings.condition,
+          finish: cardListings.finish,
+          price: cardListings.price,
+          stock: cardListings.stock,
+        })
+        .from(cardListings)
+        .innerJoin(cardsTable, eq(cardListings.cardId, cardsTable.id))
+        .innerJoin(cardSets, eq(cardsTable.setId, cardSets.id))
+        .innerJoin(cardGames, eq(cardSets.gameId, cardGames.id))
+        .where(and(gte(cardListings.stock, 1), eq(cardListings.isActive, true)))
+        .orderBy(cardsTable.name);
+
+      const conditionLabels: Record<string, string> = {
+        NM: "Neredeyse Yeni",
+        LP: "Az Kullanılmış",
+        MP: "Orta Kullanılmış",
+        HP: "Çok Kullanılmış",
+        DMG: "Hasarlı",
+        PSA10: "PSA 10",
+        PSA9: "PSA 9",
+        PSA8: "PSA 8",
+        PSA7: "PSA 7",
+      };
+
+      const data = rows.map((r) => {
+        const conditionLabel = conditionLabels[r.condition] || r.condition;
+        const finishLabel = r.finish === "foil" ? " (Foil)" : "";
+        return {
+          "Ürün Adı": `${r.cardName}${finishLabel} - ${conditionLabel}`,
+          "Kategori": `${r.gameName} - ${r.setName}`,
+          "Fiyat (TL)": Number(r.price),
+          "Stok": r.stock,
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      worksheet["!cols"] = [{ wch: 45 }, { wch: 30 }, { wch: 14 }, { wch: 10 }];
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Stoktaki Kartlar");
+      const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="stoktaki-kartlar-${dateStr}.xlsx"`
+      );
+      res.send(buffer);
+    } catch (err) {
+      console.error("[admin] export cards excel:", err);
+      res.status(500).json({ error: "Excel dosyası oluşturulamadı" });
+    }
+  });
+
   app.post("/api/admin/cards", requireAdmin, async (req, res) => {
     try {
       const { setId, name, cardNumber, rarity, cardTypes, hp, artist, imageUrl, description, isActive, isFeatured, isNew } = req.body;
