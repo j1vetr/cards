@@ -4,10 +4,32 @@
  * Fetches market/low/high prices for TCG cards and upserts into card_prices.
  */
 
-import { httpFetchWithRetry } from "./httpUtils";
-
 const BASE_URL = "https://www.pricecharting.com/api";
-export const RATE_DELAY_MS = 300; // conservative rate limiting
+export const RATE_DELAY_MS = 1100; // API permits at most one request per second
+
+let requestQueue: Promise<unknown> = Promise.resolve();
+let lastRequestAt = 0;
+
+// Share the quota across the legacy sync and sale-price previews.
+// Do not log request URLs: the API token is a query parameter.
+function requestPriceCharting(path: string, apiKey: string): Promise<any> {
+  const request = requestQueue.then(async () => {
+    await sleep(Math.max(0, RATE_DELAY_MS - (Date.now() - lastRequestAt)));
+    lastRequestAt = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(priceChartingUrl(path, apiKey), { signal: AbortSignal.timeout(15000) });
+    } catch {
+      throw new Error("PriceCharting bağlantısı kurulamadı.");
+    }
+    if (!response.ok) throw new Error(`PriceCharting isteği başarısız (HTTP ${response.status}).`);
+    const data = await response.json();
+    if (data.status === "error") throw new Error("PriceCharting isteği reddedildi. API aboneliğini kontrol edin.");
+    return data;
+  });
+  requestQueue = request.catch(() => undefined);
+  return request;
+}
 
 export interface PriceChartingProduct {
   id: string | number;
@@ -48,15 +70,15 @@ export async function searchPriceCharting(
   cardName: string,
   apiKey: string,
 ): Promise<PriceChartingProduct | null> {
-  const url = priceChartingUrl(
-    `/products?q=${encodeURIComponent(cardName)}&status=price`,
-    apiKey,
-  );
-  const data = await httpFetchWithRetry(url, {});
-  const products: PriceChartingProduct[] = data.products ?? [];
+  const products = await searchPriceChartingProducts(cardName, apiKey);
   return products[0] ?? null;
 }
 
+export async function searchPriceChartingProducts(query: string, apiKey: string): Promise<PriceChartingProduct[]> {
+  const data = await requestPriceCharting(`/products?q=${encodeURIComponent(query)}`, apiKey);
+  if (!Array.isArray(data.products)) throw new Error("PriceCharting yanıtı okunamadı.");
+  return data.products;
+}
 /**
  * Fetch price for a known PriceCharting product ID.
  * Throws on HTTP errors.
@@ -65,8 +87,7 @@ export async function fetchPriceById(
   productId: string | number,
   apiKey: string,
 ): Promise<PriceChartingProduct> {
-  const url = priceChartingUrl(`/product?id=${productId}&status=price`, apiKey);
-  return httpFetchWithRetry(url, {}) as Promise<PriceChartingProduct>;
+  return requestPriceCharting(`/product?id=${encodeURIComponent(String(productId))}`, apiKey);
 }
 
 /** Map a PriceCharting product to our card_prices shape */

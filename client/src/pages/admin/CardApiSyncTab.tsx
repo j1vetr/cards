@@ -21,6 +21,7 @@ import {
   Gauge,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
+import SalePricingPanel from "./SalePricingPanel";
 
 interface CardGame {
   id: string;
@@ -338,6 +339,8 @@ export default function CardApiSyncTab() {
         title="Kart API Senkronizasyonu"
         description="Pokemon TCG ve Riftbound verilerini API'den çek; PriceCharting ile fiyatları güncelle ve otomatik listele."
       />
+
+      <SalePricingPanel />
 
       {/* Stats overview */}
       {tcgStats && (
@@ -719,6 +722,9 @@ export default function CardApiSyncTab() {
           Fiyat verisi çekilmiş kartlar için otomatik olarak listing oluşturur.
           Önce "Fiyat Güncelleme" sync'ini çalıştırın.
         </p>
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
+          Bu eski otomatik listeleme aracıdır. Yeni ilan oluşturabilir ve stok miktarı yazabilir. Mevcut stoklu ilanların fiyatını güvenle güncellemek için yukarıdaki önizlemeli yeniden fiyatlama aracını kullanın.
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
           {/* Multiplier */}

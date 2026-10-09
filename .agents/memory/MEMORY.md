@@ -4,3 +4,5 @@
 - [Express wildcard catch-all req.path bug](express-wildcard-catchall-reqpath.md) — `app.use("*", ...)` resets req.path to "/"; use req.originalUrl for the real path inside it.
 - [SEO SSR/SPA parity contract](seo-ssr-spa-parity.md) — admin SEO overrides must resolve/clamp/transform identically in server/seo/render.ts and client SEO usage via shared/seoText.ts, or completion review rejects.
 - [Legacy URL redirect/410 decision map](legacy-url-redirect-map.md) — old URL 301/410 decisions live in a DB `redirects` table, not code, so slug changes never need a deploy.
+- [Sale pricing policy](sale-pricing-rules.md) — market USD × automatic TCMB USD/TRY rate × 1.9, preview before applying and preserve stock.
+- [External VPS deployment](external-vps-deployment.md) — production runs outside Replit, so dependency lock URLs must remain portable.

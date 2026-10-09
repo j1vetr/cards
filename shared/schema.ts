@@ -915,6 +915,17 @@ export const insertTcgSyncRunSchema = createInsertSchema(tcgSyncRuns).omit({
 export type InsertTcgSyncRun = z.infer<typeof insertTcgSyncRunSchema>;
 export type TcgSyncRun = typeof tcgSyncRuns.$inferSelect;
 
+// Admin-only snapshots for stock-preserving TCMB/PriceCharting repricing.
+export const tcgSalePriceRuns = pgTable("tcg_sale_price_runs", {
+  id: varchar("id").primaryKey(),
+  adminId: varchar("admin_id").notNull(),
+  status: text("status").notNull(),
+  data: jsonb("data").$type<import("./salePricing").SalePriceRun>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  oneRunning: uniqueIndex("tcg_sale_price_one_running").on(t.status).where(sql`${t.status} = 'running'`),
+}));
+
 // WooCommerce Integration (legacy, kept for backward compat)
 export const woocommerceSettings = pgTable("woocommerce_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

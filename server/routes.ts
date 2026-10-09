@@ -10,6 +10,7 @@ import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
 import sharp from "sharp";
+import { registerSalePricingRoutes } from "./tcg/salePricingRoutes";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
 import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, insertRedirectSchema, updateRedirectSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings, cards as cardsTable, cardSets, cardGames } from "@shared/schema";
@@ -794,6 +795,8 @@ ${items.join('\n')}
     }
     return id;
   };
+
+  await registerSalePricingRoutes(app, requireAdmin);
 
   // Allowed upload types for security
   const ALLOWED_UPLOAD_TYPES = ['products', 'categories', 'hero', 'branding', 'blog'];
