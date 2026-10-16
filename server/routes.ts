@@ -5857,28 +5857,21 @@ ${sections.join("\n\n")}
     }
   });
 
-  // Trigger a TCG sync (sets or cards or prices)
+  // Metadata sync only. Sale pricing has its own preview/confirm workflow.
   app.post("/api/admin/tcg/sync", requireAdmin, async (req, res) => {
     try {
       const { game, mode, setApiId } = req.body as {
         game: "pokemon_tcg" | "riftbound";
-        mode: "sets" | "cards" | "prices" | "full";
+        mode: "sets" | "cards" | "full";
         setApiId?: string;
       };
 
-      if (!game || !mode) {
-        return res.status(400).json({ error: "game ve mode gerekli" });
+      if (!["pokemon_tcg", "riftbound"].includes(game) || !["sets", "cards", "full"].includes(mode)) {
+        return res.status(400).json({ error: "Geçerli bir oyun ve kart veri aktarım modu seçin." });
       }
 
       // Get API keys from site_settings
       const pokemonApiKey = (await storage.getSiteSetting("pokemon_tcg_api_key")) || undefined;
-      const pricechartingApiKey = (await storage.getSiteSetting("pricecharting_api_key")) || undefined;
-
-      if (mode === "prices" && !pricechartingApiKey) {
-        return res.status(400).json({
-          error: "PriceCharting API key ayarlanmamış. Ayarlar → pricecharting_api_key.",
-        });
-      }
 
       // Engine creates exactly one run record; fire-and-forget background execution
       const { runTcgSync } = await import("./tcg/syncEngine");
@@ -5902,7 +5895,6 @@ ${sections.join("\n\n")}
         mode,
         setApiId,
         pokemonApiKey,
-        pricechartingApiKey,
         existingRunId: pendingRun.id,
         onProgress: (msg) => console.log(`[tcg-sync:${pendingRun.id}] ${msg}`),
       }).catch((err) => {
@@ -5913,42 +5905,6 @@ ${sections.join("\n\n")}
     } catch (err) {
       console.error("[TCG] sync error:", err);
       res.status(500).json({ error: "Sync başlatılamadı" });
-    }
-  });
-
-  // Auto-list cards from PriceCharting prices × multiplier
-  app.post("/api/admin/tcg/auto-list", requireAdmin, async (req, res) => {
-    try {
-      const { multiplier = 1.9, condition = "NM", finish = "normal", stock = 1, gameSlug } = req.body as {
-        multiplier?: number;
-        condition?: string;
-        finish?: string;
-        stock?: number;
-        gameSlug?: string;
-      };
-
-      if (multiplier <= 0 || multiplier > 100) {
-        return res.status(400).json({ error: "Çarpan 0-100 arasında olmalı" });
-      }
-      if (stock < 0 || stock > 9999) {
-        return res.status(400).json({ error: "Stok 0-9999 arasında olmalı" });
-      }
-
-      const result = await storage.bulkAutoListFromPrices({
-        multiplier: Number(multiplier),
-        condition: condition || "NM",
-        finish: finish || "normal",
-        stock: Number(stock),
-        gameSlug: gameSlug || undefined,
-      });
-
-      res.json({
-        message: `${result.created} yeni listing oluşturuldu, ${result.updated} güncellendi`,
-        ...result,
-      });
-    } catch (err) {
-      console.error("[TCG] auto-list error:", err);
-      res.status(500).json({ error: "Otomatik listeleme başarısız" });
     }
   });
 
@@ -6257,15 +6213,6 @@ ${sections.join("\n\n")}
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: "Set silinemedi" });
-    }
-  });
-
-  app.get("/api/admin/cards/:id/price-reference", requireAdmin, async (req, res) => {
-    try {
-      const price = await storage.getCardPriceReference(req.params.id);
-      res.json(price);
-    } catch (err) {
-      res.status(500).json({ error: "Fiyat referansı yüklenemedi" });
     }
   });
 

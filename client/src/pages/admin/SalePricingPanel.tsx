@@ -14,7 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { SalePriceRow, SalePriceRun } from "@shared/salePricing";
-import { Card, PrimaryButton, SecondaryButton } from "./_ui/AdminUI";
+import { Card, PrimaryButton } from "./_ui/AdminUI";
 
 const LATEST_KEY = ["/api/admin/tcg/sale-prices/latest"];
 const runKey = (id: string) => ["/api/admin/tcg/sale-prices", id];
@@ -238,9 +238,9 @@ export default function SalePricingPanel() {
               <Tag className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-[14px] font-semibold text-neutral-900">Mevcut ilanları yeniden fiyatla</h3>
+              <h3 className="text-[14px] font-semibold text-neutral-900">Satış fiyatlarını güncelle</h3>
               <p className="mt-1 max-w-2xl text-[12px] leading-5 text-neutral-600">
-                PriceCharting USD × TCMB USD ForexSelling × çarpan. Yalnızca aktif ve stokta olan mevcut ilanların fiyatı değişir. Stok miktarı korunur.
+                Piyasa fiyatı USD × otomatik TCMB dolar satış kuru × çarpan = TL satış fiyatı. Varsayılan çarpan 1,9. Yalnızca aktif ve stoklu mevcut ilanlar güncellenir, stok miktarı korunur.
               </p>
             </div>
           </div>
@@ -284,11 +284,11 @@ export default function SalePricingPanel() {
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <PrimaryButton onClick={startPreview} disabled={!validMultiplier || busy} className="bg-indigo-700 hover:bg-indigo-600">
               {previewMutation.isPending || run?.status === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              Önizleme oluştur
+              Güncel fiyatları çek ve önizle
             </PrimaryButton>
             {run && run.status === "ready" && (
               <PrimaryButton onClick={confirmApply} disabled={!canApply} className="bg-emerald-700 hover:bg-emerald-600">
-                Fiyatları uygula
+                {applyMutation.isPending ? "Uygulanıyor..." : "Onayla ve TL fiyatlarını uygula"}
               </PrimaryButton>
             )}
           </div>
@@ -403,10 +403,6 @@ export default function SalePricingPanel() {
                 <p className="text-[11px] leading-4 text-neutral-500">
                   Onay sonrası yalnızca {eligible.length} uygun ilan güncellenir. Yeni ilan oluşturulmaz ve stok değişmez.
                 </p>
-                <SecondaryButton onClick={confirmApply} disabled={!canApply} className="border-emerald-200 text-emerald-800 hover:bg-emerald-50">
-                  {applyMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  {applyMutation.isPending ? "Uygulanıyor" : "Fiyatları onayla ve uygula"}
-                </SecondaryButton>
               </div>
             )}
           </section>

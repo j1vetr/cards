@@ -96,6 +96,18 @@ async function generatePreview(run: SalePriceRun, apiKey: string) {
 }
 
 export async function registerSalePricingRoutes(app: Express, requireAdmin: RequestHandler) {
+  // Explicit tombstones prevent old browser tabs or API callers from reviving
+  // the removed USD-only/stale-reference pricing paths.
+  const removed: RequestHandler = (_req, res) => {
+    res.status(410).json({ error: "Bu fiyatlama işlemi kaldırıldı. Satış fiyatlarını TCMB kurlu önizleme ve onay akışından güncelleyin." });
+  };
+  app.post("/api/admin/tcg/auto-list", requireAdmin, removed);
+  app.get("/api/admin/cards/:id/price-reference", requireAdmin, removed);
+  app.post("/api/admin/tcg/sync", requireAdmin, (req, res, next) => {
+    if (req.body?.mode === "prices") return removed(req, res, next);
+    next();
+  });
+
   // Additive, idempotent DDL also runs on the user's external VPS.
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS tcg_sale_price_runs (

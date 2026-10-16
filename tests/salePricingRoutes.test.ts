@@ -118,6 +118,24 @@ async function readyPreview(): Promise<SalePriceRun> {
 }
 
 describe("admin repricing endpoints", () => {
+  it("permanently disables all legacy pricing entry points without changing inventory", async () => {
+    const autoList = await request(app).post("/api/admin/tcg/auto-list").set("x-test-admin", "owner").send({ multiplier: 1.9, stock: 999 });
+    const sync = await request(app).post("/api/admin/tcg/sync").set("x-test-admin", "owner").send({ game: "pokemon_tcg", mode: "prices" });
+    const reference = await request(app).get("/api/admin/cards/card-1/price-reference").set("x-test-admin", "owner");
+    expect(autoList.status).toBe(410);
+    expect(sync.status).toBe(410);
+    expect(reference.status).toBe(410);
+    expect(fake.updates).toEqual([]);
+    expect(fake.runs.size).toBe(0);
+    expect(fake.inventory[0].stock).toBe(7);
+  });
+  it("retains normal card metadata sync routing", async () => {
+    app.post("/api/admin/tcg/sync", (_req, res) => res.json({ metadata: true }));
+    for (const mode of ["cards", "sets", "full"]) {
+      const response = await request(app).post("/api/admin/tcg/sync").set("x-test-admin", "owner").send({ game: "pokemon_tcg", mode });
+      expect(response.body).toEqual({ metadata: true });
+    }
+  });
   it("requires authentication on preview, retrieval and apply", async () => {
     expect((await request(app).post("/api/admin/tcg/sale-prices/preview").send({ multiplier: 1.9 })).status).toBe(401);
     expect((await request(app).get("/api/admin/tcg/sale-prices/latest")).status).toBe(401);

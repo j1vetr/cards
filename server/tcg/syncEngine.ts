@@ -7,7 +7,6 @@
  *   full   — sets + cards + local image download (recommended, used by admin UI)
  *   sets   — set metadata only
  *   cards  — card data + local image download (sets must already exist)
- *   prices — PriceCharting price sync only
  */
 
 import { storage } from "../storage";
@@ -23,23 +22,16 @@ import {
   mapRiftboundSetToDb,
   mapRiftboundCardToDb,
 } from "./riftboundAdapter";
-import {
-  searchPriceCharting,
-  mapPriceToDb,
-  sleep,
-  RATE_DELAY_MS,
-} from "./priceChartingService";
 import { downloadCardImage, downloadSetImage } from "./imageDownloader";
 
 export type SyncGame = "pokemon_tcg" | "riftbound";
-export type SyncMode = "sets" | "cards" | "prices" | "full";
+export type SyncMode = "sets" | "cards" | "full";
 
 export interface SyncOptions {
   game: SyncGame;
   mode: SyncMode;
   setApiId?: string;
   pokemonApiKey?: string;
-  pricechartingApiKey?: string;
   /** If provided, engine uses this existing run record instead of creating a new one. */
   existingRunId?: string;
   onProgress?: (msg: string) => void;
@@ -74,6 +66,9 @@ async function getGameId(slug: "pokemon" | "riftbound"): Promise<string> {
  * Otherwise creates a new run record.
  */
 export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
+  if (!["full", "sets", "cards"].includes(opts.mode)) {
+    throw new Error("Kart veri aktarım modu geçersiz. Fiyatlar yalnızca TCMB kurlu önizleme akışından güncellenebilir.");
+  }
   const run = opts.existingRunId
     ? { id: opts.existingRunId }
     : await storage.createTcgSyncRun({
@@ -111,8 +106,6 @@ export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
       await syncSets(opts, stats, errors, log);
     } else if (opts.mode === "cards") {
       await syncCards(opts, stats, errors, log, true);
-    } else if (opts.mode === "prices") {
-      await syncPrices(opts, stats, errors, log);
     }
 
     await storage.completeTcgSyncRun(run.id, "completed", stats, errors);
@@ -281,43 +274,4 @@ async function syncCards(
   if (downloadImages) {
     log(`Resim indirme: ${stats.imagesDownloaded} indirildi, ${stats.imagesSkipped} atlandı`);
   }
-}
-
-async function syncPrices(
-  opts: SyncOptions,
-  stats: SyncResult["stats"],
-  errors: SyncResult["errors"],
-  log: (m: string) => void,
-) {
-  if (!opts.pricechartingApiKey) {
-    throw new Error("PriceCharting API key gerekli. Ayarlar → site_settings → pricecharting_api_key.");
-  }
-
-  log("PriceCharting fiyat güncellemesi başlıyor…");
-  const allCards = await storage.listAllActiveCards();
-  log(`${allCards.length} kart için fiyat çekilecek`);
-
-  for (const card of allCards) {
-    try {
-      const product = await searchPriceCharting(card.name, opts.pricechartingApiKey!);
-      if (product) {
-        const priceData = mapPriceToDb(card.id, product);
-        await storage.upsertCardPrice({
-          cardId: priceData.cardId,
-          source: priceData.source,
-          priceMarket: priceData.priceMarket,
-          priceLow: priceData.priceLow,
-          priceHigh: priceData.priceHigh,
-          currency: priceData.currency,
-        });
-        stats.pricesUpdated++;
-      }
-      await sleep(RATE_DELAY_MS);
-    } catch (err) {
-      errors.push({ context: `price:${card.name}`, message: String(err) });
-      stats.errors++;
-    }
-  }
-
-  log(`Fiyat sync tamamlandı: ${stats.pricesUpdated} fiyat güncellendi`);
 }

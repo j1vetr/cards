@@ -214,15 +214,6 @@ function NewListingRow({ cardId, onSave, onCancel }: { cardId: string; onSave: (
   );
 }
 
-interface PriceReference {
-  id: string;
-  priceMarket: string | null;
-  priceLow: string | null;
-  priceHigh: string | null;
-  currency: string;
-  fetchedAt: string;
-}
-
 function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () => void }) {
   const [showNewRow, setShowNewRow] = useState(false);
 
@@ -231,27 +222,11 @@ function CardListingsPanel({ cardId, onClose }: { cardId: string; onClose: () =>
     queryFn: () => adminFetch(`/api/admin/cards/${cardId}/listings`),
   });
 
-  const { data: priceRef } = useQuery<PriceReference | null>({
-    queryKey: ['admin-card-price-ref', cardId],
-    queryFn: () => adminFetch(`/api/admin/cards/${cardId}/price-reference`),
-    staleTime: 60_000,
-  });
-
   return (
     <div className="mt-2 bg-neutral-50 border border-neutral-200 rounded-lg p-3" data-testid="panel-listings">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <span className="text-[12px] font-semibold text-neutral-700">Koşul & Fiyat Listesi</span>
-          {priceRef && (
-            <span className="text-[11px] text-neutral-500 bg-white border border-neutral-200 rounded px-2 py-0.5">
-              PriceCharting: piyasa <strong className="text-neutral-800">${priceRef.priceMarket ?? '—'}</strong>
-              {priceRef.priceLow && <> · düşük <strong className="text-neutral-800">${priceRef.priceLow}</strong></>}
-              {priceRef.priceHigh && <> · yüksek <strong className="text-neutral-800">${priceRef.priceHigh}</strong></>}
-              <span className="ml-1.5 text-neutral-400">
-                ({new Date(priceRef.fetchedAt).toLocaleDateString('tr-TR')})
-              </span>
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setShowNewRow(true)}
