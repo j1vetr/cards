@@ -36,7 +36,7 @@ vi.mock("../server/db", () => {
         const row = fake.inventory.find((item) => item.listingId === params[0]);
         return { rows: row ? [{
           price: row.oldPrice, updated_at: row.updatedAt, stock: row.stock, active: row.active,
-          condition: row.condition, finish: row.finish, card_id: row.cardId, name: row.name, set_name: row.setName,
+          condition: row.condition, finish: row.finish, card_id: row.cardId, name: row.name, set_name: row.setName, game_slug: row.gameSlug,
         }] : [] };
       }
       const record = fake.runs.get(params[0]);
@@ -48,8 +48,13 @@ vi.mock("../server/db", () => {
     }),
     select: () => {
       const chain: any = {};
-      for (const method of ["from", "innerJoin", "where"]) chain[method] = () => chain;
-      chain.orderBy = async () => fake.inventory;
+      let selectedGames: string[] = [];
+      for (const method of ["from", "innerJoin"]) chain[method] = () => chain;
+      chain.where = (clause: any) => {
+        selectedGames = fake.query(clause).params.filter((value: unknown) => value === "pokemon" || value === "riftbound");
+        return chain;
+      };
+      chain.orderBy = async () => fake.inventory.filter((row) => selectedGames.includes(row.gameSlug));
       return chain;
     },
     update: () => ({ set: (values: any) => ({ where: async () => { fake.updates.push(values); } }) }),
@@ -93,7 +98,7 @@ beforeEach(async () => {
   fake.clearCache.mockClear();
   fake.inventory = [{
     listingId: "listing-1", cardId: "card-1", name: "Pikachu", cardNumber: "025/102",
-    setName: "Base Set", gameName: "Pokemon", condition: "NM", finish: "normal",
+    setName: "Base Set", gameName: "Pokemon", gameSlug: "pokemon", condition: "NM", finish: "normal",
     oldPrice: "100.00", updatedAt: new Date("2026-10-09T00:00:00Z"), stock: 7, active: true,
   }];
   app = express();
@@ -106,8 +111,8 @@ beforeEach(async () => {
   });
 });
 
-async function readyPreview(): Promise<SalePriceRun> {
-  const response = await request(app).post("/api/admin/tcg/sale-prices/preview").set("x-test-admin", "owner").send({ multiplier: 1.9 });
+async function readyPreview(game?: string): Promise<SalePriceRun> {
+  const response = await request(app).post("/api/admin/tcg/sale-prices/preview").set("x-test-admin", "owner").send({ multiplier: 1.9, ...(game ? { game } : {}) });
   expect(response.status).toBe(202);
   for (let attempt = 0; attempt < 50; attempt++) {
     const run = fake.runs.get(response.body.id)!.data;
@@ -118,6 +123,38 @@ async function readyPreview(): Promise<SalePriceRun> {
 }
 
 describe("admin repricing endpoints", () => {
+  it.each(["pokemon", "riftbound", "all"])("limits the preview to category %s", async (game) => {
+    fake.inventory.push({
+      ...fake.inventory[0], listingId: "rift-listing", cardId: "rift-card",
+      gameName: "Riftbound", gameSlug: "riftbound", condition: "LP",
+    });
+    const run = await readyPreview(game);
+    expect(run.game).toBe(game);
+    expect(run.total).toBe(game === "all" ? 2 : 1);
+    expect(run.rows.map((row) => row.listingId)).toEqual(
+      game === "all" ? ["listing-1", "rift-listing"] : game === "pokemon" ? ["listing-1"] : ["rift-listing"],
+    );
+  });
+
+  it("defaults to both categories and rejects unknown selections", async () => {
+    expect((await readyPreview()).game).toBe("all");
+    const response = await request(app).post("/api/admin/tcg/sale-prices/preview")
+      .set("x-test-admin", "owner").send({ game: "unknown", multiplier: 1.9 });
+    expect(response.status).toBe(400);
+  });
+
+  it("applies a selected-category preview and rejects a changed category", async () => {
+    const run = await readyPreview("pokemon");
+    fake.inventory[0].gameSlug = "riftbound";
+    const rejected = await request(app).post(`/api/admin/tcg/sale-prices/${run.id}/apply`).set("x-test-admin", "owner");
+    expect(rejected.status).toBe(409);
+    expect(fake.updates).toHaveLength(0);
+    fake.inventory[0].gameSlug = "pokemon";
+    const applied = await request(app).post(`/api/admin/tcg/sale-prices/${run.id}/apply`).set("x-test-admin", "owner");
+    expect(applied.status).toBe(200);
+    expect(fake.updates).toHaveLength(1);
+  });
+
   it("permanently disables all legacy pricing entry points without changing inventory", async () => {
     const autoList = await request(app).post("/api/admin/tcg/auto-list").set("x-test-admin", "owner").send({ multiplier: 1.9, stock: 999 });
     const sync = await request(app).post("/api/admin/tcg/sync").set("x-test-admin", "owner").send({ game: "pokemon_tcg", mode: "prices" });

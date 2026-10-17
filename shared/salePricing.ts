@@ -1,3 +1,5 @@
+export type SalePriceGame = "all" | "pokemon" | "riftbound";
+
 export interface SalePriceRow {
   listingId: string;
   cardId: string;
@@ -19,6 +21,7 @@ export interface SalePriceRun {
   id: string;
   status: "running" | "ready" | "applied" | "failed";
   multiplier: number;
+  game?: SalePriceGame;
   rate: { usdTry: number; date: string; source: string };
   rows: SalePriceRow[];
   total: number;

@@ -1,6 +1,6 @@
 import type { Express, RequestHandler, Request } from "express";
 import { randomUUID } from "crypto";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, inArray } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
@@ -13,7 +13,10 @@ import { calculateSalePrice, marketUsdForCondition, selectPriceMatch } from "./s
 import { fetchPriceById, searchPriceChartingProducts, type PriceChartingProduct } from "./priceChartingService";
 
 const adminId = (req: Request) => (req as Request & { adminId: string }).adminId;
-const optionsSchema = z.object({ multiplier: z.number().finite().positive().max(100).default(1.9) }).strict();
+const optionsSchema = z.object({
+  multiplier: z.number().finite().positive().max(100).default(1.9),
+  game: z.enum(["all", "pokemon", "riftbound"]).default("all"),
+}).strict();
 const ENDPOINT = "/api/admin/tcg/sale-prices";
 
 async function readRun(id: string, owner: string): Promise<SalePriceRun | null> {
@@ -36,7 +39,8 @@ async function generatePreview(run: SalePriceRun, apiKey: string) {
       .innerJoin(cardSets, eq(cardSets.id, cards.setId))
       .innerJoin(cardGames, eq(cardGames.id, cardSets.gameId))
       .where(and(gt(cardListings.stock, 0), eq(cardListings.isActive, true), eq(cards.isActive, true),
-        eq(cardSets.isActive, true), eq(cardGames.isActive, true)))
+        eq(cardSets.isActive, true), eq(cardGames.isActive, true),
+        inArray(cardGames.slug, run.game && run.game !== "all" ? [run.game] : ["pokemon", "riftbound"])))
       .orderBy(cards.name, cardListings.id);
     run.total = inventory.length;
     await saveRun(run);
@@ -141,13 +145,13 @@ export async function registerSalePricingRoutes(app: Express, requireAdmin: Requ
 
   app.post(`${ENDPOINT}/preview`, requireAdmin, async (req, res) => {
     const parsed = optionsSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Çarpan 0 ile 100 arasında pozitif bir sayı olmalı." });
+    if (!parsed.success) return res.status(400).json({ error: "Geçerli bir kategori ve 0 ile 100 arasında pozitif bir çarpan seçin." });
     try {
       const key = await storage.getSiteSetting("pricecharting_api_key");
       if (!key || key === "••••••••") return res.status(400).json({ error: "Ayarlar bölümünde PriceCharting API anahtarını tanımlayın." });
       const rate = await getTcmbUsdRate();
       const run: SalePriceRun = {
-        id: randomUUID(), status: "running", multiplier: parsed.data.multiplier, rate,
+        id: randomUUID(), status: "running", multiplier: parsed.data.multiplier, game: parsed.data.game, rate,
         rows: [], total: 0, processed: 0, createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 24 * 3600000).toISOString(),
       };
@@ -194,7 +198,7 @@ export async function registerSalePricingRoutes(app: Express, requireAdmin: Requ
         for (const row of eligible) {
           const current = await tx.execute(sql`
             SELECT cl.price, cl.updated_at, cl.condition, cl.finish, cl.stock,
-              c.id AS card_id, c.name, cs.name AS set_name,
+              c.id AS card_id, c.name, cs.name AS set_name, cg.slug AS game_slug,
               cl.is_active AND c.is_active AND cs.is_active AND cg.is_active AS active
             FROM card_listings cl JOIN cards c ON c.id = cl.card_id
               JOIN card_sets cs ON cs.id = c.set_id JOIN card_games cg ON cg.id = cs.game_id
@@ -205,7 +209,8 @@ export async function registerSalePricingRoutes(app: Express, requireAdmin: Requ
             || Number(value.price) !== Number(row.oldPrice)
             || new Date(value.updated_at as string).toISOString() !== row.listingUpdatedAt
             || value.condition !== row.condition || value.finish !== row.finish
-            || value.card_id !== row.cardId || value.name !== row.name || value.set_name !== row.setName) {
+            || value.card_id !== row.cardId || value.name !== row.name || value.set_name !== row.setName
+            || (run.game && run.game !== "all" && value.game_slug !== run.game)) {
             throw new Error("Önizlemeden sonra bir kartın fiyatı, stoğu veya bilgileri değişti. Hiçbir fiyat güncellenmedi. Yeniden önizleyin.");
           }
           await tx.update(cardListings).set({ price: row.newPrice!, updatedAt: new Date() })

@@ -13,11 +13,16 @@ import {
   Tag,
   XCircle,
 } from "lucide-react";
-import type { SalePriceRow, SalePriceRun } from "@shared/salePricing";
+import type { SalePriceGame, SalePriceRow, SalePriceRun } from "@shared/salePricing";
 import { Card, PrimaryButton } from "./_ui/AdminUI";
 
 const LATEST_KEY = ["/api/admin/tcg/sale-prices/latest"];
 const runKey = (id: string) => ["/api/admin/tcg/sale-prices", id];
+const gameLabels: Record<SalePriceGame, string> = {
+  all: "Pokémon ve Riftbound",
+  pokemon: "Pokémon",
+  riftbound: "Riftbound",
+};
 
 async function readError(response: Response, fallback: string) {
   const body = await response.json().catch(() => null);
@@ -105,6 +110,7 @@ function PriceRow({ row }: { row: SalePriceRow }) {
 export default function SalePricingPanel() {
   const queryClient = useQueryClient();
   const [multiplierText, setMultiplierText] = useState("1.9");
+  const [game, setGame] = useState<SalePriceGame>("all");
   const [runId, setRunId] = useState<string | null>(null);
   const [ignoreRecoveredRun, setIgnoreRecoveredRun] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -130,6 +136,7 @@ export default function SalePricingPanel() {
     if (!runId && !ignoreRecoveredRun && !startedLocally.current && latestQuery.data?.id) {
       setRunId(latestQuery.data.id);
       setMultiplierText(String(latestQuery.data.multiplier));
+      setGame(latestQuery.data.game ?? "all");
     }
   }, [latestQuery.data, runId, ignoreRecoveredRun]);
 
@@ -146,12 +153,12 @@ export default function SalePricingPanel() {
   });
 
   const previewMutation = useMutation({
-    mutationFn: async (multiplier: number) => {
+    mutationFn: async (options: { multiplier: number; game: SalePriceGame }) => {
       const response = await fetch("/api/admin/tcg/sale-prices/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ multiplier }),
+        body: JSON.stringify(options),
       });
       if (!response.ok) throw new Error(await readError(response, "Önizleme başlatılamadı."));
       return response.json() as Promise<{ id: string }>;
@@ -197,11 +204,21 @@ export default function SalePricingPanel() {
   const multiplier = Number(multiplierText);
   const validMultiplier = Number.isFinite(multiplier) && multiplier > 0 && multiplier <= 100;
   const multiplierMatches = !!run && validMultiplier && run.multiplier === multiplier;
+  const gameMatches = !!run && (run.game ?? "all") === game;
   const expired = !!run && new Date(run.expiresAt).getTime() <= now;
   const eligible = run?.rows.filter((row) => row.newPrice !== null && !row.reason) ?? [];
   const skipped = run?.rows.filter((row) => row.reason || row.newPrice === null) ?? [];
   const busy = previewMutation.isPending || applyMutation.isPending || run?.status === "running";
-  const canApply = !!run && run.status === "ready" && !expired && multiplierMatches && eligible.length > 0 && !busy && !applyMutation.isSuccess;
+  const canApply = !!run && run.status === "ready" && !expired && multiplierMatches && gameMatches && eligible.length > 0 && !busy && !applyMutation.isSuccess;
+
+  function handleGameChange(value: SalePriceGame) {
+    setGame(value);
+    setIgnoreRecoveredRun(true);
+    if (run && value !== (run.game ?? "all")) {
+      setRunId(null);
+      if (runId) queryClient.removeQueries({ queryKey: runKey(runId), exact: true });
+    }
+  }
 
   function handleMultiplierChange(value: string) {
     setMultiplierText(value);
@@ -216,13 +233,13 @@ export default function SalePricingPanel() {
     if (!validMultiplier || busy) return;
     applyMutation.reset();
     startedLocally.current = true;
-    previewMutation.mutate(multiplier);
+    previewMutation.mutate({ multiplier, game });
   }
 
   function confirmApply() {
     if (!run || !canApply) return;
     const approved = window.confirm(
-      `${eligible.length} mevcut ve stokta bulunan ilan fiyatı güncellenecek. Stok adetleri değiştirilmeyecek. Bu işlem geri alınamaz. Devam edilsin mi?`,
+      `${gameLabels[run.game ?? "all"]} kategorisinde ${eligible.length} mevcut ve stokta bulunan ilan fiyatı güncellenecek. Stok adetleri değiştirilmeyecek. Bu işlem geri alınamaz. Devam edilsin mi?`,
     );
     if (approved) applyMutation.mutate(run.id);
   }
@@ -259,7 +276,24 @@ export default function SalePricingPanel() {
       </div>
 
       <div className="space-y-4 p-5">
-        <div className="grid gap-3 sm:grid-cols-[minmax(180px,240px)_1fr] sm:items-end">
+        <div className="grid gap-3 sm:grid-cols-2 sm:items-end">
+          <div>
+            <label htmlFor="sale-price-game" className="mb-1.5 block text-[11px] font-medium text-neutral-600">
+              Kategori seç
+            </label>
+            <select
+              id="sale-price-game"
+              data-testid="select-sale-price-game"
+              value={game}
+              disabled={busy}
+              onChange={(event) => handleGameChange(event.target.value as SalePriceGame)}
+              className="h-9 w-full rounded-md border border-neutral-200 bg-white px-3 text-[13px] text-neutral-900 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-neutral-50"
+            >
+              <option value="all">Pokémon ve Riftbound (ikisi birden)</option>
+              <option value="pokemon">Pokémon</option>
+              <option value="riftbound">Riftbound</option>
+            </select>
+          </div>
           <div>
             <label htmlFor="sale-price-multiplier" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-neutral-600">
               Çarpan
@@ -281,7 +315,7 @@ export default function SalePricingPanel() {
             </div>
             {!validMultiplier && <p className="mt-1 text-[11px] text-red-600">0 ile 100 arasında geçerli bir çarpan girin.</p>}
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div className="flex flex-wrap items-center gap-2 sm:col-span-2 sm:justify-end">
             <PrimaryButton onClick={startPreview} disabled={!validMultiplier || busy} className="bg-indigo-700 hover:bg-indigo-600">
               {previewMutation.isPending || run?.status === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
               Güncel fiyatları çek ve önizle
@@ -330,6 +364,7 @@ export default function SalePricingPanel() {
 
         {run && (
           <section className="space-y-3" aria-label="Fiyatlama önizlemesi">
+            <p className="text-[12px] font-medium text-neutral-700">Kategori: {gameLabels[run.game ?? "all"]}</p>
             <div className="grid gap-2 rounded-lg border border-neutral-200 bg-white p-3 sm:grid-cols-3">
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">Döviz kuru</p>
