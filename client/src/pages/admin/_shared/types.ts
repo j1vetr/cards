@@ -164,6 +164,7 @@ export type TabType =
   | 'coupons'
   | 'reviews'
   | 'card-api-sync'
+  | 'riftbound-panel'
   | 'cards'
   | 'card-sets'
   | 'accessories'

@@ -14,6 +14,7 @@ import MenuTab from './admin/MenuTab';
 import CouponsTab from './admin/CouponsTab';
 import ReviewsTab from './admin/ReviewsTab';
 import CardApiSyncTab from './admin/CardApiSyncTab';
+import RifthuntPanel from './admin/RifthuntPanel';
 import CardsTab from './admin/CardsTab';
 import CardSetsTab from './admin/CardSetsTab';
 import AccessoriesTab from './admin/AccessoriesTab';
@@ -146,6 +147,7 @@ export default function AdminDashboard() {
         {activeTab === 'coupons' && <CouponsTab />}
         {activeTab === 'reviews' && <ReviewsTab />}
         {activeTab === 'card-api-sync' && <CardApiSyncTab />}
+        {activeTab === 'riftbound-panel' && <RifthuntPanel />}
         {activeTab === 'cards' && <CardsTab />}
         {activeTab === 'card-sets' && <CardSetsTab />}
         {activeTab === 'accessories' && <AccessoriesTab />}

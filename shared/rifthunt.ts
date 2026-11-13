@@ -89,6 +89,18 @@ export interface RiftCatalog extends RiftStatus {
   pages: number;
   sets: { code: string; name: string }[];
   preview: RiftRun | null;
+  rarities: string[];
+  summary: {
+    matchedPrintings: number;
+    matchedRows: number;
+    pricedRows: number;
+    unpricedRows: number;
+    stockedRows: number;
+    emptyRows: number;
+    totalStock: number;
+    minPrice: number | null;
+    maxPrice: number | null;
+  };
 }
 export interface RiftHistory {
   dates: string[];

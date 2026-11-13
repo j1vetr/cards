@@ -10,6 +10,7 @@ import { fetchRifthuntJson, priceFor, type RiftSnapshot } from "./rifthuntData";
 import { getRiftConfig, getRiftRun, initRifthuntStore, putRiftState, riftCounts, riftState } from "./rifthuntStore";
 import { applyRiftPreview, createRiftPreview, riftStock, runRiftDaily, type RiftPayload } from "./rifthuntEngine";
 import { createRiftBackup, getRiftBackup, resetRiftbound } from "./rifthuntBackup";
+import { queryRiftRows, riftCatalogQuery } from "./rifthuntCatalog";
 
 const owner = (req: Request) => (req as Request & { adminId: string }).adminId;
 const uuid = z.string().uuid();
@@ -58,13 +59,7 @@ async function status(admin: string): Promise<RiftStatus> {
   };
 }
 export async function riftCatalog(admin: string, query: Record<string, unknown>): Promise<RiftCatalog> {
-  const parsed = z.object({
-    search: z.string().max(200).default(""), set: z.string().max(30).default(""),
-    finish: z.enum(["", "normal", "foil"]).default(""), stock: z.enum(["all", "stocked", "empty"]).default("all"),
-    priced: z.enum(["all", "yes", "no"]).default("all"),
-    page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(30),
-    previewId: uuid.optional(),
-  }).parse(query);
+  const parsed = riftCatalogQuery.parse(query);
   const state = await status(admin);
   let snapshot = await riftState<RiftSnapshot | null>("snapshot", null);
   let preview: RiftRun | null = null;
@@ -81,10 +76,17 @@ export async function riftCatalog(admin: string, query: Record<string, unknown>)
     LEFT JOIN card_listings l ON l.card_id=c.id AND l.condition='NM'`);
   const rate = preview?.rate ?? await riftState<RiftRun["rate"]>("rate", null);
   const multiplier = preview?.multiplier ?? state.config.multiplier;
+  const recordsByPrinting = new Map<string, typeof records.rows>();
+  for (const record of records.rows) {
+    const key = String(record.printing_id);
+    const existing = recordsByPrinting.get(key);
+    if (existing) existing.push(record);
+    else recordsByPrinting.set(key, [record]);
+  }
   let rows: RiftAdminRow[] = [];
   for (const printing of snapshot?.printings ?? []) {
     for (const finish of printing.finishes.length ? printing.finishes : [null]) {
-      const found = records.rows.filter(r => r.printing_id === printing.printingId);
+      const found = recordsByPrinting.get(printing.printingId) ?? [];
       const matches = found.filter(r => r.finish === finish);
       const listing = matches[0];
       const calculated = rate
@@ -101,16 +103,8 @@ export async function riftCatalog(admin: string, query: Record<string, unknown>)
       });
     }
   }
-  const search = parsed.search.toLocaleLowerCase("tr-TR");
-  rows = rows.filter(r => (!search || `${r.printing.name} ${r.printing.collector} ${r.printing.riftboundId}`.toLocaleLowerCase("tr-TR").includes(search))
-    && (!parsed.set || r.printing.set === parsed.set) && (!parsed.finish || r.finish === parsed.finish)
-    && (parsed.stock === "all" || (parsed.stock === "stocked" ? r.stock > 0 : r.stock === 0))
-    && (parsed.priced === "all" || (parsed.priced === "yes" ? !!r.salePrice : !r.salePrice)));
-  const total = rows.length;
-  const pages = Math.max(1, Math.ceil(total / parsed.limit));
-  const page = Math.min(parsed.page, pages);
   return {
-    ...state, rows: rows.slice((page - 1) * parsed.limit, page * parsed.limit), total, page, pages,
+    ...state, ...queryRiftRows(rows, parsed),
     sets: snapshot?.sets.map(s => ({ code: s.code, name: s.name })) ?? [], preview,
   };
 }
@@ -122,7 +116,8 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
     try { res.json(await status(owner(req))); } catch (e) { res.status(500).json({ error: errorMessage(e) }); }
   });
   app.get(`${root}/catalog`, requireAdmin, async (req, res) => {
-    try { res.json(await riftCatalog(owner(req), req.query)); } catch (e) { res.status(400).json({ error: errorMessage(e) }); }
+    try { res.json(await riftCatalog(owner(req), req.query)); }
+    catch (e) { res.status(400).json({ error: e instanceof z.ZodError ? "Filtreler geçersiz. Fiyat aralığını ve seçimlerinizi kontrol edin." : errorMessage(e) }); }
   });
   app.post(`${root}/preview`, requireAdmin, async (req, res) => {
     const input = options.safeParse(req.body);

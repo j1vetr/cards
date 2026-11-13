@@ -63,3 +63,17 @@ mtime_ms = 1794580634145
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/e2653758-524d-4344-8a7a-43b239fd490f/a7c86831-c40f-49fe-b9f1-d3ea639a9773"
 storage_version_token = "1794580910423307"
 content_type = "image/png"
+
+[[outputs]]
+id = "s8cpRo0K8PA3OEftGj1TU"
+uri = "file://generated-artifacts/rifthunt-browser/price-explorer-desktop.png"
+type = "image"
+title = "Riftbound Panel: filtreler ve fiyat listesi"
+description = "Gerçek Vendetta kartlarıyla izole test görünümü. En yüksek fiyat, filtreler ve stok alanları. Kur ve stok değerleri test ortamına aittir, canlı fiyat listesi değildir."
+logical_id = "8594b7a7-043e-4cff-9c94-cbdfd33ef343"
+content_hash = "sha256:598fca7aaed73741f760f3ffe684578850fc2e5a3456229c5ea74a24f4e74e43"
+size = 250975
+mtime_ms = 1794584420417
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/8594b7a7-043e-4cff-9c94-cbdfd33ef343/d8c5f620-9ba1-496a-990d-503f3d5753d9"
+storage_version_token = "1794584651721647"
+content_type = "image/png"

@@ -33,6 +33,7 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
   const errors: string[] = [];
+  const catalogRequests: URL[] = [];
   page.on("pageerror", e => errors.push(e.message));
   page.on("dialog", dialog => { void dialog.accept(); });
   await fs.mkdir("generated-artifacts/rifthunt-browser", { recursive: true });
@@ -41,6 +42,7 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
       const browserRequest = route.request();
       const url = new URL(browserRequest.url());
       const pathname = url.pathname;
+      if (pathname === "/api/admin/rifthunt/catalog") catalogRequests.push(url);
       if (pathname.startsWith("/api/admin/rifthunt/") || pathname === "/api/admin/cards" ||
           pathname.startsWith("/api/admin/cards/") || ["/api/admin/card-games", "/api/admin/card-sets", "/api/cards", "/api/card-sets"].includes(pathname)) {
         const method = browserRequest.method().toLowerCase() as "get" | "post" | "put";
@@ -59,6 +61,10 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     const origin = `https://${process.env.REPLIT_DEV_DOMAIN}`;
     const panel = page.locator('section[aria-label="Riftbound fiyat ve stok yönetimi"]');
     await page.goto(origin + "/toov-admin?tab=card-api-sync");
+    expect(await panel.count()).toBe(0);
+    await page.getByRole("link", { name: "Riftbound Paneli aç", exact: true }).click();
+    await panel.waitFor();
+    expect(page.url()).toContain("tab=riftbound-panel");
     await panel.getByPlaceholder("RIFTBOUND SİL").fill("RIFTBOUND SİL");
     await panel.getByRole("button", { name: "Eski Riftbound verilerini sil", exact: true }).click();
     await panel.getByRole("status").waitFor();
@@ -69,15 +75,44 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     expect((await client.query("SELECT COUNT(*)::int AS count FROM cards WHERE api_source='rifthunt'")).rows[0].count).toBe(0);
     await apply.click();
     await panel.getByTestId("rift-import-complete").waitFor();
+    expect(await panel.getByLabel("Stok filtresi").inputValue()).toBe("empty");
+    expect(await panel.getByLabel("Sıralama").inputValue()).toBe("price_desc");
+    const expectedCatalog = (await request(app).get("/api/admin/rifthunt/catalog?stock=empty&sort=price_desc").set("x-test-admin", "test-admin")).body;
+    await expect.poll(() => panel.getByTestId("rift-inventory-row").first().getAttribute("data-printing-id")).toBe(expectedCatalog.rows[0].printing.printingId);
+    const format = (value: number) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 2 }).format(value);
+    expect(await panel.getByTestId("summary-max-price").innerText()).toContain(format(expectedCatalog.summary.maxPrice));
+    await panel.getByLabel("Sıralama").selectOption("price_asc");
+    const cheapest = (await request(app).get("/api/admin/rifthunt/catalog?stock=empty&sort=price_asc").set("x-test-admin", "test-admin")).body;
+    await expect.poll(() => panel.getByTestId("rift-inventory-row").first().getAttribute("data-printing-id")).toBe(cheapest.rows[0].printing.printingId);
+    await panel.getByLabel("Sıralama").selectOption("price_desc");
+    await panel.getByRole("heading", { name: "Baskı kataloğu", exact: true }).evaluate(el => el.scrollIntoView({ block: "start" }));
+    await page.screenshot({ path: "generated-artifacts/rifthunt-browser/price-explorer-desktop.png" });
     await panel.getByPlaceholder("Kart veya baskı ara").fill("ven-sp1-006");
+    await panel.getByLabel("Nadirlik filtresi").selectOption("Showcase");
+    await panel.getByLabel("En düşük fiyat", { exact: true }).fill("10000");
+    await panel.getByLabel("En yüksek fiyat", { exact: true }).fill("6000");
+    await panel.getByRole("alert").filter({ hasText: "En düşük fiyat, en yüksek fiyattan büyük olamaz." }).waitFor();
+    await panel.getByLabel("En düşük fiyat", { exact: true }).fill("5000");
+    await expect.poll(() => panel.getByTestId("rift-inventory-row").count()).toBe(1);
+    await expect.poll(() => panel.getByTestId("summary-max-price").innerText()).toContain(format(5732.68));
+    expect(catalogRequests.some(url => {
+      const min = url.searchParams.get("minPrice"), max = url.searchParams.get("maxPrice");
+      return min !== null && max !== null && Number(min) > Number(max);
+    })).toBe(false);
     const stock = panel.getByRole("spinbutton", { name: "Kai'Sa, Survivor stok adedi", exact: true });
     await stock.fill("3");
     expect((await client.query("SELECT COUNT(*)::int AS count FROM rifthunt_printings")).rows[0].count).toBe(expectedCards);
     const cardId = (await client.query("SELECT card_id FROM rifthunt_printings WHERE data->>'riftboundId'='ven-sp1-006'")).rows[0].card_id;
     await stock.locator("xpath=ancestor::td").getByRole("button", { name: "Kaydet", exact: true }).click();
     await expect.poll(async () => (await client.query("SELECT stock FROM card_listings WHERE card_id=$1", [cardId])).rows[0]?.stock).toBe(3);
+    await panel.getByRole("status").filter({ hasText: "Stok yok filtresinden kaldırıldı." }).waitFor();
+    await expect.poll(() => stock.count()).toBe(0);
+    await panel.getByLabel("Stok filtresi").selectOption("stocked");
+    await expect.poll(() => stock.inputValue()).toBe("3");
+    await panel.getByLabel("Stok filtresi").selectOption("all");
     await panel.getByLabel("Set filtresi").selectOption("ven");
     await page.reload();
+    await panel.getByLabel("Stok filtresi").selectOption("all");
     await panel.getByPlaceholder("Kart veya baskı ara").fill("ven-sp1-006");
     await expect.poll(() => stock.inputValue()).toBe("3");
     await page.goto(origin + "/toov-admin?tab=cards");
@@ -92,7 +127,8 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     await page.getByTestId(`button-edit-card-${cardId}`).click();
     expect(await page.getByTestId("input-edit-rarity").inputValue()).toBe("Legendary");
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/rarity-edit.png", fullPage: true });
-    await page.goto(origin + "/toov-admin?tab=card-api-sync");
+    await page.goto(origin + "/toov-admin?tab=riftbound-panel");
+    await panel.getByLabel("Stok filtresi").selectOption("all");
     await panel.getByPlaceholder("Kart veya baskı ara").fill("ven-sp1-006");
     await expect.poll(() => stock.inputValue()).toBe("3");
     await panel.getByRole("button", { name: "Fiyatları önizle", exact: true }).click();

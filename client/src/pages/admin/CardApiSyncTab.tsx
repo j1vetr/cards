@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
 import SalePricingPanel from "./SalePricingPanel";
-import RifthuntPanel from "./RifthuntPanel";
 
 interface CardGame {
   id: string;
@@ -247,7 +246,15 @@ export default function CardApiSyncTab() {
         description="Kart verilerini senkronize et. Satış fiyatlarını tek akışta piyasa USD fiyatı, otomatik TCMB kuru ve çarpan ile TL olarak hesapla."
       />
 
-      <RifthuntPanel />
+      <div className="flex flex-col gap-3 rounded-lg border border-[#d7ded5] bg-[#f5f7f2] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[#274a3d]">Riftbound fiyat ve stok yönetimi</p>
+          <p className="mt-1 text-xs leading-5 text-neutral-600">Kaynak baskıları, otomatik TL fiyatlarını ve stok girişini ayrı panelde yönetin.</p>
+        </div>
+        <a href="/toov-admin?tab=riftbound-panel" className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-[#174c45] px-3 text-xs font-semibold text-white hover:bg-[#123d37]">
+          Riftbound Paneli aç
+        </a>
+      </div>
       <SalePricingPanel />
 
       {/* Stats overview */}

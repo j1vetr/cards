@@ -37,7 +37,7 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
   const validPrice = row.finish !== null && row.salePrice !== null && Number.isFinite(Number(row.salePrice)) && Number(row.salePrice) > 0;
   const valid = /^\d+$/.test(value) && Number(value) >= 0;
   const p = row.printing;
-  return <tr className="align-top border-b border-neutral-100 last:border-0 hover:bg-[#f8f7f2]">
+  return <tr data-testid="rift-inventory-row" data-printing-id={p.printingId} data-finish={row.finish ?? ""} className="align-top border-b border-neutral-100 last:border-0 hover:bg-[#f8f7f2]">
     <td className="px-3 py-3 min-w-[250px]">
       <div className="flex gap-3">
         {p.image ? <img src={p.image} alt="" loading="lazy" className="h-[76px] w-[54px] rounded border border-neutral-200 object-cover bg-neutral-100" /> : <div className="h-[76px] w-[54px] rounded border border-neutral-200 bg-neutral-100" />}
@@ -54,8 +54,8 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
     </td>
     <td className="px-3 py-3 min-w-[220px]">
       <div className="grid grid-cols-2 gap-1.5">
-        <PriceTile title="Önceki satış" value={row.oldPrice} currency="TRY" className="bg-neutral-50" />
-        <PriceTile title="Yeni satış" value={row.salePrice} currency="TRY" className={validPrice ? "bg-emerald-50" : "bg-amber-50"} />
+        <PriceTile title="Sitedeki fiyat" value={row.oldPrice} currency="TRY" className="bg-neutral-50" />
+        <PriceTile title="Hesaplanan TL" value={row.salePrice} currency="TRY" className={validPrice ? "bg-emerald-50" : "bg-amber-50"} />
         <PriceTile title="TCG market" value={row.finish ? p.prices[row.finish]?.market : null} currency="USD" className="bg-neutral-50" />
         <PriceTile title="CM trend" value={row.finish ? p.cardmarket[row.finish]?.trend : null} currency="EUR" className="bg-neutral-50" />
       </div>
@@ -65,6 +65,7 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
       <div className="mt-1 flex gap-1.5"><input aria-label={`${p.name} stok adedi`} type="number" min="0" step="1" value={value} onChange={(e) => { setValue(e.target.value); setError(""); }} disabled={!enabled || !validPrice} className="h-8 w-20 rounded border border-neutral-300 px-2 text-sm tabular-nums disabled:bg-neutral-100" /><button type="button" disabled={!enabled || !validPrice || !valid || Number(value) === row.stock} onClick={() => { if (valid) onSave(row, Number(value)); }} className="h-8 rounded bg-[#174c45] px-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Kaydet</button></div>
       {error && <p className="text-[10px] text-rose-700">{error}</p>}
       {!validPrice && <p className="mt-1 max-w-[150px] text-[10px] text-amber-800">Fiyat geçerli değil, stok düzenlenemez.</p>}
+      {!enabled && validPrice && !row.cardId && <p className="mt-1 max-w-[150px] text-[10px] text-neutral-500">Stok girmek için önce kartı siteye aktarın.</p>}
     </td>
   </tr>;
 }
@@ -74,23 +75,38 @@ export default function RifthuntPanel() {
   const [search, setSearch] = useState("");
   const [setCode, setSetCode] = useState("");
   const [finish, setFinish] = useState("");
-  const [stockFilter, setStockFilter] = useState("all");
+  const [rarity, setRarity] = useState("");
+  const [stockFilter, setStockFilter] = useState("empty");
   const [priced, setPriced] = useState("all");
+  const [sort, setSort] = useState("price_desc");
+  const [minPriceText, setMinPriceText] = useState("");
+  const [maxPriceText, setMaxPriceText] = useState("");
   const [page, setPage] = useState(1);
   const [multiplierText, setMultiplierText] = useState("1.9");
   const [autoDaily, setAutoDaily] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [resetText, setResetText] = useState("");
   const [resetWarnings, setResetWarnings] = useState<string[]>([]);
+  const [stockFeedback, setStockFeedback] = useState("");
   const [now, setNow] = useState(Date.now());
   const settingsInitialized = useRef(false);
   const multiplier = Number(multiplierText);
   const validMultiplier = Number.isFinite(multiplier) && multiplier > 0 && multiplier <= 100;
+  const minPrice = minPriceText.trim() === "" ? null : Number(minPriceText);
+  const maxPrice = maxPriceText.trim() === "" ? null : Number(maxPriceText);
+  const validMinPrice = minPrice === null || (Number.isFinite(minPrice) && minPrice >= 0);
+  const validMaxPrice = maxPrice === null || (Number.isFinite(maxPrice) && maxPrice >= 0);
+  const validPriceRange = validMinPrice && validMaxPrice && (minPrice === null || maxPrice === null || minPrice <= maxPrice);
+  const priceRangeError = !validMinPrice || !validMaxPrice
+    ? "Fiyat sınırları sıfır veya daha büyük, geçerli TL değerleri olmalı."
+    : !validPriceRange ? "En düşük fiyat, en yüksek fiyattan büyük olamaz." : "";
   const queryString = useMemo(() => {
-    const params = new URLSearchParams({ search, set: setCode, finish, stock: stockFilter, priced, page: String(page), limit: "30" });
+    const params = new URLSearchParams({ search, set: setCode, finish, rarity, stock: stockFilter, priced, sort, page: String(page), limit: "30" });
+    if (minPrice !== null && validMinPrice) params.set("minPrice", String(minPrice));
+    if (maxPrice !== null && validMaxPrice) params.set("maxPrice", String(maxPrice));
     if (runId) params.set("previewId", runId);
     return params.toString();
-  }, [search, setCode, finish, stockFilter, priced, page, runId]);
+  }, [search, setCode, finish, rarity, stockFilter, priced, sort, minPrice, maxPrice, minPriceText, maxPriceText, validMinPrice, validMaxPrice, page, runId]);
   const statusQuery = useQuery<RiftStatus>({ queryKey: STATUS_KEY, queryFn: () => request("/api/admin/rifthunt/status"), refetchInterval: 10000, refetchOnWindowFocus: false });
   useEffect(() => {
     if (statusQuery.data && !settingsInitialized.current) {
@@ -100,7 +116,7 @@ export default function RifthuntPanel() {
       setAutoDaily(latest?.autoDaily ?? statusQuery.data.config.autoDaily);
     }
   }, [statusQuery.data?.config.multiplier, statusQuery.data?.config.autoDaily]);
-  const catalogQuery = useQuery<RiftCatalog>({ queryKey: [...CATALOG_KEY, queryString], queryFn: () => request(`/api/admin/rifthunt/catalog?${queryString}`), refetchOnWindowFocus: false });
+  const catalogQuery = useQuery<RiftCatalog>({ queryKey: [...CATALOG_KEY, queryString], queryFn: () => request(`/api/admin/rifthunt/catalog?${queryString}`), enabled: validPriceRange, refetchOnWindowFocus: false });
   const currentStatus = catalogQuery.data ?? statusQuery.data;
   useEffect(() => { if (statusQuery.data?.latestRun && !runId) setRunId(statusQuery.data.latestRun.id); }, [statusQuery.data?.latestRun?.id]);
   const runQuery = useQuery<RiftRun>({ queryKey: ["/api/admin/rifthunt/runs", runId], queryFn: () => request(`/api/admin/rifthunt/runs/${encodeURIComponent(runId!)}`), enabled: !!runId, refetchInterval: (q) => q.state.data?.status === "running" ? 2000 : false, refetchOnWindowFocus: false });
@@ -128,7 +144,12 @@ export default function RifthuntPanel() {
   });
   const stockMutation = useMutation({
     mutationFn: ({ row, stock }: { row: RiftAdminRow; stock: number }) => request<{ success: true }>("/api/admin/rifthunt/stock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ printingId: row.printing.printingId, finish: row.finish, stock, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt }) }),
-    onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]); },
+    onSuccess: async (_result, { row, stock }) => {
+      setStockFeedback(stockFilter === "empty" && stock > 0
+        ? `${row.printing.name} için stok ${stock} olarak kaydedildi. Kart, Stok yok filtresinden kaldırıldı.`
+        : `${row.printing.name} stok adedi ${stock} olarak kaydedildi.`);
+      await Promise.all([qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]);
+    },
   });
   const resetMutation = useMutation({
     mutationFn: () => request<{ success: true; warnings: string[] }>("/api/admin/rifthunt/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: resetText }) }),
@@ -180,16 +201,30 @@ export default function RifthuntPanel() {
     </Card>
 
     <Card className="overflow-hidden">
-      <div className="border-b border-neutral-200 px-4 py-3 sm:px-5"><div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h3 className="text-sm font-semibold text-neutral-900">Baskı kataloğu</h3><p className="text-[11px] text-neutral-500">Fiyatı olmayan baskılar listelenir ancak stok alanı kapalı kalır.</p></div><span className="text-[11px] tabular-nums text-neutral-500">{catalogQuery.data?.total.toLocaleString("tr-TR") ?? 0} sonuç</span></div></div>
-      <div className="grid gap-2 border-b border-neutral-100 bg-[#fafaf7] p-3 sm:grid-cols-2 lg:grid-cols-6">
-        <label className="relative sm:col-span-2"><Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-neutral-400" /><input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Kart veya baskı ara" className="h-9 w-full rounded border border-neutral-300 bg-white pl-8 pr-3 text-xs" /></label>
-        <select aria-label="Set filtresi" value={setCode} onChange={(e) => { setSetCode(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="">Tüm setler</option>{catalogQuery.data?.sets.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}</select>
+      <div className="border-b border-neutral-200 px-4 py-3 sm:px-5"><div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h3 className="text-sm font-semibold text-neutral-900">Baskı kataloğu</h3><p className="text-[11px] text-neutral-500">Stoksuz baskılar ve hesaplanan TL fiyatları. Fiyat girişi gerekmez.</p></div><span className="text-[11px] tabular-nums text-neutral-500">{catalogQuery.data?.summary.matchedRows.toLocaleString("tr-TR") ?? 0} baskı satırı eşleşti</span></div></div>
+      <div className="grid gap-2 border-b border-neutral-100 bg-[#fafaf7] p-3 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="relative sm:col-span-2"><Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-neutral-400" /><input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); setStockFeedback(""); }} placeholder="Kart veya baskı ara" className="h-9 w-full rounded border border-neutral-300 bg-white pl-8 pr-3 text-xs" /></label>
+        <label className="sr-only" htmlFor="rift-set-filter">Set filtresi</label><select id="rift-set-filter" aria-label="Set filtresi" value={setCode} onChange={(e) => { setSetCode(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="">Tüm setler</option>{catalogQuery.data?.sets.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}</select>
         <select aria-label="Baskı yüzeyi" value={finish} onChange={(e) => { setFinish(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="">Tüm yüzeyler</option><option value="normal">Normal</option><option value="foil">Foil</option></select>
-        <select aria-label="Stok filtresi" value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="all">Tüm stoklar</option><option value="stocked">Stokta</option><option value="empty">Stok yok</option></select>
+        <select aria-label="Stok filtresi" value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1); setStockFeedback(""); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="all">Tüm stoklar</option><option value="stocked">Stokta</option><option value="empty">Stok yok</option></select>
         <select aria-label="Fiyat filtresi" value={priced} onChange={(e) => { setPriced(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="all">Tüm fiyatlar</option><option value="yes">Fiyatı olan</option><option value="no">Fiyatı olmayan</option></select>
+        <select aria-label="Nadirlik filtresi" value={rarity} onChange={(e) => { setRarity(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="">Tüm nadirlikler</option>{catalogQuery.data?.rarities.map((item) => <option key={item} value={item}>{item}</option>)}</select>
+        <select aria-label="Sıralama" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className="h-9 rounded border border-neutral-300 bg-white px-2 text-xs"><option value="price_desc">Satış fiyatı: yüksekten düşüğe</option><option value="price_asc">Satış fiyatı: düşükten yükseğe</option><option value="market_desc">TCG market: yüksekten düşüğe</option><option value="market_asc">TCG market: düşükten yükseğe</option><option value="name_asc">Kart adı: A'dan Z'ye</option><option value="stock_desc">Stok: çoktan aza</option></select>
+        <label className="block"><span className="mb-1 block text-[10px] font-medium text-neutral-500">En düşük fiyat</span><input aria-label="En düşük fiyat" type="number" min="0" step="0.01" value={minPriceText} onChange={(e) => { setMinPriceText(e.target.value); setPage(1); }} placeholder="En düşük fiyat, TL" className="h-9 w-full rounded border border-neutral-300 bg-white px-2 text-xs" /></label>
+        <label className="block"><span className="mb-1 block text-[10px] font-medium text-neutral-500">En yüksek fiyat</span><input aria-label="En yüksek fiyat" type="number" min="0" step="0.01" value={maxPriceText} onChange={(e) => { setMaxPriceText(e.target.value); setPage(1); }} placeholder="En yüksek fiyat, TL" className="h-9 w-full rounded border border-neutral-300 bg-white px-2 text-xs" /></label>
+        <div className="flex items-end"><button type="button" onClick={() => { setSearch(""); setSetCode(""); setFinish(""); setRarity(""); setStockFilter("empty"); setPriced("all"); setSort("price_desc"); setMinPriceText(""); setMaxPriceText(""); setPage(1); setStockFeedback(""); }} className="h-9 rounded border border-neutral-300 bg-white px-3 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Filtreleri sıfırla</button></div>
       </div>
-      {catalogQuery.isError ? <div className="p-4"><ErrorBox message={catalogQuery.error instanceof Error ? catalogQuery.error.message : "Katalog yüklenemedi."} retry={() => catalogQuery.refetch()} /></div> : catalogQuery.isLoading ? <div className="space-y-2 p-4">{[1,2,3].map((n) => <div key={n} className="h-24 animate-pulse rounded bg-neutral-100" />)}</div> : catalogQuery.data?.rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-[11px]"><thead className="bg-[#f5f5f0] text-[10px] uppercase tracking-wide text-neutral-500"><tr><th className="px-3 py-2">Kart / baskı</th><th className="px-3 py-2">Yüzey / veri</th><th className="px-3 py-2">Fiyat karşılaştırması</th><th className="px-3 py-2">Stok</th></tr></thead><tbody>{catalogQuery.data.rows.map((row) => <InventoryRow key={`${row.printing.printingId}:${row.finish}`} row={row} enabled={!!currentStatus?.config.enabled && run?.status === "applied" && !!row.finish && Number(row.salePrice) > 0} onSave={(r, stock) => stockMutation.mutate({ row: r, stock })} />)}</tbody></table></div> : <div className="px-5 py-12 text-center"><div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#edf1eb] text-[#557365]"><Search className="h-4 w-4" /></div><p className="text-sm font-semibold text-neutral-800">Bu filtrelerle baskı bulunamadı</p><p className="mt-1 text-xs text-neutral-500">Aramayı veya filtreleri değiştirin.</p></div>}
-      <div className="flex items-center justify-between border-t border-neutral-100 px-3 py-2"><span className="text-[11px] text-neutral-500">Sayfa {catalogQuery.data?.page ?? page} / {catalogQuery.data?.pages ?? 1}</span><div className="flex gap-1"><SecondaryButton aria-label="Önceki sayfa" className="h-8 px-2" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></SecondaryButton><SecondaryButton aria-label="Sonraki sayfa" className="h-8 px-2" disabled={page >= (catalogQuery.data?.pages ?? 1)} onClick={() => setPage((p) => p + 1)}><ChevronRight className="h-4 w-4" /></SecondaryButton></div></div>
+      {priceRangeError && <p role="alert" className="border-b border-rose-100 bg-rose-50 px-4 py-2 text-xs text-rose-800">{priceRangeError}</p>}
+      {catalogQuery.data && validPriceRange && <div className="grid grid-cols-2 gap-2 border-b border-neutral-100 bg-white p-3 sm:grid-cols-4">
+        <div className="rounded-md bg-[#f7f8f4] px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-neutral-500">Eşleşen baskılar</p><p className="mt-1 text-sm font-semibold tabular-nums text-[#274a3d]">{catalogQuery.data.summary.matchedPrintings.toLocaleString("tr-TR")}</p></div>
+        <div className="rounded-md bg-[#f7f8f4] px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-neutral-500">Finish satırları</p><p className="mt-1 text-sm font-semibold tabular-nums text-[#274a3d]">{catalogQuery.data.summary.matchedRows.toLocaleString("tr-TR")} <span className="text-[10px] font-normal text-neutral-500">· fiyatlı {catalogQuery.data.summary.pricedRows.toLocaleString("tr-TR")} · fiyatsız {catalogQuery.data.summary.unpricedRows.toLocaleString("tr-TR")}</span></p></div>
+        <div data-testid="summary-min-price" className="rounded-md bg-[#f7f8f4] px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-neutral-500">En düşük hesaplanan TL</p><p className="mt-1 text-sm font-semibold tabular-nums text-[#274a3d]">{money(catalogQuery.data.summary.minPrice, "TRY")}</p></div>
+        <div data-testid="summary-max-price" className="rounded-md bg-[#f7f8f4] px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-neutral-500">En yüksek hesaplanan TL</p><p className="mt-1 text-sm font-semibold tabular-nums text-[#274a3d]">{money(catalogQuery.data.summary.maxPrice, "TRY")}</p></div>
+        <p className="col-span-2 text-[10px] text-neutral-500 sm:col-span-4">Filtrelenmiş katalog toplamı: {catalogQuery.data.summary.stockedRows.toLocaleString("tr-TR")} stoklu baskı satırı, {catalogQuery.data.summary.emptyRows.toLocaleString("tr-TR")} stoksuz satır, toplam {catalogQuery.data.summary.totalStock.toLocaleString("tr-TR")} adet stok. Özetteki sayılar yalnızca bu sayfayı değil tüm eşleşmeleri kapsar.</p>
+      </div>}
+      {stockFeedback && <p role="status" className="border-b border-emerald-100 bg-emerald-50 px-4 py-2.5 text-xs font-medium text-emerald-800">{stockFeedback}</p>}
+      {!validPriceRange ? null : catalogQuery.isError ? <div className="p-4"><ErrorBox message={catalogQuery.error instanceof Error ? catalogQuery.error.message : "Katalog yüklenemedi."} retry={() => catalogQuery.refetch()} /></div> : catalogQuery.isLoading ? <div className="space-y-2 p-4">{[1,2,3].map((n) => <div key={n} className="h-24 animate-pulse rounded bg-neutral-100" />)}</div> : catalogQuery.data?.rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-[11px]"><thead className="bg-[#f5f5f0] text-[10px] uppercase tracking-wide text-neutral-500"><tr><th className="px-3 py-2">Kart / baskı</th><th className="px-3 py-2">Yüzey / veri</th><th className="px-3 py-2">Fiyat karşılaştırması</th><th className="px-3 py-2">Stok</th></tr></thead><tbody>{catalogQuery.data.rows.map((row) => <InventoryRow key={`${row.printing.printingId}:${row.finish}`} row={row} enabled={!stockMutation.isPending && !!currentStatus?.config.enabled && run?.status === "applied" && !!row.finish && Number(row.salePrice) > 0} onSave={(r, stock) => { setStockFeedback(""); stockMutation.mutate({ row: r, stock }); }} />)}</tbody></table></div> : <div className="px-5 py-12 text-center"><div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#edf1eb] text-[#557365]"><Search className="h-4 w-4" /></div><p className="text-sm font-semibold text-neutral-800">Bu filtrelerle baskı bulunamadı</p><p className="mt-1 text-xs text-neutral-500">Aramayı veya filtreleri değiştirin.</p></div>}
+      <div className="flex items-center justify-between border-t border-neutral-100 px-3 py-2"><span className="text-[11px] text-neutral-500">Sayfa {catalogQuery.data?.page ?? page} / {catalogQuery.data?.pages ?? 1}</span><div className="flex gap-1"><SecondaryButton aria-label="Önceki sayfa" className="h-8 px-2" disabled={page <= 1 || !validPriceRange} onClick={() => setPage((p) => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></SecondaryButton><SecondaryButton aria-label="Sonraki sayfa" className="h-8 px-2" disabled={page >= (catalogQuery.data?.pages ?? 1) || !validPriceRange} onClick={() => setPage((p) => p + 1)}><ChevronRight className="h-4 w-4" /></SecondaryButton></div></div>
       {stockMutation.isPending && <p className="px-4 pb-2 text-[11px] text-[#28584b]">Stok güncelleniyor…</p>}
       {stockMutation.isError && <div className="px-4 pb-3"><ErrorBox message={stockMutation.error.message} /></div>}
     </Card>

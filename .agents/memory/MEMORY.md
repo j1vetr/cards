@@ -8,4 +8,5 @@
 - [External VPS deployment](external-vps-deployment.md) — production runs outside Replit, so dependency lock URLs must remain portable.
 - [KartFiyat API contract](kartfiyat-api-contract.md) — trial REST prices work while GraphQL prices may be empty, documented filters differ and printing codes can be null.
 - [RiftHunt identities](rifthunt-identity-contract.md) — join by printing UUID, preserve special collector tokens and validate supported finishes. Riftbound only, not Pokémon.
+- [Riftbound admin workflow](riftbound-admin-workflow.md) — separate Riftbound Panel for stock entry and exploring high-priced, out-of-stock cards.
 - [Browser testing](browser-testing.md) — use system Chromium on NixOS and an isolated database for destructive admin scenarios.

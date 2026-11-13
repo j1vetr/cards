@@ -212,6 +212,25 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect((await storage.getAdminCards({ gameId: "rift" })).total).toBe(1);
     expect((await get(`${base}/runs/${p.id}`)).body).toMatchObject({ importedCards: 1, importedSets: 1 });
   });
+  it("serves authenticated inventory filters and summaries reflecting saved stock and local rarity", async () => {
+    await activate();
+    const url = `${base}/catalog?stock=empty&sort=price_desc&minPrice=5732&maxPrice=5733&rarity=Showcase&limit=1`;
+    expect((await request(app).get(url)).status).toBe(401);
+    const response = await get(url);
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.summary).toMatchObject({ matchedPrintings: 1, matchedRows: 1, pricedRows: 1, emptyRows: 1, totalStock: 0, minPrice: 5732.68, maxPrice: 5732.68 });
+    expect(response.body.rarities).toEqual(["Showcase"]);
+    const row = response.body.rows[0];
+    expect((await post(base + "/stock", { printingId, finish: "foil", stock: 3, expectedStock: 0, expectedUpdatedAt: row.updatedAt })).status).toBe(200);
+    expect((await get(url)).body.summary).toMatchObject({ matchedRows: 0, maxPrice: null, minPrice: null });
+    const stock = (await get(`${base}/catalog?stock=stocked&sort=stock_desc`)).body;
+    expect(stock.summary).toMatchObject({ stockedRows: 1, emptyRows: 0, totalStock: 3 });
+    expect((await request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner).send({ rarity: "Legendary" })).status).toBe(200);
+    expect((await get(`${base}/catalog?rarity=Legendary`)).body.total).toBe(1);
+    expect((await get(`${base}/catalog?rarity=Showcase`)).body.total).toBe(0);
+    expect((await get(`${base}/catalog?minPrice=100&maxPrice=1`)).status).toBe(400);
+    expect((await get(`${base}/catalog?sort=invalid`)).status).toBe(400);
+  });
   it("imports at zero stock, lists by stock only, reprices without changing stock and rejects stale writes", async () => {
     const p = await activate();
     let cat = (await get(base + "/catalog")).body;
