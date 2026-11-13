@@ -4,6 +4,7 @@ import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
 import cron from "node-cron";
 import { db } from "../db";
+import { cache } from "../cache";
 import type { RiftAdminRow, RiftCatalog, RiftDetails, RiftHistory, RiftPrinting, RiftRun, RiftStatus } from "@shared/rifthunt";
 import { fetchRifthuntJson, priceFor, type RiftSnapshot } from "./rifthuntData";
 import { getRiftConfig, getRiftRun, initRifthuntStore, putRiftState, riftCounts, riftState } from "./rifthuntStore";
@@ -13,6 +14,34 @@ import { createRiftBackup, getRiftBackup, resetRiftbound } from "./rifthuntBacku
 const owner = (req: Request) => (req as Request & { adminId: string }).adminId;
 const uuid = z.string().uuid();
 const options = z.object({ multiplier: z.number().finite().positive().max(100), autoDaily: z.boolean() }).strict();
+const metadataInput = z.object({
+  name: z.string().trim().min(1).max(300).optional(),
+  setId: z.string().min(1).optional(),
+  cardNumber: z.string().max(80).nullable().optional(),
+  rarity: z.string().trim().max(100).nullable().optional(),
+  cardTypes: z.array(z.string().max(100)).max(30).optional(),
+  hp: z.number().int().nonnegative().max(100000).nullable().optional(),
+  artist: z.string().max(300).nullable().optional(),
+  imageUrl: z.string().max(2000).nullable().optional(),
+  imageUrlHiRes: z.string().max(2000).nullable().optional(),
+  description: z.string().max(30000).nullable().optional(),
+  seoTitle: z.string().max(500).nullable().optional(),
+  seoDescription: z.string().max(2000).nullable().optional(),
+  isActive: z.boolean().optional(), isFeatured: z.boolean().optional(), isNew: z.boolean().optional(),
+  isManuallyEdited: z.literal(false).optional(),
+}).strict();
+const metadataColumns: Record<string, string> = {
+  name: "name", cardNumber: "card_number", rarity: "rarity", cardTypes: "card_types", hp: "hp",
+  artist: "artist", imageUrl: "image_url", imageUrlHiRes: "image_url_hi_res", description: "description",
+  seoTitle: "seo_title", seoDescription: "seo_description", isActive: "is_active", isFeatured: "is_featured", isNew: "is_new",
+};
+function localPrinting(printing: RiftPrinting, row: any): RiftPrinting {
+  if (!row?.is_manually_edited) return printing;
+  return {
+    ...printing, name: row.name ?? printing.name, rarity: row.rarity ?? "",
+    artist: row.artist ?? null, text: row.description ?? null, image: row.image_url ?? null,
+  };
+}
 function errorMessage(e: unknown) {
   return e instanceof Error && !("code" in e) && !e.cause && !(e instanceof z.ZodError) ? e.message.slice(0, 300) : "İşlem tamamlanamadı. Verileri yenileyip tekrar deneyin.";
 }
@@ -44,7 +73,8 @@ export async function riftCatalog(admin: string, query: Record<string, unknown>)
     if (!preview) throw new Error("Önizleme bulunamadı.");
     if (payload) snapshot = payload.snapshot;
   }
-  const records = await db.execute(sql`SELECT p.printing_id,p.card_id,c.slug,l.id AS listing_id,l.stock,l.price,l.updated_at,l.finish
+  const records = await db.execute(sql`SELECT p.printing_id,p.card_id,c.slug,c.name,c.rarity,c.artist,c.description,c.image_url,c.is_manually_edited,
+    l.id AS listing_id,l.stock,l.price,l.updated_at,l.finish
     FROM rifthunt_printings p LEFT JOIN cards c ON c.id=p.card_id
     LEFT JOIN card_listings l ON l.card_id=c.id AND l.condition='NM'`);
   const rate = preview?.rate ?? await riftState<RiftRun["rate"]>("rate", null);
@@ -59,7 +89,7 @@ export async function riftCatalog(admin: string, query: Record<string, unknown>)
         ? priceFor(printing, finish, rate.usdTry, multiplier)
         : { salePrice: null, reason: "TCMB kuru için fiyat önizlemesi oluşturun." };
       rows.push({
-        printing, finish, cardId: (listing?.card_id || found[0]?.card_id || null) as string | null,
+        printing: localPrinting(printing, found[0]), finish, cardId: (listing?.card_id || found[0]?.card_id || null) as string | null,
         slug: (listing?.slug || found[0]?.slug || null) as string | null,
         listingId: listing?.listing_id as string || null, stock: Number(listing?.stock || 0),
         updatedAt: listing?.updated_at ? new Date(listing.updated_at as string).toISOString() : null,
@@ -157,6 +187,30 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
     if (req.query.game === "pokemon") return next();
     res.status(409).json({ error: "Riftbound silme işlemi yalnızca RiftHunt temiz kurulum ekranından yapılabilir." });
   });
+  app.put("/api/admin/cards/:cardId", requireAdmin, async (req, res, next) => {
+    try {
+      const existing = await db.execute(sql`SELECT api_source,set_id FROM cards WHERE id=${req.params.cardId}`);
+      const card = existing.rows[0];
+      if (card?.api_source !== "rifthunt") return next();
+      const parsed = metadataInput.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: "Kart bilgileri geçersiz. Fiyat ve stok için RiftHunt panelini kullanın." });
+      const input = parsed.data;
+      if (input.setId && input.setId !== card.set_id) return res.status(409).json({ error: "RiftHunt baskısının kaynak seti değiştirilemez." });
+      for (const image of [input.imageUrl, input.imageUrlHiRes]) {
+        if (image && !/^https:\/\//i.test(image) && !/^\/(?!\/)/.test(image)) return res.status(400).json({ error: "Görsel adresi HTTPS veya site içi bir yol olmalı." });
+      }
+      const assignments = Object.entries(input).filter(([key]) => key in metadataColumns).map(([key, value]) =>
+        key === "cardTypes" ? sql`${sql.identifier(metadataColumns[key])}=${JSON.stringify(value)}::jsonb` : sql`${sql.identifier(metadataColumns[key])}=${value}`);
+      const metadataKeys = ["name", "cardNumber", "rarity", "cardTypes", "hp", "artist", "imageUrl", "imageUrlHiRes", "description"];
+      if (input.isManuallyEdited === false) assignments.push(sql`is_manually_edited=false,manually_edited_at=NULL`);
+      else if (metadataKeys.some(key => key in input)) assignments.push(sql`is_manually_edited=true,manually_edited_at=NOW()`);
+      if (!assignments.length) return res.status(400).json({ error: "Güncellenecek kart bilgisi yok." });
+      const updated = await db.execute(sql`UPDATE cards SET ${sql.join(assignments, sql`, `)},updated_at=NOW()
+        WHERE id=${req.params.cardId} AND api_source='rifthunt' RETURNING *`);
+      cache.clear();
+      res.json(updated.rows[0]);
+    } catch (e) { res.status(500).json({ error: errorMessage(e) }); }
+  });
   // Existing general inventory forms must not override automatic RiftHunt prices.
   app.use("/api/admin/cards/:cardId", requireAdmin, async (req, res, next) => {
     if (!["POST", "PATCH", "PUT", "DELETE"].includes(req.method)) return next();
@@ -177,10 +231,11 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
 }
 
 async function publicPrinting(cardId: string): Promise<RiftPrinting | null> {
-  const result = await db.execute(sql`SELECT p.data FROM rifthunt_printings p JOIN cards c ON c.id=p.card_id
+  const result = await db.execute(sql`SELECT p.data,c.name,c.rarity,c.artist,c.description,c.image_url,c.is_manually_edited FROM rifthunt_printings p JOIN cards c ON c.id=p.card_id
     JOIN card_sets s ON s.id=c.set_id JOIN card_games g ON g.id=s.game_id
     WHERE p.card_id=${cardId} AND c.is_active=true AND g.slug='riftbound'`);
-  return result.rows[0]?.data as RiftPrinting ?? null;
+  const row = result.rows[0];
+  return row ? localPrinting(row.data as RiftPrinting, row) : null;
 }
 async function registerRiftPublicRoutes(app: Express) {
   app.get("/api/rifthunt/cards/:cardId", async (req, res) => {

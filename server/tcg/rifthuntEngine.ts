@@ -11,7 +11,7 @@ export interface RiftPayload {
   snapshot: RiftSnapshot;
   baselineAppliedAt: string | null;
 }
-export async function createRiftPreview(owner: string, multiplier: number, autoDaily: boolean) {
+export async function createRiftPreview(owner: string, multiplier: number, autoDaily: boolean, scheduled = false) {
   const config = await getRiftConfig();
   const run: RiftRun = {
     id: randomUUID(), status: "running", multiplier, autoDaily, rate: null,
@@ -22,7 +22,7 @@ export async function createRiftPreview(owner: string, multiplier: number, autoD
     VALUES(${run.id},${owner},'running',${JSON.stringify(run)}::jsonb)`);
   const work = async () => {
     try {
-      const snapshot = await loadRiftSnapshot();
+      const snapshot = await loadRiftSnapshot(scheduled);
       run.rate = await getTcmbUsdRate();
       run.total = snapshot.printings.length;
       run.priced = snapshot.printings.filter(p => p.finishes.some(f => priceFor(p, f, run.rate!.usdTry, multiplier).salePrice)).length;
@@ -164,7 +164,7 @@ export async function runRiftDaily() {
   try {
     const config = await getRiftConfig();
     if (!config.enabled || !config.autoDaily) return;
-    const id = await createRiftPreview("rifthunt-scheduler", config.multiplier, true);
+    const id = await createRiftPreview("rifthunt-scheduler", config.multiplier, true, true);
     // Wait for the same persisted preview pipeline rather than a second pricing implementation.
     for (let n = 0; n < 150; n++) {
       await new Promise(resolve => setTimeout(resolve, 1000));

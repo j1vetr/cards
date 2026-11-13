@@ -2655,7 +2655,7 @@ export class DbStorage implements IStorage {
         c.id, c.name, c.slug, c.card_number, c.rarity, c.image_url,
         c.image_url_hi_res, c.card_types, c.hp, c.artist, c.description,
         c.seo_title, c.seo_description,
-        c.is_active, c.is_featured, c.is_new, c.is_manually_edited, c.created_at,
+        c.is_active, c.is_featured, c.is_new, c.is_manually_edited, c.created_at, c.api_source,
         cs.id AS set_id, cs.name AS set_name,
         cg.id AS game_id, cg.name AS game_name,
         COUNT(DISTINCT cl.id) FILTER (WHERE cl.is_active = true AND cl.stock > 0)::int AS active_listings,

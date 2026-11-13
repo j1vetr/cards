@@ -48,6 +48,8 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
       CREATE TABLE cards(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),set_id varchar REFERENCES card_sets(id) ON DELETE CASCADE,
         name text,slug text UNIQUE,card_number text,rarity text,card_types jsonb,artist text,image_url text,image_url_hi_res text,
         description text,api_id text,api_source text,is_active boolean DEFAULT true,is_manually_edited boolean DEFAULT false,
+        manually_edited_at timestamp,hp int,seo_title text,seo_description text,is_featured boolean DEFAULT false,
+        is_new boolean DEFAULT false,created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now(),UNIQUE(api_source,api_id));
       CREATE TABLE card_listings(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),card_id varchar REFERENCES cards(id) ON DELETE CASCADE,
         condition text,finish text,price numeric(10,2),stock int,is_active boolean,updated_at timestamp DEFAULT now());
@@ -259,4 +261,66 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     const record = (await client.query("SELECT price,stock FROM card_listings WHERE card_id=$1", [row.cardId])).rows[0];
     expect(record).toEqual({ price: "6080.00", stock: 2 });
   }, 15000);
+  it("refreshes yesterday's export on the daily run even just inside the 24-hour cache window", async () => {
+    await activate();
+    // At 04:20 the previous day's download can be a few seconds under 24 hours old.
+    const almostYesterday = new Date(Date.now() - 24 * 3600_000 + 5000).toISOString();
+    await client.query("UPDATE rifthunt_state SET data=jsonb_set(data,'{fetchedAt}',to_jsonb($1::text)) WHERE key='snapshot'", [almostYesterday]);
+    market = 80;
+    await runRiftDaily();
+    const listing = (await client.query("SELECT price FROM card_listings WHERE card_id IN (SELECT card_id FROM rifthunt_printings)")).rows[0];
+    expect(listing.price).toBe("6080.00");
+  }, 15000);
+  it("edits rarity and description without changing printing identity, price or stock, then protects edits from sync", async () => {
+    await activate();
+    const row = (await get(base + "/catalog")).body.rows[0];
+    expect((await post(base + "/stock", { printingId, finish: "foil", stock: 3, expectedStock: 0, expectedUpdatedAt: row.updatedAt })).status).toBe(200);
+    const edit = await request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner)
+      .send({ rarity: "Legendary", description: "Test açıklaması", setId: (await client.query("SELECT set_id FROM cards WHERE id=$1", [row.cardId])).rows[0].set_id });
+    expect(edit.status, JSON.stringify(edit.body)).toBe(200);
+    expect(edit.body).toMatchObject({ rarity: "Legendary", is_manually_edited: true });
+    const p = await preview();
+    expect((await post(`${base}/runs/${p.id}/apply`)).status).toBe(200);
+    const updated = (await get(base + "/catalog")).body.rows[0];
+    expect(updated).toMatchObject({ stock: 3, oldPrice: "5732.68", printing: { printingId, rarity: "Legendary", text: "Test açıklaması" } });
+    const details = await request(app).get(`/api/rifthunt/cards/${row.cardId}`);
+    expect(details.body.printing.rarity).toBe("Legendary");
+    expect((await request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner).send({ isManuallyEdited: false })).status).toBe(200);
+    const unlocked = await preview();
+    expect((await post(`${base}/runs/${unlocked.id}/apply`)).status).toBe(200);
+    expect((await client.query("SELECT rarity FROM cards WHERE id=$1", [row.cardId])).rows[0].rarity).toBe("Showcase");
+  });
+  it("rejects manual price or identity changes while allowing safe card switches", async () => {
+    await activate();
+    const row = (await get(base + "/catalog")).body.rows[0];
+    const edit = (body: unknown) => request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner).send(body);
+    expect((await edit({ rarity: "Legendary", stock: 999, price: "0.01" })).status).toBe(400);
+    expect((await edit({ setId: "poke-set" })).status).toBe(409);
+    expect((await edit({ hp: -1 })).status).toBe(400);
+    expect((await edit({ imageUrl: "javascript:alert(1)" })).status).toBe(400);
+    expect((await edit({ isActive: false, isFeatured: true })).status).toBe(200);
+    expect((await client.query("SELECT is_active,is_featured,is_manually_edited FROM cards WHERE id=$1", [row.cardId])).rows[0])
+      .toEqual({ is_active: false, is_featured: true, is_manually_edited: false });
+    expect((await client.query("SELECT stock,price FROM card_listings WHERE card_id=$1", [row.cardId])).rows[0]).toEqual({ stock: 0, price: "5732.68" });
+  });
+  it.skipIf(!process.env.RIFTHUNT_BROWSER_TEST)("browser imports a set, edits stock and rarity, reloads and preserves changes through repricing", async () => {
+    const { checkRifthuntBrowser } = await import("./helpers/rifthuntBrowser");
+    let count = 1;
+    if (process.env.RIFTHUNT_REAL_EXPORT) {
+      // Optional live-export replay. Raw exports stay ignored, not in application data or Git.
+      const exported = JSON.parse(await fs.readFile(process.env.RIFTHUNT_REAL_EXPORT, "utf8"));
+      const cards = exported.c.cards.filter((c: any) => c.set === "VEN");
+      const ids = new Set(cards.map((c: any) => c.printing_id));
+      const catalog = { ...exported.c, cards, sets: exported.c.sets.filter((s: any) => s.id === "VEN") };
+      const prices = { ...exported.p, prices: exported.p.prices.filter((p: any) => ids.has(p.printing_id)),
+        cardmarket: { ...exported.p.cardmarket, prices: exported.p.cardmarket.prices.filter((p: any) => ids.has(p.printing_id)) } };
+      const fixtureFetch = globalThis.fetch;
+      vi.stubGlobal("fetch", async (url: string, init: any) => url.endsWith("/bulk/cards")
+        ? new Response(JSON.stringify(catalog)) : url.endsWith("/bulk/prices")
+        ? new Response(JSON.stringify(prices)) : fixtureFetch(url, init));
+      count = cards.length;
+      console.log(`Replaying real Vendetta export: ${count} printings`);
+    }
+    await checkRifthuntBrowser(app, client, count);
+  }, 120000);
 });

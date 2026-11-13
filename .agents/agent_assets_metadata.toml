@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "5ovonepTWwMTYCZvE4_I9"
@@ -36,3 +35,17 @@ id = "gS-Q_LgzXf4NLQ-R9-iHM"
 uri = "file://attached_assets/generated_images/polen-hero-dark-3.png"
 type = "image"
 title = "polen hero dark calacatta vein"
+
+[[outputs]]
+id = "PcSYP7TGHfi_cyg-Ccmmo"
+uri = "file://generated-artifacts/rifthunt-browser/rarity-edit.png"
+type = "image"
+title = "RiftHunt admin testi: nadirlik düzenleme"
+description = "Ayrı test veritabanına aktarılan gerçek Vendetta verisiyle Kai’Sa SP1’in nadirliği düzenlendi ve yeniden fiyatlandırma sonrasında korundu."
+logical_id = "44d817aa-e75a-43cc-a571-1e61483606cb"
+content_hash = "sha256:4d5aa11931d3b608d770debb38cdb6e14ab2ebb2b72343ca83907345c2cd91d1"
+size = 125694
+mtime_ms = 1794579014404
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/44d817aa-e75a-43cc-a571-1e61483606cb/b680f554-6693-4b10-b970-59583b4b8f5e"
+storage_version_token = "1794579383247247"
+content_type = "image/png"

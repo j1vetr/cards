@@ -39,6 +39,7 @@ async function adminFetch(url: string, opts?: RequestInit) {
 }
 
 interface AdminCard {
+  api_source?: string | null;
   id: string; name: string; slug: string;
   card_number: string | null; rarity: string | null; image_url: string | null;
   image_url_hi_res: string | null; card_types: string[] | null; hp: number | null;
@@ -604,7 +605,7 @@ function EditCardModal({ card, games, allSets, onClose }: {
             <label className="block text-[11px] font-medium text-neutral-600 mb-1">Oyun</label>
             <select value={gameId} onChange={(e) => { setGameId(e.target.value); setSetId(''); }}
               className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-              data-testid="select-edit-game">
+              disabled={card.api_source === "rifthunt"} data-testid="select-edit-game">
               <option value="">Oyun seçin</option>
               {games.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
@@ -613,7 +614,7 @@ function EditCardModal({ card, games, allSets, onClose }: {
             <label className="block text-[11px] font-medium text-neutral-600 mb-1">Set</label>
             <select value={setId} onChange={(e) => setSetId(e.target.value)}
               className="w-full text-[13px] border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400"
-              data-testid="select-edit-set">
+              disabled={card.api_source === "rifthunt"} data-testid="select-edit-set">
               <option value="">Set seçin</option>
               {filteredSets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -802,15 +803,18 @@ function CardRow({ card, games, allSets }: { card: AdminCard; games: Game[]; all
             </button>
             <button type="button"
               onClick={() => { if (confirm(`"${card.name}" kartını ve tüm listinglerini silmek istediğinizden emin misiniz?`)) deleteMut.mutate(); }}
-              disabled={deleteMut.isPending}
+              disabled={deleteMut.isPending || card.api_source === "rifthunt"}
               className="p-1.5 rounded-md hover:bg-red-50 text-neutral-400 hover:text-red-500 disabled:opacity-50 transition-colors"
-              title="Kartı Sil" data-testid={`button-delete-card-${card.id}`}>
+              title={card.api_source === "rifthunt" ? "RiftHunt kartını satıştan kaldırmak için Aktif seçeneğini kapatın" : "Kartı Sil"} data-testid={`button-delete-card-${card.id}`}>
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </td>
       </tr>
-      {expanded && (
+      {expanded && card.api_source === "rifthunt" && (
+        <tr><td colSpan={8} className="bg-emerald-50 px-6 py-4 text-xs leading-5 text-emerald-900">Bu kartın fiyatı RiftHunt, TCMB kuru ve çarpanla otomatik hesaplanır. Stokları <a href="/toov-admin?tab=card-api-sync" className="font-semibold underline">RiftHunt panelinden</a> yönetin. Nadirlik ve açıklama gibi kart bilgilerini Düzenle ile değiştirebilirsiniz.</td></tr>
+      )}
+      {expanded && card.api_source !== "rifthunt" && (
         <tr>
           <td colSpan={8} className="px-4 pb-3">
             <CardListingsPanel cardId={card.id} onClose={() => setExpanded(false)} />

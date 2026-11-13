@@ -10,6 +10,7 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "test": "vitest run",
+    "test:rifthunt-ui": "RIFTHUNT_BROWSER_TEST=1 vitest run tests/rifthuntRoutes.test.ts -t browser",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
@@ -112,6 +113,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "playwright": "^1.65.0",
     "@replit/vite-plugin-cartographer": "^0.4.4",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.4",

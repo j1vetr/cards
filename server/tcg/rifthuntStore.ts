@@ -36,12 +36,16 @@ export async function putRiftState(key: string, data: unknown, executor: any = d
 }
 export const getRiftConfig = (executor: any = db) => riftState("config", defaultRiftConfig, executor);
 let loading: Promise<RiftSnapshot> | null = null;
-export async function loadRiftSnapshot(): Promise<RiftSnapshot> {
+export async function loadRiftSnapshot(scheduled = false): Promise<RiftSnapshot> {
   if (loading) return loading;
   loading = db.transaction(async tx => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(71842101)`);
     const cached = await riftState<RiftSnapshot | null>("snapshot", null, tx);
-    if (cached && Date.now() - Date.parse(cached.fetchedAt) < 24 * 3600_000) return cached;
+    const day = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(date);
+    const age = cached ? Date.now() - Date.parse(cached.fetchedAt) : Infinity;
+    // A daily run must not reuse yesterday's export just because the previous
+    // request finished milliseconds after 04:20. Manual previews retain the cache.
+    if (cached && age >= 0 && age < 24 * 3600_000 && (!scheduled || day(new Date(cached.fetchedAt)) === day(new Date()))) return cached;
     // One fetch per bulk endpoint per day, reused by previews and scheduled runs.
     const catalog = await fetchRifthuntJson("/bulk/cards");
     const prices = await fetchRifthuntJson("/bulk/prices");

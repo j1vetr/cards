@@ -26,3 +26,15 @@ Some unpriced token and rune identifiers omit the printed-total suffix, such as 
 **Why:** Live bulk evaluation found these alongside normal `ven-sp1-006` identities. Requiring the final total excludes the entire otherwise-valid catalog.
 
 **How to apply:** Preserve their complete token or rune collector code even without prices. Never fall back to numeric `num`.
+
+Allow admins to edit local card metadata, including rarity and description, without unlocking manual sale-price or printing-identity changes.
+
+**Why:** The user requested testing of stock and rarity editing in the new RiftHunt admin flow. A broad provider-protection rule also blocked ordinary metadata edits and made the existing admin unusable.
+
+**How to apply:** Protect pricing and canonical source set/printing identity separately from local metadata. Preserve manually edited metadata during refreshes, but continue automatic pricing and stock management against the original source printing.
+
+Scheduled daily source refreshes must account for the Istanbul calendar day, not just an exact 24-hour cache lifetime.
+
+**Why:** A download that finishes just after the scheduled minute is still a few seconds under 24 hours old at the next run. Reusing it can delay a daily source refresh by another whole day.
+
+**How to apply:** Let scheduled refreshes reject yesterday's cached export while manual previews continue reusing the normal cache. Keep the provider's daily bulk-download limits in mind when changing either path.
