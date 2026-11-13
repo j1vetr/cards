@@ -57,6 +57,13 @@ describe("RiftHunt printing and money contract", () => {
     expect(p.collector).toBe("sp1");
     expect(priceFor(p, "foil", 40, 1.9).salePrice).toBeNull();
   });
+  it("includes unpriced tokens and runes without a printed total suffix", () => {
+    const f = fixture(); f.prices.prices = [];
+    for (const id of ["rad-t01b", "sfd-t03", "rad-r06b"]) {
+      f.catalog.cards[0].riftboundId = id;
+      expect(normalizeRifthunt(f.catalog, f.prices).printings[0].collector).toBe(id.split("-")[1]);
+    }
+  });
   it("rejects wrong currencies and duplicate or orphan price identities", () => {
     const f = fixture();
     expect(() => normalizeRifthunt(f.catalog, { ...f.prices, currency: "TRY" })).toThrow();

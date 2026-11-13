@@ -73,7 +73,8 @@ export function normalizeRifthunt(catalog: unknown, prices: unknown): RiftSnapsh
     const cm = eur.get(card.printing_id);
     if (!sets.has(card.set.toLowerCase())) throw new Error("RiftHunt kartının seti bulunamadı.");
     // Never use numeric num: SP1 and 039a must remain complete identifiers.
-    const collector = price?.collector || card.riftboundId.match(/^[^-]+-(.+)-\d+$/)?.[1];
+    const collector = price?.collector || card.riftboundId.match(/^[^-]+-(.+)-\d+$/)?.[1]
+      || card.riftboundId.match(/^[^-]+-([a-zA-Z0-9]+)$/)?.[1];
     if (!collector) throw new Error("Tam kart numarası okunamadı.");
     const finishes = card.finishes ?? [];
     return {

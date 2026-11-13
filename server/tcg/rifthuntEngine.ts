@@ -93,9 +93,10 @@ export async function applyRiftPreview(id: string, owner: string) {
       ON CONFLICT(printing_id) DO UPDATE SET card_id=EXCLUDED.card_id,data=EXCLUDED.data`);
     // Missing printings are retired, not deleted. Their stock and order links survive.
     await tx.execute(sql`UPDATE card_listings SET is_active=false,updated_at=NOW()
-      WHERE card_id IN (SELECT card_id FROM rifthunt_printings WHERE NOT (printing_id::text=ANY(${entries.map(p => p.printingId)}::text[])))`);
+      WHERE card_id IN (SELECT card_id FROM rifthunt_printings WHERE NOT EXISTS
+        (SELECT 1 FROM jsonb_array_elements_text(${JSON.stringify(entries.map(p => p.printingId))}::jsonb) ids WHERE ids=printing_id::text))`);
     await tx.execute(sql`UPDATE rifthunt_printings SET data=jsonb_set(data,'{finishes}','[]'::jsonb)
-      WHERE NOT (printing_id::text=ANY(${entries.map(p => p.printingId)}::text[]))`);
+      WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(${JSON.stringify(entries.map(p => p.printingId))}::jsonb) ids WHERE ids=printing_id::text)`);
     const saleRows = entries.flatMap(p => p.finishes.map(finish => ({
       cardId: p.cardId, finish, price: priceFor(p, finish, run.rate!.usdTry, run.multiplier).salePrice,
     })));

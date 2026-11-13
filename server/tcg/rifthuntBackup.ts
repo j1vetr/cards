@@ -108,13 +108,15 @@ export async function resetRiftbound(backupId: string, owner: string) {
   // Never touch shared images. Files are removed only after a successful DB commit.
   for (const file of images) {
     const publicUrl = "/" + file.relative.split("/public/")[1];
-    const used = await db.execute(sql`SELECT EXISTS(
-      SELECT 1 FROM cards WHERE image_url=${publicUrl} OR image_url_hi_res=${publicUrl}
-      UNION ALL SELECT 1 FROM card_sets WHERE logo_url=${publicUrl} OR symbol_url=${publicUrl}
-      UNION ALL SELECT 1 FROM products WHERE images::text LIKE ${"%" + publicUrl + "%"}
-    ) AS used`);
-    if (used.rows[0]?.used) { warnings.push(`Paylaşılan görsel korundu: ${publicUrl}`); continue; }
-    try { await fs.unlink(file.relative); } catch { warnings.push(`Görsel silinemedi: ${publicUrl}`); }
+    try {
+      const used = await db.execute(sql`SELECT EXISTS(
+        SELECT 1 FROM cards WHERE image_url=${publicUrl} OR image_url_hi_res=${publicUrl}
+        UNION ALL SELECT 1 FROM card_sets WHERE logo_url=${publicUrl} OR symbol_url=${publicUrl}
+        UNION ALL SELECT 1 FROM products WHERE images::text LIKE ${"%" + publicUrl + "%"}
+      ) AS used`);
+      if (used.rows[0]?.used) { warnings.push(`Paylaşılan görsel korundu: ${publicUrl}`); continue; }
+      await fs.unlink(file.relative);
+    } catch { warnings.push(`Görsel korundu, elle kontrol edilmeli: ${publicUrl}`); }
   }
   cache.clear();
   return { success: true, warnings };

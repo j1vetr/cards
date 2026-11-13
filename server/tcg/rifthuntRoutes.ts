@@ -6,7 +6,7 @@ import cron from "node-cron";
 import { db } from "../db";
 import type { RiftAdminRow, RiftCatalog, RiftDetails, RiftHistory, RiftPrinting, RiftRun, RiftStatus } from "@shared/rifthunt";
 import { fetchRifthuntJson, priceFor, type RiftSnapshot } from "./rifthuntData";
-import { defaultRiftConfig, getRiftConfig, getRiftRun, initRifthuntStore, putRiftState, riftCounts, riftState } from "./rifthuntStore";
+import { getRiftConfig, getRiftRun, initRifthuntStore, putRiftState, riftCounts, riftState } from "./rifthuntStore";
 import { applyRiftPreview, createRiftPreview, riftStock, runRiftDaily, type RiftPayload } from "./rifthuntEngine";
 import { createRiftBackup, getRiftBackup, resetRiftbound } from "./rifthuntBackup";
 
@@ -14,7 +14,7 @@ const owner = (req: Request) => (req as Request & { adminId: string }).adminId;
 const uuid = z.string().uuid();
 const options = z.object({ multiplier: z.number().finite().positive().max(100), autoDaily: z.boolean() }).strict();
 function errorMessage(e: unknown) {
-  return e instanceof Error && !("code" in e) && !(e instanceof z.ZodError) ? e.message : "İşlem tamamlanamadı. Verileri yenileyip tekrar deneyin.";
+  return e instanceof Error && !("code" in e) && !e.cause && !(e instanceof z.ZodError) ? e.message.slice(0, 300) : "İşlem tamamlanamadı. Verileri yenileyip tekrar deneyin.";
 }
 async function status(admin: string): Promise<RiftStatus> {
   const config = await getRiftConfig();
@@ -109,7 +109,10 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
   app.post(`${root}/runs/:id/apply`, requireAdmin, async (req, res) => {
     if (!uuid.safeParse(req.params.id).success) return res.sendStatus(400);
     try { res.json(await applyRiftPreview(req.params.id, owner(req))); }
-    catch (e) { res.status(409).json({ error: errorMessage(e) }); }
+    catch (e: any) {
+      if (e.code || e.cause) console.error("[rifthunt] Apply database error", e.cause?.code ?? e.code, e.cause?.message ?? e.message);
+      res.status(409).json({ error: errorMessage(e) });
+    }
   });
   app.post(`${root}/stock`, requireAdmin, async (req, res) => {
     const input = z.object({
@@ -161,6 +164,13 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
       const cardId = req.params.cardId;
       const record = await db.execute(sql`SELECT api_source FROM cards WHERE id=${cardId}`);
       if (record.rows[0]?.api_source === "rifthunt") return res.status(409).json({ error: "RiftHunt kartlarında stok ve fiyat yönetimi için RiftHunt panelini kullanın." });
+      next();
+    } catch (e) { res.status(500).json({ error: errorMessage(e) }); }
+  });
+  app.delete("/api/admin/card-sets/:setId", requireAdmin, async (req, res, next) => {
+    try {
+      const record = await db.execute(sql`SELECT api_source FROM card_sets WHERE id=${req.params.setId}`);
+      if (record.rows[0]?.api_source === "rifthunt") return res.status(409).json({ error: "RiftHunt setleri toplu aktarım tarafından yönetiliyor. Stokları RiftHunt panelinden düzenleyin." });
       next();
     } catch (e) { res.status(500).json({ error: errorMessage(e) }); }
   });
@@ -230,5 +240,11 @@ async function registerRiftPublicRoutes(app: Express) {
 export function startRifthuntScheduler() {
   if (process.env.NODE_ENV === "test") return;
   cron.schedule("20 4 * * *", () => { void runRiftDaily(); }, { timezone: "Europe/Istanbul" });
+  // Catch up after a server outage. Disabled configurations never start importing.
+  void getRiftConfig().then(config => {
+    if (config.enabled && config.autoDaily && (!config.lastAppliedAt || Date.now() - Date.parse(config.lastAppliedAt) >= 24 * 3600_000)) {
+      void runRiftDaily();
+    }
+  }).catch(() => console.error("[rifthunt] Could not check missed daily update"));
   console.log("[rifthunt] Daily pricing scheduled at 04:20 Europe/Istanbul");
 }
