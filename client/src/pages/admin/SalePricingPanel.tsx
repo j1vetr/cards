@@ -19,9 +19,9 @@ import { Card, PrimaryButton } from "./_ui/AdminUI";
 const LATEST_KEY = ["/api/admin/tcg/sale-prices/latest"];
 const runKey = (id: string) => ["/api/admin/tcg/sale-prices", id];
 const gameLabels: Record<SalePriceGame, string> = {
-  all: "Pokémon ve Riftbound",
+  all: "Pokémon",
   pokemon: "Pokémon",
-  riftbound: "Riftbound",
+  riftbound: "Pokémon",
 };
 
 async function readError(response: Response, fallback: string) {
@@ -110,7 +110,7 @@ function PriceRow({ row }: { row: SalePriceRow }) {
 export default function SalePricingPanel() {
   const queryClient = useQueryClient();
   const [multiplierText, setMultiplierText] = useState("1.9");
-  const [game, setGame] = useState<SalePriceGame>("all");
+  const game: SalePriceGame = "pokemon";
   const [runId, setRunId] = useState<string | null>(null);
   const [ignoreRecoveredRun, setIgnoreRecoveredRun] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -133,10 +133,9 @@ export default function SalePricingPanel() {
   });
 
   useEffect(() => {
-    if (!runId && !ignoreRecoveredRun && !startedLocally.current && latestQuery.data?.id) {
+    if (!runId && !ignoreRecoveredRun && !startedLocally.current && latestQuery.data?.id && latestQuery.data.game === "pokemon") {
       setRunId(latestQuery.data.id);
       setMultiplierText(String(latestQuery.data.multiplier));
-      setGame(latestQuery.data.game ?? "all");
     }
   }, [latestQuery.data, runId, ignoreRecoveredRun]);
 
@@ -200,7 +199,7 @@ export default function SalePricingPanel() {
     },
   });
 
-  const run = runQuery.data ?? (!runId && !ignoreRecoveredRun ? latestQuery.data ?? undefined : undefined);
+  const run = runQuery.data ?? (!runId && !ignoreRecoveredRun && latestQuery.data?.game === "pokemon" ? latestQuery.data : undefined);
   const multiplier = Number(multiplierText);
   const validMultiplier = Number.isFinite(multiplier) && multiplier > 0 && multiplier <= 100;
   const multiplierMatches = !!run && validMultiplier && run.multiplier === multiplier;
@@ -210,15 +209,6 @@ export default function SalePricingPanel() {
   const skipped = run?.rows.filter((row) => row.reason || row.newPrice === null) ?? [];
   const busy = previewMutation.isPending || applyMutation.isPending || run?.status === "running";
   const canApply = !!run && run.status === "ready" && !expired && multiplierMatches && gameMatches && eligible.length > 0 && !busy && !applyMutation.isSuccess;
-
-  function handleGameChange(value: SalePriceGame) {
-    setGame(value);
-    setIgnoreRecoveredRun(true);
-    if (run && value !== (run.game ?? "all")) {
-      setRunId(null);
-      if (runId) queryClient.removeQueries({ queryKey: runKey(runId), exact: true });
-    }
-  }
 
   function handleMultiplierChange(value: string) {
     setMultiplierText(value);
@@ -277,22 +267,8 @@ export default function SalePricingPanel() {
 
       <div className="space-y-4 p-5">
         <div className="grid gap-3 sm:grid-cols-2 sm:items-end">
-          <div>
-            <label htmlFor="sale-price-game" className="mb-1.5 block text-[11px] font-medium text-neutral-600">
-              Kategori seç
-            </label>
-            <select
-              id="sale-price-game"
-              data-testid="select-sale-price-game"
-              value={game}
-              disabled={busy}
-              onChange={(event) => handleGameChange(event.target.value as SalePriceGame)}
-              className="h-9 w-full rounded-md border border-neutral-200 bg-white px-3 text-[13px] text-neutral-900 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-neutral-50"
-            >
-              <option value="all">Pokémon ve Riftbound (ikisi birden)</option>
-              <option value="pokemon">Pokémon</option>
-              <option value="riftbound">Riftbound</option>
-            </select>
+          <div className="flex h-9 items-center rounded-md border border-neutral-200 bg-neutral-50 px-3 text-[12px] font-medium text-neutral-700">
+            Yalnızca Pokémon TCG ilanları
           </div>
           <div>
             <label htmlFor="sale-price-multiplier" className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-neutral-600">

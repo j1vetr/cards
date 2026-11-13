@@ -9,6 +9,7 @@ import { useCardDetail, useSimilarCards } from '@/hooks/useTcg';
 import { useCart } from '@/hooks/useCart';
 import { useCartModal } from '@/hooks/useCartModal';
 import { useToast } from '@/hooks/use-toast';
+import RifthuntDetails from '@/components/RifthuntDetails';
 import {
   ChevronRight, ChevronLeft, ShoppingCart, Minus, Plus, Loader2,
   Shield, Zap, Package, Pencil, Calendar, Hash, CheckCircle2, Sparkles,
@@ -1026,6 +1027,7 @@ export default function CardDetail() {
 
         {/* ── Set cards — full width, below both layouts ── */}
         <SetCardsRow cards={similar} setSlug={card.set_slug} />
+        {card.game_slug === 'riftbound' && card.id != null && <RifthuntDetails cardId={card.id} />}
 
       </main>
     </div>

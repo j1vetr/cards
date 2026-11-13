@@ -11,14 +11,13 @@ import {
   Info,
   Tag,
   Swords,
-  Trash2,
-  AlertTriangle,
   Clock,
   Image,
   Gauge,
 } from "lucide-react";
 import { PageHeader, Card, PrimaryButton, SecondaryButton, EmptyState } from "./_ui/AdminUI";
 import SalePricingPanel from "./SalePricingPanel";
+import RifthuntPanel from "./RifthuntPanel";
 
 interface CardGame {
   id: string;
@@ -62,11 +61,7 @@ interface TcgStats {
   totalListings: number;
 }
 
-const GAME_LABELS: Record<string, string> = {
-  pokemon_tcg: "Pokemon TCG",
-  riftbound: "Riftbound",
-  pricecharting: "PriceCharting",
-};
+const GAME_LABELS: Record<string, string> = { pokemon_tcg: "Pokémon TCG", pricecharting: "PriceCharting" };
 
 const MODE_LABELS: Record<string, string> = {
   full: "Tam Sync (Set + Kart + Resim)",
@@ -108,39 +103,19 @@ function duration(run: SyncRun): string {
 export default function CardApiSyncTab() {
   const qc = useQueryClient();
 
-  const [selectedGame, setSelectedGame] = useState<"pokemon_tcg" | "riftbound">("pokemon_tcg");
+  const selectedGame = "pokemon_tcg";
   const [selectedSetId, setSelectedSetId] = useState<string>("");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [backfillSetId, setBackfillSetId] = useState<string>("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Danger zone — delete all TCG data
-  const [deleteTarget, setDeleteTarget] = useState<"" | "pokemon" | "riftbound" | "all">("");
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [deleteResult, setDeleteResult] = useState<{ deletedCards: number; deletedSets: number; deletedListings: number } | null>(null);
-
-  const deleteMutation = useMutation({
-    mutationFn: async (game: string) => {
-      const url = game === "all" ? "/api/admin/tcg/data" : `/api/admin/tcg/data?game=${game}`;
-      const res = await fetch(url, { method: "DELETE", credentials: "include" });
-      if (!res.ok) throw new Error("Silme başarısız");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setDeleteResult(data);
-      setDeleteConfirmText("");
-      setDeleteTarget("");
-      qc.invalidateQueries({ queryKey: ["/api/admin/tcg/stats"] });
-    },
-  });
-
   const { data: games = [] } = useQuery<CardGame[]>({
     queryKey: ["/api/admin/tcg/games"],
     refetchInterval: false,
   });
 
-  const gameId = games.find((g) => g.slug === (selectedGame === "pokemon_tcg" ? "pokemon" : "riftbound"))?.id;
+  const gameId = games.find((g) => g.slug === "pokemon")?.id;
   const pokemonGameId = games.find((g) => g.slug === "pokemon")?.id;
 
   const { data: sets = [] } = useQuery<CardSet[]>({
@@ -272,6 +247,7 @@ export default function CardApiSyncTab() {
         description="Kart verilerini senkronize et. Satış fiyatlarını tek akışta piyasa USD fiyatı, otomatik TCMB kuru ve çarpan ile TL olarak hesapla."
       />
 
+      <RifthuntPanel />
       <SalePricingPanel />
 
       {/* Stats overview */}
@@ -311,25 +287,15 @@ export default function CardApiSyncTab() {
             <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
               Oyun
             </label>
-            <select
-              data-testid="select-tcg-game"
-              value={selectedGame}
-              onChange={(e) => {
-                setSelectedGame(e.target.value as any);
-                setSelectedSetId("");
-              }}
-              className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-              disabled={isRunning}
-            >
-              <option value="pokemon_tcg">Pokemon TCG</option>
-              <option value="riftbound">Riftbound</option>
-            </select>
+            <div className="flex h-[38px] w-full items-center rounded-md border border-neutral-200 bg-neutral-50 px-3 text-[13px] font-medium text-neutral-700">
+              Pokémon TCG
+            </div>
           </div>
 
           {/* Optional set filter */}
           <div>
             <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
-              Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel — boş = tüm setler)</span>
+              Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel, boş = tüm setler)</span>
             </label>
             <select
               data-testid="select-tcg-set"
@@ -338,7 +304,7 @@ export default function CardApiSyncTab() {
               className="w-full text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50"
               disabled={isRunning}
             >
-              <option value="">— Tüm setler —</option>
+              <option value="">Tüm setler</option>
               {sets.map((s) => (
                 <option key={s.id} value={s.apiId}>
                   {s.name} {s.totalCards ? `(${s.totalCards})` : ""}
@@ -353,7 +319,7 @@ export default function CardApiSyncTab() {
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-indigo-500" />
           <span>
             Seçili oyunun tüm setleri ve kartları API'den çekilir, kart resimleri sunucuya indirilip WebP'ye dönüştürülür.
-            {selectedSetId ? " Sadece seçili set işlenir." : " Tüm setler işlenir — büyük koleksiyonlarda uzun sürebilir."}
+              {selectedSetId ? " Sadece seçili set işlenir." : " Tüm setler işlenir, büyük koleksiyonlarda uzun sürebilir."}
           </span>
         </div>
 
@@ -422,7 +388,7 @@ export default function CardApiSyncTab() {
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
                 <span className="text-[13px] font-semibold text-blue-900">
-                  {GAME_LABELS[activeRun.game] ?? activeRun.game} — {MODE_LABELS[activeRun.mode] ?? activeRun.mode}
+                  {GAME_LABELS[activeRun.game] ?? activeRun.game} · {MODE_LABELS[activeRun.mode] ?? activeRun.mode}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-[12px] text-blue-600 font-medium">
@@ -528,7 +494,7 @@ export default function CardApiSyncTab() {
 
         <div className="mb-4">
           <label className="text-[11px] font-medium text-neutral-600 uppercase tracking-wide mb-1.5 block">
-            Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel — boş bırakılırsa tüm setler)</span>
+            Set Filtresi <span className="font-normal text-neutral-400">(opsiyonel, boş bırakılırsa tüm setler)</span>
           </label>
           <select
             data-testid="select-backfill-set"
@@ -537,7 +503,7 @@ export default function CardApiSyncTab() {
             className="w-full sm:w-64 text-[13px] border border-neutral-200 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50"
             disabled={isRunning || backfillMutation.isPending}
           >
-            <option value="">— Tüm Pokémon setleri —</option>
+            <option value="">Tüm Pokémon setleri</option>
             {pokemonSets.map((s) => (
               <option key={s.id} value={s.apiId}>
                 {s.name} {s.totalCards ? `(${s.totalCards})` : ""}
@@ -573,7 +539,6 @@ export default function CardApiSyncTab() {
           <PrimaryButton
             data-testid="button-backfill-attacks"
             onClick={() => {
-              setSelectedGame("pokemon_tcg");
               backfillMutation.mutate();
             }}
             disabled={isRunning || backfillMutation.isPending}
@@ -694,80 +659,6 @@ export default function CardApiSyncTab() {
         </span>
       </div>
 
-      {/* ── Danger Zone ───────────────────────────────────────────────────────── */}
-      <Card>
-        <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle className="w-4 h-4 text-red-500" />
-          <h3 className="font-semibold text-red-600 text-sm">Tehlike Bölgesi — Veri Silme</h3>
-        </div>
-        <p className="text-xs text-neutral-500 mb-4">
-          Seçili oyuna ait tüm kartlar, setler, listinglar ve fiyatlar <strong>kalıcı olarak silinir</strong>. Geri alınamaz.
-        </p>
-
-        {deleteResult && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
-            ✓ Silindi — {deleteResult.deletedCards} kart, {deleteResult.deletedSets} set, {deleteResult.deletedListings} listing kaldırıldı.
-          </div>
-        )}
-
-        {deleteMutation.isError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
-            Hata: {(deleteMutation.error as Error)?.message}
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          {[
-            { key: "riftbound", label: "Riftbound Verisini Sil" },
-            { key: "pokemon",   label: "Pokemon TCG Verisini Sil" },
-            { key: "all",       label: "Tüm TCG Verisini Sil" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => { setDeleteTarget(key as any); setDeleteConfirmText(""); setDeleteResult(null); }}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
-                deleteTarget === key
-                  ? key === "all" ? "bg-red-600 text-white border-red-600" : "bg-red-50 text-red-700 border-red-300"
-                  : "bg-white text-neutral-600 border-neutral-200 hover:border-red-300 hover:text-red-600"
-              }`}
-            >
-              <Trash2 className="w-3 h-3 inline mr-1" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {deleteTarget && (
-          <div className="border border-red-200 rounded-lg p-4 bg-red-50/50">
-            <p className="text-xs text-red-600 mb-2 font-medium">
-              Onaylamak için aşağıya <strong>SİL</strong> yazın:
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={deleteConfirmText}
-                onChange={e => setDeleteConfirmText(e.target.value)}
-                placeholder="SİL"
-                className="flex-1 text-sm px-3 py-1.5 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-              />
-              <button
-                disabled={deleteConfirmText !== "SİL" || deleteMutation.isPending}
-                onClick={() => deleteMutation.mutate(deleteTarget)}
-                className="text-sm px-4 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-1.5"
-              >
-                {deleteMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                Sil
-              </button>
-              <button
-                onClick={() => { setDeleteTarget(""); setDeleteConfirmText(""); }}
-                className="text-sm px-3 py-1.5 border border-neutral-200 rounded-lg hover:bg-neutral-50 text-neutral-600"
-              >
-                İptal
-              </button>
-            </div>
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

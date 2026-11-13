@@ -11,6 +11,7 @@ import fs from "fs";
 import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { registerSalePricingRoutes } from "./tcg/salePricingRoutes";
+import { registerRifthuntRoutes } from "./tcg/rifthuntRoutes";
 import { cache, CACHE_KEYS, CACHE_TTL } from "./cache";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
 import { insertAdminUserSchema, insertCategorySchema, insertProductSchema, insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertUserSchema, insertRedirectSchema, updateRedirectSchema, couponRedemptions, orders, orderItems as orderItemsTable, coupons, products, stockAdjustments, productCategories, cardListings, cards as cardsTable, cardSets, cardGames } from "@shared/schema";
@@ -144,6 +145,7 @@ async function expandCartLinesToOrderItems(
     // ── Card-listing path (TCG primary) ──────────────────────────────────────
     if (cartItem.cardListingId) {
       const listing = await storage.getCardListing(cartItem.cardListingId);
+      if (listing && "rifthuntBlocked" in listing) return { lines: [], subtotal: 0, error: "Sepetteki Riftbound kartının güncel fiyatı doğrulanamadı. Kartı sepetten çıkarıp tekrar deneyin." };
       if (!listing || !listing.isActive) continue;
       const card = await storage.getCard(listing.cardId);
       const itemPrice = parseFloat(listing.price as string);
@@ -796,6 +798,7 @@ ${items.join('\n')}
     return id;
   };
 
+  await registerRifthuntRoutes(app, requireAdmin);
   await registerSalePricingRoutes(app, requireAdmin);
 
   // Allowed upload types for security

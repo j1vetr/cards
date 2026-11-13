@@ -66,6 +66,9 @@ async function getGameId(slug: "pokemon" | "riftbound"): Promise<string> {
  * Otherwise creates a new run record.
  */
 export async function runTcgSync(opts: SyncOptions): Promise<SyncResult> {
+  if (opts.game === "riftbound") {
+    throw new Error("Riftbound aktarımı RiftHunt paneline taşındı.");
+  }
   if (!["full", "sets", "cards"].includes(opts.mode)) {
     throw new Error("Kart veri aktarım modu geçersiz. Fiyatlar yalnızca TCMB kurlu önizleme akışından güncellenebilir.");
   }

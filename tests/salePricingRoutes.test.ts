@@ -123,17 +123,22 @@ async function readyPreview(game?: string): Promise<SalePriceRun> {
 }
 
 describe("admin repricing endpoints", () => {
-  it.each(["pokemon", "riftbound", "all"])("limits the preview to category %s", async (game) => {
+  it.each(["pokemon", "all"])("keeps PriceCharting pricing Pokemon-only for selection %s", async (game) => {
     fake.inventory.push({
       ...fake.inventory[0], listingId: "rift-listing", cardId: "rift-card",
       gameName: "Riftbound", gameSlug: "riftbound", condition: "LP",
     });
     const run = await readyPreview(game);
     expect(run.game).toBe(game);
-    expect(run.total).toBe(game === "all" ? 2 : 1);
-    expect(run.rows.map((row) => row.listingId)).toEqual(
-      game === "all" ? ["listing-1", "rift-listing"] : game === "pokemon" ? ["listing-1"] : ["rift-listing"],
-    );
+    expect(run.total).toBe(1);
+    expect(run.rows.map((row) => row.listingId)).toEqual(["listing-1"]);
+  });
+
+  it("rejects legacy Riftbound price previews", async () => {
+    const response = await request(app).post("/api/admin/tcg/sale-prices/preview")
+      .set("x-test-admin", "owner").send({ game: "riftbound", multiplier: 1.9 });
+    expect(response.status).toBe(410);
+    expect(fake.runs.size).toBe(0);
   });
 
   it("defaults to both categories and rejects unknown selections", async () => {

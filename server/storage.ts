@@ -2223,6 +2223,13 @@ export class DbStorage implements IStorage {
 
   async getCardListing(id: string) {
     const [row] = await db.select().from(cardListings).where(eq(cardListings.id, id));
+    if (row) {
+      const [card] = await db.select({ source: cards.apiSource }).from(cards).where(eq(cards.id, row.cardId));
+      if (card?.source === "rifthunt") {
+        const { isRiftListingSellable } = await import("./tcg/rifthuntGuard");
+        if (!await isRiftListingSellable(row)) return { ...row, isActive: false, rifthuntBlocked: true };
+      }
+    }
     return row ?? null;
   }
 

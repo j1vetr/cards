@@ -40,7 +40,7 @@ async function generatePreview(run: SalePriceRun, apiKey: string) {
       .innerJoin(cardGames, eq(cardGames.id, cardSets.gameId))
       .where(and(gt(cardListings.stock, 0), eq(cardListings.isActive, true), eq(cards.isActive, true),
         eq(cardSets.isActive, true), eq(cardGames.isActive, true),
-        inArray(cardGames.slug, run.game && run.game !== "all" ? [run.game] : ["pokemon", "riftbound"])))
+        eq(cardGames.slug, "pokemon")))
       .orderBy(cards.name, cardListings.id);
     run.total = inventory.length;
     await saveRun(run);
@@ -144,6 +144,7 @@ export async function registerSalePricingRoutes(app: Express, requireAdmin: Requ
   });
 
   app.post(`${ENDPOINT}/preview`, requireAdmin, async (req, res) => {
+    if (req.body?.game === "riftbound") return res.status(410).json({ error: "Riftbound fiyatları RiftHunt panelinden yönetiliyor." });
     const parsed = optionsSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Geçerli bir kategori ve 0 ile 100 arasında pozitif bir çarpan seçin." });
     try {
@@ -205,6 +206,7 @@ export async function registerSalePricingRoutes(app: Express, requireAdmin: Requ
             WHERE cl.id = ${row.listingId} FOR UPDATE OF cl, c, cs, cg
           `);
           const value = current.rows[0];
+          if (value?.game_slug !== "pokemon") throw new Error("Bu eski önizleme Riftbound kartları içeriyor. Pokémon için yeni önizleme oluşturun.");
           if (!value || !value.active || Number(value.stock) <= 0
             || Number(value.price) !== Number(row.oldPrice)
             || new Date(value.updated_at as string).toISOString() !== row.listingUpdatedAt

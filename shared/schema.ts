@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, boolean, timestamp, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, uuid, integer, decimal, boolean, timestamp, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -326,6 +326,37 @@ export const cardListings = pgTable("card_listings", {
 export const insertCardListingSchema = createInsertSchema(cardListings).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCardListing = z.infer<typeof insertCardListingSchema>;
 export type CardListing = typeof cardListings.$inferSelect;
+
+// Additive RiftHunt catalog state. Created idempotently at application startup on the VPS.
+export const rifthuntState = pgTable("rifthunt_state", {
+  key: text("key").primaryKey(),
+  data: jsonb("data").notNull(),
+});
+export const rifthuntPrintings = pgTable("rifthunt_printings", {
+  printingId: uuid("printing_id").primaryKey(),
+  cardId: varchar("card_id").unique().references(() => cards.id, { onDelete: "set null" }),
+  data: jsonb("data").notNull(),
+});
+export const rifthuntRuns = pgTable("rifthunt_runs", {
+  id: uuid("id").primaryKey(),
+  ownerId: varchar("owner_id").notNull(),
+  status: text("status").notNull(),
+  data: jsonb("data").notNull(),
+  payload: jsonb("payload"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, t => ({
+  running: uniqueIndex("rifthunt_one_running").on(t.status).where(sql`${t.status}='running'`),
+}));
+export const rifthuntBackups = pgTable("rifthunt_backups", {
+  id: uuid("id").primaryKey(),
+  ownerId: varchar("owner_id").notNull(),
+  filename: text("filename").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  counts: jsonb("counts").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  downloadedAt: timestamp("downloaded_at", { withTimezone: true }),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+});
 
 // PriceCharting reference prices (market data, not our selling price)
 export const cardPrices = pgTable("card_prices", {

@@ -369,6 +369,8 @@ app.use((req, res, next) => {
   try {
     const { startScheduler } = await import("./scheduler");
     startScheduler();
+    const { startRifthuntScheduler } = await import("./tcg/rifthuntRoutes");
+    startRifthuntScheduler();
   } catch (err) {
     console.error("[index] failed to start marketplace scheduler:", err);
   }
