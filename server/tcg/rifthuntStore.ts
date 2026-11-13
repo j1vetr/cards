@@ -45,7 +45,7 @@ export async function loadRiftSnapshot(scheduled = false): Promise<RiftSnapshot>
     const age = cached ? Date.now() - Date.parse(cached.fetchedAt) : Infinity;
     // A daily run must not reuse yesterday's export just because the previous
     // request finished milliseconds after 04:20. Manual previews retain the cache.
-    if (cached && age >= 0 && age < 24 * 3600_000 && (!scheduled || day(new Date(cached.fetchedAt)) === day(new Date()))) return cached;
+    if (cached?.version === 2 && age >= 0 && age < 24 * 3600_000 && (!scheduled || day(new Date(cached.fetchedAt)) === day(new Date()))) return cached;
     // One fetch per bulk endpoint per day, reused by previews and scheduled runs.
     const catalog = await fetchRifthuntJson("/bulk/cards");
     const prices = await fetchRifthuntJson("/bulk/prices");

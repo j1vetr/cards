@@ -38,3 +38,9 @@ Scheduled daily source refreshes must account for the Istanbul calendar day, not
 **Why:** A download that finishes just after the scheduled minute is still a few seconds under 24 hours old at the next run. Reusing it can delay a daily source refresh by another whole day.
 
 **How to apply:** Let scheduled refreshes reject yesterday's cached export while manual previews continue reusing the normal cache. Keep the provider's daily bulk-download limits in mind when changing either path.
+
+Preserve the source rich rules field, not only plain text, when preparing card descriptions.
+
+**Why:** Actual RiftHunt plain text concatenates some choice lists without separators. The rich field retains their paragraphs and list items. Cost codes and keyword brackets also need semantic rendering instead of literal display.
+
+**How to apply:** Render allowlisted structure as React nodes with local symbols, never inject source HTML directly. Keep unknown identifiers readable. Treat `[>]` and `[>>]` as neutral effect separators, not instructions to activate twice. Use local edited descriptions instead of stale source rich text when the description differs, but retain source formatting after unrelated rarity or name edits.

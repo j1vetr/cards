@@ -49,3 +49,17 @@ mtime_ms = 1794579014404
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/44d817aa-e75a-43cc-a571-1e61483606cb/b680f554-6693-4b10-b970-59583b4b8f5e"
 storage_version_token = "1794579383247247"
 content_type = "image/png"
+
+[[outputs]]
+id = "uGurrTM3AEXztZdaMlCNs"
+uri = "file://generated-artifacts/rift-card-page/ogn-200-mobile.png"
+type = "image"
+title = "Riftbound kart sayfası: mobil test görünümü"
+description = "Twisted Fate’in gerçek kaynak metnindeki rün ikonları ve ayrı seçenekler. Ekrandaki fiyat ve stok değerleri yalnızca test verisidir."
+logical_id = "e2653758-524d-4344-8a7a-43b239fd490f"
+content_hash = "sha256:c6d25b53f3b55576de95ef1bca6babd0b1229d794bd2e84399e332c7e518f1f3"
+size = 401368
+mtime_ms = 1794580634145
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/e2653758-524d-4344-8a7a-43b239fd490f/a7c86831-c40f-49fe-b9f1-d3ea639a9773"
+storage_version_token = "1794580910423307"
+content_type = "image/png"

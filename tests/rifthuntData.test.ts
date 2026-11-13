@@ -31,6 +31,13 @@ export function fixture() {
   };
 }
 describe("RiftHunt printing and money contract", () => {
+  it("retains source rich formatting for lists without changing source plain text", () => {
+    const f = fixture();
+    const card = { ...f.catalog.cards[0], text: "Choose oneDeal 2.Stun.", rich: "<p>Choose one</p><ul><li>Deal 2.</li><li>Stun.</li></ul>" };
+    const p = normalizeRifthunt({ ...f.catalog, cards: [card] }, f.prices).printings[0];
+    expect(p.text).toBe(card.text);
+    expect(p.rich).toBe(card.rich);
+  });
   it("preserves SP1, printing UUID, foil-only identity and separate market currencies", () => {
     const f = fixture();
     const p = normalizeRifthunt(f.catalog, f.prices).printings[0];

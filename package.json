@@ -11,6 +11,7 @@
     "check": "tsc",
     "test": "vitest run",
     "test:rifthunt-ui": "RIFTHUNT_BROWSER_TEST=1 vitest run tests/rifthuntRoutes.test.ts -t browser",
+    "test:rift-card-ui": "RIFT_CARD_BROWSER_TEST=1 vitest run tests/riftCardPage.test.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {

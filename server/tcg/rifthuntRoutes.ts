@@ -39,7 +39,9 @@ function localPrinting(printing: RiftPrinting, row: any): RiftPrinting {
   if (!row?.is_manually_edited) return printing;
   return {
     ...printing, name: row.name ?? printing.name, rarity: row.rarity ?? "",
-    artist: row.artist ?? null, text: row.description ?? null, image: row.image_url ?? null,
+    artist: row.artist ?? null, text: row.description ?? null,
+    rich: row.description === printing.text ? printing.rich ?? null : null,
+    image: row.image_url ?? null,
   };
 }
 function errorMessage(e: unknown) {

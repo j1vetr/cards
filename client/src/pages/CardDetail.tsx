@@ -10,6 +10,7 @@ import { useCart } from '@/hooks/useCart';
 import { useCartModal } from '@/hooks/useCartModal';
 import { useToast } from '@/hooks/use-toast';
 import RifthuntDetails from '@/components/RifthuntDetails';
+import RiftRules from '@/components/riftbound/RiftRules';
 import {
   ChevronRight, ChevronLeft, ShoppingCart, Minus, Plus, Loader2,
   Shield, Zap, Package, Pencil, Calendar, Hash, CheckCircle2, Sparkles,
@@ -166,7 +167,7 @@ function parseCardTypes(raw: any): string[] {
 }
 
 /* ─── 3D HoloCard ────────────────────────────────────────────────────── */
-function HoloCard({ src, alt, accent }: { src: string; alt: string; accent?: string }) {
+function HoloCard({ src, alt, accent, fullWidth = false }: { src: string; alt: string; accent?: string; fullWidth?: boolean }) {
   const [imgSrc, setImgSrc] = useState(src);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -206,7 +207,7 @@ function HoloCard({ src, alt, accent }: { src: string; alt: string; accent?: str
 
   return (
     <div className="relative flex items-center justify-center select-none touch-none"
-      style={{ perspective: '1000px', padding: '24px 16px' }}
+      style={{ perspective: '1000px', padding: '24px 16px', width: fullWidth ? '100%' : undefined }}
       onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
       onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
     >
@@ -214,11 +215,11 @@ function HoloCard({ src, alt, accent }: { src: string; alt: string; accent?: str
         background: `radial-gradient(ellipse at 50% 65%, ${glowColor} 0%, transparent 70%)`,
         filter: 'blur(52px)', transform: 'scale(1.6)',
       }} />
-      <motion.div style={{ rotateX: springX, rotateY: springY, transformStyle: 'preserve-3d' }} className="relative z-10">
+      <motion.div style={{ rotateX: springX, rotateY: springY, transformStyle: 'preserve-3d', width: fullWidth ? 'min(100%, 400px)' : undefined }} className="relative z-10">
         <img src={imgSrc} alt={alt} width={400} height={558} onError={() => setImgSrc(FALLBACK)} draggable={false}
           className="h-auto"
           style={{
-            width: 'clamp(260px, 85%, 400px)',
+            width: fullWidth ? '100%' : 'clamp(260px, 85%, 400px)',
             borderRadius: '4.5% / 3.3%',
             filter: accent === 'amber'
               ? 'drop-shadow(0 20px 44px rgba(245,158,11,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.95))'
@@ -482,8 +483,8 @@ function PokemonInfoPanel({ card, cardTypes, attacks, abilities, purchaseBox, tr
 }
 
 /* ─── Riftbound Desktop Info Panel ───────────────────────────────────── */
-function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow, isFoilSelected }: {
-  card: any; cardTypes: string[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode; isFoilSelected?: boolean;
+function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow, isFoilSelected, printingRich }: {
+  card: any; cardTypes: string[]; purchaseBox: React.ReactNode; trustRow: React.ReactNode; isFoilSelected?: boolean; printingRich?: string | null;
 }) {
   return (
     <div className="space-y-5 pt-2">
@@ -539,9 +540,9 @@ function RiftboundInfoPanel({ card, cardTypes, purchaseBox, trustRow, isFoilSele
           <div className="px-4 py-2 border-b border-indigo-500/15">
             <span className="text-[9px] font-semibold text-indigo-400/70 uppercase tracking-widest">Kart Yeteneği</span>
           </div>
-          <p className="px-4 py-3 text-sm leading-relaxed text-zinc-200 italic">
-            {card.description}
-          </p>
+          <div className="px-4 py-3 text-sm leading-relaxed text-zinc-200">
+            <RiftRules text={card.description} rich={printingRich ?? null} />
+          </div>
         </div>
       )}
 
@@ -716,6 +717,18 @@ export default function CardDetail() {
 
   const { data: card, isLoading, isError } = useCardDetail(slug);
   const { data: similar = [] } = useSimilarCards(slug);
+  const riftId = card?.game_slug === 'riftbound' && card.id != null ? encodeURIComponent(String(card.id)) : null;
+  const { data: riftDetails } = useQuery<any | null>({
+    queryKey: ['/api/rifthunt/cards', riftId],
+    queryFn: async () => {
+      const response = await fetch(`/api/rifthunt/cards/${riftId}`, { credentials: 'include' });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`Kart bilgisi yüklenemedi (${response.status})`);
+      return response.json();
+    },
+    enabled: !!riftId,
+    staleTime: 5 * 60_000,
+  });
   const { addToCart } = useCart();
   const { showModal } = useCartModal();
   const { toast } = useToast();
@@ -778,7 +791,7 @@ export default function CardDetail() {
     <div className="min-h-screen" style={{ background: '#09090f' }}>
       <Header />
       <div className="max-w-md mx-auto px-6 py-40 text-center">
-        <p className="text-5xl mb-5">🃏</p>
+        <p className="text-xs font-mono tracking-[0.3em] text-indigo-300/70 mb-5">404</p>
         <h1 className="text-xl font-bold text-white mb-2">Kart bulunamadı</h1>
         <p className="text-zinc-500 text-sm mb-7">Bu kart mevcut değil veya kaldırılmış.</p>
         <Link href="/magaza">
@@ -878,7 +891,7 @@ export default function CardDetail() {
 
           {/* LEFT — card image column */}
           <div className="flex flex-col items-center">
-            <HoloCard src={imgSrc} alt={`${card.name} kart görseli — ${card.set_name}`} accent={glowAccent} />
+            <HoloCard src={imgSrc} alt={`${card.name} kart görseli — ${card.set_name}`} accent={glowAccent} fullWidth={!isPokemon} />
             {(card.set_logo_url || card.set_symbol_url) && (
               <div className="flex items-center gap-3 mt-1 opacity-40 hover:opacity-70 transition-opacity">
                 {card.set_logo_url && <img src={card.set_logo_url} alt={card.set_name} className="h-8 object-contain" />}
@@ -891,7 +904,7 @@ export default function CardDetail() {
           {isPokemon ? (
             <PokemonInfoPanel card={card} cardTypes={cardTypes} attacks={attacks} abilities={abilities} purchaseBox={purchaseBox} trustRow={trustRow} isFoilSelected={isFoilSelected} />
           ) : (
-            <RiftboundInfoPanel card={card} cardTypes={cardTypes} purchaseBox={purchaseBox} trustRow={trustRow} isFoilSelected={isFoilSelected} />
+            <RiftboundInfoPanel card={card} cardTypes={cardTypes} purchaseBox={purchaseBox} trustRow={trustRow} isFoilSelected={isFoilSelected} printingRich={riftDetails?.printing?.rich} />
           )}
         </div>
 
@@ -929,7 +942,7 @@ export default function CardDetail() {
           </div>
 
           {/* Mobile card image */}
-          <HoloCard src={imgSrc} alt={`${card.name} kart görseli — ${card.set_name}`} accent={glowAccent} />
+          <HoloCard src={imgSrc} alt={`${card.name} kart görseli — ${card.set_name}`} accent={glowAccent} fullWidth={!isPokemon} />
 
           {/* Mobile: Riftbound card type chips */}
           {!isPokemon && cardTypes.length > 0 && (
@@ -973,9 +986,9 @@ export default function CardDetail() {
               <div className="px-4 py-2 border-b border-indigo-500/15">
                 <span className="text-[9px] font-semibold text-indigo-400/70 uppercase tracking-widest">Kart Yeteneği</span>
               </div>
-              <p className="px-4 py-3 text-sm leading-relaxed text-zinc-200 italic">
-                {card.description}
-              </p>
+              <div className="px-4 py-3 text-sm leading-relaxed text-zinc-200">
+                <RiftRules text={card.description} rich={riftDetails?.printing?.rich ?? null} />
+              </div>
             </div>
           )}
 

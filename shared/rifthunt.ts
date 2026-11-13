@@ -22,6 +22,7 @@ export interface RiftPrinting {
   power: number | null;
   might: number | null;
   text: string | null;
+  rich?: string | null;
   flavour: string | null;
   artist: string | null;
   image: string | null;

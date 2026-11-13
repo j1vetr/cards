@@ -87,7 +87,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
         fetched: now, source: "riotgames.com", sets: [{ id: "VEN", name: "Vendetta", count: 1, released: "2026-07-31" }],
         cards: [{ printing_id: printingId, oracle_id: oracleId, riftboundId: "ven-sp1-006", name: "Kai'Sa, Survivor",
           set: "VEN", setName: "Vendetta", rarity: "Showcase", type: "Unit", domains: ["Fury"], energy: 4, power: null, might: 4,
-          text: "Draw 1.", flavour: null, artist: "Artist", imgUrl: "https://images.rifthunt.com/test.webp",
+          text: "Draw 1.", rich: "<p>Draw 1.</p>", flavour: null, artist: "Artist", imgUrl: "https://images.rifthunt.com/test.webp",
           alt: false, sig: false, over: false, finishes: ["foil"] }],
       } : url.endsWith("/bulk/prices") ? {
         source: "tcgplayer", currency: "USD", prices: [{ printing_id: printingId, collector: "sp1", slug: "kaisa-survivor", updatedAt: now,
@@ -274,6 +274,9 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
   it("edits rarity and description without changing printing identity, price or stock, then protects edits from sync", async () => {
     await activate();
     const row = (await get(base + "/catalog")).body.rows[0];
+    const rarityOnly = await request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner).send({ rarity: "Rare" });
+    expect(rarityOnly.status).toBe(200);
+    expect((await get(base + "/catalog")).body.rows[0].printing.rich).toBe("<p>Draw 1.</p>");
     expect((await post(base + "/stock", { printingId, finish: "foil", stock: 3, expectedStock: 0, expectedUpdatedAt: row.updatedAt })).status).toBe(200);
     const edit = await request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner)
       .send({ rarity: "Legendary", description: "Test açıklaması", setId: (await client.query("SELECT set_id FROM cards WHERE id=$1", [row.cardId])).rows[0].set_id });
@@ -283,6 +286,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect((await post(`${base}/runs/${p.id}/apply`)).status).toBe(200);
     const updated = (await get(base + "/catalog")).body.rows[0];
     expect(updated).toMatchObject({ stock: 3, oldPrice: "5732.68", printing: { printingId, rarity: "Legendary", text: "Test açıklaması" } });
+    expect(updated.printing.rich).toBeNull();
     const details = await request(app).get(`/api/rifthunt/cards/${row.cardId}`);
     expect(details.body.printing.rarity).toBe("Legendary");
     expect((await request(app).put(`/api/admin/cards/${row.cardId}`).set("x-test-admin", owner).send({ isManuallyEdited: false })).status).toBe(200);

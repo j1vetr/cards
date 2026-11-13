@@ -20,7 +20,7 @@ const cardSchema = z.object({
   set: z.string().min(1), setName: z.string().min(1), num: z.number().nullable().optional(),
   rarity: z.string(), type: z.string(), domains: z.array(z.string()),
   energy: z.number().nullable(), power: z.number().nullable(), might: z.number().nullable(),
-  text: z.string().nullable(), flavour: z.string().nullable().optional(),
+  text: z.string().nullable(), rich: z.string().nullable().optional(), flavour: z.string().nullable().optional(),
   artist: z.string().nullable(), imgUrl: z.string().nullable(),
   alt: z.boolean(), sig: z.boolean(), over: z.boolean(),
   finishes: z.array(finishSchema).nullable(),
@@ -28,6 +28,7 @@ const cardSchema = z.object({
   cardmarketUrl: z.string().nullable().optional(),
 });
 export interface RiftSnapshot {
+  version?: number;
   fetchedAt: string;
   sourceFetchedAt: string;
   sets: { code: string; name: string; count: number; released: string | null }[];
@@ -82,7 +83,7 @@ export function normalizeRifthunt(catalog: unknown, prices: unknown): RiftSnapsh
       collector, name: card.name, baseName: card.cleanName || card.name,
       set: card.set.toLowerCase(), setName: card.setName, rarity: card.rarity, type: card.type,
       domains: card.domains, energy: card.energy, power: card.power, might: card.might,
-      text: card.text, flavour: card.flavour ?? null, artist: card.artist, image: httpsUrl(card.imgUrl),
+      text: card.text, rich: card.rich ?? null, flavour: card.flavour ?? null, artist: card.artist, image: httpsUrl(card.imgUrl),
       alternate: card.alt, signature: card.sig, overnumbered: card.over, finishes,
       tags: card.tags ?? [],
       sourceUrl: `https://rifthunt.com/cards/${encodeURIComponent(card.set.toLowerCase())}/${encodeURIComponent(collector.toLowerCase())}/${encodeURIComponent(price?.slug || card.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}/`,
@@ -96,7 +97,7 @@ export function normalizeRifthunt(catalog: unknown, prices: unknown): RiftSnapsh
     };
   });
   return {
-    fetchedAt: new Date().toISOString(), sourceFetchedAt: c.fetched,
+    version: 2, fetchedAt: new Date().toISOString(), sourceFetchedAt: c.fetched,
     sets: c.sets.map(s => ({ code: s.id.toLowerCase(), name: s.name, count: s.count, released: s.released })),
     printings, tags: { tags: [], taggings: [] }, rulings: { cards: [] }, warnings: [],
   };

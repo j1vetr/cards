@@ -1,0 +1,729 @@
+{
+  "catalog": {
+    "fetched": "2026-11-06T21:03:32.635Z",
+    "source": "riotgames.com",
+    "sets": [
+      {
+        "id": "UNL",
+        "name": "Unleashed",
+        "count": 306,
+        "released": "2026-05-08"
+      },
+      {
+        "id": "VEN",
+        "name": "Vendetta",
+        "count": 243,
+        "released": "2026-07-31"
+      },
+      {
+        "id": "OGN",
+        "name": "Origins",
+        "count": 352,
+        "released": "2025-10-31"
+      },
+      {
+        "id": "RAD",
+        "name": "Radiance",
+        "count": 250,
+        "released": "2026-10-23"
+      }
+    ],
+    "cards": [
+      {
+        "id": "ogn-001-298",
+        "printing_id": "01afb7e3-0e97-42a2-9458-28a51a2626b4",
+        "oracle_id": "f2c16cd8-01a4-4357-b741-34db22446e15",
+        "oracleId": "f2c16cd8-01a4-4357-b741-34db22446e15",
+        "riftboundId": "ogn-001-298",
+        "name": "Blazing Scorcher",
+        "cleanName": "Blazing Scorcher",
+        "num": 1,
+        "energy": 5,
+        "might": 5,
+        "power": null,
+        "type": "Unit",
+        "supertype": null,
+        "rarity": "Common",
+        "domains": [
+          "Fury"
+        ],
+        "text": "[Accelerate] (You may pay :rb_energy_1::rb_rune_fury: as an additional cost to have me enter ready.)",
+        "rich": "<p>[Accelerate] (You may pay :rb_energy_1::rb_rune_fury: as an additional cost to have me enter ready.)</p>",
+        "flavour": null,
+        "set": "OGN",
+        "setName": "Origins",
+        "tags": [
+          "Dragon",
+          "Noxus"
+        ],
+        "artist": "Envar Studio",
+        "tcgId": "652771",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/15ed971e4029a92b362a81ccadf309fb81e40b81-744x1039.png?accountingTag=RB",
+        "img": "cards/ogn-001-298.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "normal",
+          "foil"
+        ],
+        "imgHash": "8de89b4b8fb3",
+        "cardmarketId": "845712",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Blazing-Scorcher"
+      },
+      {
+        "id": "ogn-003-298",
+        "printing_id": "8a329e0b-1f64-4aa3-8c14-9882802b20ae",
+        "oracle_id": "3260bb91-1809-477c-afe7-9abedeb8ff95",
+        "oracleId": "3260bb91-1809-477c-afe7-9abedeb8ff95",
+        "riftboundId": "ogn-003-298",
+        "name": "Chemtech Enforcer",
+        "cleanName": "Chemtech Enforcer",
+        "num": 3,
+        "energy": 2,
+        "might": 2,
+        "power": null,
+        "type": "Unit",
+        "supertype": null,
+        "rarity": "Common",
+        "domains": [
+          "Fury"
+        ],
+        "text": "[Assault 2] (+2 :rb_might: while I'm an attacker.)\nWhen you play me, discard 1.",
+        "rich": "<p>[Assault 2] (+2 :rb_might: while I'm an attacker.)<br />When you play me, discard 1.</p>",
+        "flavour": "\"Knock, knock.\"",
+        "set": "OGN",
+        "setName": "Origins",
+        "tags": [
+          "Zaun"
+        ],
+        "artist": "Six More Vodka",
+        "tcgId": "652773",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/19dcf211457d9c9c6e9ea0cd32af76c2c92a3160-744x1039.png?accountingTag=RB",
+        "img": "cards/ogn-003-298.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "normal",
+          "foil"
+        ],
+        "imgHash": "96054d06a9d5",
+        "cardmarketId": "845881",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Chemtech-Enforcer"
+      },
+      {
+        "id": "ogn-017-298",
+        "printing_id": "04dc2a63-4fb6-46b7-9f12-cf89dd456410",
+        "oracle_id": "9588d2c9-fceb-47b0-8dc6-50e20d284fea",
+        "oracleId": "9588d2c9-fceb-47b0-8dc6-50e20d284fea",
+        "riftboundId": "ogn-017-298",
+        "name": "Iron Ballista",
+        "cleanName": "Iron Ballista",
+        "num": 17,
+        "energy": 3,
+        "might": null,
+        "power": null,
+        "type": "Gear",
+        "supertype": null,
+        "rarity": "Uncommon",
+        "domains": [
+          "Fury"
+        ],
+        "text": "This enters exhausted.\n:rb_exhaust:: Deal 2 to a unit at a battlefield.",
+        "rich": "<p>This enters exhausted.<br />:rb_exhaust:: Deal 2 to a unit at a battlefield.</p>",
+        "flavour": "\"There's no way they can hit us at this dist-AUGH!\"",
+        "set": "OGN",
+        "setName": "Origins",
+        "tags": [],
+        "artist": "Kudos Productions",
+        "tcgId": "652788",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/9b5cfe757b6067994e17e284eba46433880a1461-744x1039.png?accountingTag=RB",
+        "img": "cards/ogn-017-298.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "normal",
+          "foil"
+        ],
+        "imgHash": "11dd3523df18",
+        "cardmarketId": "847131",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Iron-Ballista"
+      },
+      {
+        "id": "ogn-157-298",
+        "printing_id": "b81f643d-ab91-4487-9f7a-7c87a6cab299",
+        "oracle_id": "8cab4b26-f7ba-4422-9070-82c5475f3a06",
+        "oracleId": "8cab4b26-f7ba-4422-9070-82c5475f3a06",
+        "riftboundId": "ogn-157-298",
+        "name": "Udyr, Wildman",
+        "cleanName": "Udyr, Wildman",
+        "num": 157,
+        "energy": 6,
+        "might": 6,
+        "power": 1,
+        "type": "Unit",
+        "supertype": "Champion",
+        "rarity": "Rare",
+        "domains": [
+          "Body"
+        ],
+        "text": "Spend my buff: Choose one you've not chosen this turn —Deal 2 to a unit at a battlefield.Stun a unit at a battlefield.Ready me.Give me [Ganking] this turn.",
+        "rich": "<p>Spend my buff: Choose one you've not chosen this turn —</p><ul><li>Deal 2 to a unit at a battlefield.</li><li>Stun a unit at a battlefield.</li><li>Ready me.</li><li>Give me [Ganking] this turn.</li></ul>",
+        "flavour": null,
+        "set": "OGN",
+        "setName": "Origins",
+        "tags": [
+          "Udyr",
+          "Freljord"
+        ],
+        "artist": "Six More Vodka",
+        "tcgId": "652942",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/2e461e5d05b5ee86e47a425c42c6f3b3c12bc4cf-744x1039.png?accountingTag=RB",
+        "img": "cards/ogn-157-298.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "foil"
+        ],
+        "imgHash": "fe9425b6e9bf",
+        "cardmarketId": "847320",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Udyr-Wildman"
+      },
+      {
+        "id": "ogn-200-298",
+        "printing_id": "936d5cd3-d4f8-432b-a005-e91f826f0ebd",
+        "oracle_id": "71af7787-2aae-464b-a1a3-dda1c2018874",
+        "oracleId": "71af7787-2aae-464b-a1a3-dda1c2018874",
+        "riftboundId": "ogn-200-298",
+        "name": "Twisted Fate, Gambler",
+        "cleanName": "Twisted Fate, Gambler",
+        "num": 200,
+        "energy": 4,
+        "might": 4,
+        "power": null,
+        "type": "Unit",
+        "supertype": "Champion",
+        "rarity": "Rare",
+        "domains": [
+          "Chaos"
+        ],
+        "text": "When I attack, reveal the top rune of your rune deck, then recycle it. Do one of the following based on its domain::rb_rune_fury: — Deal 2 to an enemy unit here and 1 to all other enemy units here.:rb_rune_mind: — Draw 1.:rb_rune_order: — Stun an enemy unit.",
+        "rich": "<p>When I attack, reveal the top rune of your rune deck, then recycle it. Do one of the following based on its domain:</p><ul><li>:rb_rune_fury: — Deal 2 to an enemy unit here and 1 to all other enemy units here.</li><li>:rb_rune_mind: — Draw 1.</li><li>:rb_rune_order: — Stun an enemy unit.</li></ul>",
+        "flavour": null,
+        "set": "OGN",
+        "setName": "Origins",
+        "tags": [
+          "Twisted Fate",
+          "Bilgewater"
+        ],
+        "artist": "Six More Vodka",
+        "tcgId": "652991",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/9eff1a038528c4d633196f13259670d84b74c2a8-744x1039.png?accountingTag=RB",
+        "img": "cards/ogn-200-298.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "foil"
+        ],
+        "imgHash": "3721b2234e79",
+        "cardmarketId": "847369",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Twisted-Fate-Gambler"
+      },
+      {
+        "id": "rad-r01a",
+        "printing_id": "0f69b05d-21ff-4bf9-b38f-3942aa060635",
+        "oracle_id": "6c57a1de-bdfc-46de-aaa0-0e7cc121537a",
+        "oracleId": "6c57a1de-bdfc-46de-aaa0-0e7cc121537a",
+        "riftboundId": "rad-r01a",
+        "name": "Fury Rune (Alternate Art)",
+        "cleanName": "Fury Rune",
+        "num": 1,
+        "energy": null,
+        "might": null,
+        "power": null,
+        "type": "Rune",
+        "supertype": "Basic",
+        "rarity": "Showcase",
+        "domains": [
+          "Fury"
+        ],
+        "text": "[NO TEXT]",
+        "rich": "<p>[NO TEXT]</p>",
+        "flavour": null,
+        "set": "RAD",
+        "setName": "Radiance",
+        "tags": [],
+        "artist": "Yeon Art Studio",
+        "tcgId": "722877",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/55f5b003c67cd821895bc78a0a0c36322af53e11-744x1039.png?accountingTag=RB",
+        "img": "cards/rad-r01a.png",
+        "orientation": "portrait",
+        "alt": true,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "foil"
+        ],
+        "imgHash": "e9dc22612fba",
+        "cardmarketId": "917447",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Radiance/Fury-Rune-V2-Showcase"
+      },
+      {
+        "id": "unl-049-219",
+        "printing_id": "4a408795-a8bb-4e54-a0d1-c74c9e186cf1",
+        "oracle_id": "d666388b-bc9a-41dd-80db-6438ad0e4036",
+        "oracleId": "d666388b-bc9a-41dd-80db-6438ad0e4036",
+        "riftboundId": "unl-049-219",
+        "name": "Honeyfruit",
+        "cleanName": "Honeyfruit",
+        "num": 49,
+        "energy": 2,
+        "might": null,
+        "power": null,
+        "type": "Gear",
+        "supertype": null,
+        "rarity": "Rare",
+        "domains": [
+          "Calm"
+        ],
+        "text": "This enters exhausted.\n[Reaction][>] :rb_exhaust:: [Add] :rb_rune_rainbow:. (Abilities that add resources can't be reacted to.)\n[Level 6][>] [>>][Reaction][>] :rb_exhaust:: [Add] :rb_energy_1::rb_rune_rainbow:. (Use this ability only while you have 6+ XP.)",
+        "rich": "<p>This enters exhausted.<br />[Reaction][&gt;] :rb_exhaust:: [Add] :rb_rune_rainbow:. (Abilities that add resources can't be reacted to.)<br />[Level 6][&gt;] [&gt;&gt;][Reaction][&gt;] :rb_exhaust:: [Add] :rb_energy_1::rb_rune_rainbow:. (Use this ability only while you have 6+ XP.)</p>",
+        "flavour": null,
+        "set": "UNL",
+        "setName": "Unleashed",
+        "tags": [],
+        "artist": "黯荧岛Dark Glow",
+        "tcgId": "685658",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/4794052d16d88b12861b348a466673ace098c32e-744x1039.png?accountingTag=RB",
+        "img": "cards/unl-049-219.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "foil"
+        ],
+        "imgHash": "62e51af3e6f2",
+        "cardmarketId": "884011",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Unleashed/Honeyfruit"
+      },
+      {
+        "id": "ven-032-166",
+        "printing_id": "6223a47c-d82f-4ebe-88cf-9d0735ac50db",
+        "oracle_id": "6ecb7a30-aab5-438b-a550-472e9581ee81",
+        "oracleId": "6ecb7a30-aab5-438b-a550-472e9581ee81",
+        "riftboundId": "ven-032-166",
+        "name": "Frostcoat Mother",
+        "cleanName": "Frostcoat Mother",
+        "num": 32,
+        "energy": 3,
+        "might": 3,
+        "power": null,
+        "type": "Unit",
+        "supertype": null,
+        "rarity": "Uncommon",
+        "domains": [
+          "Calm"
+        ],
+        "text": "[Empower] :rb_energy_12:. This ability costs :rb_energy_1: less for each rune you control. (Pay the cost: Empower me. Use only if not Empowered.)\n[Empowered][>] I have +3 :rb_might:.",
+        "rich": "<p>[Empower] :rb_energy_12:. This ability costs :rb_energy_1: less for each rune you control. (Pay the cost: Empower me. Use only if not Empowered.)<br />[Empowered][&gt;] I have +3 :rb_might:.</p>",
+        "flavour": "Few step between a mother and her pack.\nNone do it twice.",
+        "set": "VEN",
+        "setName": "Vendetta",
+        "tags": [
+          "Dog",
+          "Freljord"
+        ],
+        "artist": "Caravan Studio",
+        "tcgId": "707640",
+        "imgUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/38e2b4f12346a1af420f875c0a5f922c56c4140f-744x1039.png?accountingTag=RB",
+        "img": "cards/ven-032-166.png",
+        "orientation": "portrait",
+        "alt": false,
+        "sig": false,
+        "over": false,
+        "finishes": [
+          "normal",
+          "foil"
+        ],
+        "imgHash": "a58cab75572d",
+        "cardmarketId": "897970",
+        "cardmarketUrl": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Vendetta/Frostcoat-Mother"
+      }
+    ]
+  },
+  "prices": {
+    "fetched": "2026-11-13T13:39:42.048Z",
+    "source": "tcgplayer",
+    "currency": "USD",
+    "prices": [
+      {
+        "printing_id": "01afb7e3-0e97-42a2-9458-28a51a2626b4",
+        "riftboundId": "ogn-001-298",
+        "collector": "001",
+        "slug": "blazing-scorcher",
+        "tcgId": "652771",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F652771",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.13,
+            "mid": 0.25,
+            "high": 99,
+            "market": 0.21,
+            "directLow": null
+          },
+          "normal": {
+            "low": 0.01,
+            "mid": 0.2,
+            "high": 15,
+            "market": 0.07,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "8a329e0b-1f64-4aa3-8c14-9882802b20ae",
+        "riftboundId": "ogn-003-298",
+        "collector": "003",
+        "slug": "chemtech-enforcer",
+        "tcgId": "652773",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F652773",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.01,
+            "mid": 0.25,
+            "high": 5,
+            "market": 0.14,
+            "directLow": null
+          },
+          "normal": {
+            "low": 0.01,
+            "mid": 0.19,
+            "high": 15,
+            "market": 0.04,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "04dc2a63-4fb6-46b7-9f12-cf89dd456410",
+        "riftboundId": "ogn-017-298",
+        "collector": "017",
+        "slug": "iron-ballista",
+        "tcgId": "652788",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F652788",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.2,
+            "mid": 0.45,
+            "high": 6,
+            "market": 0.42,
+            "directLow": null
+          },
+          "normal": {
+            "low": 0.01,
+            "mid": 0.24,
+            "high": 20.19,
+            "market": 0.14,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "b81f643d-ab91-4487-9f7a-7c87a6cab299",
+        "riftboundId": "ogn-157-298",
+        "collector": "157",
+        "slug": "udyr-wildman",
+        "tcgId": "652942",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F652942",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.09,
+            "mid": 0.27,
+            "high": 9,
+            "market": 0.2,
+            "directLow": null
+          },
+          "normal": {
+            "low": null,
+            "mid": null,
+            "high": null,
+            "market": null,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "936d5cd3-d4f8-432b-a005-e91f826f0ebd",
+        "riftboundId": "ogn-200-298",
+        "collector": "200",
+        "slug": "twisted-fate-gambler",
+        "tcgId": "652991",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F652991",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.09,
+            "mid": 0.33,
+            "high": 5,
+            "market": 0.25,
+            "directLow": null
+          },
+          "normal": {
+            "low": null,
+            "mid": null,
+            "high": null,
+            "market": null,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "0f69b05d-21ff-4bf9-b38f-3942aa060635",
+        "riftboundId": "rad-r01a",
+        "collector": "r01a",
+        "slug": "fury-rune-alternate-art",
+        "tcgId": "722877",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F722877",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 2.2,
+            "mid": 4.15,
+            "high": 50,
+            "market": 2.71,
+            "directLow": null
+          },
+          "normal": {
+            "low": null,
+            "mid": null,
+            "high": null,
+            "market": null,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "4a408795-a8bb-4e54-a0d1-c74c9e186cf1",
+        "riftboundId": "unl-049-219",
+        "collector": "049",
+        "slug": "honeyfruit",
+        "tcgId": "685658",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F685658",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.01,
+            "mid": 0.25,
+            "high": 9,
+            "market": 0.18,
+            "directLow": null
+          },
+          "normal": {
+            "low": null,
+            "mid": null,
+            "high": null,
+            "market": null,
+            "directLow": null
+          }
+        }
+      },
+      {
+        "printing_id": "6223a47c-d82f-4ebe-88cf-9d0735ac50db",
+        "riftboundId": "ven-032-166",
+        "collector": "032",
+        "slug": "frostcoat-mother",
+        "tcgId": "707640",
+        "purchaseUri": "https://tcgplayer.pxf.io/c/2226219/1830156/21018?subId1=rifthunt_api&partnerpropertyid=1989897&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F707640",
+        "updatedAt": "2026-11-12T17:00:42.053Z",
+        "finishes": {
+          "foil": {
+            "low": 0.07,
+            "mid": 0.25,
+            "high": 6,
+            "market": 0.2,
+            "directLow": null
+          },
+          "normal": {
+            "low": 0.01,
+            "mid": 0.15,
+            "high": 20,
+            "market": 0.05,
+            "directLow": null
+          }
+        }
+      }
+    ],
+    "cardmarket": {
+      "source": "cardmarket",
+      "currency": "EUR",
+      "prices": [
+        {
+          "printing_id": "01afb7e3-0e97-42a2-9458-28a51a2626b4",
+          "riftboundId": "ogn-001-298",
+          "collector": "001",
+          "slug": "blazing-scorcher",
+          "cardmarketId": "845712",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Blazing-Scorcher?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.17
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.06
+            }
+          }
+        },
+        {
+          "printing_id": "8a329e0b-1f64-4aa3-8c14-9882802b20ae",
+          "riftboundId": "ogn-003-298",
+          "collector": "003",
+          "slug": "chemtech-enforcer",
+          "cardmarketId": "845881",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Chemtech-Enforcer?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.11
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.05
+            }
+          }
+        },
+        {
+          "printing_id": "04dc2a63-4fb6-46b7-9f12-cf89dd456410",
+          "riftboundId": "ogn-017-298",
+          "collector": "017",
+          "slug": "iron-ballista",
+          "cardmarketId": "847131",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Iron-Ballista?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.3
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.11
+            }
+          }
+        },
+        {
+          "printing_id": "b81f643d-ab91-4487-9f7a-7c87a6cab299",
+          "riftboundId": "ogn-157-298",
+          "collector": "157",
+          "slug": "udyr-wildman",
+          "cardmarketId": "847320",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Udyr-Wildman?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.16
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.23
+            }
+          }
+        },
+        {
+          "printing_id": "936d5cd3-d4f8-432b-a005-e91f826f0ebd",
+          "riftboundId": "ogn-200-298",
+          "collector": "200",
+          "slug": "twisted-fate-gambler",
+          "cardmarketId": "847369",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Origins/Twisted-Fate-Gambler?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.15
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.22
+            }
+          }
+        },
+        {
+          "printing_id": "0f69b05d-21ff-4bf9-b38f-3942aa060635",
+          "riftboundId": "rad-r01a",
+          "collector": "r01a",
+          "slug": "fury-rune-alternate-art",
+          "cardmarketId": "917447",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Radiance/Fury-Rune-V2-Showcase?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 1.5,
+              "trend": 2.21
+            },
+            "normal": {
+              "low": null,
+              "trend": null
+            }
+          }
+        },
+        {
+          "printing_id": "4a408795-a8bb-4e54-a0d1-c74c9e186cf1",
+          "riftboundId": "unl-049-219",
+          "collector": "049",
+          "slug": "honeyfruit",
+          "cardmarketId": "884011",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Unleashed/Honeyfruit?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.16
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.1
+            }
+          }
+        },
+        {
+          "printing_id": "6223a47c-d82f-4ebe-88cf-9d0735ac50db",
+          "riftboundId": "ven-032-166",
+          "collector": "032",
+          "slug": "frostcoat-mother",
+          "cardmarketId": "897970",
+          "purchaseUri": "https://www.cardmarket.com/en/Riftbound/Products/Singles/Vendetta/Frostcoat-Mother?utm_source=rifthunt&utm_medium=rifthunt_api",
+          "updatedAt": "2026-11-12T17:00:42.750Z",
+          "finishes": {
+            "foil": {
+              "low": 0.02,
+              "trend": 0.12
+            },
+            "normal": {
+              "low": 0.02,
+              "trend": 0.09
+            }
+          }
+        }
+      ]
+    }
+  }
+}
