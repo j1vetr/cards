@@ -7,3 +7,4 @@
 - [Sale pricing policy](sale-pricing-rules.md) — market USD × automatic TCMB USD/TRY rate × 1.9, preview before applying and preserve stock.
 - [External VPS deployment](external-vps-deployment.md) — production runs outside Replit, so dependency lock URLs must remain portable.
 - [KartFiyat API contract](kartfiyat-api-contract.md) — trial REST prices work while GraphQL prices may be empty, documented filters differ and printing codes can be null.
+- [RiftHunt identities](rifthunt-identity-contract.md) — join by printing UUID, preserve special collector tokens and validate supported finishes. Riftbound only, not Pokémon.
