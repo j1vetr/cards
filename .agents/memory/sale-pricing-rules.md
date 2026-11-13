@@ -14,3 +14,9 @@ Keep exactly one admin price-fetching and sale-price update workflow. Do not rei
 **Why:** The user explicitly asked to remove the old/new pricing alternatives because they were confusing and to keep only the latest automatic-TCMB workflow.
 
 **How to apply:** Keep metadata import and ordinary manual inventory editing separate from automatic pricing. Removing obsolete pricing tools must not delete actual cards, listings, inventory or pricing history.
+
+Use a single upstream provider for both card catalog data and market prices when migrating providers.
+
+**Why:** The user asked to move away from separate card and price sources after observing incorrect prices and inconsistent card identities.
+
+**How to apply:** Verify both Pokémon and Riftbound coverage, full printing identifiers, currency and commercial usage rights before replacing the current providers. Preserve local listing identities and inventory during migration. A provider change cannot reconstruct previously overwritten stock.
