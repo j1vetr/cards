@@ -71,6 +71,8 @@ export interface RiftRun {
   priced: number;
   error?: string;
   appliedAt?: string;
+  importedCards?: number;
+  importedSets?: number;
 }
 export interface RiftStatus {
   config: RiftConfig;

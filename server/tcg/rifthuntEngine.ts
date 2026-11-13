@@ -49,7 +49,7 @@ export async function applyRiftPreview(id: string, owner: string) {
     const run = query.rows[0]?.data as RiftRun;
     const payload = query.rows[0]?.payload as RiftPayload;
     if (!run) throw new Error("Önizleme bulunamadı.");
-    if (run.status === "applied") return { success: true, updated: run.priced };
+    if (run.status === "applied") return { success: true, updated: run.priced, importedCards: run.importedCards, importedSets: run.importedSets };
     if (run.status !== "ready" || Date.parse(run.expiresAt) <= Date.now() || !run.rate || !payload) throw new Error("Önizleme hazır değil veya süresi doldu.");
     const config = await getRiftConfig(tx);
     if (!config.resetAt) throw new Error("Önce eski Riftbound kataloğunu temizleyin.");
@@ -91,6 +91,20 @@ export async function applyRiftPreview(id: string, owner: string) {
       SELECT (x->>'printingId')::uuid,x->>'cardId',x-'cardId'-'slug'
       FROM jsonb_array_elements(${JSON.stringify(entries)}::jsonb) x
       ON CONFLICT(printing_id) DO UPDATE SET card_id=EXCLUDED.card_id,data=EXCLUDED.data`);
+    // Reading a source snapshot is not an import. Verify local catalog records
+    // inside the same transaction before reporting success or changing prices.
+    const verified = await tx.execute(sql`SELECT
+      (SELECT COUNT(*)::int FROM rifthunt_printings p
+        JOIN cards c ON c.id=p.card_id JOIN card_sets s ON s.id=c.set_id
+        JOIN jsonb_array_elements_text(${JSON.stringify(entries.map(p => p.printingId))}::jsonb) wanted ON wanted.value=p.printing_id::text
+        WHERE s.game_id=${gameId} AND c.api_source='rifthunt') AS cards,
+      (SELECT COUNT(*)::int FROM card_sets s
+        JOIN jsonb_array_elements_text(${JSON.stringify(snapshot.sets.map(s => s.code))}::jsonb) wanted ON wanted.value=s.api_id
+        WHERE s.game_id=${gameId} AND s.api_source='rifthunt') AS sets`);
+    const imported = verified.rows[0] as { cards: number; sets: number };
+    if (imported.cards !== entries.length || imported.sets !== snapshot.sets.length) {
+      throw new Error("Kartlar ve setler site kataloğuna tam aktarılamadı. İşlem geri alındı. Yeni önizleme oluşturup tekrar deneyin.");
+    }
     // Missing printings are retired, not deleted. Their stock and order links survive.
     await tx.execute(sql`UPDATE card_listings SET is_active=false,updated_at=NOW()
       WHERE card_id IN (SELECT card_id FROM rifthunt_printings WHERE NOT EXISTS
@@ -115,8 +129,10 @@ export async function applyRiftPreview(id: string, owner: string) {
     await putRiftState("config", { ...config, enabled: true, multiplier: run.multiplier, autoDaily: run.autoDaily, lastAppliedAt: enabledAt, lastError: null }, tx);
     run.status = "applied";
     run.appliedAt = enabledAt;
+    run.importedCards = imported.cards;
+    run.importedSets = imported.sets;
     await tx.execute(sql`UPDATE rifthunt_runs SET status='applied',data=${JSON.stringify(run)}::jsonb,payload=NULL WHERE id=${id}`);
-    return { success: true, updated: run.priced };
+    return { success: true, updated: run.priced, importedCards: imported.cards, importedSets: imported.sets };
   });
   cache.clear();
   return result;

@@ -44,7 +44,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
       CREATE TABLE card_games(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),name text,slug text UNIQUE,is_active boolean DEFAULT true);
       CREATE TABLE card_sets(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),game_id varchar REFERENCES card_games(id),
         name text,slug text UNIQUE,release_date text,total_cards int,api_id text,api_source text,is_active boolean DEFAULT true,
-        logo_url text,symbol_url text,updated_at timestamp DEFAULT now());
+        logo_url text,symbol_url text,series text,seo_no_index boolean DEFAULT false,updated_at timestamp DEFAULT now());
       CREATE TABLE cards(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),set_id varchar REFERENCES card_sets(id) ON DELETE CASCADE,
         name text,slug text UNIQUE,card_number text,rarity text,card_types jsonb,artist text,image_url text,image_url_hi_res text,
         description text,api_id text,api_source text,is_active boolean DEFAULT true,is_manually_edited boolean DEFAULT false,
@@ -53,7 +53,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
         updated_at timestamp DEFAULT now(),UNIQUE(api_source,api_id));
       CREATE TABLE card_listings(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),card_id varchar REFERENCES cards(id) ON DELETE CASCADE,
         condition text,finish text,price numeric(10,2),stock int,is_active boolean,updated_at timestamp DEFAULT now());
-      CREATE TABLE card_prices(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),card_id varchar REFERENCES cards(id) ON DELETE CASCADE);
+      CREATE TABLE card_prices(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),card_id varchar REFERENCES cards(id) ON DELETE CASCADE,source text,price_market numeric);
       CREATE TABLE tcg_sync_runs(id varchar PRIMARY KEY DEFAULT gen_random_uuid(),game text);
       CREATE TABLE products(id varchar PRIMARY KEY,images jsonb);
       CREATE TABLE order_items(id varchar PRIMARY KEY,card_listing_id varchar REFERENCES card_listings(id) ON DELETE SET NULL,
@@ -187,6 +187,30 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect(cat.body.rows[0]).toMatchObject({ finish: "foil", stock: 0, salePrice: "5732.68", printing: { collector: "sp1" } });
     expect((await post(`${base}/runs/${p.id}/apply`)).status).toBe(409);
     expect((await client.query("SELECT stock FROM card_listings WHERE id='old-listing'")).rows[0].stock).toBe(5);
+  });
+  it("distinguishes source previews from imported admin and public catalogs, including zero-stock cards", async () => {
+    const { storage } = await import("../server/storage");
+    await reset();
+    const p = await preview();
+    expect((await get(`${base}/catalog?previewId=${p.id}`)).body.rows[0].cardId).toBeNull();
+    expect((await storage.getAdminCards({ gameId: "rift" })).total).toBe(0);
+    expect((await storage.getCardsPublic({ gameSlug: "riftbound" })).total).toBe(0);
+    expect(await storage.getCardSetsPublic("riftbound")).toHaveLength(0);
+    const applied = await post(`${base}/runs/${p.id}/apply`);
+    expect(applied.status, JSON.stringify(applied.body)).toBe(200);
+    expect(applied.body).toMatchObject({ importedCards: 1, importedSets: 1 });
+    const admin = await storage.getAdminCards({ gameId: "rift" });
+    const publicCards = await storage.getCardsPublic({ gameSlug: "riftbound" });
+    expect(admin.total).toBe(1);
+    expect(publicCards.total).toBe(1);
+    expect(publicCards.cards[0].id).toBe(admin.cards[0].id);
+    expect((await storage.getCardSetsPublic("riftbound"))[0]).toMatchObject({ name: "Vendetta", listed_cards: 0 });
+    expect((await storage.getCardsPublic({ gameSlug: "riftbound", inStock: true })).total).toBe(0);
+    expect((await storage.getAdminCards({ gameId: "poke" })).total).toBe(1);
+    const repeated = await post(`${base}/runs/${p.id}/apply`);
+    expect(repeated.body).toMatchObject({ importedCards: 1, importedSets: 1 });
+    expect((await storage.getAdminCards({ gameId: "rift" })).total).toBe(1);
+    expect((await get(`${base}/runs/${p.id}`)).body).toMatchObject({ importedCards: 1, importedSets: 1 });
   });
   it("imports at zero stock, lists by stock only, reprices without changing stock and rejects stale writes", async () => {
     const p = await activate();

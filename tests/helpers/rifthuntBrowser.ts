@@ -9,6 +9,12 @@ import { expect } from "vitest";
 /** Browser uses real UI + real handlers in the isolated test database, never live inventory. */
 export async function checkRifthuntBrowser(app: Express, client: Client, expectedCards = 1) {
   const { storage } = await import("../../server/storage");
+  app.get("/api/cards", async (req, res) => {
+    res.json(await storage.getCardsPublic({ gameSlug: String(req.query.game || "") || undefined, inStock: req.query.inStock === "true" }));
+  });
+  app.get("/api/card-sets", async (req, res) => {
+    res.json(await storage.getCardSetsPublic(String(req.query.game || "") || undefined));
+  });
   app.get("/api/admin/cards", async (req, res) => {
     try {
       res.json(await storage.getAdminCards({
@@ -36,7 +42,7 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
       const url = new URL(browserRequest.url());
       const pathname = url.pathname;
       if (pathname.startsWith("/api/admin/rifthunt/") || pathname === "/api/admin/cards" ||
-          pathname.startsWith("/api/admin/cards/") || ["/api/admin/card-games", "/api/admin/card-sets"].includes(pathname)) {
+          pathname.startsWith("/api/admin/cards/") || ["/api/admin/card-games", "/api/admin/card-sets", "/api/cards", "/api/card-sets"].includes(pathname)) {
         const method = browserRequest.method().toLowerCase() as "get" | "post" | "put";
         const pending = request(app)[method](url.pathname + url.search).set("x-test-admin", "test-admin");
         if (browserRequest.postData()) pending.send(JSON.parse(browserRequest.postData()!));
@@ -57,8 +63,12 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     await panel.getByRole("button", { name: "Eski Riftbound verilerini sil", exact: true }).click();
     await panel.getByRole("status").waitFor();
     await panel.getByRole("button", { name: "Fiyatları önizle", exact: true }).click();
-    const apply = panel.getByRole("button", { name: "Önizlemeyi onayla ve uygula", exact: true });
+    const apply = panel.getByTestId("button-rift-import");
+    await apply.waitFor();
+    await panel.getByTestId("rift-import-required").waitFor();
+    expect((await client.query("SELECT COUNT(*)::int AS count FROM cards WHERE api_source='rifthunt'")).rows[0].count).toBe(0);
     await apply.click();
+    await panel.getByTestId("rift-import-complete").waitFor();
     await panel.getByPlaceholder("Kart veya baskı ara").fill("ven-sp1-006");
     const stock = panel.getByRole("spinbutton", { name: "Kai'Sa, Survivor stok adedi", exact: true });
     await stock.fill("3");
@@ -97,6 +107,18 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/stock-panel.png", fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/mobile-panel.png", fullPage: true });
+    await page.goto(origin + "/riftbound");
+    const categoryLink = page.locator('a[href^="/kart/riftbound-ven-"]').first();
+    await categoryLink.waitFor();
+    await categoryLink.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: "generated-artifacts/rifthunt-browser/imported-category.png" });
+    const catalogResult = await page.evaluate(async () => {
+      const cards = await (await fetch("/api/cards?game=riftbound")).json();
+      const stocked = await (await fetch("/api/cards?game=riftbound&inStock=true")).json();
+      const sets = await (await fetch("/api/card-sets?game=riftbound")).json();
+      return { total: cards.total, stocked: stocked.total, sets: sets.length };
+    });
+    expect(catalogResult).toEqual({ total: expectedCards, stocked: 0, sets: 1 });
     expect(errors).toEqual([]);
   } catch (e) {
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/failure.png", fullPage: true }).catch(() => {});

@@ -50,6 +50,7 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
       <p className="text-[10px] text-neutral-500">TCG fiyatı: {age(p.updatedAt)}</p>
       <p className="text-[10px] text-neutral-500">Cardmarket: {age(p.cardmarketUpdatedAt)}</p>
       <p className="mt-1 text-[10px] text-neutral-600">{row.reason || (validPrice ? "Piyasa fiyatı mevcut" : "Satış fiyatı yok")}</p>
+      <p className={`mt-1 text-[10px] font-medium ${row.cardId ? "text-emerald-700" : "text-amber-800"}`} data-testid="rift-row-import-status">{row.cardId ? "Site kataloğuna aktarılmış" : "Yalnızca kaynakta var, henüz siteye aktarılmadı"}</p>
     </td>
     <td className="px-3 py-3 min-w-[220px]">
       <div className="grid grid-cols-2 gap-1.5">
@@ -119,9 +120,9 @@ export default function RifthuntPanel() {
     onSuccess: ({ id }) => { setRunId(id); qc.invalidateQueries({ queryKey: STATUS_KEY }); },
   });
   const applyMutation = useMutation({
-    mutationFn: (id: string) => request<{ success: true; updated: number }>(`/api/admin/rifthunt/runs/${encodeURIComponent(id)}/apply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
+    mutationFn: (id: string) => request<{ success: true; updated: number; importedCards?: number; importedSets?: number }>(`/api/admin/rifthunt/runs/${encodeURIComponent(id)}/apply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
     onSuccess: async (result, id) => {
-      qc.setQueryData<RiftRun>(["/api/admin/rifthunt/runs", id], (old) => old ? { ...old, status: "applied", appliedAt: new Date().toISOString() } : old);
+      qc.setQueryData<RiftRun>(["/api/admin/rifthunt/runs", id], (old) => old ? { ...old, status: "applied", appliedAt: new Date().toISOString(), importedCards: result.importedCards, importedSets: result.importedSets } : old);
       await Promise.all([qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]);
     },
   });
@@ -148,7 +149,7 @@ export default function RifthuntPanel() {
       </div>
       <div className="space-y-4 p-4 sm:p-5">
         {statusQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{[1,2,3,4].map((n) => <div key={n} className="h-16 animate-pulse rounded-md bg-[#f0f1ec]" />)}</div> : statusQuery.isError ? <ErrorBox message={statusError} retry={() => statusQuery.refetch()} /> : currentStatus && <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{[
-          ["Baskı", currentStatus.counts.cards], ["Set", currentStatus.counts.sets], ["İlan", currentStatus.counts.listings], ["Toplam stok", currentStatus.counts.stock],
+          ["Sitedeki kart", currentStatus.counts.cards], ["Sitedeki set", currentStatus.counts.sets], ["İlan", currentStatus.counts.listings], ["Toplam stok", currentStatus.counts.stock],
         ].map(([label, value]) => <div key={String(label)} className="rounded-md border border-[#e5e7df] bg-[#fafaf7] px-3 py-2"><p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">{label}</p><p className="mt-1 text-lg font-semibold tabular-nums text-[#274a3d]">{Number(value).toLocaleString("tr-TR")}</p></div>)}</div>}
         {currentStatus?.warnings.map((warning, i) => <div key={i} className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"><AlertTriangle className="h-4 w-4 shrink-0" />{warning}</div>)}
         {currentStatus?.config.lastError && <ErrorBox message={currentStatus.config.lastError} />}
@@ -160,17 +161,19 @@ export default function RifthuntPanel() {
           <label className="flex min-h-9 items-center gap-2 text-xs text-neutral-700"><input type="checkbox" checked={autoDaily} onChange={(e) => setAutoDaily(e.target.checked)} className="accent-[#1e5d53]" />Uygulanan ayarla günlük otomatik fiyatla</label>
           <PrimaryButton onClick={() => { setRunId(null); previewMutation.reset(); applyMutation.reset(); previewMutation.mutate(); }} disabled={!validMultiplier || previewInProgress} className="bg-[#174c45] hover:bg-[#123d37]">{previewInProgress ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}Fiyatları önizle</PrimaryButton>
         </div>
-        <p className="text-[11px] leading-5 text-neutral-500">Önizleme hazırlanması katalog verisini kaydeder, satış fiyatlarını ve stokları değiştirmez. Uygulama için ayrıca onay gerekir. Stok hesabı NM ve derecelendirilmemiş kart piyasa fiyatını kullanır, PSA fiyatı değildir.</p>
+        <p className="text-[11px] leading-5 text-neutral-500">1. Fiyatları önizle ile kaynak verisini getir. 2. Kartları ve setleri siteye aktar ile Kartlar ve Riftbound sayfalarına kaydet, fiyatları uygula. Yeni kartlar 0 stokla eklenir, mevcut stoklar korunur. Stok hesabı NM ve derecelendirilmemiş kart piyasa fiyatını kullanır, PSA fiyatı değildir.</p>
+        {currentStatus?.snapshotAt && currentStatus.counts.cards === 0 && <div role="status" data-testid="rift-import-required" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-900"><p className="font-semibold">Kaynak verisi alındı ama site kataloğunda henüz kart yok.</p><p>API Sync tablosunda gördüğünüz kartlar şu anda yalnızca kaynak verisidir. Kartlar ve Riftbound sayfalarında görünmeleri için aşağıdaki aktarım düğmesiyle işlemi tamamlayın. Düğme kapalıysa veya görünmüyorsa önce Fiyatları önizle ile yeni bir önizleme oluşturun. Tekrar silme veya sıfırlama gerekmez.</p></div>}
         {priceIssues.map((e, i) => <ErrorBox key={i} message={e.message} />)}
         {runQuery.isError && <ErrorBox message={runQuery.error instanceof Error ? runQuery.error.message : "Önizleme alınamadı."} retry={() => runQuery.refetch()} />}
         {previewInProgress && <div className="animate-pulse rounded-md border border-[#cbd8ce] bg-[#f5f7f3] p-3 text-xs text-[#365447]">Piyasa verileri ve TRY fiyatları hazırlanıyor…</div>}
         {run && <div className="rounded-lg border border-[#d5dfd5] bg-[#f7f8f4] p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div><p className="text-sm font-semibold text-[#263e33]">{run.status === "applied" ? "Bu önizleme uygulandı" : run.status === "failed" ? "Önizleme başarısız" : run.status === "running" ? "Önizleme hazırlanıyor" : "Uygulama önizlemesi hazır"}</p><p className="mt-1 text-[11px] text-neutral-600">{run.priced.toLocaleString("tr-TR")} / {run.total.toLocaleString("tr-TR")} baskıda fiyat var · Çarpan {run.multiplier}× · {age(run.createdAt)}</p>{run.rate && <p className="text-[11px] text-neutral-600">Kur: 1 USD = {run.rate.usdTry.toLocaleString("tr-TR", { maximumFractionDigits: 4 })} TL · {run.rate.source} · {run.rate.date}</p>}{run.error && <p className="mt-1 text-xs text-rose-700">{run.error}</p>}</div>
-            {run.status === "ready" && <PrimaryButton disabled={!canApply || applyMutation.isPending} onClick={() => { if (window.confirm(`${run.priced} fiyat önerisi uygulanacak. Stok değişmeyecek. Devam edilsin mi?`)) applyMutation.mutate(run.id); }} className="bg-[#174c45] hover:bg-[#123d37]">{applyMutation.isPending ? "Uygulanıyor…" : "Önizlemeyi onayla ve uygula"}</PrimaryButton>}
+            {run.status === "ready" && <PrimaryButton disabled={!canApply || applyMutation.isPending} onClick={() => { if (window.confirm(`${run.total} kaynak baskı site kataloğuna aktarılacak ve ${run.priced} baskının fiyatı uygulanacak. Yeni kartlar 0 stokla eklenecek, mevcut stoklar korunacak. Devam edilsin mi?`)) applyMutation.mutate(run.id); }} className="bg-[#174c45] hover:bg-[#123d37]" data-testid="button-rift-import">{applyMutation.isPending ? "Kartlar ve setler aktarılıyor…" : "Kartları ve setleri siteye aktar"}</PrimaryButton>}
           </div>
           {run.status === "ready" && (!canApply) && <p className="mt-2 text-[11px] text-amber-800">Önizleme süresi dolmuş veya ayarlar değişmiş. Uygulamak için yeni önizleme oluşturun.</p>}
           {applyMutation.isSuccess && <p className="mt-2 flex items-center gap-1 text-xs text-emerald-800"><Check className="h-3.5 w-3.5" />{applyMutation.data.updated.toLocaleString("tr-TR")} fiyat uygulandı.</p>}
+          {run.status === "applied" && run.importedCards !== undefined && run.importedSets !== undefined && <div role="status" data-testid="rift-import-complete" className="mt-2 text-xs leading-5 text-emerald-800"><p>{run.importedCards.toLocaleString("tr-TR")} kart ve {run.importedSets.toLocaleString("tr-TR")} set siteye aktarıldı. Kartlar bölümünde ve Riftbound kategorisinde listelenebilir.</p><div className="mt-1 flex gap-3"><a href="/toov-admin?tab=cards" className="font-semibold underline">Kartlar bölümünü aç</a><a href="/riftbound" target="_blank" rel="noreferrer" className="font-semibold underline">Riftbound kategorisini aç</a></div></div>}
         </div>}
         {resetWarnings.map((w, i) => <div key={i} className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">{w}</div>)}
       </div>
