@@ -126,8 +126,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     return b.body;
   }
   async function reset() {
-    const b = await backup();
-    const response = await post(base + "/reset", { backupId: b.id, confirmation: "RIFTBOUND SİL" });
+    const response = await post(base + "/reset", { confirmation: "RIFTBOUND SİL" });
     expect(response.status, JSON.stringify(response.body)).toBe(200);
   }
   async function preview(multiplier = 1.9) {
@@ -150,15 +149,16 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
   }
   it("requires authentication, owner access and validated reset confirmation", async () => {
     expect((await request(app).get(base + "/status")).status).toBe(401);
-    expect((await post(base + "/reset", { backupId: printingId, confirmation: "wrong" })).status).toBe(400);
+    expect((await request(app).post(base + "/reset").send({ confirmation: "RIFTBOUND SİL" })).status).toBe(401);
+    expect((await post(base + "/reset", { confirmation: "wrong" })).status).toBe(400);
+    expect((await post(base + "/reset")).status).toBe(400);
     const b = await backup(false);
     expect((await request(app).get(b.downloadUrl).set("x-test-admin", "other")).status).toBe(404);
-    expect((await post(base + "/reset", { backupId: b.id, confirmation: "RIFTBOUND SİL" })).status).toBe(409);
+    expect((await client.query("SELECT stock FROM card_listings WHERE id='old-listing'")).rows[0].stock).toBe(5);
   });
-  it("backs up before deleting only Riftbound data and preserves Pokemon and orders", async () => {
-    const b = await backup();
-    expect(b.counts).toMatchObject({ cards: 1, listings: 1, stock: 5 });
-    const changed = await post(base + "/reset", { backupId: b.id, confirmation: "RIFTBOUND SİL" });
+  it("deletes Riftbound directly without creating a backup and preserves Pokemon and orders", async () => {
+    expect((await client.query("SELECT * FROM rifthunt_backups")).rows).toHaveLength(0);
+    const changed = await post(base + "/reset", { confirmation: "RIFTBOUND SİL" });
     expect(changed.status, JSON.stringify(changed.body)).toBe(200);
     expect((await client.query("SELECT id FROM cards")).rows).toEqual([{ id: "poke-card" }]);
     expect((await client.query("SELECT stock FROM card_listings")).rows).toEqual([{ stock: 9 }]);
@@ -166,12 +166,18 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect((await client.query("SELECT * FROM cart_items")).rows).toHaveLength(0);
     expect((await client.query("SELECT * FROM card_prices")).rows).toHaveLength(0);
     expect((await client.query("SELECT id FROM tcg_sync_runs")).rows).toEqual([{ id: "poke-sync" }]);
+    expect((await client.query("SELECT * FROM rifthunt_backups")).rows).toHaveLength(0);
+    const state = (await get(base + "/status")).body;
+    expect(state.config.enabled).toBe(false);
+    expect(state.config.resetAt).toBeTruthy();
+    expect(state.counts).toMatchObject({ cards: 0, sets: 0, listings: 0, stock: 0 });
   });
-  it("refuses deletion if stock changed after the downloaded backup", async () => {
-    const b = await backup();
-    await client.query("UPDATE card_listings SET stock=4 WHERE id='old-listing'");
-    expect((await post(base + "/reset", { backupId: b.id, confirmation: "RIFTBOUND SİL" })).status).toBe(409);
-    expect((await client.query("SELECT stock FROM card_listings WHERE id='old-listing'")).rows[0].stock).toBe(4);
+  it("invalidates old previews on direct cleanup and requires a new explicit import", async () => {
+    const p = await preview();
+    await reset();
+    expect((await get(`${base}/runs/${p.id}`)).status).toBe(404);
+    expect((await post(`${base}/runs/${p.id}/apply`)).status).toBe(409);
+    expect((await client.query("SELECT id FROM cards")).rows).toEqual([{ id: "poke-card" }]);
   });
   it("shows every printing in previews but prevents apply without clean installation", async () => {
     const p = await preview();
@@ -197,6 +203,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect(listings.rows[0]).toMatchObject({ stock: 3, price: "6034.40" });
     expect((await post(`${base}/runs/${next.id}/apply`)).status).toBe(200);
     expect((await post(base + "/backup")).status).toBe(409);
+    expect((await post(base + "/reset", { confirmation: "RIFTBOUND SİL" })).status).toBe(409);
     expect((await client.query("SELECT stock FROM card_listings WHERE id='poke-listing'")).rows[0].stock).toBe(9);
   });
   it("does not import fake zero prices and fails explicitly on upstream errors", async () => {

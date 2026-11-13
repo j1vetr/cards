@@ -20,7 +20,7 @@ async function inventorySnapshot(executor: any = db) {
   const sync = await executor.execute(sql`SELECT * FROM tcg_sync_runs WHERE game='riftbound' ORDER BY id`);
   return { sets: sets.rows, cards: cards.rows, listings: listings.rows, prices: prices.rows, sync: sync.rows };
 }
-async function managedImages() {
+async function managedImages(withHashes = true) {
   const files: { relative: string; sha256: string }[] = [];
   async function visit(relative: string) {
     let stat;
@@ -29,7 +29,7 @@ async function managedImages() {
     if (stat.isSymbolicLink()) throw new Error("Riftbound görsel yolunda sembolik bağlantı var. Güvenli temizlik için kaldırılmalı.");
     if (stat.isDirectory()) {
       for (const name of (await fs.readdir(relative)).sort()) await visit(path.join(relative, name));
-    } else if (stat.isFile()) files.push({ relative, sha256: hash(await fs.readFile(relative)) });
+    } else if (stat.isFile()) files.push({ relative, sha256: withHashes ? hash(await fs.readFile(relative)) : "" });
   }
   for (const root of ROOTS) {
     await visit(path.join(root, "cards/riftbound"));
@@ -76,20 +76,15 @@ export async function getRiftBackup(id: string, owner: string) {
   if (!backup || !/^[a-f0-9-]+\.tar\.gz$/.test(backup.filename)) return null;
   return { ...backup, filePath: path.join(BACKUPS, backup.filename) };
 }
-export async function resetRiftbound(backupId: string, owner: string) {
-  const backup = await getRiftBackup(backupId, owner);
-  if (!backup?.downloaded_at || backup.used_at) throw new Error("Önce yeni bir yedek oluşturup tamamen indirin.");
-  await fs.access(backup.filePath);
-  const images = await managedImages();
+export async function resetRiftbound() {
+  const images = await managedImages(false);
   await db.transaction(async tx => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(71842102)`);
     if ((await getRiftConfig(tx)).enabled) throw new Error("Temiz kurulum zaten tamamlandı.");
-    // Lock existing catalog and stock before checking backup freshness.
+    // Serialize deletion with imports and stock changes. No backup is created or required.
     await tx.execute(sql`SELECT s.id FROM card_sets s JOIN card_games g ON g.id=s.game_id WHERE g.slug='riftbound' FOR UPDATE OF s`);
     await tx.execute(sql`SELECT c.id FROM cards c JOIN card_sets s ON s.id=c.set_id JOIN card_games g ON g.id=s.game_id WHERE g.slug='riftbound' FOR UPDATE OF c`);
     await tx.execute(sql`SELECT l.id FROM card_listings l JOIN cards c ON c.id=l.card_id JOIN card_sets s ON s.id=c.set_id JOIN card_games g ON g.id=s.game_id WHERE g.slug='riftbound' FOR UPDATE OF l`);
-    const snapshot = await inventorySnapshot(tx);
-    if (hash(JSON.stringify({ snapshot, images })) !== backup.fingerprint) throw new Error("Yedekten sonra stok veya katalog değişti. Hiçbir kayıt silinmedi. Yeni yedek alıp indirin.");
     // order_items.card_listing_id is SET NULL by its FK. Names, totals and orders remain.
     await tx.execute(sql`DELETE FROM card_listings WHERE card_id IN
       (SELECT c.id FROM cards c JOIN card_sets s ON s.id=c.set_id JOIN card_games g ON g.id=s.game_id WHERE g.slug='riftbound')`);
@@ -102,7 +97,6 @@ export async function resetRiftbound(backupId: string, owner: string) {
     await tx.execute(sql`DELETE FROM rifthunt_printings`);
     await tx.execute(sql`DELETE FROM rifthunt_runs`);
     await putRiftState("config", { ...defaultRiftConfig, resetAt: new Date().toISOString() }, tx);
-    await tx.execute(sql`UPDATE rifthunt_backups SET used_at=NOW() WHERE id=${backupId}`);
   });
   const warnings: string[] = [];
   // Never touch shared images. Files are removed only after a successful DB commit.

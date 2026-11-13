@@ -52,7 +52,7 @@ export async function applyRiftPreview(id: string, owner: string) {
     if (run.status === "applied") return { success: true, updated: run.priced };
     if (run.status !== "ready" || Date.parse(run.expiresAt) <= Date.now() || !run.rate || !payload) throw new Error("Önizleme hazır değil veya süresi doldu.");
     const config = await getRiftConfig(tx);
-    if (!config.resetAt) throw new Error("Önce eski Riftbound kataloğunu yedekleyip temizleyin.");
+    if (!config.resetAt) throw new Error("Önce eski Riftbound kataloğunu temizleyin.");
     if ((config.lastAppliedAt ?? null) !== payload.baselineAppliedAt) throw new Error("Ayarlar başka bir işlemde değişti. Yeni önizleme oluşturun.");
     const freshRate = await getTcmbUsdRate();
     if (freshRate.date !== run.rate.date || freshRate.usdTry !== run.rate.usdTry) throw new Error("TCMB kuru değişti. Yeni önizleme oluşturun.");
@@ -62,7 +62,7 @@ export async function applyRiftPreview(id: string, owner: string) {
     const gameId = game.rows[0].id as string;
     const legacy = await tx.execute(sql`SELECT c.id FROM cards c JOIN card_sets s ON s.id=c.set_id
       WHERE s.game_id=${gameId} AND COALESCE(c.api_source,'')<>'rifthunt' LIMIT 1`);
-    if (legacy.rows.length) throw new Error("Eski Riftbound kartları hâlâ var. Yedekli temiz kurulumu tamamlayın.");
+    if (legacy.rows.length) throw new Error("Eski Riftbound kartları hâlâ var. Temiz kurulumu tamamlayın.");
 
     const setRows = snapshot.sets.map(s => ({ id: randomUUID(), code: s.code, name: s.name, slug: `riftbound-${s.code}`, released: s.released, count: s.count }));
     await tx.execute(sql`INSERT INTO card_sets(id,game_id,name,slug,release_date,total_cards,api_id,api_source,is_active)

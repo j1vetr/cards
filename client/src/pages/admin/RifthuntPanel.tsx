@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Archive, Check, ChevronLeft, ChevronRight, Download, ExternalLink, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import type { RiftAdminRow, RiftCatalog, RiftRun, RiftStatus } from "@shared/rifthunt";
 import { Card, PrimaryButton, SecondaryButton } from "./_ui/AdminUI";
 
@@ -79,7 +79,6 @@ export default function RifthuntPanel() {
   const [multiplierText, setMultiplierText] = useState("1.9");
   const [autoDaily, setAutoDaily] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
-  const [backup, setBackup] = useState<{ id: string; downloadUrl: string; downloaded: boolean; counts: Record<string, number>; createdAt: string } | null>(null);
   const [resetText, setResetText] = useState("");
   const [resetWarnings, setResetWarnings] = useState<string[]>([]);
   const [now, setNow] = useState(Date.now());
@@ -130,32 +129,14 @@ export default function RifthuntPanel() {
     mutationFn: ({ row, stock }: { row: RiftAdminRow; stock: number }) => request<{ success: true }>("/api/admin/rifthunt/stock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ printingId: row.printing.printingId, finish: row.finish, stock, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt }) }),
     onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]); },
   });
-  const backupMutation = useMutation({
-    mutationFn: () => request<{ id: string; downloadUrl: string; counts: Record<string, number>; createdAt: string }>("/api/admin/rifthunt/backup", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
-    onSuccess: (data) => { setBackup({ ...data, downloaded: false }); setResetText(""); },
-  });
   const resetMutation = useMutation({
-    mutationFn: () => request<{ success: true; warnings: string[] }>("/api/admin/rifthunt/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backupId: backup?.id, confirmation: resetText }) }),
-    onSuccess: async ({ warnings }) => { setResetWarnings(warnings); setBackup(null); setResetText(""); setRunId(null); await Promise.all([qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]); },
+    mutationFn: () => request<{ success: true; warnings: string[] }>("/api/admin/rifthunt/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: resetText }) }),
+    onSuccess: async ({ warnings }) => { setResetWarnings(warnings); setResetText(""); setRunId(null); await Promise.all([qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]); },
   });
-  async function downloadBackup() {
-    if (!backup) return;
-    try {
-      const url = new URL(backup.downloadUrl, window.location.origin);
-      if (url.origin !== window.location.origin) throw new Error("Yedek indirme bağlantısı mağaza adresiyle eşleşmiyor.");
-      const response = await fetch(url.toString(), { credentials: "include" });
-      if (!response.ok) throw new Error("Yedek indirilemedi.");
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = objectUrl; a.download = `rifthunt-backup-${backup.id}.tar.gz`; a.click(); URL.revokeObjectURL(objectUrl);
-      setBackup({ ...backup, downloaded: true });
-    } catch (error) { setDownloadError(error instanceof Error ? error.message : "Yedek indirilemedi."); }
-  }
-  const [downloadError, setDownloadError] = useState("");
   const previewInProgress = previewMutation.isPending || run?.status === "running";
-  const resetEligible = !!statusQuery.data && !statusQuery.data.config.enabled && !statusQuery.data.config.lastAppliedAt;
+  const resetEligible = !!statusQuery.data && !statusQuery.data.config.enabled && !statusQuery.data.config.resetAt;
   const statusError = statusQuery.error instanceof Error ? statusQuery.error.message : "Durum bilgisi alınamadı.";
-  const priceIssues = [previewMutation.error, applyMutation.error, stockMutation.error, backupMutation.error, resetMutation.error].filter(Boolean) as Error[];
+  const priceIssues = [previewMutation.error, applyMutation.error, stockMutation.error, resetMutation.error].filter(Boolean) as Error[];
 
   return <section className="space-y-4" aria-label="Riftbound fiyat ve stok yönetimi">
     <Card className="overflow-hidden border-[#cbd8ce]">
@@ -213,13 +194,13 @@ export default function RifthuntPanel() {
     {resetEligible && <Card className="overflow-hidden border-rose-200">
       <div className="border-b border-rose-100 bg-rose-50 px-4 py-3"><h3 className="flex items-center gap-2 text-sm font-semibold text-rose-900"><AlertTriangle className="h-4 w-4" />İlk etkinleştirme öncesi Riftbound temiz kurulumu</h3><p className="mt-1 text-xs leading-5 text-rose-800">Sıfırlama Riftbound kartlarını, ilanlarını ve stoklarını siler ve stokları 0’dan başlatır. Pokémon, müşteriler ve siparişler etkilenmez. Bu işlem yalnızca ilk etkinleştirmeden önce kullanılabilir.</p></div>
       <div className="space-y-3 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-semibold text-neutral-800">1. Önce yedek oluşturun ve indirin</p><p className="text-[11px] text-neutral-500">Yedek verileri ve yönetilen görselleri içerir.</p></div><div className="flex flex-wrap gap-2"><SecondaryButton onClick={() => backupMutation.mutate()} disabled={backupMutation.isPending}>{backupMutation.isPending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}Yedek oluştur</SecondaryButton>{backup && <SecondaryButton onClick={downloadBackup}><Download className="h-3.5 w-3.5" />Yedeği indir</SecondaryButton>}</div></div>
-        {backup && <div className="rounded-md border border-[#d5dfd5] bg-[#f7f8f4] p-3 text-xs"><p className="font-semibold text-neutral-800">Yedek hazır · {age(backup.createdAt)}</p><p className="mt-1 text-neutral-600">{Object.entries(backup.counts).map(([k,v]) => `${k}: ${v}`).join(" · ")}</p><p className="mt-1 font-medium text-amber-800">{backup.downloaded ? "İndirme başlatıldı. Yine de dosyanın cihazınıza kaydedildiğini doğrulayın." : "Sıfırlamadan önce yedeği indirmeniz gerekir."}</p></div>}
-        {downloadError && <ErrorBox message={downloadError} />}
-        <div className="border-t border-neutral-100 pt-3"><p className="text-xs font-semibold text-neutral-800">2. Yedek indirildikten sonra sıfırlamayı onaylayın</p><div className="mt-2 flex flex-col gap-2 sm:flex-row"><input value={resetText} onChange={(e) => setResetText(e.target.value)} placeholder="RIFTBOUND SİL" aria-label="Sıfırlama onayı" className="h-9 rounded border border-rose-200 px-3 text-xs sm:max-w-xs" /><PrimaryButton disabled={!backup?.downloaded || resetText !== "RIFTBOUND SİL" || resetMutation.isPending} onClick={() => { if (window.confirm("Riftbound kartları, ilanları ve stokları silinecek. Pokémon, müşteriler ve siparişler korunacak. Devam edilsin mi?")) resetMutation.mutate(); }} className="bg-rose-700 hover:bg-rose-800">{resetMutation.isPending ? "Sıfırlanıyor…" : "Riftbound verisini sıfırla"}</PrimaryButton></div></div>
+        <p className="text-xs font-semibold text-rose-900">Yedek oluşturulmaz. Eski Riftbound setleri, kartları, ilanları, stokları ve yalnızca onlara ait yerel görseller kalıcı olarak silinir.</p>
+        <p className="text-xs leading-5 text-neutral-600">Temizleme sonrası Fiyatları önizle ile RiftHunt kataloğunu ve piyasa fiyatlarını alın. Önizlemeyi onayla ve uygula ile setler ve kartlar siteye 0 stokla kaydedilir. Stok girdiğiniz kartlar hesaplanan TL fiyatıyla satışa açılır.</p>
+        <div><p className="text-xs font-semibold text-neutral-800">Silmek için RIFTBOUND SİL yazın</p><div className="mt-2 flex flex-col gap-2 sm:flex-row"><input value={resetText} onChange={(e) => setResetText(e.target.value)} placeholder="RIFTBOUND SİL" aria-label="Sıfırlama onayı" className="h-9 rounded border border-rose-200 px-3 text-xs sm:max-w-xs" /><PrimaryButton disabled={resetText !== "RIFTBOUND SİL" || resetMutation.isPending} onClick={() => { if (window.confirm("Yedek alınmadan eski Riftbound setleri, kartları, ilanları, stokları ve yalnızca onlara ait yerel görseller kalıcı olarak silinecek. Pokémon, müşteriler ve siparişler korunacak. Devam edilsin mi?")) resetMutation.mutate(); }} className="bg-rose-700 hover:bg-rose-800">{resetMutation.isPending ? "Siliniyor…" : "Eski Riftbound verilerini sil"}</PrimaryButton></div></div>
         {resetMutation.isError && <ErrorBox message={resetMutation.error.message} />}
       </div>
     </Card>}
+    {statusQuery.data?.config.resetAt && !statusQuery.data.config.enabled && <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">Eski Riftbound verileri temizlendi. Şimdi Fiyatları önizle ile RiftHunt setlerini, kartlarını ve piyasa fiyatlarını alın, ardından Önizlemeyi onayla ve uygula ile siteye kaydedin. Yeni kartlar 0 stokla başlar.</p>}
     {statusQuery.data?.config.enabled && <p className="flex items-center gap-2 px-1 text-[11px] text-neutral-500"><ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />Temiz kurulum sıfırlaması ilk etkinleştirmeden sonra kullanılamaz. Günlük yönetim için stok ve fiyat önizlemesini kullanın.</p>}
   </section>;
 }

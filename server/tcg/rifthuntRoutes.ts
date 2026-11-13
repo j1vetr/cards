@@ -141,21 +141,21 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
     } catch (e) { res.status(500).json({ error: errorMessage(e) }); }
   });
   app.post(`${root}/reset`, requireAdmin, async (req, res) => {
-    const input = z.object({ backupId: uuid, confirmation: z.literal("RIFTBOUND SİL") }).strict().safeParse(req.body);
-    if (!input.success) return res.status(400).json({ error: "Yedek seçilmeli ve RIFTBOUND SİL yazılmalı." });
-    try { res.json(await resetRiftbound(input.data.backupId, owner(req))); }
+    const input = z.object({ confirmation: z.literal("RIFTBOUND SİL") }).strict().safeParse(req.body);
+    if (!input.success) return res.status(400).json({ error: "Silmek için RIFTBOUND SİL yazılmalı." });
+    try { res.json(await resetRiftbound()); }
     catch (e) { res.status(409).json({ error: errorMessage(e) }); }
   });
   await registerRiftPublicRoutes(app);
 
-  // Legacy RiftCodex import/deletion cannot bypass the backup-first workflow.
+  // Legacy import/deletion cannot bypass the scoped, explicitly confirmed cleanup.
   app.post("/api/admin/tcg/sync", requireAdmin, (req, res, next) => {
     if (req.body?.game !== "riftbound") return next();
     res.status(410).json({ error: "Riftbound için RiftHunt panelini kullanın." });
   });
   app.delete("/api/admin/tcg/data", requireAdmin, (req, res, next) => {
     if (req.query.game === "pokemon") return next();
-    res.status(409).json({ error: "Riftbound silme işlemi yalnızca yedekli temiz kurulum ekranından yapılabilir." });
+    res.status(409).json({ error: "Riftbound silme işlemi yalnızca RiftHunt temiz kurulum ekranından yapılabilir." });
   });
   // Existing general inventory forms must not override automatic RiftHunt prices.
   app.use("/api/admin/cards/:cardId", requireAdmin, async (req, res, next) => {

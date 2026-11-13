@@ -15,11 +15,11 @@ Use RiftHunt for Riftbound only. Do not change Pokémon's catalog or provider.
 
 **How to apply:** Keep every reset, import, automatic pricing and legacy-provider guard scoped to Riftbound. Use bulk snapshots at most daily and inspect per-row price timestamps rather than the export creation time.
 
-The user approved a backup-first clean Riftbound installation, including deletion of old stock. New source printings start at zero stock. Customer accounts and historical orders must survive.
+The user wants direct deletion of the old Riftbound catalog and stock without creating or downloading a backup. New source printings start at zero stock. Customer accounts and historical orders must survive.
 
-**Why:** The user asked to remove every old Riftbound listing and image and explicitly answered “Evet, yedekli temiz kurulum yap” after the stock-deletion warning. This is a one-time migration, not permission to delete stock during later price updates.
+**Why:** The user explicitly superseded the earlier backup-first choice with “Yedekli silme işlemine gerek yok direkt sil işlemi yapalım”. This is a one-time migration, not permission to delete stock during later price updates.
 
-**How to apply:** On the external production server require a completed backup download and explicit reset confirmation before deleting old Riftbound data. Subsequent catalog and price refreshes must preserve stock. Do not silently reset production during development or testing.
+**How to apply:** Keep explicit destructive confirmation but do not require a backup for the one-time cleanup. Explain that preview fetches RiftHunt data and apply imports sets and cards at zero stock. Subsequent catalog and price refreshes must preserve stock. Do not silently reset production during development or testing.
 
 Some unpriced token and rune identifiers omit the printed-total suffix, such as `sfd-t03` or `rad-r06b`.
 
