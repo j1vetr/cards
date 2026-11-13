@@ -6,3 +6,4 @@
 - [Legacy URL redirect/410 decision map](legacy-url-redirect-map.md) — old URL 301/410 decisions live in a DB `redirects` table, not code, so slug changes never need a deploy.
 - [Sale pricing policy](sale-pricing-rules.md) — market USD × automatic TCMB USD/TRY rate × 1.9, preview before applying and preserve stock.
 - [External VPS deployment](external-vps-deployment.md) — production runs outside Replit, so dependency lock URLs must remain portable.
+- [KartFiyat API contract](kartfiyat-api-contract.md) — trial REST prices work while GraphQL prices may be empty, documented filters differ and printing codes can be null.
