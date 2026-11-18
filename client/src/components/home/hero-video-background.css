@@ -1,0 +1,44 @@
+.gocards-hero-video {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  container-type: size;
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.gocards-hero-video.is-playing { opacity: 1; }
+.gocards-hero-video iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, 177.778cqh);
+  height: max(100cqh, 56.25cqw);
+  transform: translate(-50%, -50%);
+  border: 0;
+}
+
+.gocards-hero-video__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(0 0 0 / 75%), rgb(0 0 0 / 42%) 55%, rgb(0 0 0 / 25%));
+}
+
+.gocards-hero-video__toggle {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: white;
+  background: rgb(0 0 0 / 45%);
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 50%;
+}
+
+.gocards-hero-video__toggle:hover { background: rgb(0 0 0 / 75%); }
+.gocards-hero-video__toggle:focus-visible { outline: 2px solid #f5c25d; outline-offset: 3px; }

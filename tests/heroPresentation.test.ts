@@ -36,7 +36,34 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       await expect.poll(() => heading.evaluate(el => getComputedStyle(el).opacity)).toBe("1");
       expect(await hero.getByRole("heading", { level: 1 }).count()).toBe(1);
       expect((await heading.innerText()).replace(/\s+/g, " ")).toMatch(/Riftbound.*Pokémon TCG.*Kartları.*Türkiye[’']de/);
-      expect(await hero.locator("iframe").count()).toBe(0);
+      const video = page.getByTestId("hero-background-video");
+      await video.waitFor({ state: "attached" });
+      const videoUrl = new URL((await video.getAttribute("src"))!);
+      expect(videoUrl.pathname).toBe("/embed/ZHhqwBwmRkI");
+      for (const [key, value] of Object.entries({ autoplay: "1", mute: "1", loop: "1", playlist: "ZHhqwBwmRkI", playsinline: "1" })) {
+        expect(videoUrl.searchParams.get(key)).toBe(value);
+      }
+      // Simulate player events without depending on YouTube's network/bot checks.
+      await video.evaluate(el => {
+        window.dispatchEvent(new MessageEvent('message', {
+          origin: 'https://www.youtube-nocookie.com',
+          source: (el as HTMLIFrameElement).contentWindow,
+          data: JSON.stringify({ event: 'onStateChange', info: 1 }),
+        }));
+      });
+      await expect.poll(() => hero.locator('.gocards-hero-video').evaluate(el => el.classList.contains('is-playing'))).toBe(true);
+      await video.evaluate(el => {
+        window.dispatchEvent(new MessageEvent('message', {
+          origin: 'https://www.youtube-nocookie.com',
+          source: (el as HTMLIFrameElement).contentWindow,
+          data: JSON.stringify({ event: 'onError', info: 150 }),
+        }));
+      });
+      await expect.poll(() => hero.locator('.gocards-hero-video').evaluate(el => el.classList.contains('is-playing'))).toBe(false);
+      await page.getByTestId("button-hero-video").click();
+      expect(await video.count()).toBe(0);
+      await page.getByTestId("button-hero-video").click();
+      await video.waitFor({ state: "attached" });
       expect(await page.getByTestId("bar-announcement").isVisible()).toBe(false);
       expect(cardRequests.some(url => url.searchParams.get("limit") === "30" && url.searchParams.get("game") === "riftbound")).toBe(true);
       const titleBox = await heading.boundingBox();
@@ -96,6 +123,7 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       await page.getByTestId("input-search").waitFor({ state: "visible" });
       await page.keyboard.press("Escape");
       await page.emulateMedia({ reducedMotion: "reduce" });
+      await expect.poll(() => video.count()).toBe(0);
       expect(await page.getByTestId("hero-riftbound").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
       const card = fan.locator("img").first();
       await card.tap();

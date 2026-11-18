@@ -8,6 +8,7 @@ import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
 import { OnSaleCardsSection as RiftboundOnSaleCardsSection } from '@/components/home/OnSaleCardsSection';
 import '@/components/home/hero-section.css';
+import { HeroVideoBackground } from '@/components/home/HeroVideoBackground';
 import { useDesktopHeroLayout } from '@/components/home/useDesktopHeroLayout';
 import { useCardSets, useCards, useCardGames, type CardSetPublic } from '@/hooks/useTcg';
 import type { CardPublic } from '@/components/CardCard';
@@ -391,6 +392,7 @@ function HeroSection() {
       className="gocards-hero relative flex flex-col overflow-hidden"
       data-testid="section-hero"
     >
+      <HeroVideoBackground />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="gocards-hero__video-overlay absolute inset-0" />
         <div className="gocards-hero__bottom-fade absolute bottom-0 left-0 right-0 h-32" />
