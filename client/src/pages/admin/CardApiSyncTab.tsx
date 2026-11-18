@@ -242,8 +242,8 @@ export default function CardApiSyncTab() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Kart API Senkronizasyonu"
-        description="Kart verilerini senkronize et. Satış fiyatlarını tek akışta piyasa USD fiyatı, otomatik TCMB kuru ve çarpan ile TL olarak hesapla."
+        title="Pokémon API Sync"
+        description="Pokémon kart verilerini senkronize et. Satış fiyatlarını tek akışta piyasa USD fiyatı, otomatik TCMB kuru ve çarpan ile TL olarak hesapla."
       />
 
       <div className="flex flex-col gap-3 rounded-lg border border-[#d7ded5] bg-[#f5f7f2] p-4 sm:flex-row sm:items-center sm:justify-between">

@@ -13,7 +13,7 @@ For Riftbound only, enforce these minimum TRY sale prices after conversion and m
 
 **Why:** The user explicitly wants site prices derived from the external market, not an Excel-only market-price report, and selected automatic central-bank exchange rates.
 
-**How to apply:** Show the rate's publication date and preview proposed prices before changing existing active in-stock listings. Preserve inventory counts and skip uncertain variant matches. Do not interpret multiplying USD by 1.9 alone as a TRY conversion or use a graded high price for an ungraded card.
+**How to apply:** Show the rate's publication date. The user subsequently replaced the manual preview/apply flow with one direct update action. Validate prices internally, apply transactionally and preserve inventory counts. Skip uncertain variant matches. Do not interpret multiplying USD by 1.9 alone as a TRY conversion or use a graded high price for an ungraded card.
 
 Keep exactly one admin price-fetching and sale-price update workflow. Do not reintroduce a separate raw-price sync or automatic-listing tool alongside it.
 

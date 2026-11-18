@@ -23,8 +23,8 @@ export async function initRifthuntStore() {
     );
   `);
   await db.execute(sql`UPDATE rifthunt_runs SET status='failed',
-    data=data || '{"status":"failed","error":"Sunucu yeniden başladı. Önizlemeyi yeniden oluşturun."}'::jsonb
-    WHERE status='running'`);
+    data=data || '{"status":"failed","error":"Sunucu yeniden başladı. Güncellemeyi tekrar başlatın."}'::jsonb
+    WHERE status='running' OR (status='ready' AND data->>'autoApply'='true')`);
 }
 export async function riftState<T>(key: string, fallback: T, executor: any = db): Promise<T> {
   const result = await executor.execute(sql`SELECT data FROM rifthunt_state WHERE key=${key}`);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import type { RiftAdminRow, RiftCatalog, RiftRun, RiftStatus } from "@shared/rifthunt";
 import { Card, PrimaryButton, SecondaryButton } from "./_ui/AdminUI";
 
@@ -98,7 +98,7 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
                 <span data-testid="rift-floor-original" className="text-[11px] tabular-nums text-neutral-400 line-through">{money(row.priceBeforeMinimum, "TRY")}</span>
                 <span className="text-[12px] font-semibold tabular-nums text-neutral-800">{money(row.salePrice, "TRY")}</span>
               </div>
-              <p className="mt-1 text-[9px] font-medium text-amber-800">Alt Limit Önizlemesi</p>
+            <p className="mt-1 text-[9px] font-medium text-amber-800">Alt Limit Hesaplaması</p>
             </> : <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-neutral-800">{money(row.salePrice, "TRY")}</p>}
           </div>
          <PriceTile title="TCG Market" value={row.finish ? p.prices[row.finish]?.market : null} currency="USD" className="bg-neutral-50" />
@@ -133,7 +133,6 @@ export default function RifthuntPanel() {
   const [resetText, setResetText] = useState("");
   const [resetWarnings, setResetWarnings] = useState<string[]>([]);
   const [stockFeedback, setStockFeedback] = useState("");
-  const [now, setNow] = useState(Date.now());
   const settingsInitialized = useRef(false);
   const multiplier = Number(multiplierText);
   const validMultiplier = Number.isFinite(multiplier) && multiplier > 0 && multiplier <= 100;
@@ -149,43 +148,36 @@ export default function RifthuntPanel() {
     const params = new URLSearchParams({ search, set: setCode, finish, rarity, stock: stockFilter, priced, sort, page: String(page), limit: "30" });
     if (minPrice !== null && validMinPrice) params.set("minPrice", String(minPrice));
     if (maxPrice !== null && validMaxPrice) params.set("maxPrice", String(maxPrice));
-    if (runId) params.set("previewId", runId);
     return params.toString();
-  }, [search, setCode, finish, rarity, stockFilter, priced, sort, minPrice, maxPrice, minPriceText, maxPriceText, validMinPrice, validMaxPrice, page, runId]);
+  }, [search, setCode, finish, rarity, stockFilter, priced, sort, minPrice, maxPrice, minPriceText, maxPriceText, validMinPrice, validMaxPrice, page]);
   const statusQuery = useQuery<RiftStatus>({ queryKey: STATUS_KEY, queryFn: () => request("/api/admin/rifthunt/status"), refetchInterval: 10000, refetchOnWindowFocus: false });
   useEffect(() => {
     if (statusQuery.data && !settingsInitialized.current) {
       settingsInitialized.current = true;
-      const latest = statusQuery.data.latestRun?.status === "ready" ? statusQuery.data.latestRun : null;
-      setMultiplierText(String(latest?.multiplier ?? statusQuery.data.config.multiplier));
-      setAutoDaily(latest?.autoDaily ?? statusQuery.data.config.autoDaily);
+      setMultiplierText(String(statusQuery.data.config.multiplier));
+      setAutoDaily(statusQuery.data.config.autoDaily);
     }
   }, [statusQuery.data?.config.multiplier, statusQuery.data?.config.autoDaily]);
   const catalogQuery = useQuery<RiftCatalog>({ queryKey: [...CATALOG_KEY, queryString], queryFn: () => request(`/api/admin/rifthunt/catalog?${queryString}`), enabled: validPriceRange, refetchOnWindowFocus: false });
   const currentStatus = catalogQuery.data ?? statusQuery.data;
-  useEffect(() => { if (statusQuery.data?.latestRun && !runId) setRunId(statusQuery.data.latestRun.id); }, [statusQuery.data?.latestRun?.id]);
-  const runQuery = useQuery<RiftRun>({ queryKey: ["/api/admin/rifthunt/runs", runId], queryFn: () => request(`/api/admin/rifthunt/runs/${encodeURIComponent(runId!)}`), enabled: !!runId, refetchInterval: (q) => q.state.data?.status === "running" ? 2000 : false, refetchOnWindowFocus: false });
-  const run = runQuery.data ?? (currentStatus?.latestRun?.id === runId ? currentStatus.latestRun : null);
   useEffect(() => {
-    if (run?.status !== "ready") return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [run?.status]);
+    const latest = statusQuery.data?.latestRun;
+    if (!runId && latest && (latest.status === "applied" || latest.status === "failed" || (latest.autoApply === true && (latest.status === "running" || latest.status === "ready")))) {
+      setRunId(latest.id);
+    }
+  }, [statusQuery.data?.latestRun?.id, statusQuery.data?.latestRun?.status, statusQuery.data?.latestRun?.autoApply, runId]);
+  const runQuery = useQuery<RiftRun>({ queryKey: ["/api/admin/rifthunt/runs", runId], queryFn: () => request(`/api/admin/rifthunt/runs/${encodeURIComponent(runId!)}`), enabled: !!runId, refetchInterval: (q) => q.state.data?.status === "running" || (q.state.data?.status === "ready" && q.state.data?.autoApply === true) ? 2000 : false, refetchOnWindowFocus: false });
+  const run = runQuery.data ?? null;
   useEffect(() => {
-    if (run?.status === "ready" || run?.status === "applied") qc.invalidateQueries({ queryKey: CATALOG_KEY });
+    if (run?.status === "applied") {
+      qc.invalidateQueries({ queryKey: CATALOG_KEY });
+      qc.invalidateQueries({ queryKey: STATUS_KEY });
+      qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) });
+    }
   }, [run?.id, run?.status, qc]);
-  const runExpiry = run?.expiresAt ? new Date(run.expiresAt).getTime() <= now : false;
-  const canApply = !!run && run.status === "ready" && !runExpiry && currentStatus?.latestRun?.id === run.id && run.multiplier === multiplier && run.autoDaily === autoDaily;
-  const previewMutation = useMutation({
-    mutationFn: () => request<{ id: string }>("/api/admin/rifthunt/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ multiplier, autoDaily }) }),
+  const syncMutation = useMutation({
+    mutationFn: () => request<{ id: string }>("/api/admin/rifthunt/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ multiplier, autoDaily }) }),
     onSuccess: ({ id }) => { setRunId(id); qc.invalidateQueries({ queryKey: STATUS_KEY }); },
-  });
-  const applyMutation = useMutation({
-    mutationFn: (id: string) => request<{ success: true; updated: number; importedCards?: number; importedSets?: number }>(`/api/admin/rifthunt/runs/${encodeURIComponent(id)}/apply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
-    onSuccess: async (result, id) => {
-      qc.setQueryData<RiftRun>(["/api/admin/rifthunt/runs", id], (old) => old ? { ...old, status: "applied", appliedAt: new Date().toISOString(), importedCards: result.importedCards, importedSets: result.importedSets } : old);
-      await Promise.all([qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]);
-    },
   });
   const stockMutation = useMutation({
     mutationFn: ({ row, stock }: { row: RiftAdminRow; stock: number }) => request<{ success: true }>("/api/admin/rifthunt/stock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ printingId: row.printing.printingId, finish: row.finish, stock, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt }) }),
@@ -200,10 +192,11 @@ export default function RifthuntPanel() {
     mutationFn: () => request<{ success: true; warnings: string[] }>("/api/admin/rifthunt/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: resetText }) }),
     onSuccess: async ({ warnings }) => { setResetWarnings(warnings); setResetText(""); setRunId(null); await Promise.all([qc.invalidateQueries({ queryKey: STATUS_KEY }), qc.invalidateQueries({ queryKey: CATALOG_KEY }), qc.invalidateQueries({ predicate: (q) => /card|listing|inventory/i.test(q.queryKey.map(String).join("/")) })]); },
   });
-  const previewInProgress = previewMutation.isPending || run?.status === "running";
+  const syncInProgress = syncMutation.isPending || (!!runId && runQuery.isLoading) || run?.status === "running" || (run?.status === "ready" && run.autoApply === true);
   const resetEligible = !!statusQuery.data && !statusQuery.data.config.enabled && !statusQuery.data.config.resetAt;
   const statusError = statusQuery.error instanceof Error ? statusQuery.error.message : "Durum bilgisi alınamadı.";
-  const priceIssues = [previewMutation.error, applyMutation.error, stockMutation.error, resetMutation.error].filter(Boolean) as Error[];
+  const priceIssues = [syncMutation.error, stockMutation.error, resetMutation.error].filter(Boolean) as Error[];
+  const syncAllowed = !!statusQuery.data && (statusQuery.data.config.enabled || !!statusQuery.data.config.resetAt);
 
   return <section className="space-y-4" aria-label="Riftbound fiyat ve stok yönetimi">
      <Card className="overflow-hidden border-[#cbd8ce]">
@@ -221,25 +214,23 @@ export default function RifthuntPanel() {
         {currentStatus?.config.lastError && <ErrorBox message={currentStatus.config.lastError} />}
         <div className="grid gap-3 rounded-lg border border-[#e5e7df] p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <label className="text-[11px] font-medium text-neutral-600">Satış Çarpanı
-            <div className="mt-1 flex h-9 items-center rounded border border-neutral-300 bg-white px-2"><input type="number" min="0.01" max="100" step="0.1" value={multiplierText} onChange={(e) => setMultiplierText(e.target.value)} className="w-full text-sm outline-none" /><span className="text-xs text-neutral-500">×</span></div>
+            <div className="mt-1 flex h-9 items-center rounded border border-neutral-300 bg-white px-2"><input type="number" min="0.01" max="100" step="0.1" value={multiplierText} onChange={(e) => setMultiplierText(e.target.value)} disabled={syncInProgress} className="w-full text-sm outline-none disabled:bg-neutral-100" /><span className="text-xs text-neutral-500">×</span></div>
             {!validMultiplier && <span className="mt-1 block text-[10px] text-rose-700">0 ile 100 arasında değer girin.</span>}
           </label>
-          <label className="flex min-h-9 items-center gap-2 text-xs text-neutral-700"><input type="checkbox" checked={autoDaily} onChange={(e) => setAutoDaily(e.target.checked)} className="accent-[#1e5d53]" />Uygulanan Ayarla Günlük Otomatik Fiyatla</label>
-          <PrimaryButton onClick={() => { setRunId(null); previewMutation.reset(); applyMutation.reset(); previewMutation.mutate(); }} disabled={!validMultiplier || previewInProgress} className="bg-[#174c45] hover:bg-[#123d37]">{previewInProgress ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}Fiyatları Önizle</PrimaryButton>
+          <label className="flex min-h-9 items-center gap-2 text-xs text-neutral-700"><input type="checkbox" checked={autoDaily} onChange={(e) => setAutoDaily(e.target.checked)} disabled={syncInProgress} className="accent-[#1e5d53] disabled:opacity-50" />Uygulanan Ayarla Günlük Otomatik Fiyatla</label>
+          <PrimaryButton data-testid="button-rift-sync" onClick={() => { syncMutation.reset(); setRunId(null); syncMutation.mutate(); }} disabled={!validMultiplier || syncInProgress || !syncAllowed} className="bg-[#174c45] hover:bg-[#123d37]">{syncInProgress ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}Kartları Ve Fiyatları Güncelle</PrimaryButton>
         </div>
-        <p className="text-[11px] leading-5 text-neutral-500">1. Fiyatları önizle ile kaynak verisini getir. 2. Kartları ve setleri siteye aktar ile Kartlar ve Riftbound sayfalarına kaydet, fiyatları uygula. Yeni kartlar 0 stokla eklenir, mevcut stoklar korunur. Stok hesabı NM ve derecelendirilmemiş kart piyasa fiyatını kullanır, PSA fiyatı değildir.</p>
-         {currentStatus?.snapshotAt && currentStatus.counts.cards === 0 && <div role="status" data-testid="rift-import-required" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-900"><p className="font-semibold">Kaynak Verisi Alındı Ama Site Kataloğunda Henüz Kart Yok.</p><p>API Sync tablosunda gördüğünüz kartlar şu anda yalnızca kaynak verisidir. Kartlar ve Riftbound sayfalarında görünmeleri için aşağıdaki aktarım düğmesiyle işlemi tamamlayın. Düğme kapalıysa veya görünmüyorsa önce Fiyatları Önizle ile yeni bir önizleme oluşturun. Tekrar silme veya sıfırlama gerekmez.</p></div>}
+        <p className="text-[11px] leading-5 text-neutral-500">Bu düğme kaynak verisini getirir, kartları ve setleri site kataloğuna kaydeder ve TRY fiyatlarını doğrudan uygular. Yeni kartlar 0 stokla başlar, mevcut stoklar korunur. Stok hesabı NM ve derecelendirilmemiş kart piyasa fiyatını kullanır, PSA fiyatı değildir.</p>
+          {!syncAllowed && <p className="text-[11px] leading-5 text-amber-800">Güncellemeden önce ilk temiz kurulumu tamamlayın.</p>}
         {priceIssues.map((e, i) => <ErrorBox key={i} message={e.message} />)}
-        {runQuery.isError && <ErrorBox message={runQuery.error instanceof Error ? runQuery.error.message : "Önizleme alınamadı."} retry={() => runQuery.refetch()} />}
-         {previewInProgress && <div className="animate-pulse rounded-md border border-[#cbd8ce] bg-[#f5f7f3] p-3 text-xs text-[#365447]">Piyasa Verileri Ve TRY Fiyatları Hazırlanıyor…</div>}
+         {runQuery.isError && <ErrorBox message={runQuery.error instanceof Error ? runQuery.error.message : "Güncelleme durumu alınamadı."} retry={() => runQuery.refetch()} />}
+          {syncInProgress && <div className="animate-pulse rounded-md border border-[#cbd8ce] bg-[#f5f7f3] p-3 text-xs text-[#365447]">Kaynak Verileri Alınıyor, Kartlar Kaydediliyor Ve TRY Fiyatları Uygulanıyor…</div>}
+         {!runId && statusQuery.data?.latestRun?.status === "ready" && <div role="status" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">Eski bir hazır güncelleme kaydı bulundu. Bu kayıt otomatik olarak uygulanmaz. Güncel verileri almak ve kaydetmek için Kartları Ve Fiyatları Güncelle düğmesine basın.</div>}
         {run && <div className="rounded-lg border border-[#d5dfd5] bg-[#f7f8f4] p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-             <div><p className="text-sm font-semibold text-[#263e33]">{run.status === "applied" ? "Bu Önizleme Uygulandı" : run.status === "failed" ? "Önizleme Başarısız" : run.status === "running" ? "Önizleme Hazırlanıyor" : "Uygulama Önizlemesi Hazır"}</p><p className="mt-1 text-[11px] text-neutral-600">{run.priced.toLocaleString("tr-TR")} / {run.total.toLocaleString("tr-TR")} baskıda fiyat var · Çarpan {run.multiplier}× · {age(run.createdAt)}</p>{run.rate && <p className="text-[11px] text-neutral-600">Kur: 1 USD = {run.rate.usdTry.toLocaleString("tr-TR", { maximumFractionDigits: 4 })} TL · {run.rate.source} · {run.rate.date}</p>}{run.error && <p className="mt-1 text-xs text-rose-700">{run.error}</p>}</div>
-             {run.status === "ready" && <PrimaryButton disabled={!canApply || applyMutation.isPending} onClick={() => { if (window.confirm(`${run.total} kaynak baskı site kataloğuna aktarılacak ve ${run.priced} baskının fiyatı uygulanacak. Yeni kartlar 0 stokla eklenecek, mevcut stoklar korunacak. Devam edilsin mi?`)) applyMutation.mutate(run.id); }} className="bg-[#174c45] hover:bg-[#123d37]" data-testid="button-rift-import">{applyMutation.isPending ? "Kartlar Ve Setler Aktarılıyor…" : "Kartları Ve Setleri Siteye Aktar"}</PrimaryButton>}
+              <div><p className="text-sm font-semibold text-[#263e33]">{run.status === "applied" ? "Güncelleme Tamamlandı" : run.status === "failed" ? "Güncelleme Başarısız" : syncInProgress ? "Güncelleme Sürüyor" : "Güncelleme Durumu"}</p><p className="mt-1 text-[11px] text-neutral-600">{run.priced.toLocaleString("tr-TR")} / {run.total.toLocaleString("tr-TR")} baskıda fiyat var · Çarpan {run.multiplier}× · {age(run.createdAt)}</p>{run.rate && <p className="text-[11px] text-neutral-600">Kur: 1 USD = {run.rate.usdTry.toLocaleString("tr-TR", { maximumFractionDigits: 4 })} TL · {run.rate.source} · {run.rate.date}</p>}{run.error && <p className="mt-1 text-xs text-rose-700">{run.error}</p>}</div>
           </div>
-          {run.status === "ready" && (!canApply) && <p className="mt-2 text-[11px] text-amber-800">Önizleme süresi dolmuş veya ayarlar değişmiş. Uygulamak için yeni önizleme oluşturun.</p>}
-           {applyMutation.isSuccess && <p className="mt-2 flex items-center gap-1 text-xs text-emerald-800"><Check className="h-3.5 w-3.5" />{applyMutation.data.updated.toLocaleString("tr-TR")} Fiyat Uygulandı.</p>}
-           {run.status === "applied" && run.importedCards !== undefined && run.importedSets !== undefined && <div role="status" data-testid="rift-import-complete" className="mt-2 text-xs leading-5 text-emerald-800"><p>{run.importedCards.toLocaleString("tr-TR")} kart ve {run.importedSets.toLocaleString("tr-TR")} set siteye aktarıldı. Kartlar bölümünde ve Riftbound kategorisinde listelenebilir.</p><div className="mt-1 flex gap-3"><a href="/toov-admin?tab=cards" className="font-semibold underline">Kartlar Bölümünü Aç</a><a href="/riftbound" target="_blank" rel="noreferrer" className="font-semibold underline">Riftbound Kategorisini Aç</a></div></div>}
+            {run.status === "applied" && run.importedCards !== undefined && run.importedSets !== undefined && <div role="status" data-testid="rift-import-complete" className="mt-2 text-xs leading-5 text-emerald-800"><p>{run.importedCards.toLocaleString("tr-TR")} kart ve {run.importedSets.toLocaleString("tr-TR")} set siteye aktarıldı, {run.priced.toLocaleString("tr-TR")} baskının fiyatı güncellendi. Kartlar bölümünde ve Riftbound kategorisinde listelenebilir.</p>{run.rate && <p>Kaynak kuru: 1 USD = {run.rate.usdTry.toLocaleString("tr-TR", { maximumFractionDigits: 4 })} TL · {run.rate.source} · {run.rate.date}</p>}<div className="mt-1 flex gap-3"><a href="/toov-admin?tab=cards" className="font-semibold underline">Kartlar Bölümünü Aç</a><a href="/riftbound" target="_blank" rel="noreferrer" className="font-semibold underline">Riftbound Kategorisini Aç</a></div></div>}
         </div>}
         {resetWarnings.map((w, i) => <div key={i} className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">{w}</div>)}
       </div>
@@ -268,7 +259,7 @@ export default function RifthuntPanel() {
         <p className="col-span-2 text-[10px] text-neutral-500 sm:col-span-4">Filtrelenmiş katalog toplamı: {catalogQuery.data.summary.stockedRows.toLocaleString("tr-TR")} stoklu baskı satırı, {catalogQuery.data.summary.emptyRows.toLocaleString("tr-TR")} stoksuz satır, toplam {catalogQuery.data.summary.totalStock.toLocaleString("tr-TR")} adet stok. Özetteki sayılar yalnızca bu sayfayı değil tüm eşleşmeleri kapsar.</p>
       </div>}
       {stockFeedback && <p role="status" className="border-b border-emerald-100 bg-emerald-50 px-4 py-2.5 text-xs font-medium text-emerald-800">{stockFeedback}</p>}
-       {!validPriceRange ? null : catalogQuery.isError ? <div className="p-4"><ErrorBox message={catalogQuery.error instanceof Error ? catalogQuery.error.message : "Katalog yüklenemedi."} retry={() => catalogQuery.refetch()} /></div> : catalogQuery.isLoading ? <div className="space-y-2 p-4">{[1,2,3].map((n) => <div key={n} className="h-24 animate-pulse rounded bg-neutral-100" />)}</div> : catalogQuery.data?.rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-[11px]"><thead className="bg-[#f5f5f0] text-[10px] tracking-wide text-neutral-500"><tr><th className="px-3 py-2">Kart / Baskı</th><th className="px-3 py-2">Yüzey / Veri</th><th className="px-3 py-2">Fiyat Karşılaştırması</th><th className="px-3 py-2">Stok</th></tr></thead><tbody>{catalogQuery.data.rows.map((row) => <InventoryRow key={`${row.printing.printingId}:${row.finish}`} row={row} enabled={!stockMutation.isPending && !!currentStatus?.config.enabled && run?.status === "applied" && !!row.finish && Number(row.salePrice) > 0} onSave={(r, stock) => { setStockFeedback(""); stockMutation.mutate({ row: r, stock }); }} />)}</tbody></table></div> : <div className="px-5 py-12 text-center"><div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#edf1eb] text-[#557365]"><Search className="h-4 w-4" /></div><p className="text-sm font-semibold text-neutral-800">Bu Filtrelerle Baskı Bulunamadı</p><p className="mt-1 text-xs text-neutral-500">Aramayı veya filtreleri değiştirin.</p></div>}
+        {!validPriceRange ? null : catalogQuery.isError ? <div className="p-4"><ErrorBox message={catalogQuery.error instanceof Error ? catalogQuery.error.message : "Katalog yüklenemedi."} retry={() => catalogQuery.refetch()} /></div> : catalogQuery.isLoading ? <div className="space-y-2 p-4">{[1,2,3].map((n) => <div key={n} className="h-24 animate-pulse rounded bg-neutral-100" />)}</div> : catalogQuery.data?.rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-[11px]"><thead className="bg-[#f5f5f0] text-[10px] tracking-wide text-neutral-500"><tr><th className="px-3 py-2">Kart / Baskı</th><th className="px-3 py-2">Yüzey / Veri</th><th className="px-3 py-2">Fiyat Karşılaştırması</th><th className="px-3 py-2">Stok</th></tr></thead><tbody>{catalogQuery.data.rows.map((row) => <InventoryRow key={`${row.printing.printingId}:${row.finish}`} row={row} enabled={!stockMutation.isPending && !syncInProgress && !catalogQuery.isFetching && !!currentStatus?.config.enabled && !!row.finish && Number(row.salePrice) > 0} onSave={(r, stock) => { setStockFeedback(""); stockMutation.mutate({ row: r, stock }); }} />)}</tbody></table></div> : <div className="px-5 py-12 text-center"><div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#edf1eb] text-[#557365]"><Search className="h-4 w-4" /></div><p className="text-sm font-semibold text-neutral-800">Bu Filtrelerle Baskı Bulunamadı</p><p className="mt-1 text-xs text-neutral-500">Aramayı veya filtreleri değiştirin.</p></div>}
        <div className="flex items-center justify-between border-t border-neutral-100 px-3 py-2"><span className="text-[11px] text-neutral-500">Sayfa {catalogQuery.data?.page ?? page} / {catalogQuery.data?.pages ?? 1}</span><div className="flex gap-1"><SecondaryButton aria-label="Önceki Sayfa" className="h-8 px-2" disabled={page <= 1 || !validPriceRange} onClick={() => setPage((p) => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></SecondaryButton><SecondaryButton aria-label="Sonraki Sayfa" className="h-8 px-2" disabled={page >= (catalogQuery.data?.pages ?? 1) || !validPriceRange} onClick={() => setPage((p) => p + 1)}><ChevronRight className="h-4 w-4" /></SecondaryButton></div></div>
        {stockMutation.isPending && <p className="px-4 pb-2 text-[11px] text-[#28584b]">Stok Güncelleniyor…</p>}
       {stockMutation.isError && <div className="px-4 pb-3"><ErrorBox message={stockMutation.error.message} /></div>}
@@ -278,12 +269,12 @@ export default function RifthuntPanel() {
        <div className="border-b border-rose-100 bg-rose-50 px-4 py-3"><h3 className="flex items-center gap-2 text-sm font-semibold text-rose-900"><AlertTriangle className="h-4 w-4" />İlk Etkinleştirme Öncesi Riftbound Temiz Kurulumu</h3><p className="mt-1 text-xs leading-5 text-rose-800">Sıfırlama Riftbound kartlarını, ilanlarını ve stoklarını siler ve stokları 0’dan başlatır. Pokémon, müşteriler ve siparişler etkilenmez. Bu işlem yalnızca ilk etkinleştirmeden önce kullanılabilir.</p></div>
       <div className="space-y-3 p-4">
          <p className="text-xs font-semibold text-rose-900">Yedek oluşturulmaz. Eski Riftbound setleri, kartları, ilanları, stokları ve yalnızca onlara ait yerel görseller kalıcı olarak silinir.</p>
-        <p className="text-xs leading-5 text-neutral-600">Temizleme sonrası Fiyatları önizle ile RiftHunt kataloğunu ve piyasa fiyatlarını alın. Önizlemeyi onayla ve uygula ile setler ve kartlar siteye 0 stokla kaydedilir. Stok girdiğiniz kartlar hesaplanan TL fiyatıyla satışa açılır.</p>
+          <p className="text-xs leading-5 text-neutral-600">Temizleme sonrası Kartları Ve Fiyatları Güncelle düğmesi RiftHunt kataloğunu ve piyasa fiyatlarını doğrudan alıp kaydeder. Yeni kartlar 0 stokla başlar. Stok girdiğiniz kartlar hesaplanan TL fiyatıyla satışa açılır.</p>
          <div><p className="text-xs font-semibold text-neutral-800">Silmek İçin RIFTBOUND SİL Yazın</p><div className="mt-2 flex flex-col gap-2 sm:flex-row"><input value={resetText} onChange={(e) => setResetText(e.target.value)} placeholder="RIFTBOUND SİL" aria-label="Sıfırlama Onayı" className="h-9 rounded border border-rose-200 px-3 text-xs sm:max-w-xs" /><PrimaryButton disabled={resetText !== "RIFTBOUND SİL" || resetMutation.isPending} onClick={() => { if (window.confirm("Yedek alınmadan eski Riftbound setleri, kartları, ilanları, stokları ve yalnızca onlara ait yerel görseller kalıcı olarak silinecek. Pokémon, müşteriler ve siparişler korunacak. Devam edilsin mi?")) resetMutation.mutate(); }} className="bg-rose-700 hover:bg-rose-800">{resetMutation.isPending ? "Siliniyor…" : "Eski Riftbound Verilerini Sil"}</PrimaryButton></div></div>
         {resetMutation.isError && <ErrorBox message={resetMutation.error.message} />}
       </div>
     </Card>}
-     {statusQuery.data?.config.resetAt && !statusQuery.data.config.enabled && <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">Eski Riftbound verileri temizlendi. Şimdi Fiyatları Önizle ile RiftHunt setlerini, kartlarını ve piyasa fiyatlarını alın, ardından Önizlemeyi onayla ve uygula ile siteye kaydedin. Yeni kartlar 0 stokla başlar.</p>}
-     {statusQuery.data?.config.enabled && <p className="flex items-center gap-2 px-1 text-[11px] text-neutral-500"><ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />Temiz kurulum sıfırlaması ilk etkinleştirmeden sonra kullanılamaz. Günlük yönetim için stok ve fiyat önizlemesini kullanın.</p>}
+      {statusQuery.data?.config.resetAt && !statusQuery.data.config.enabled && <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">Eski Riftbound verileri temizlendi. Kartları Ve Fiyatları Güncelle düğmesi setleri, kartları ve fiyatları doğrudan siteye kaydeder. Yeni kartlar 0 stokla başlar.</p>}
+      {statusQuery.data?.config.enabled && <p className="flex items-center gap-2 px-1 text-[11px] text-neutral-500"><ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />Temiz kurulum sıfırlaması ilk etkinleştirmeden sonra kullanılamaz. Günlük yönetim için stok ve fiyat güncellemesini kullanın.</p>}
   </section>;
 }

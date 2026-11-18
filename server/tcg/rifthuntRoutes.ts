@@ -127,6 +127,17 @@ export async function registerRifthuntRoutes(app: Express, requireAdmin: Request
     try { res.status(202).json({ id: await createRiftPreview(owner(req), input.data.multiplier, input.data.autoDaily) }); }
     catch (e: any) { res.status(e.code === "23505" ? 409 : 503).json({ error: e.code === "23505" ? "Bir RiftHunt önizlemesi zaten hazırlanıyor." : errorMessage(e) }); }
   });
+  app.post(`${root}/sync`, requireAdmin, async (req, res) => {
+    const input = options.safeParse(req.body);
+    if (!input.success) return res.status(400).json({ error: "Geçerli çarpan ve günlük güncelleme tercihi gerekli." });
+    try {
+      const config = await getRiftConfig();
+      if (!config.resetAt) return res.status(409).json({ error: "Önce eski Riftbound kataloğunun temiz kurulumunu tamamlayın." });
+      res.status(202).json({ id: await createRiftPreview(owner(req), input.data.multiplier, input.data.autoDaily, false, true) });
+    } catch (e: any) {
+      res.status(e.code === "23505" ? 409 : 503).json({ error: e.code === "23505" ? "Bir RiftHunt güncellemesi zaten çalışıyor." : errorMessage(e) });
+    }
+  });
   app.get(`${root}/runs/:id`, requireAdmin, async (req, res) => {
     if (!uuid.safeParse(req.params.id).success) return res.sendStatus(400);
     try {

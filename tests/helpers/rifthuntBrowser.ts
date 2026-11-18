@@ -34,6 +34,7 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
   const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
   const errors: string[] = [];
   const catalogRequests: URL[] = [];
+  const mutationPaths: string[] = [];
   page.on("pageerror", e => errors.push(e.message));
   page.on("dialog", dialog => { void dialog.accept(); });
   await fs.mkdir("generated-artifacts/rifthunt-browser", { recursive: true });
@@ -42,6 +43,7 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
       const browserRequest = route.request();
       const url = new URL(browserRequest.url());
       const pathname = url.pathname;
+      if (browserRequest.method() === "POST") mutationPaths.push(pathname);
       if (pathname === "/api/admin/rifthunt/catalog") catalogRequests.push(url);
       if (pathname.startsWith("/api/admin/rifthunt/") || pathname === "/api/admin/cards" ||
           pathname.startsWith("/api/admin/cards/") || ["/api/admin/card-games", "/api/admin/card-sets", "/api/cards", "/api/card-sets"].includes(pathname)) {
@@ -71,13 +73,11 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     await panel.getByPlaceholder("RIFTBOUND SİL").fill("RIFTBOUND SİL");
     await panel.getByRole("button", { name: /Eski Riftbound Verilerini Sil/i }).click();
     await panel.getByRole("status").waitFor();
-    await panel.getByRole("button", { name: /Fiyatları Önizle/i }).click();
-    const apply = panel.getByTestId("button-rift-import");
-    await apply.waitFor();
-    await panel.getByTestId("rift-import-required").waitFor();
+    const syncButton = panel.getByTestId("button-rift-sync");
     expect((await client.query("SELECT COUNT(*)::int AS count FROM cards WHERE api_source='rifthunt'")).rows[0].count).toBe(0);
-    await apply.click();
+    await syncButton.click();
     await panel.getByTestId("rift-import-complete").waitFor();
+    expect(await panel.getByTestId("button-rift-import").count()).toBe(0);
     expect(await panel.getByLabel(/Stok Filtresi/i).inputValue()).toBe("empty");
     expect(await panel.getByLabel(/Stok Filtresi/i).locator("option:checked").innerText()).toBe("Stok Yok");
     expect(await panel.getByLabel(/Set Filtresi/i).locator("option").first().innerText()).toBe("Tüm Setler");
@@ -116,7 +116,7 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
       await floorRow.waitFor();
       expect(await siteTile.getByTestId("rift-floor-original").count()).toBe(0);
       expect(await siteTile.innerText()).toContain(format(Number(floored.priceBeforeMinimum)));
-      expect(await floorRow.getByTestId("rift-calculated-price").innerText()).toContain("Alt Limit Önizlemesi");
+      expect(await floorRow.getByTestId("rift-calculated-price").innerText()).toContain("Alt Limit Hesaplaması");
       await client.query("UPDATE card_listings SET price=$1 WHERE id=$2", [floored.oldPrice, floored.listingId]);
       await page.reload();
     }
@@ -167,15 +167,18 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     await panel.getByLabel(/Stok Filtresi/i).selectOption("all");
     await panel.getByPlaceholder(/Kart Veya Baskı Ara/i).fill("ven-sp1-006");
     await expect.poll(() => stock.inputValue()).toBe("3");
-    await panel.getByRole("button", { name: /Fiyatları Önizle/i }).click();
+    const oldAppliedAt = (await request(app).get("/api/admin/rifthunt/status").set("x-test-admin", "test-admin")).body.config.lastAppliedAt;
     await Promise.all([
-      page.waitForResponse(response => response.url().includes("/api/admin/rifthunt/catalog") && response.ok()),
-      apply.click(),
+      page.waitForResponse(response => response.url().includes("/api/admin/rifthunt/sync") && response.status() === 202),
+      syncButton.click(),
     ]);
+    await expect.poll(async () => (await request(app).get("/api/admin/rifthunt/status").set("x-test-admin", "test-admin")).body.config.lastAppliedAt).not.toBe(oldAppliedAt);
     await panel.getByTestId("rift-import-complete").waitFor();
     // Wait for the refreshed catalog to commit before submitting a stock change
     // with its optimistic concurrency timestamp.
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect.poll(() => stock.isEnabled()).toBe(true);
+    expect(await stock.inputValue()).toBe("3");
     await stock.fill("0");
     await stock.locator("xpath=ancestor::td").getByRole("button", { name: "Kaydet", exact: true }).click();
     await expect.poll(async () => (await client.query("SELECT stock FROM card_listings WHERE card_id=$1", [cardId])).rows[0]?.stock).toBe(0);
@@ -198,6 +201,8 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
       return { total: cards.total, stocked: stocked.total, sets: sets.length };
     });
     expect(catalogResult).toEqual({ total: expectedCards, stocked: 0, sets: 1 });
+    expect(mutationPaths.filter(path => path === "/api/admin/rifthunt/sync")).toHaveLength(2);
+    expect(mutationPaths.some(path => path.endsWith("/preview") || path.endsWith("/apply"))).toBe(false);
     expect(errors).toEqual([]);
   } catch (e) {
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/failure.png", fullPage: true }).catch(() => {});

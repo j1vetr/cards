@@ -150,6 +150,49 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect(applied.status, JSON.stringify(applied.body)).toBe(200);
     return p;
   }
+  async function sync(multiplier = 1.9, autoDaily = true) {
+    const started = await post(base + "/sync", { multiplier, autoDaily });
+    expect(started.status, JSON.stringify(started.body)).toBe(202);
+    for (let i = 0; i < 200; i++) {
+      const result = await get(`${base}/runs/${started.body.id}`);
+      if (["applied", "failed"].includes(result.body.status)) return result.body;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    throw new Error("direct sync timeout");
+  }
+  it("imports and reprices directly in one request while preserving entered stock and Pokemon", async () => {
+    await reset();
+    const first = await sync();
+    expect(first).toMatchObject({ status: "applied", autoApply: true, importedCards: 1, importedSets: 1 });
+    const row = (await get(base + "/catalog")).body.rows[0];
+    expect(row).toMatchObject({ stock: 0, oldPrice: "5732.68" });
+    expect((await post(base + "/stock", {
+      printingId, finish: "foil", stock: 7, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt,
+    })).status).toBe(200);
+    const updated = await sync(2, false);
+    expect(updated).toMatchObject({ status: "applied", multiplier: 2, autoDaily: false });
+    const after = (await get(base + "/catalog")).body.rows[0];
+    expect(after).toMatchObject({ cardId: row.cardId, listingId: row.listingId, oldPrice: "6034.40", stock: 7 });
+    expect((await get(base + "/status")).body.config).toMatchObject({ enabled: true, multiplier: 2, autoDaily: false });
+    expect((await client.query("SELECT stock,price FROM card_listings WHERE id='poke-listing'")).rows[0])
+      .toEqual({ stock: 9, price: "100.00" });
+  });
+  it("validates direct updates and preserves saved stock and prices on a source failure", async () => {
+    expect((await request(app).post(base + "/sync").send({ multiplier: 1.9, autoDaily: true })).status).toBe(401);
+    expect((await post(base + "/sync", { multiplier: 0, autoDaily: true })).status).toBe(400);
+    expect((await post(base + "/sync", { multiplier: 1.9, autoDaily: true })).status).toBe(409);
+    await reset();
+    await sync();
+    const row = (await get(base + "/catalog")).body.rows[0];
+    expect((await post(base + "/stock", {
+      printingId, finish: "foil", stock: 4, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt,
+    })).status).toBe(200);
+    await client.query("DELETE FROM rifthunt_state WHERE key='snapshot'");
+    sourceFails = true;
+    expect((await sync(2)).status).toBe("failed");
+    expect((await client.query("SELECT stock,price FROM card_listings WHERE id=$1", [row.listingId])).rows[0])
+      .toEqual({ stock: 4, price: "5732.68" });
+  });
   it("requires authentication, owner access and validated reset confirmation", async () => {
     expect((await request(app).get(base + "/status")).status).toBe(401);
     expect((await request(app).post(base + "/reset").send({ confirmation: "RIFTBOUND SİL" })).status).toBe(401);

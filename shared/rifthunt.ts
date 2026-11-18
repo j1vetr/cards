@@ -66,6 +66,7 @@ export interface RiftRun {
   status: "running" | "ready" | "applied" | "failed";
   multiplier: number;
   autoDaily: boolean;
+  autoApply?: boolean;
   rate: { usdTry: number; date: string; source: string } | null;
   createdAt: string;
   expiresAt: string;

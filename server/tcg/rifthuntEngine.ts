@@ -11,10 +11,10 @@ export interface RiftPayload {
   snapshot: RiftSnapshot;
   baselineAppliedAt: string | null;
 }
-export async function createRiftPreview(owner: string, multiplier: number, autoDaily: boolean, scheduled = false) {
+export async function createRiftPreview(owner: string, multiplier: number, autoDaily: boolean, scheduled = false, autoApply = false) {
   const config = await getRiftConfig();
   const run: RiftRun = {
-    id: randomUUID(), status: "running", multiplier, autoDaily, rate: null,
+    id: randomUUID(), status: "running", multiplier, autoDaily, autoApply, rate: null,
     createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600_000).toISOString(),
     total: 0, priced: 0,
   };
@@ -31,9 +31,10 @@ export async function createRiftPreview(owner: string, multiplier: number, autoD
       const payload: RiftPayload = { snapshot, baselineAppliedAt: config.lastAppliedAt ?? null };
       await db.execute(sql`UPDATE rifthunt_runs SET status='ready',data=${JSON.stringify(run)}::jsonb,
         payload=${JSON.stringify(payload)}::jsonb WHERE id=${run.id}`);
+      if (autoApply) await applyRiftPreview(run.id, owner);
     } catch (e) {
       run.status = "failed";
-      run.error = e instanceof Error && !("code" in e) ? e.message.slice(0, 240) : "RiftHunt önizlemesi hazırlanamadı. Fiyatlar ve stoklar değişmedi.";
+      run.error = e instanceof Error && !("code" in e) ? e.message.slice(0, 240) : "RiftHunt güncellemesi tamamlanamadı. Fiyatlar ve stoklar değişmedi.";
       await db.execute(sql`UPDATE rifthunt_runs SET status='failed',data=${JSON.stringify(run)}::jsonb WHERE id=${run.id}`);
     }
   };

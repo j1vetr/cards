@@ -55,7 +55,7 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
     items: [
       { id: 'cards', icon: Layers, label: 'Kartlar' },
       { id: 'card-sets', icon: BookOpen, label: 'Kart Setleri' },
-      { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
+      { id: 'card-api-sync', icon: RefreshCw, label: 'Pokémon API Sync' },
       { id: 'riftbound-panel', icon: RiftboundSidebarIcon, label: 'Riftbound Panel' },
       { id: 'accessories', icon: ShoppingBag, label: 'Aksesuarlar' },
       { id: 'boxes', icon: Box, label: 'Box & Sealed' },

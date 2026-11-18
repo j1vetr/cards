@@ -9,6 +9,12 @@ Keep routine Riftbound stock entry and price-list exploration together in a dedi
 
 **How to apply:** Keep the generic API Sync page focused on its other providers and link to the Riftbound section. Preserve easy access to out-of-stock cards, highest-price ordering and price filters alongside stock entry. Highest and lowest prices must represent the complete filtered result, not only one page. Do not extend this provider-specific workflow into Pokémon.
 
+Use one direct “Kartları Ve Fiyatları Güncelle” action rather than a user-facing preview and separate apply step. Keep the other provider's sync page clearly identified as Pokémon.
+
+**Why:** The user asked “önizle diyoruz sonra aktarıyor ya bunu kaldır abi tek akış olsun direkt aktarmalı” and specifically wanted confirmation that entered stocks survive later imports.
+
+**How to apply:** Fetch, validate and apply in the backend, show completion only after the transaction commits and preserve existing stock. New listings start at zero. Explicit one-time destructive reset remains separate and must never be triggered by a routine update.
+
 Use Turkish-aware title case for the Riftbound panel's headings, field labels and selectable items, with every word starting uppercase. Use the Riftbound brand icon for its admin menu entry.
 
 **Why:** The user requested “2. 3. kelimeler büyük başlasın” for panel headings, fields and selectable items, and asked to replace its generic menu icon with the Riftbound icon.
