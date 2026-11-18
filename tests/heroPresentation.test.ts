@@ -68,11 +68,7 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       expect(await announcement.isVisible()).toBe(true);
       expect(await announcement.innerText()).toContain("500 TL Üzeri Ücretsiz Kargo");
       expect(await page.getByTestId("button-close-announcement").count()).toBe(0);
-      const pauseAnnouncements = announcement.getByRole("button");
-      await pauseAnnouncements.click();
-      expect(await pauseAnnouncements.getAttribute("aria-pressed")).toBe("true");
-      await pauseAnnouncements.click();
-      expect(await pauseAnnouncements.getAttribute("aria-pressed")).toBe("false");
+      expect(await announcement.getByRole("button").count()).toBe(0);
       await page.evaluate(() => scrollTo(0, 300));
       await expect.poll(async () => (await announcement.boundingBox())!.y).toBeGreaterThanOrEqual(-1);
       await expect.poll(async () => (await announcement.boundingBox())!.y).toBeLessThan(100);
@@ -150,7 +146,6 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       await page.getByTestId("input-search").waitFor({ state: "visible" });
       await page.keyboard.press("Escape");
       await page.emulateMedia({ reducedMotion: "reduce" });
-      expect(await page.getByTestId("announcement-track").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
       await expect.poll(() => video.count()).toBe(0);
       expect(await page.getByTestId("hero-riftbound").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
       const card = fan.locator("img").first();
