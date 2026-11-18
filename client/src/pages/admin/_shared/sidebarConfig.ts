@@ -12,7 +12,6 @@ import {
   Ticket,
   MessageSquare,
   RefreshCw,
-  Sparkles,
   Layers,
   BookOpen,
   ShoppingBag,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { SidebarCategory } from '../_layout/AdminLayout';
 import type { TabType } from './types';
+import RiftboundSidebarIcon from '../RiftboundSidebarIcon';
 
 export const VALID_TABS: TabType[] = [
   'dashboard',
@@ -56,7 +56,7 @@ export const SIDEBAR_CATEGORIES: SidebarCategory[] = [
       { id: 'cards', icon: Layers, label: 'Kartlar' },
       { id: 'card-sets', icon: BookOpen, label: 'Kart Setleri' },
       { id: 'card-api-sync', icon: RefreshCw, label: 'Kart API Sync' },
-      { id: 'riftbound-panel', icon: Sparkles, label: 'Riftbound Panel' },
+      { id: 'riftbound-panel', icon: RiftboundSidebarIcon, label: 'Riftbound Panel' },
       { id: 'accessories', icon: ShoppingBag, label: 'Aksesuarlar' },
       { id: 'boxes', icon: Box, label: 'Box & Sealed' },
     ],

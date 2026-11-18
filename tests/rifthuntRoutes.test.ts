@@ -26,6 +26,7 @@ let app: express.Express;
 let client: Client;
 let schema: string;
 let market: number | null = 75.43;
+let sourceRarity = "Showcase";
 let sourceFails = false;
 const base = "/api/admin/rifthunt";
 const owner = "test-admin";
@@ -68,7 +69,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
       INSERT INTO order_items VALUES('order-line','old-listing','Old Card',181.66,2);
       INSERT INTO cart_items VALUES('old-cart','old-listing');`);
     holder.db = drizzle(client);
-    market = 75.43; sourceFails = false;
+    market = 75.43; sourceFails = false; sourceRarity = "Showcase";
     const originalLstat = fs.lstat.bind(fs);
     vi.spyOn(fs, "lstat").mockImplementation(((file: any, ...args: any[]) => {
       if (String(file).includes("/cards/")) return Promise.reject(Object.assign(new Error("test image root absent"), { code: "ENOENT" }));
@@ -86,7 +87,7 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
       const data = url.endsWith("/bulk/cards") ? {
         fetched: now, source: "riotgames.com", sets: [{ id: "VEN", name: "Vendetta", count: 1, released: "2026-07-31" }],
         cards: [{ printing_id: printingId, oracle_id: oracleId, riftboundId: "ven-sp1-006", name: "Kai'Sa, Survivor",
-          set: "VEN", setName: "Vendetta", rarity: "Showcase", type: "Unit", domains: ["Fury"], energy: 4, power: null, might: 4,
+          set: "VEN", setName: "Vendetta", rarity: sourceRarity, type: "Unit", domains: ["Fury"], energy: 4, power: null, might: 4,
           text: "Draw 1.", rich: "<p>Draw 1.</p>", flavour: null, artist: "Artist", imgUrl: "https://images.rifthunt.com/test.webp",
           alt: false, sig: false, over: false, finishes: ["foil"] }],
       } : url.endsWith("/bulk/prices") ? {
@@ -211,6 +212,29 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect(repeated.body).toMatchObject({ importedCards: 1, importedSets: 1 });
     expect((await storage.getAdminCards({ gameId: "rift" })).total).toBe(1);
     expect((await get(`${base}/runs/${p.id}`)).body).toMatchObject({ importedCards: 1, importedSets: 1 });
+  });
+  it("uses Riftbound floors in preview, import, stock entry and daily repricing without touching Pokemon", async () => {
+    sourceRarity = "Common";
+    market = 0.01;
+    await reset();
+    const p = await preview();
+    const previewRow = (await get(`${base}/catalog?previewId=${p.id}`)).body.rows[0];
+    expect(previewRow).toMatchObject({ salePrice: "50.00", finish: "foil", cardId: null });
+    expect((await post(`${base}/runs/${p.id}/apply`)).status).toBe(200);
+    const row = (await get(base + "/catalog")).body.rows[0];
+    expect(row).toMatchObject({ oldPrice: "50.00", salePrice: "50.00", stock: 0 });
+    expect((await post(base + "/stock", {
+      printingId, finish: "foil", stock: 3, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt,
+    })).status).toBe(200);
+    expect((await client.query("SELECT price,stock FROM card_listings WHERE card_id=$1", [row.cardId])).rows[0])
+      .toMatchObject({ price: "50.00", stock: 3 });
+    // Simulate an existing under-floor listing. The real daily engine must correct it.
+    await client.query("UPDATE card_listings SET price=1 WHERE card_id=$1", [row.cardId]);
+    await runRiftDaily();
+    expect((await client.query("SELECT price,stock,is_active FROM card_listings WHERE card_id=$1", [row.cardId])).rows[0])
+      .toMatchObject({ price: "50.00", stock: 3, is_active: true });
+    expect((await client.query("SELECT price,stock FROM card_listings WHERE id='poke-listing'")).rows[0])
+      .toMatchObject({ price: "100.00", stock: 9 });
   });
   it("serves authenticated inventory filters and summaries reflecting saved stock and local rarity", async () => {
     await activate();
@@ -359,7 +383,11 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
       const cards = exported.c.cards.filter((c: any) => c.set === "VEN");
       const ids = new Set(cards.map((c: any) => c.printing_id));
       const catalog = { ...exported.c, cards, sets: exported.c.sets.filter((s: any) => s.id === "VEN") };
-      const prices = { ...exported.p, prices: exported.p.prices.filter((p: any) => ids.has(p.printing_id)),
+      // Replay prices as fresh test input, not live data. Archived timestamps
+      // otherwise expire after 72 hours and prevent inventory UI tests entirely.
+      // Stale-price rejection is tested separately.
+      const prices = { ...exported.p, prices: exported.p.prices.filter((p: any) => ids.has(p.printing_id))
+        .map((p: any) => ({ ...p, updatedAt: new Date().toISOString() })),
         cardmarket: { ...exported.p.cardmarket, prices: exported.p.cardmarket.prices.filter((p: any) => ids.has(p.printing_id)) } };
       const fixtureFetch = globalThis.fetch;
       vi.stubGlobal("fetch", async (url: string, init: any) => url.endsWith("/bulk/cards")

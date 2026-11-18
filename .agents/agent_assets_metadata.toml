@@ -77,3 +77,17 @@ mtime_ms = 1794584420417
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/8594b7a7-043e-4cff-9c94-cbdfd33ef343/d8c5f620-9ba1-496a-990d-503f3d5753d9"
 storage_version_token = "1794584651721647"
 content_type = "image/png"
+
+[[outputs]]
+id = "qruB2nbGWP5x3EVMCuHKd"
+uri = "file://generated-artifacts/rifthunt-browser/title-case-and-logo.png"
+type = "image"
+title = "Riftbound Panel: Başlıklar Ve Menü Simgesi"
+description = "İzole test ortamında güncellenmiş başlıklar, filtre seçenekleri ve Riftbound menü simgesi. Fiyat ve stok değerleri canlı veriler değildir."
+logical_id = "0d8b1baa-cd24-4ae1-8615-6ff67bd5c7d9"
+content_hash = "sha256:36fa0648be1404a5152124d73bb018d8497b07d293b73b3937711590cc3b0bd8"
+size = 196024
+mtime_ms = 1795012419069
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/0d8b1baa-cd24-4ae1-8615-6ff67bd5c7d9/66f32da0-144c-45c3-b7ff-6c2171f5a646"
+storage_version_token = "1795012488726251"
+content_type = "image/png"

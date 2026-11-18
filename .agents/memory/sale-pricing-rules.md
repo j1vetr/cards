@@ -5,6 +5,12 @@ description: User's USD-to-TRY pricing formula and stock-preserving safety const
 
 Use market USD × automatically retrieved TCMB USD/TRY foreign-exchange selling rate × a configurable margin multiplier, initially 1.9, for site sale prices.
 
+For Riftbound only, enforce these minimum TRY sale prices after conversion and multiplier: Common normal 15, Uncommon normal 25, Rare normal 90, Common foil 50, Uncommon foil 70. Higher calculated prices stay unchanged. No new floor applies to Rare foil or unspecified rarities.
+
+**Why:** The user explicitly requested fixed lower limits and confirmed “Yalnızca Riftbound”. They were told Rare Foil and unspecified types would not receive a new floor.
+
+**How to apply:** Use the canonical source rarity and finish consistently in preview, import, stock entry and scheduled pricing. Local display metadata must not alter price identity. Do not invent a market price for missing or stale source prices. Preserve stock and keep Pokémon pricing unchanged.
+
 **Why:** The user explicitly wants site prices derived from the external market, not an Excel-only market-price report, and selected automatic central-bank exchange rates.
 
 **How to apply:** Show the rate's publication date and preview proposed prices before changing existing active in-stock listings. Preserve inventory counts and skip uncertain variant matches. Do not interpret multiplying USD by 1.9 alone as a TRY conversion or use a graded high price for an ungraded card.

@@ -4,6 +4,12 @@ import { calculateSalePrice } from "./salePricingMath";
 
 export const RIFTHUNT_BASE = "https://api.rifthunt.com";
 export const MAX_PRICE_AGE = 72 * 3600_000;
+// Use the source printing's exact rarity, never a local display label.
+const RIFT_PRICE_FLOORS: Record<string, Partial<Record<RiftFinish, number>>> = {
+  common: { normal: 15, foil: 50 },
+  uncommon: { normal: 25, foil: 70 },
+  rare: { normal: 90 },
+};
 const amount = z.number().finite().nonnegative().nullable();
 const finishSchema = z.enum(["normal", "foil"]);
 const marketSchema = z.object({
@@ -108,7 +114,13 @@ export function priceFor(printing: RiftPrinting, finish: RiftFinish | null, rate
   if (!Number.isFinite(age) || age > MAX_PRICE_AGE || age < -86400_000) return { salePrice: null, reason: "Piyasa fiyatı eksik veya 72 saatten eski." };
   const usd = printing.prices[finish]?.market;
   if (typeof usd !== "number" || !Number.isFinite(usd) || usd <= 0) return { salePrice: null, reason: "Bu baskı ve yüzey için pozitif TCGplayer piyasa fiyatı yok." };
-  try { return { salePrice: calculateSalePrice(usd, rate, multiplier), reason: null }; }
+  try {
+    const minimum = RIFT_PRICE_FLOORS[printing.rarity.trim().toLowerCase()]?.[finish] ?? 0;
+    // Clamp before monetary rounding so even a valid sub-cent market price
+    // receives its floor. calculateSalePrice still validates rate and multiplier.
+    const salePrice = calculateSalePrice(Math.max(usd, minimum / rate / multiplier), rate, multiplier);
+    return { salePrice, reason: null };
+  }
   catch { return { salePrice: null, reason: "Hesaplanan fiyat geçersiz. Kur ve çarpanı kontrol edin." }; }
 }
 export async function fetchRifthuntJson(path: string) {

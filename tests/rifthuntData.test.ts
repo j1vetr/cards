@@ -31,6 +31,58 @@ export function fixture() {
   };
 }
 describe("RiftHunt printing and money contract", () => {
+  it.each([
+    ["Common", "normal", "15.00"],
+    ["Uncommon", "normal", "25.00"],
+    ["Rare", "normal", "90.00"],
+    ["Common", "foil", "50.00"],
+    ["Uncommon", "foil", "70.00"],
+    ["Rare", "foil", "0.76"],
+    ["Epic", "normal", "0.76"],
+    ["Showcase", "foil", "0.76"],
+    ["Uncommon Plus", "normal", "0.76"],
+    [" COMMON ", "normal", "15.00"],
+  ] as const)("applies only the configured %s %s floor", (rarity, finish, expected) => {
+    const f = fixture();
+    const p = normalizeRifthunt(f.catalog, f.prices).printings[0];
+    p.rarity = rarity;
+    p.finishes = ["normal", "foil"];
+    p.prices = {
+      normal: { market: 0.01, low: 0.01, mid: 0.01, high: 0.01 },
+      foil: { market: 0.01, low: 0.01, mid: 0.01, high: 0.01 },
+    };
+    expect(priceFor(p, finish, 40, 1.9)).toEqual({ salePrice: expected, reason: null });
+  });
+  it.each([
+    ["Common", "normal", 15],
+    ["Uncommon", "normal", 25],
+    ["Rare", "normal", 90],
+    ["Common", "foil", 50],
+    ["Uncommon", "foil", 70],
+  ] as const)("keeps %s %s prices at or above their floor unchanged", (rarity, finish, minimum) => {
+    const p = normalizeRifthunt(fixture().catalog, fixture().prices).printings[0];
+    p.rarity = rarity;
+    p.finishes = [finish];
+    for (const price of [minimum, minimum + 10.25]) {
+      p.prices[finish] = { market: price, low: price, mid: price, high: price };
+      expect(priceFor(p, finish, 1, 1).salePrice).toBe(price.toFixed(2));
+    }
+  });
+  it("does not let a floor bypass missing, stale or unsupported pricing and invalid inputs", () => {
+    const p = normalizeRifthunt(fixture().catalog, fixture().prices).printings[0];
+    p.rarity = "Common";
+    p.prices.foil!.market = 0.000001;
+    expect(priceFor(p, "foil", 40, 1.9).salePrice).toBe("50.00");
+    expect(priceFor(p, "normal", 40, 1.9).salePrice).toBeNull();
+    for (const [rate, multiplier] of [[0, 1.9], [-1, 1.9], [NaN, 1.9], [40, 0], [40, 101], [40, Infinity]]) {
+      expect(priceFor(p, "foil", rate, multiplier).salePrice).toBeNull();
+    }
+    expect(priceFor({ ...p, updatedAt: new Date(Date.now() - 73 * 3600_000).toISOString() }, "foil", 40, 1.9).salePrice).toBeNull();
+    for (const market of [null, 0, -1, NaN, Infinity]) {
+      p.prices.foil!.market = market;
+      expect(priceFor(p, "foil", 40, 1.9).salePrice).toBeNull();
+    }
+  });
   it("retains source rich formatting for lists without changing source plain text", () => {
     const f = fixture();
     const card = { ...f.catalog.cards[0], text: "Choose oneDeal 2.Stun.", rich: "<p>Choose one</p><ul><li>Deal 2.</li><li>Stun.</li></ul>" };
