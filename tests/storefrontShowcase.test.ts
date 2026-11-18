@@ -33,6 +33,7 @@ describe.skipIf(process.env.STOREFRONT_BROWSER_TEST !== "1")("Storefront card an
     });
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, hasTouch: true });
     const errors: string[] = [];
+    const showcaseRequests: URL[] = [];
     let empty = false, fail = false, cartWrites = 0;
     page.on("pageerror", error => errors.push(error.message));
     await fs.mkdir("generated-artifacts/storefront", { recursive: true });
@@ -42,6 +43,7 @@ describe.skipIf(process.env.STOREFRONT_BROWSER_TEST !== "1")("Storefront card an
         const url = new URL(route.request().url()), path = url.pathname;
         let data: unknown = [];
         if (path === "/api/cards") {
+          if (url.searchParams.get("inStock") === "true" && url.searchParams.get("limit") === "18") showcaseRequests.push(url);
           if (fail && url.searchParams.get("inStock") === "true") return route.fulfill({ status: 503, json: { error: "Test outage" } });
           const game = url.searchParams.get("game");
           const filtered = empty ? [] : game === "pokemon" ? [pokemon] : game === "riftbound" ? cards : [...cards, pokemon];
@@ -63,8 +65,18 @@ describe.skipIf(process.env.STOREFRONT_BROWSER_TEST !== "1")("Storefront card an
       const showcase = page.getByTestId("section-cards-on-sale");
       const first = showcase.locator('a[href="/kart/riftbound-test-0"]').first();
       await home();
-      expect(await page.getByTestId("tab-on-sale-riftbound").getAttribute("aria-selected")).toBe("true");
       await first.waitFor();
+      expect(await showcase.getByRole("heading", { name: "Riftbound Kartları", exact: true }).count()).toBe(1);
+      expect(await showcase.getByText("Stoktaki Riftbound Kartlarını Set Ve Kondisyon Seçenekleriyle Keşfet.", { exact: true }).count()).toBe(1);
+      expect(await showcase.getByRole("tab").count()).toBe(0);
+      expect(await showcase.getByText(/pokémon|pikachu/i).count()).toBe(0);
+      expect(await showcase.locator(".lucide-sparkles").count()).toBe(0);
+      expect(await showcase.getByTestId("btn-on-sale-all").getAttribute("href")).toBe("/kartlar?game=riftbound&inStock=true");
+      expect(await showcase.getByTestId("btn-on-sale-all").innerText()).toBe("Tüm Riftbound Kartları");
+      const ctaIcon = showcase.getByTestId("riftbound-showcase-cta-icon");
+      expect(await ctaIcon.getAttribute("src")).toBe("/icon-riftbound.svg");
+      await expect.poll(() => ctaIcon.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+      expect(await showcase.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(8, 14, 28)");
       await page.screenshot({ path: "generated-artifacts/storefront/showcase-desktop.jpg" });
       await first.click({ position: { x: 30, y: 40 } });
       await page.waitForURL("**/kart/riftbound-test-0");
@@ -75,11 +87,7 @@ describe.skipIf(process.env.STOREFRONT_BROWSER_TEST !== "1")("Storefront card an
       await showcase.getByTestId("btn-addtocart-test-0").click();
       await expect.poll(() => cartWrites).toBe(1);
       expect(new URL(page.url()).pathname).toBe("/");
-      await page.getByTestId("tab-on-sale-pokemon").click();
-      await showcase.locator('a[href="/kart/pokemon-test"]').waitFor();
-      await page.getByTestId("tab-on-sale-all").click();
-      await expect.poll(() => showcase.locator("article").count()).toBe(15);
-      await page.getByTestId("tab-on-sale-riftbound").click();
+      await expect.poll(() => showcase.locator("article").count()).toBe(14);
       const rail = page.getByTestId("on-sale-card-list");
       await page.getByTestId("btn-on-sale-next").click();
       await expect.poll(() => rail.evaluate(el => el.scrollLeft)).toBeGreaterThan(100);
@@ -104,13 +112,15 @@ describe.skipIf(process.env.STOREFRONT_BROWSER_TEST !== "1")("Storefront card an
       await mobileSet.click(); await page.waitForURL("**/set/riftbound-ven");
       empty = true;
       await home();
-      await showcase.getByText("Bu seçkide stokta kart yok").waitFor();
+      await showcase.getByText("Şu Anda Stokta Kart Yok.").waitFor();
       empty = false; fail = true;
       await home();
-      await showcase.getByRole("button", { name: "Yeniden dene" }).waitFor({ timeout: 15000 });
+      await showcase.getByRole("button", { name: "Yeniden Dene" }).waitFor({ timeout: 15000 });
       fail = false;
-      await showcase.getByRole("button", { name: "Yeniden dene" }).click();
+      await showcase.getByRole("button", { name: "Yeniden Dene" }).click();
       await first.waitFor();
+      expect(showcaseRequests.length).toBeGreaterThan(0);
+      expect(showcaseRequests.every(url => url.searchParams.get("game") === "riftbound")).toBe(true);
       expect(errors).toEqual([]);
     } catch (error) {
       await page.screenshot({ path: "generated-artifacts/storefront/test-failure.jpg" });
