@@ -3,7 +3,7 @@ import { Pause, Play } from 'lucide-react';
 import './hero-video-background.css';
 
 const VIDEO_ORIGIN = 'https://www.youtube-nocookie.com';
-const VIDEO_URL = `${VIDEO_ORIGIN}/embed/ZHhqwBwmRkI?enablejsapi=1&autoplay=1&mute=1&start=15&loop=1&playlist=ZHhqwBwmRkI&controls=0&playsinline=1&rel=0&disablekb=1&fs=0`;
+const VIDEO_URL = `${VIDEO_ORIGIN}/embed/zF5Ddo9JdpY?enablejsapi=1&autoplay=1&mute=1&start=15&loop=1&playlist=zF5Ddo9JdpY&controls=0&playsinline=1&rel=0&disablekb=1&fs=0`;
 
 export function HeroVideoBackground() {
   const [reducedMotion, setReducedMotion] = useState(true);

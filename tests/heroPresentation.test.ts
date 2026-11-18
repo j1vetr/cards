@@ -39,8 +39,8 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       const video = page.getByTestId("hero-background-video");
       await video.waitFor({ state: "attached" });
       const videoUrl = new URL((await video.getAttribute("src"))!);
-      expect(videoUrl.pathname).toBe("/embed/ZHhqwBwmRkI");
-      for (const [key, value] of Object.entries({ autoplay: "1", mute: "1", start: "15", loop: "1", playlist: "ZHhqwBwmRkI", playsinline: "1" })) {
+      expect(videoUrl.pathname).toBe("/embed/zF5Ddo9JdpY");
+      for (const [key, value] of Object.entries({ autoplay: "1", mute: "1", start: "15", loop: "1", playlist: "zF5Ddo9JdpY", playsinline: "1" })) {
         expect(videoUrl.searchParams.get(key)).toBe(value);
       }
       // Simulate player events without depending on YouTube's network/bot checks.
