@@ -84,6 +84,17 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     expect(await panel.getByLabel(/Fiyat Filtresi/i).locator("option").first().innerText()).toBe("Tüm Fiyatlar");
     await panel.getByRole("heading", { name: "Baskı Kataloğu", exact: true }).waitFor();
     expect(await panel.getByRole("heading", { name: "Baskı Kataloğu", exact: true }).evaluate(el => getComputedStyle(el).textTransform)).not.toBe("uppercase");
+    const brandIcon = panel.getByTestId("rift-panel-brand-icon");
+    expect(await brandIcon.getAttribute("src")).toBe("/icon-riftbound.svg");
+    await expect.poll(() => brandIcon.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await page.mouse.move(0, 0);
+    await expect.poll(() => syncButton.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(184, 71, 18)");
+    await syncButton.hover();
+    await expect.poll(() => syncButton.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(150, 56, 13)");
+    const firstRow = panel.getByTestId("rift-inventory-row").first();
+    await firstRow.hover();
+    expect(await firstRow.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 248, 243)");
+    await panel.getByRole("heading", { name: "Riftbound Fiyat Ve Stok", exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/title-case-and-logo.png" });
     expect(await panel.getByLabel("Sıralama").inputValue()).toBe("price_desc");
     const expectedCatalog = (await request(app).get("/api/admin/rifthunt/catalog?stock=empty&sort=price_desc").set("x-test-admin", "test-admin")).body;

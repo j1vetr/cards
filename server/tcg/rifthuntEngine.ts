@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { cache } from "../cache";
 import type { RiftRun } from "@shared/rifthunt";
+import { getRiftboundSetAssets } from "@shared/riftboundSets";
 import { priceFor, type RiftSnapshot } from "./rifthuntData";
 import { getTcmbUsdRate } from "./tcmbService";
 import { getRiftConfig, loadRiftSnapshot, putRiftState } from "./rifthuntStore";
@@ -65,13 +66,17 @@ export async function applyRiftPreview(id: string, owner: string) {
       WHERE s.game_id=${gameId} AND COALESCE(c.api_source,'')<>'rifthunt' LIMIT 1`);
     if (legacy.rows.length) throw new Error("Eski Riftbound kartları hâlâ var. Temiz kurulumu tamamlayın.");
 
-    const setRows = snapshot.sets.map(s => ({ id: randomUUID(), code: s.code, name: s.name, slug: `riftbound-${s.code}`, released: s.released, count: s.count }));
-    await tx.execute(sql`INSERT INTO card_sets(id,game_id,name,slug,release_date,total_cards,api_id,api_source,is_active)
-      SELECT x.id,${gameId},x.name,x.slug,x.released,x.count,x.code,'rifthunt',true
-      FROM jsonb_to_recordset(${JSON.stringify(setRows)}::jsonb) AS x(id TEXT,code TEXT,name TEXT,slug TEXT,released TEXT,count INT)
+    const setRows = snapshot.sets.map(s => ({ id: randomUUID(), code: s.code, name: s.name, slug: `riftbound-${s.code}`, released: s.released, count: s.count, ...getRiftboundSetAssets(s.code) }));
+    await tx.execute(sql`INSERT INTO card_sets(id,game_id,name,slug,release_date,total_cards,api_id,api_source,is_active,logo_url,symbol_url)
+      SELECT x.id,${gameId},x.name,x.slug,x.released,x.count,x.code,'rifthunt',true,x.logo,x.symbol
+      FROM jsonb_to_recordset(${JSON.stringify(setRows)}::jsonb) AS x(id TEXT,code TEXT,name TEXT,slug TEXT,released TEXT,count INT,logo TEXT,symbol TEXT)
       ON CONFLICT(slug) DO UPDATE SET name=EXCLUDED.name,release_date=EXCLUDED.release_date,total_cards=EXCLUDED.total_cards,
-        api_source='rifthunt',api_id=EXCLUDED.api_id,updated_at=NOW()
+        api_source='rifthunt',api_id=EXCLUDED.api_id,is_active=true,
+        logo_url=COALESCE(EXCLUDED.logo_url,card_sets.logo_url),symbol_url=COALESCE(EXCLUDED.symbol_url,card_sets.symbol_url),updated_at=NOW()
       WHERE card_sets.game_id=${gameId}`);
+    await tx.execute(sql`UPDATE card_sets SET is_active=false,updated_at=NOW()
+      WHERE game_id=${gameId} AND api_source='rifthunt'
+      AND api_id NOT IN (SELECT jsonb_array_elements_text(${JSON.stringify(snapshot.sets.map(s => s.code))}::jsonb))`);
     const known = await tx.execute(sql`SELECT printing_id,card_id FROM rifthunt_printings`);
     const knownIds = new Map(known.rows.map(r => [String(r.printing_id), r.card_id as string]));
     const entries = snapshot.printings.map(p => ({

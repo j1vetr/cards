@@ -10,3 +10,4 @@
 - [RiftHunt identities](rifthunt-identity-contract.md) — join by printing UUID, preserve special collector tokens and validate supported finishes. Riftbound only, not Pokémon.
 - [Riftbound admin workflow](riftbound-admin-workflow.md) — separate Riftbound Panel for stock entry and exploring high-priced, out-of-stock cards.
 - [Browser testing](browser-testing.md) — use system Chromium on NixOS and an isolated database for destructive admin scenarios.
+- [Storefront priorities](storefront-priorities.md) — the post-hero card showcase should prioritize Riftbound without removing Pokémon or ordinary card navigation.

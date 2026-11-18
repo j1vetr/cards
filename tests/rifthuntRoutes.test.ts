@@ -301,6 +301,24 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect((await get(`${base}/catalog?minPrice=100&maxPrice=1`)).status).toBe(400);
     expect((await get(`${base}/catalog?sort=invalid`)).status).toBe(400);
   });
+  it("keeps public set menus on the current RiftHunt catalog and saves local set marks", async () => {
+    await post(base + "/reset", { confirmation: "RIFTBOUND SİL" });
+    expect((await sync()).status).toBe("applied");
+    await client.query(`INSERT INTO card_sets(id,game_id,name,slug,api_id,api_source) VALUES
+      ('retired-set','rift','Retired','riftbound-retired','retired','rifthunt'),
+      ('legacy-set','rift','Legacy','riftbound-legacy','legacy','kartfiyat');
+      UPDATE card_sets SET is_active=false WHERE slug='riftbound-ven'`);
+    expect((await sync()).status).toBe("applied");
+    const { storage } = await import("../server/storage");
+    const sets = await storage.getCardSetsPublic("riftbound");
+    expect(sets.map(set => set.slug)).toEqual(["riftbound-ven"]);
+    expect(sets[0]).toMatchObject({ logo_url: "/riftbound/sets/ven.webp", symbol_url: "/icon-riftbound.svg" });
+    expect((await client.query("SELECT is_active FROM card_sets WHERE id='retired-set'")).rows[0].is_active).toBe(false);
+    expect((await client.query("SELECT is_active FROM card_sets WHERE id='legacy-set'")).rows[0].is_active).toBe(true);
+    expect((await client.query("SELECT logo_url FROM card_sets WHERE slug='riftbound-ven'")).rows[0].logo_url).toBe("/riftbound/sets/ven.webp");
+    expect((await storage.getCardSetsPublic("pokemon")).map(set => set.slug)).toEqual(["pokemon-base"]);
+  });
+
   it("imports at zero stock, lists by stock only, reprices without changing stock and rejects stale writes", async () => {
     const p = await activate();
     let cat = (await get(base + "/catalog")).body;

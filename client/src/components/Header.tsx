@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { SearchOverlay } from '@/components/SearchOverlay';
 import { useCardSets, type CardSetPublic } from '@/hooks/useTcg';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { SetLogo } from '@/components/home/SetLogo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,7 +128,12 @@ function MegaMenuPanel({
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-1 h-5 rounded-full" style={{ background: accent }} />
-                <span className="text-sm font-bold text-white tracking-wide">
+                <span className="flex items-center gap-2 text-sm font-bold text-white tracking-wide">
+                  <img
+                    src={game === 'pokemon' ? '/logo-pokemon-tcg.webp' : '/logo-riftbound.png'}
+                    alt=""
+                    className="h-6 max-w-16 object-contain"
+                  />
                   {game === 'pokemon' ? 'Pokémon TCG Setleri' : 'Riftbound Setleri'}
                 </span>
                 <span className="text-xs text-white/30 ml-1">({sets.length} set)</span>
@@ -151,40 +157,20 @@ function MegaMenuPanel({
 
             <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
               {displaySets.map(set => (
-                <Link key={set.id} href={`/set/${set.slug}`} className="flex">
+                <Link key={set.id} href={`/set/${set.slug}`} className="flex" data-testid={`link-mega-set-${set.slug}`}>
                   <div
                     className="group flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-all duration-150 w-full"
                     style={{ background: 'rgba(255,255,255,0.03)', minHeight: 100 }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                   >
-                    <div className="h-10 w-full flex items-center justify-center">
-                      {set.logo_url ? (
-                        <img
-                          src={set.logo_url}
-                          alt={set.name}
-                          className="max-h-10 max-w-[110px] object-contain"
-                          onError={e => {
-                            const el = e.currentTarget as HTMLImageElement;
-                            el.style.display = 'none';
-                            const fallback = el.nextElementSibling as HTMLElement | null;
-                            if (fallback) fallback.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="items-center justify-center w-full h-full"
-                        style={{ display: set.logo_url ? 'none' : 'flex' }}
-                      >
-                        {game === 'pokemon'
-                          ? <img src="/icon-pokemon.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
-                          : <img src="/icon-riftbound.svg" alt="" className="w-8 h-8 object-contain" style={{ opacity: 0.55 }} />
-                        }
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-white/55 text-center leading-tight line-clamp-2 group-hover:text-white/80 transition-colors w-full" style={{ minHeight: '2.4em' }}>
-                      {set.name}
-                    </span>
+                    <SetLogo
+                      set={set}
+                      game={game}
+                      className="min-h-16 w-full flex-col justify-center gap-2"
+                      imageClassName="max-h-7 max-w-[110px]"
+                      nameClassName="w-full text-center text-[10px] leading-tight text-white/55 transition-colors group-hover:text-white/80"
+                    />
                     <span className="text-[9px] font-medium" style={{ color: accent, opacity: set.listed_cards > 0 ? 0.8 : 0, minHeight: '1em' }}>
                       {set.listed_cards > 0 ? `${set.listed_cards} stokta` : ''}
                     </span>
@@ -458,6 +444,11 @@ export function Header() {
                 <button
                   className={`${navCls(isActive('/riftbound') || isActive('/oyun/riftbound'))} flex items-center gap-1`}
                   data-testid="button-nav-riftbound"
+                  type="button"
+                  onClick={() => openMega('riftbound')}
+                  onFocus={() => openMega('riftbound')}
+                  onKeyDown={event => { if (event.key === 'Escape') setMegaMenu(null); }}
+                  aria-expanded={megaMenu === 'riftbound'}
                 >
                   Riftbound
                   <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${megaMenu === 'riftbound' ? 'rotate-180' : ''}`} />
@@ -749,9 +740,9 @@ export function Header() {
                     >
                       <span className="flex items-center gap-2.5">
                         <img
-                          src="/icon-pokemon.svg"
+                          src="/logo-pokemon-tcg.webp"
                           alt=""
-                          className="w-5 h-5 object-contain shrink-0"
+                          className="h-6 max-w-12 object-contain shrink-0"
                           style={{ opacity: mobileAccordion === 'pokemon' ? 1 : 0.85 }}
                         />
                         <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'pokemon' ? 'text-[#CC0000]' : 'text-white'}`}>
@@ -797,7 +788,7 @@ export function Header() {
                                 {pokemonBoxes.slice(0, 5).map(box => (
                                   <Link key={box.id} href={`/urun/${box.slug}`} onClick={() => setMobileOpen(false)}
                                     className="flex items-center py-1.5 text-[12px] text-amber-400/80 hover:text-amber-300 transition-colors">
-                                    📦 {box.name}
+                                    {box.name}
                                   </Link>
                                 ))}
                                 <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-2 pb-1">Setler</p>
@@ -805,8 +796,9 @@ export function Header() {
                             )}
                             {pokemonSets.slice(0, 12).map(set => (
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
+                                data-testid={`link-mobile-pokemon-set-${set.slug}`}
                                 className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">
-                                {set.name}
+                                <SetLogo set={set} game="pokemon" imageClassName="h-5 w-7" />
                               </Link>
                             ))}
                             {pokemonSets.length > 12 && (
@@ -830,9 +822,9 @@ export function Header() {
                     >
                       <span className="flex items-center gap-2.5">
                         <img
-                          src="/icon-riftbound.svg"
+                          src="/logo-riftbound.png"
                           alt=""
-                          className="w-5 h-5 object-contain shrink-0"
+                          className="h-6 max-w-12 object-contain shrink-0"
                           style={{ opacity: mobileAccordion === 'riftbound' ? 1 : 0.85 }}
                         />
                         <span className={`text-[14px] font-semibold transition-colors ${mobileAccordion === 'riftbound' ? 'text-[#EF7D00]' : 'text-white'}`}>
@@ -878,7 +870,7 @@ export function Header() {
                                 {riftboundBoxes.slice(0, 5).map(box => (
                                   <Link key={box.id} href={`/urun/${box.slug}`} onClick={() => setMobileOpen(false)}
                                     className="flex items-center py-1.5 text-[12px] text-indigo-300/80 hover:text-indigo-200 transition-colors">
-                                    📦 {box.name}
+                                    {box.name}
                                   </Link>
                                 ))}
                                 <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest pt-2 pb-1">Setler</p>
@@ -886,8 +878,9 @@ export function Header() {
                             )}
                             {riftboundSets.map(set => (
                               <Link key={set.id} href={`/set/${set.slug}`} onClick={() => setMobileOpen(false)}
+                                data-testid={`link-mobile-riftbound-set-${set.slug}`}
                                 className="flex items-center py-2 text-[12px] text-white/65 hover:text-white transition-colors">
-                                {set.name}
+                                <SetLogo set={set} game="riftbound" imageClassName="h-5 w-7" />
                               </Link>
                             ))}
                           </div>

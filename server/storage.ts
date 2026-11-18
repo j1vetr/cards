@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { withRiftboundSetAssets } from "@shared/riftboundSets";
 import { 
   adminUsers, 
   categories, 
@@ -2582,10 +2583,11 @@ export class DbStorage implements IStorage {
       JOIN card_games cg ON cg.id = cs.game_id
       LEFT JOIN cards c ON c.set_id = cs.id
       WHERE cs.is_active = true ${gameFilter}
+        AND (cg.slug <> 'riftbound' OR cs.api_source = 'rifthunt')
       GROUP BY cs.id, cg.id
       ORDER BY cs.release_date DESC NULLS LAST, cs.name ASC
     `);
-    return result.rows as any[];
+    return (result.rows as any[]).map(withRiftboundSetAssets);
   }
 
   async getCardSetPublicBySlug(slug: string): Promise<any | null> {
@@ -2600,7 +2602,7 @@ export class DbStorage implements IStorage {
       WHERE cs.slug = ${slug} AND cs.is_active = true
       LIMIT 1
     `);
-    return (result.rows[0] as any) ?? null;
+    return result.rows[0] ? withRiftboundSetAssets(result.rows[0] as any) : null;
   }
 
   async getRaritiesByGame(gameSlug?: string): Promise<string[]> {
