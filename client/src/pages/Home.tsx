@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
 import { OnSaleCardsSection as RiftboundOnSaleCardsSection } from '@/components/home/OnSaleCardsSection';
+import '@/components/home/hero-section.css';
 import { useCardSets, useCards, useCardGames, type CardSetPublic } from '@/hooks/useTcg';
 import type { CardPublic } from '@/components/CardCard';
 import {
@@ -246,7 +247,7 @@ function CardFan() {
         className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
           width: '130%', height: '52%',
-          background: 'radial-gradient(ellipse 100% 65% at 50% 100%, rgba(99,102,241,0.6) 0%, rgba(124,58,237,0.32) 38%, rgba(79,70,229,0.1) 68%, transparent 82%)',
+          background: 'radial-gradient(ellipse 100% 65% at 50% 100%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 48%, transparent 82%)',
           filter: 'blur(26px)',
         }}
       />
@@ -254,7 +255,7 @@ function CardFan() {
       <div
         className="absolute -inset-10 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 85%, rgba(79,70,229,0.22), transparent 68%)',
+          background: 'radial-gradient(ellipse at 50% 85%, rgba(255,255,255,0.035), transparent 68%)',
           filter: 'blur(48px)',
         }}
       />
@@ -389,7 +390,7 @@ function HeroBackgroundVideo() {
 function HeroSection() {
   return (
     <section
-      className="relative bg-[#0d1427] flex flex-col overflow-hidden"
+      className="gocards-hero relative flex flex-col overflow-hidden"
       style={{ minHeight: 'calc(100vh - 120px)' }}
       data-testid="section-hero"
     >
@@ -397,61 +398,59 @@ function HeroSection() {
       <div className="absolute inset-0 pointer-events-none">
         <HeroBackgroundVideo />
         {/* Dark overlay */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(13,20,39,0.82) 0%, rgba(13,20,39,0.55) 50%, rgba(13,20,39,0.75) 100%)' }} />
+        <div data-testid="hero-video-overlay" className="gocards-hero__video-overlay absolute inset-0" />
         {/* Bottom fade to next section */}
-        <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to bottom, transparent, #0d1427)' }} />
-      </div>
-
-      {/* Background orbs (mobile + subtle desktop accent) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full bg-indigo-700/18 blur-[130px] lg:opacity-40" />
-        <div className="absolute top-1/2 -left-32 w-[500px] h-[500px] rounded-full bg-violet-800/12 blur-[110px] lg:opacity-40" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.14),transparent_58%)] lg:opacity-50" />
+        <div className="gocards-hero__bottom-fade absolute bottom-0 left-0 right-0 h-32" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
-
-        {/* Main content grid */}
-        <div className="flex-1 flex items-center pt-2 pb-0 lg:py-4">
-          <div className="flex flex-col lg:grid lg:gap-4 lg:items-start w-full"
-            style={{ gridTemplateColumns: '44% 56%' }}
+        <div className="gocards-hero__content">
+          <motion.h1
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+            className="gocards-hero__heading text-white font-bold"
+            style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
+            data-testid="hero-heading"
           >
-            {/* Card fan — top on mobile, right col on desktop */}
+            <span className="gocards-hero__heading-line">
+              <span className="gocards-hero__riftbound" data-testid="hero-riftbound">Riftbound</span>
+              {' & Pokémon TCG'}
+            </span>
+            <span className="gocards-hero__heading-line">
+              Kartları <span className="gocards-hero__turkey" data-testid="hero-turkey">Türkiye'de</span>
+            </span>
+          </motion.h1>
+
+          <div className="gocards-hero__lower">
+            {/* Card fan shares the lower desktop row with the original supporting copy. */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.04 }}
-              className="flex justify-center lg:justify-end order-1 lg:order-2 mb-1 lg:mb-0 overflow-visible"
+              className="gocards-hero__stage overflow-visible"
             >
-              <CardFan />
+              <div className="gocards-hero__fan">
+                <CardFan />
+              </div>
             </motion.div>
 
-            {/* Text — below on mobile, left col on desktop */}
+            <div className="gocards-hero__copy text-center flex flex-col items-center">
+            {/* Trust badge */}
             <motion.div
               variants={stagger}
               initial="hidden"
               animate="show"
-              className="text-center lg:text-left order-2 lg:order-1 flex flex-col items-center lg:items-start"
+              className="flex flex-col items-center"
             >
-              {/* Filled badge */}
               <motion.div
                 variants={fadeUp}
                 className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
-                style={{ background: 'rgba(79,70,229,0.85)', backdropFilter: 'blur(4px)' }}
+                style={{ background: 'rgba(24,24,22,0.82)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-200" />
-                <span className="text-[11px] text-indigo-100 font-semibold tracking-wider uppercase">Güvenle Alışveriş Yap</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-white/80" />
+                <span className="text-[11px] text-white/90 font-semibold tracking-wider uppercase">Güvenle Alışveriş Yap</span>
               </motion.div>
-
-              <motion.h1
-                variants={fadeUp}
-                className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold text-white leading-[1.08] mb-5"
-                style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
-              >
-                <span className="riftbound-shimmer">Riftbound</span> &amp; Pokémon TCG
-                <br />
-                Kartları Türkiye'de
-              </motion.h1>
 
               <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
                 Aradığın kartı bul, güvenle sipariş ver.
@@ -460,13 +459,13 @@ function HeroSection() {
               </motion.p>
 
               {/* CTA buttons */}
-              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start w-full sm:w-auto">
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
                 <Link href="/kartlar">
                   <motion.button
                     data-testid="btn-hero-magaza"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/40 w-full sm:w-auto justify-center"
+                    className="inline-flex items-center gap-2 bg-white/90 hover:bg-white text-zinc-950 font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-black/30 w-full sm:w-auto justify-center"
                   >
                     Kartlara Bak
                     <ChevronRight className="w-4 h-4" />
@@ -491,16 +490,15 @@ function HeroSection() {
                 </Link>
               </motion.div>
 
-              {/* Trust badges row — desktop only */}
               <motion.div
                 variants={fadeUp}
-                className="hidden lg:flex items-center mt-6 justify-center lg:justify-start"
+                className="hidden lg:flex items-center mt-5 justify-center"
               >
                 {HERO_TRUST_ITEMS.map((item, i) => (
                   <div key={i} className="flex items-center">
-                    {i > 0 && <div className="w-px h-8 bg-white/10 mx-4 sm:mx-5 shrink-0" />}
+                    {i > 0 && <div className="w-px h-8 bg-white/15 mx-4 sm:mx-5 shrink-0" />}
                     <div className="flex items-center gap-2">
-                      <item.icon className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <item.icon className="w-3.5 h-3.5 text-white/70 shrink-0" />
                       <div className="text-left">
                         <div className="text-[11px] font-semibold text-white/80 leading-tight whitespace-nowrap">{item.title}</div>
                         <div className="text-[10px] text-white/36 leading-tight whitespace-nowrap">{item.sub}</div>
@@ -510,6 +508,7 @@ function HeroSection() {
                 ))}
               </motion.div>
             </motion.div>
+            </div>
           </div>
         </div>
 
@@ -518,7 +517,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:flex pb-12 items-center justify-center gap-20"
+          className="hidden lg:flex pb-5 items-center justify-center gap-20"
         >
           <Link href="/riftbound" data-testid="link-hero-riftbound-logo">
             <motion.div
@@ -560,7 +559,7 @@ function HeroSection() {
 
       {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #080e1c)' }} />
+        style={{ background: 'linear-gradient(to bottom, transparent, #11110f)' }} />
     </section>
   );
 }

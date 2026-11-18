@@ -1,0 +1,158 @@
+.gocards-hero {
+  --hero-paper: #11110f;
+  position: relative;
+  isolation: isolate;
+  background: var(--hero-paper);
+}
+
+.gocards-hero__video-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 7, 0.76) 0%,
+    rgba(8, 8, 7, 0.58) 47%,
+    rgba(8, 8, 7, 0.82) 100%
+  );
+}
+
+.gocards-hero__bottom-fade {
+  background: linear-gradient(to bottom, transparent, var(--hero-paper));
+}
+
+.gocards-hero__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-top: clamp(1.3rem, 3.4vh, 2.5rem);
+  padding-bottom: 0.5rem;
+}
+
+.gocards-hero__heading {
+  position: relative;
+  z-index: 2;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin: 0 0 0.75rem;
+  text-align: center;
+  font-size: clamp(2rem, 5.1vw, 4.65rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.gocards-hero__heading-line {
+  display: block;
+}
+
+.gocards-hero__riftbound {
+  display: inline-block;
+  color: #ef7d00;
+}
+
+.gocards-hero__turkey {
+  display: inline-block;
+  color: #efefec;
+  background-color: #e8e6df;
+  background-image: url('./turkish-flag.svg');
+  background-position: 0% 50%;
+  background-repeat: repeat-x;
+  background-size: 3em 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gocards-flag-drift 36s linear infinite;
+}
+
+.gocards-hero__stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  margin-top: 0.15rem;
+}
+
+.gocards-hero__lower {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.gocards-hero__fan {
+  max-width: 100%;
+}
+
+.gocards-hero__copy {
+  width: 100%;
+}
+
+.gocards-hero__copy p {
+  color: rgba(244, 242, 237, 0.76);
+}
+
+@keyframes gocards-flag-drift {
+  from { background-position: 0 50%; }
+  to { background-position: 3em 50%; }
+}
+
+@media (min-width: 1024px) {
+  .gocards-hero__content {
+    padding-top: clamp(1.2rem, 2.6vh, 2rem);
+  }
+
+  .gocards-hero__heading {
+    margin-bottom: 0.1rem;
+    font-size: clamp(3.5rem, 5vw, 4.65rem);
+  }
+
+  .gocards-hero__stage {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .gocards-hero__lower {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 3vw, 3rem);
+  }
+
+  .gocards-hero__stage {
+    width: min(62%, 740px);
+  }
+
+  .gocards-hero__copy {
+    width: 38%;
+    margin-top: -0.4rem;
+  }
+
+  .gocards-hero__heading {
+    width: 100vw;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .gocards-hero__fan {
+    transform: scale(0.72);
+    transform-origin: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .gocards-hero__heading {
+    font-size: clamp(2rem, 8.6vw, 3.15rem);
+    line-height: 1.06;
+    margin-bottom: 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gocards-hero__turkey {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
