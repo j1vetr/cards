@@ -1,6 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="120" viewBox="0 0 360 120">
-  <rect width="360" height="120" fill="#e30a17"/>
-  <circle cx="88" cy="60" r="35" fill="#fff"/>
-  <circle cx="99" cy="52" r="28" fill="#e30a17"/>
-  <path fill="#fff" d="m159 43 4.8 11.4 12.3.9-9.4 8 3 12-10.7-6.4-10.7 6.4 3-12-9.4-8 12.3-.9z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 480 120">
+  <defs>
+    <linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b90818"/>
+      <stop offset=".32" stop-color="#ed1b2f"/>
+      <stop offset=".58" stop-color="#d70c20"/>
+      <stop offset="1" stop-color="#a80717"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#fff" stop-opacity=".2"/>
+      <stop offset=".48" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#3b0007" stop-opacity=".2"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="120" fill="url(#cloth)"/>
+  <path d="M0 22C75 5 130 42 210 24s160-23 270 5v27C375 34 305 70 220 50S80 35 0 57zm0 58c95-26 150 17 235-1s150-35 245-8v30c-90-28-155 8-243 15S86 83 0 111z" fill="url(#fold)" opacity=".78"/>
+  <path d="M0 0h480v120H0z" fill="url(#fold)" opacity=".55"/>
+  <circle cx="105" cy="60" r="39" fill="#fff"/>
+  <circle cx="119" cy="51" r="31" fill="#d70c20"/>
+  <path fill="#fff" d="m174 37 7.3 15.1 16.7 1.6-12.4 11.3 3.2 16.4-14.8-8.4-14.8 8.4 3.2-16.4L150 53.7l16.7-1.6z"/>
 </svg>

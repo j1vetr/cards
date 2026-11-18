@@ -3,6 +3,7 @@
   position: relative;
   isolation: isolate;
   background: var(--hero-paper);
+  min-height: calc(100vh - 120px);
 }
 
 .gocards-hero__video-overlay {
@@ -47,21 +48,36 @@
 
 .gocards-hero__riftbound {
   display: inline-block;
-  color: #ef7d00;
+  color: transparent;
+  background-image: linear-gradient(
+    105deg,
+    #ef7d00 0%,
+    #ef7d00 34%,
+    #ffc17a 48%,
+    #fff0d9 52%,
+    #f28a19 60%,
+    #ef7d00 76%,
+    #ef7d00 100%
+  );
+  background-size: 240% 100%;
+  background-position: 100% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: gocards-riftbound-shimmer 5.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 .gocards-hero__turkey {
   display: inline-block;
   color: #efefec;
-  background-color: #e8e6df;
-  background-image: url('./turkish-flag.svg');
+  background-color: #e30a17;
+  background-image: url('./turkish-flag-wave.svg');
   background-position: 0% 50%;
   background-repeat: repeat-x;
-  background-size: 3em 100%;
+  background-size: 4.8em 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: gocards-flag-drift 36s linear infinite;
+  animation: gocards-flag-wave 8s ease-in-out infinite;
 }
 
 .gocards-hero__stage {
@@ -94,9 +110,14 @@
   color: rgba(244, 242, 237, 0.76);
 }
 
-@keyframes gocards-flag-drift {
-  from { background-position: 0 50%; }
-  to { background-position: 3em 50%; }
+@keyframes gocards-riftbound-shimmer {
+  0%, 12% { background-position: 100% 50%; }
+  62%, 100% { background-position: 0% 50%; }
+}
+
+@keyframes gocards-flag-wave {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 @media (min-width: 1024px) {
@@ -143,16 +164,127 @@
 }
 
 @media (max-width: 767px) {
+  .gocards-hero {
+    height: var(--hero-mobile-available-height, calc(100svh - 120px - env(safe-area-inset-bottom, 0px)));
+    min-height: 0;
+  }
+
+  .gocards-hero > .relative {
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .gocards-hero__content {
+    flex: 0 0 auto;
+    padding-top: clamp(1.75rem, 3.5vh, 2rem);
+    padding-bottom: 0;
+  }
+
   .gocards-hero__heading {
     font-size: clamp(2rem, 8.6vw, 3.15rem);
     line-height: 1.06;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.08rem;
+  }
+
+  .gocards-hero__lower {
+    flex: 0 0 auto;
+  }
+
+  .gocards-hero__stage {
+    flex: 0 0 164px;
+    height: 164px;
+    margin-top: 0;
+  }
+
+  .gocards-hero__fan {
+    transform: scale(0.72);
+    transform-origin: center center;
+  }
+
+  .gocards-hero__copy {
+    flex: 0 0 auto;
+  }
+
+  .gocards-hero__trust-badge {
+    margin-bottom: 0.35rem;
+    padding: 0.28rem 0.7rem;
+  }
+
+  .gocards-hero__copy p {
+    max-width: 22rem;
+    margin-bottom: 0.55rem;
+    font-size: 0.83rem;
+    line-height: 1.35;
+  }
+
+  .gocards-hero__copy [data-testid="btn-hero-magaza"] {
+    min-height: 42px;
+    padding: 0.55rem 1.2rem;
+    border-radius: 0.7rem;
+  }
+
+  .gocards-hero__mobile-logos {
+    gap: 1.1rem;
+    margin-top: 0.45rem;
+  }
+
+  .gocards-hero__mobile-logos img {
+    height: 2rem;
+  }
+
+  .gocards-hero__mobile-logos > div {
+    height: 1.8rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .gocards-hero__fan {
+    transform: scale(0.66);
+  }
+}
+
+@media (max-width: 767px) and (max-height: 700px) {
+  .gocards-hero__content {
+    padding-top: 0.45rem;
+  }
+
+  .gocards-hero__heading {
+    font-size: clamp(1.85rem, 7.8vw, 2.5rem);
+    margin-bottom: 0;
+  }
+
+  .gocards-hero__stage {
+    flex-basis: 138px;
+    height: 138px;
+  }
+
+  .gocards-hero__fan {
+    transform: scale(0.62);
+  }
+
+  .gocards-hero__trust-badge {
+    margin-bottom: 0.2rem;
+  }
+
+  .gocards-hero__copy p {
+    margin-bottom: 0.35rem;
+    font-size: 0.76rem;
+  }
+
+  .gocards-hero__mobile-logos {
+    margin-top: 0.3rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .gocards-hero__riftbound,
   .gocards-hero__turkey {
     animation: none;
+  }
+
+  .gocards-hero__riftbound { background-position: 50% 50%; }
+  .gocards-hero__turkey {
+    background-image: url('./turkish-flag.svg');
     background-position: 50% 50%;
   }
 }

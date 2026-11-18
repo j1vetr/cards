@@ -260,7 +260,7 @@ export function Header() {
             initial={{ height: 40, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.4, 0, 1, 1] }}
-            className="relative overflow-hidden text-white"
+            className="relative hidden overflow-hidden text-white md:block"
             style={{ height: 40, background: ANNOUNCE_BG, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
             data-testid="bar-announcement"
           >

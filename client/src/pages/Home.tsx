@@ -388,14 +388,50 @@ function HeroBackgroundVideo() {
 }
 
 function HeroSection() {
+  const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const section = heroRef.current;
+    if (!section) return;
+
+    const updateAvailableHeight = () => {
+      if (window.innerWidth > 767) {
+        section.style.removeProperty('--hero-mobile-available-height');
+        return;
+      }
+
+      const nav = document.querySelector<HTMLElement>('[data-testid="nav-mobile-bottom"]');
+      const documentTop = section.getBoundingClientRect().top + window.scrollY;
+      const navHeight = nav?.getBoundingClientRect().height ?? 60;
+      const available = Math.max(0, window.innerHeight - documentTop - navHeight);
+      section.style.setProperty('--hero-mobile-available-height', `${available}px`);
+    };
+
+    updateAvailableHeight();
+    window.addEventListener('resize', updateAvailableHeight);
+    window.addEventListener('orientationchange', updateAvailableHeight);
+
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateAvailableHeight) : null;
+    const header = document.querySelector<HTMLElement>('[data-testid="header"]');
+    const nav = document.querySelector<HTMLElement>('[data-testid="nav-mobile-bottom"]');
+    if (header) observer?.observe(header);
+    if (nav) observer?.observe(nav);
+
+    return () => {
+      window.removeEventListener('resize', updateAvailableHeight);
+      window.removeEventListener('orientationchange', updateAvailableHeight);
+      observer?.disconnect();
+    };
+  }, []);
+
   return (
     <section
-      className="gocards-hero relative flex flex-col overflow-hidden"
-      style={{ minHeight: 'calc(100vh - 120px)' }}
+      ref={heroRef}
+      className="gocards-hero relative flex flex-col overflow-visible"
       data-testid="section-hero"
     >
       {/* YouTube video background — deferred until idle, all screens */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <HeroBackgroundVideo />
         {/* Dark overlay */}
         <div data-testid="hero-video-overlay" className="gocards-hero__video-overlay absolute inset-0" />
@@ -429,6 +465,7 @@ function HeroSection() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.04 }}
               className="gocards-hero__stage overflow-visible"
+              data-testid="hero-card-fan"
             >
               <div className="gocards-hero__fan">
                 <CardFan />
@@ -445,7 +482,7 @@ function HeroSection() {
             >
               <motion.div
                 variants={fadeUp}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+                className="gocards-hero__trust-badge inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
                 style={{ background: 'rgba(24,24,22,0.82)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-white/80" />
@@ -476,7 +513,8 @@ function HeroSection() {
               {/* Game logos — mobile only, inline after CTA */}
               <motion.div
                 variants={fadeUp}
-                className="flex lg:hidden items-center justify-center gap-6 mt-5"
+                className="gocards-hero__mobile-logos flex lg:hidden items-center justify-center gap-6 mt-5"
+                data-testid="hero-mobile-logos"
               >
                 <Link href="/riftbound">
                   <img src="/logo-riftbound.png" alt="Riftbound"

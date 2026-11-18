@@ -15,7 +15,10 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Homepage hero presentati
     page.on("pageerror", error => errors.push(error.message));
     await page.route("**/api/**", route => {
       const path = new URL(route.request().url()).pathname;
-      const json = path === "/api/cards" ? { cards: [], total: 0 }
+      const isHero = new URL(route.request().url()).searchParams.get("limit") === "30";
+      const json = path === "/api/cards" ? { cards: isHero ? [
+        { id: "hero-fixture", slug: "riftbound-hero-fixture", name: "Hero Test", image_url: "/logo-riftbound.png" },
+      ] : [], total: isHero ? 1 : 0 }
         : path.includes("settings") ? {} : [];
       return route.fulfill({ status: 200, json });
     });
@@ -41,6 +44,9 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Homepage hero presentati
       expect(decodeURIComponent(normal.image)).toContain("#e30a17");
       expect(normal.clip).toBe("text");
       expect(normal.animation).not.toBe("none");
+      const riftbound = page.getByTestId("hero-riftbound");
+      expect(await riftbound.evaluate(el => getComputedStyle(el).animationName)).toBe("gocards-riftbound-shimmer");
+      expect(await page.getByTestId("bar-announcement").isVisible()).toBe(true);
       expect(await turkey.evaluate(el => new Promise<boolean>(resolve => {
         const image = new Image();
         image.onload = () => resolve(image.naturalWidth > 0);
@@ -50,17 +56,34 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Homepage hero presentati
       const orange = await heading.locator("span").filter({ hasText: /^Riftbound$/ }).evaluate(el => getComputedStyle(el).color);
       expect(orange).not.toBe("rgb(255, 255, 255)");
       await page.screenshot({ path: "generated-artifacts/hero/desktop.jpg" });
-      for (const width of [1024, 390, 360]) {
-        await page.setViewportSize({ width, height: 900 });
+      for (const [width, height] of [[1024, 900], [390, 844], [360, 740], [375, 667], [360, 640]]) {
+        await page.setViewportSize({ width, height });
+        await page.evaluate(() => scrollTo(0, 0));
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         const bounds = await heading.boundingBox();
         expect(bounds!.x).toBeGreaterThanOrEqual(0);
         expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+        if (width < 768) {
+          expect(await page.getByTestId("bar-announcement").isVisible()).toBe(false);
+          const logos = page.getByTestId("hero-mobile-logos");
+          await expect.poll(async () => {
+            const logoBox = await logos.boundingBox();
+            const navBox = await page.getByTestId("nav-mobile-bottom").boundingBox();
+            return logoBox!.y + logoBox!.height <= navBox!.y - 4;
+          }).toBe(true);
+          expect(await logos.locator("a").count()).toBe(2);
+          expect(await logos.locator("img").evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
+          const button = await hero.getByTestId("btn-hero-magaza").boundingBox();
+          expect(button!.y).toBeGreaterThan(bounds!.y + bounds!.height);
+        }
       }
       await page.screenshot({ path: "generated-artifacts/hero/mobile.jpg" });
       await page.emulateMedia({ reducedMotion: "reduce" });
       await expect.poll(() => turkey.evaluate(el => getComputedStyle(el).animationName)).toBe("none");
-      expect(await turkey.evaluate(el => getComputedStyle(el).backgroundImage)).toBe(normal.image);
+      expect(await riftbound.evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+      const staticFlag = await turkey.evaluate(el => getComputedStyle(el).backgroundImage);
+      expect(staticFlag).not.toBe(normal.image);
+      expect(decodeURIComponent(staticFlag)).not.toContain("<animate");
       expect(await hero.getByTestId("btn-hero-magaza").locator("..").getAttribute("href")).toBe("/kartlar");
       await hero.getByTestId("btn-hero-magaza").click();
       await page.waitForURL("**/kartlar");
