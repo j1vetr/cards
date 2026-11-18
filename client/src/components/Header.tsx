@@ -496,7 +496,7 @@ export function Header() {
               {/* Giriş Yap button (shown when not logged in) */}
               {!user && (
                 <Link href="/giris" data-testid="link-giris-btn" className="ml-2 inline-flex items-center rounded-md border border-white/35 px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:border-white/70 hover:bg-white/[0.06]">
-                  {location === '/' && <User aria-hidden="true" className="h-[1.35vw] w-[1.35vw]" />}
+                  {location === "/" && <User aria-hidden="true" className="h-[1.1vw] w-[1.1vw]" />}
                   Giriş Yap
                 </Link>
               )}

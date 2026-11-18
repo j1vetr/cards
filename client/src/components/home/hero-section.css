@@ -483,7 +483,7 @@
     font-size: clamp(12px, 1.2vw, 22px);
     box-shadow: inset 0 1px rgba(255,255,255,.6), 0 7px 22px rgba(10,15,25,.15);
   }
-  .gocards-hero__store-button svg { width: 1.55vw; height: 1.55vw; }
+  .gocards-hero__store-button svg { width: 1.25vw; height: 1.25vw; }
   .gocards-hero__store-button svg:last-child { width: 1.1vw; height: 1.1vw; }
   .gocards-hero__collections { gap: .4vw; font-size: clamp(10px, .96vw, 18px); }
   .gocards-hero__collections svg { width: 1.05vw; height: 1.05vw; }
@@ -577,21 +577,21 @@
   }
   body:has(.gocards-hero) [data-testid="button-search"],
   body:has(.gocards-hero) [data-testid="link-cart"],
-  body:has(.gocards-hero) [data-testid="button-account"] { padding: .58vw; color: #e0e4ee; }
+  body:has(.gocards-hero) [data-testid="button-account"] { padding: .46vw; color: #e0e4ee; }
   body:has(.gocards-hero) [data-testid="button-search"] svg,
   body:has(.gocards-hero) [data-testid="link-cart"] > svg,
-  body:has(.gocards-hero) [data-testid="button-account"] > svg { width: 1.55vw; height: 1.55vw; }
+  body:has(.gocards-hero) [data-testid="button-account"] > svg { width: 1.25vw; height: 1.25vw; }
   body:has(.gocards-hero) [data-testid="header"]:has([data-testid="link-giris-btn"]) [data-testid="button-account"] { display: none; }
   body:has(.gocards-hero) [data-testid="link-giris-btn"] {
     position: relative;
     gap: .46vw;
-    min-height: clamp(25px, 2.35vw, 38px);
+    min-height: clamp(21px, 1.9vw, 31px);
     margin-left: 2.25vw;
-    padding: .42vh .66vw;
+    padding: .34vh .55vw;
     border: 1px solid #d4d8e4;
     border-radius: .54vw;
     color: #f1f3f8;
-    font-size: clamp(10px, .94vw, 16px);
+    font-size: clamp(9px, .78vw, 13px);
     line-height: 1;
     font-weight: 650;
   }
