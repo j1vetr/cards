@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, type ElementType } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
-import { motion, MotionConfig, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, MotionConfig, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
@@ -21,6 +21,7 @@ import {
   Boxes,
   BookOpen,
   Calendar,
+  ShoppingCart,
 } from 'lucide-react';
 
 // ── Animations ─────────────────────────────────────────────────────────────
@@ -345,48 +346,6 @@ const HERO_TRUST_ITEMS = [
   { icon: Package,     title: 'Güvenli Ödeme', sub: '256-bit SSL' },
 ];
 
-function HeroBackgroundVideo() {
-  // YouTube iframe is the single biggest third-party cost on the home page.
-  // Defer it until after first paint/idle so it never competes with LCP/TTI.
-  const [ready, setReady] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (prefersReducedMotion) return; // respect reduced-motion: skip the video entirely
-    const schedule = (cb: () => void) =>
-      'requestIdleCallback' in window ? (window as any).requestIdleCallback(cb, { timeout: 2000 }) : setTimeout(cb, 1200);
-    const cancel = schedule(() => setReady(true));
-    return () => {
-      if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(cancel);
-      else clearTimeout(cancel);
-    };
-  }, [prefersReducedMotion]);
-
-  if (!ready) return null;
-
-  return (
-    <iframe
-      src="https://www.youtube-nocookie.com/embed/zF5Ddo9JdpY?autoplay=1&mute=1&loop=1&playlist=zF5Ddo9JdpY&start=10&controls=0&showinfo=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&modestbranding=1&enablejsapi=0&cc_load_policy=0&origin=https://gocardstcg.com"
-      allow="autoplay; encrypted-media"
-      allowFullScreen={false}
-      title=""
-      loading="lazy"
-      style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        width: '100vw',
-        height: '56.25vw',
-        minHeight: '100%',
-        minWidth: '177.78vh',
-        transform: 'translate(-50%, -50%)',
-        border: 'none',
-        opacity: 0.45,
-      }}
-    />
-  );
-}
-
 function HeroSection() {
   const heroRef = useRef<HTMLElement>(null);
 
@@ -427,177 +386,74 @@ function HeroSection() {
   return (
     <section
       ref={heroRef}
-      className="gocards-hero relative flex flex-col overflow-visible"
+      className="gocards-hero relative flex flex-col overflow-hidden"
       data-testid="section-hero"
     >
-      {/* YouTube video background — deferred until idle, all screens */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <HeroBackgroundVideo />
-        {/* Dark overlay */}
-        <div data-testid="hero-video-overlay" className="gocards-hero__video-overlay absolute inset-0" />
-        {/* Bottom fade to next section */}
+        <div className="gocards-hero__video-overlay absolute inset-0" />
         <div className="gocards-hero__bottom-fade absolute bottom-0 left-0 right-0 h-32" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
+      <div className="relative max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
         <div className="gocards-hero__content" data-testid="hero-content-group">
-          <motion.h1
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            className="gocards-hero__heading text-white font-bold"
-            style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700 }}
-            data-testid="hero-heading"
-          >
-            <span className="gocards-hero__heading-line">
-              <span className="gocards-hero__riftbound" data-testid="hero-riftbound">Riftbound</span>
-              {' & Pokémon TCG'}
-            </span>
-            <span className="gocards-hero__heading-line">
-              Kartları <span className="gocards-hero__turkey" data-testid="hero-turkey">Türkiye'de</span>
-            </span>
-          </motion.h1>
-
-          <div className="gocards-hero__lower">
-            {/* Card fan shares the lower desktop row with the original supporting copy. */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.04 }}
-              className="gocards-hero__stage overflow-visible"
-              data-testid="hero-card-fan"
-            >
-              <div className="gocards-hero__fan">
-                <CardFan />
+          <div className="gocards-hero__layout">
+            <div className="gocards-hero__content-group">
+              <motion.div className="gocards-hero__eyebrow" variants={fadeUp} initial="hidden" animate="show">
+                Orijinal Koleksiyon Kartları
+              </motion.div>
+              <motion.h1 variants={fadeUp} initial="hidden" animate="show" className="gocards-hero__heading" data-testid="hero-heading">
+                <span className="gocards-hero__heading-line">
+                  <span className="gocards-hero__riftbound" data-testid="hero-riftbound">Riftbound</span>{' & Pokémon TCG'}
+                </span>
+                <span className="gocards-hero__heading-line">
+                  Kartları <span className="gocards-hero__turkey" data-testid="hero-turkey">Türkiye’de</span>
+                </span>
+              </motion.h1>
+              <div className="gocards-hero__lower">
+                <motion.div className="gocards-hero__copy" variants={stagger} initial="hidden" animate="show">
+                  <motion.p variants={fadeUp}>
+                    Aradığın kartı bul, güvenle sipariş ver.<br />
+                    Hızlı kargo, orijinal kart garantisi ve en iyi fiyatlar.<br />
+                    <strong>GoCards’ta seni bekliyor.</strong>
+                  </motion.p>
+                  <motion.div variants={fadeUp} className="gocards-hero__actions">
+                    <Link href="/kartlar" className="gocards-hero__store-button" data-testid="btn-hero-magaza">
+                      <ShoppingCart className="h-[19px] w-[19px]" strokeWidth={2.2} />
+                      Kartlara Bak
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                    <Link href="/kartlar?game=riftbound" className="gocards-hero__collections">
+                      Koleksiyonları Keşfet <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </motion.div>
+                </motion.div>
               </div>
-            </motion.div>
-
-            <div className="gocards-hero__copy text-center flex flex-col items-center">
-            {/* Trust badge */}
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              animate="show"
-              className="flex flex-col items-center"
-            >
-              <motion.div
-                variants={fadeUp}
-                className="gocards-hero__trust-badge inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
-                style={{ background: 'rgba(24,24,22,0.82)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)' }}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-white/80" />
-                <span className="text-[11px] text-white/90 font-semibold tracking-wider uppercase">Güvenle Alışveriş Yap</span>
-              </motion.div>
-
-              <motion.p variants={fadeUp} className="text-zinc-400 text-base lg:text-lg leading-relaxed mb-7 max-w-md mx-auto lg:mx-0">
-                Aradığın kartı bul, güvenle sipariş ver.
-                <br />
-                Hızlı kargo, orijinal kart garantisi ve en iyi fiyatlar.
-              </motion.p>
-
-              {/* CTA buttons */}
-              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
-                <Link href="/kartlar">
-                  <motion.button
-                    data-testid="btn-hero-magaza"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center gap-2 bg-white/90 hover:bg-white text-zinc-950 font-semibold px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-black/30 w-full sm:w-auto justify-center"
-                  >
-                    Kartlara Bak
-                    <ChevronRight className="w-4 h-4" />
-                  </motion.button>
-                </Link>
-              </motion.div>
-
-              {/* Game logos — mobile only, inline after CTA */}
-              <motion.div
-                variants={fadeUp}
-                className="gocards-hero__mobile-logos flex lg:hidden items-center justify-center gap-6 mt-5"
-                data-testid="hero-mobile-logos"
-              >
-                <Link href="/riftbound">
-                  <img src="/logo-riftbound.png" alt="Riftbound"
-                    className="h-10 w-auto object-contain select-none"
-                    style={{ mixBlendMode: 'screen' }} draggable={false} />
-                </Link>
-                <div className="w-px h-10 bg-white/12 shrink-0" />
-                <Link href="/pokemon">
-                  <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG"
-                    className="h-10 w-auto object-contain select-none" draggable={false} />
-                </Link>
-              </motion.div>
-
-              <motion.div
-                variants={fadeUp}
-                className="hidden lg:flex items-center mt-5 justify-center"
-              >
+              <motion.div variants={fadeUp} initial="hidden" animate="show" className="gocards-hero__trust-row">
                 {HERO_TRUST_ITEMS.map((item, i) => (
-                  <div key={i} className="flex items-center">
-                    {i > 0 && <div className="w-px h-8 bg-white/15 mx-4 sm:mx-5 shrink-0" />}
-                    <div className="flex items-center gap-2">
-                      <item.icon className="w-3.5 h-3.5 text-white/70 shrink-0" />
-                      <div className="text-left">
-                        <div className="text-[11px] font-semibold text-white/80 leading-tight whitespace-nowrap">{item.title}</div>
-                        <div className="text-[10px] text-white/36 leading-tight whitespace-nowrap">{item.sub}</div>
-                      </div>
-                    </div>
+                  <div key={item.title} className="gocards-hero__trust-item">
+                    <item.icon className="h-[19px] w-[19px] shrink-0" strokeWidth={1.8} />
+                    <span className="gocards-hero__trust-item-copy">
+                      <strong>{item.title}</strong><span>{item.sub}</span>
+                    </span>
                   </div>
                 ))}
               </motion.div>
-            </motion.div>
+              <motion.div variants={fadeUp} initial="hidden" animate="show" className="gocards-hero__game-logos" data-testid="hero-mobile-logos">
+                <Link href="/riftbound" data-testid="link-hero-riftbound-logo" aria-label="Riftbound koleksiyonu">
+                  <img src="/logo-riftbound.png" alt="Riftbound" style={{ mixBlendMode: 'screen' }} draggable={false} />
+                </Link>
+                <span className="gocards-hero__logo-divider" />
+                <Link href="/pokemon" data-testid="link-hero-pokemon-logo" aria-label="Pokémon koleksiyonu">
+                  <img src="/logo-pokemon-tcg.webp" alt="Pokémon TCG" draggable={false} />
+                </Link>
+              </motion.div>
             </div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .7, delay: .2 }} className="gocards-hero__stage" data-testid="hero-card-fan">
+              <div className="gocards-hero__fan"><CardFan /></div>
+            </motion.div>
           </div>
         </div>
-
-        {/* Game logo row — desktop only, anchored to bottom */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:flex pb-5 items-center justify-center gap-20"
-        >
-          <Link href="/riftbound" data-testid="link-hero-riftbound-logo">
-            <motion.div
-              whileHover={{ scale: 1.06, y: -3 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.18 }}
-              className="cursor-pointer"
-            >
-              <img
-                src="/logo-riftbound.png"
-                alt="Riftbound"
-                className="h-10 sm:h-12 lg:h-24 w-auto object-contain select-none"
-                style={{ mixBlendMode: 'screen' }}
-                draggable={false}
-              />
-            </motion.div>
-          </Link>
-
-          <div className="w-px h-12 lg:h-16 bg-white/10 shrink-0" />
-
-          <Link href="/pokemon" data-testid="link-hero-pokemon-logo">
-            <motion.div
-              whileHover={{ scale: 1.06, y: -3 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.18 }}
-              className="cursor-pointer"
-            >
-              <img
-                src="/logo-pokemon-tcg.webp"
-                alt="Pokémon TCG"
-                className="h-14 sm:h-16 lg:h-20 w-auto object-contain select-none"
-                draggable={false}
-              />
-            </motion.div>
-          </Link>
-        </motion.div>
-
       </div>
-
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #11110f)' }} />
     </section>
   );
 }

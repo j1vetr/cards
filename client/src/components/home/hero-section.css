@@ -1,298 +1,340 @@
 .gocards-hero {
-  --hero-paper: #11110f;
+  --hero-ink: #07101f;
   position: relative;
   isolation: isolate;
-  background: var(--hero-paper);
-  min-height: calc(100vh - 120px);
+  min-height: 610px;
+  color: #f8f6f0;
+  background-color: var(--hero-ink);
+  background-image: linear-gradient(90deg, rgba(5, 12, 24, .96) 0%, rgba(5, 12, 24, .82) 35%, rgba(5, 12, 24, .24) 77%, rgba(5, 12, 24, .15) 100%), url('./hero-world.webp');
+  background-position: center, center top;
+  background-size: cover, 100% 100%;
 }
 
 .gocards-hero__video-overlay {
-  background: linear-gradient(
-    180deg,
-    rgba(8, 8, 7, 0.76) 0%,
-    rgba(8, 8, 7, 0.58) 47%,
-    rgba(8, 8, 7, 0.82) 100%
-  );
+  background: linear-gradient(0deg, rgba(5, 12, 24, .60), transparent 28%, rgba(5, 12, 24, .08) 75%, rgba(5, 12, 24, .3));
 }
 
 .gocards-hero__bottom-fade {
-  background: linear-gradient(to bottom, transparent, var(--hero-paper));
+  background: linear-gradient(to bottom, transparent, var(--hero-ink));
 }
 
 .gocards-hero__content {
   display: flex;
-  flex: 1;
-  flex-direction: column;
+  min-height: inherit;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-block: 32px 26px;
+}
+
+.gocards-hero__layout {
+  display: grid;
+  grid-template-columns: minmax(420px, .92fr) minmax(540px, 1.08fr);
   align-items: center;
   width: 100%;
-  padding-top: clamp(1.3rem, 3.4vh, 2.5rem);
-  padding-bottom: 0.5rem;
+  max-width: 1320px;
+  margin: 0 auto;
+  gap: clamp(12px, 2vw, 38px);
+}
+
+.gocards-hero__content-group {
+  position: relative;
+  z-index: 3;
+  padding: 12px 0 18px;
+}
+
+.gocards-hero__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 19px;
+  color: rgba(255,255,255,.76);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+
+.gocards-hero__eyebrow::before,
+.gocards-hero__eyebrow::after {
+  width: 30px;
+  height: 1px;
+  content: '';
+  background: #e5b85b;
 }
 
 .gocards-hero__heading {
   position: relative;
-  z-index: 2;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin: 0 0 0.75rem;
-  text-align: center;
-  font-size: clamp(2rem, 5.1vw, 4.65rem);
-  line-height: 1.04;
-  letter-spacing: -0.035em;
+  margin: 0 0 12px;
+  color: #f7f6f2;
+  font-family: var(--font-body), sans-serif;
+  font-size: clamp(2.3rem, 3.1vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1.08;
   text-wrap: balance;
 }
 
-.gocards-hero__heading-line {
-  display: block;
-}
+.gocards-hero__heading-line { display: block; }
 
 .gocards-hero__riftbound {
-  display: inline-block;
-  color: transparent;
-  background-image: linear-gradient(
-    105deg,
-    #ef7d00 0%,
-    #ef7d00 34%,
-    #ffc17a 48%,
-    #fff0d9 52%,
-    #f28a19 60%,
-    #ef7d00 76%,
-    #ef7d00 100%
-  );
-  background-size: 240% 100%;
-  background-position: 100% 50%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: gocards-riftbound-shimmer 5.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
-.gocards-hero__turkey {
-  display: inline-block;
-  color: #efefec;
-  background-color: #e30a17;
-  background-image: url('./turkish-flag-wave.svg');
-  background-position: 50% 50%;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  -webkit-background-clip: text;
+  color: #f7b746;
+  background: linear-gradient(180deg, #ffe79d 10%, #e89626 72%, #bd6416);
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.gocards-hero__stage {
-  display: flex;
-  justify-content: center;
+.gocards-hero__turkey {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  width: 100%;
-  min-height: 0;
-  flex: 1;
-  margin-top: 0.15rem;
+  justify-content: center;
+  width: clamp(210px, 25vw, 290px);
+  height: clamp(53px, 6vw, 69px);
+  margin-left: 8px;
+  color: #fff;
+  background: url('./turkish-ribbon.webp') center / 100% 100% no-repeat;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,.28));
 }
 
 .gocards-hero__lower {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  align-items: center;
   width: 100%;
+}
+
+.gocards-hero__stage {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 58%;
+  min-height: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .gocards-hero__fan {
   max-width: 100%;
+  pointer-events: auto;
+  transform: scale(.78);
+  filter: drop-shadow(0 22px 20px rgba(0,0,0,.25));
 }
 
 .gocards-hero__copy {
-  width: 100%;
+  width: min(100%, 490px);
+  align-items: flex-start;
+  text-align: left;
 }
 
 .gocards-hero__copy p {
-  color: rgba(244, 242, 237, 0.76);
+  max-width: 440px;
+  margin: 0 0 22px;
+  color: rgba(246,247,250,.82);
+  font-size: 15px;
+  line-height: 1.62;
 }
 
-@keyframes gocards-riftbound-shimmer {
-  0%, 12% { background-position: 100% 50%; }
-  62%, 100% { background-position: 0% 50%; }
+.gocards-hero__trust-badge { display: none; }
+
+.gocards-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
-@media (min-width: 1024px) {
-  .gocards-hero__content {
-    padding-top: clamp(1.2rem, 2.6vh, 2rem);
-  }
-
-  .gocards-hero__heading {
-    /* The desktop cards are translated upward inside the stage box. Keep
-       deliberate clearance for their highest point and gentle float. */
-    margin-bottom: clamp(2rem, 4vh, 3rem);
-    font-size: clamp(3.5rem, 5vw, 4.65rem);
-  }
-
-  .gocards-hero__stage {
-    flex: 0 0 auto;
-    min-height: 0;
-  }
-
-  .gocards-hero__lower {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(1rem, 3vw, 3rem);
-  }
-
-  .gocards-hero__stage {
-    width: min(62%, 740px);
-  }
-
-  .gocards-hero__copy {
-    width: 38%;
-    margin-top: -0.4rem;
-  }
-
-  .gocards-hero__heading {
-    width: 100vw;
-  }
+.gocards-hero__store-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 49px;
+  padding: 0 24px;
+  border: 1px solid rgba(255,225,150,.7);
+  border-radius: 9px;
+  color: #16130d;
+  background: linear-gradient(180deg, #ffdc78, #efa928);
+  box-shadow: 0 8px 25px rgba(219,151,35,.2), inset 0 1px rgba(255,255,255,.58);
+  font-size: 14px;
+  font-weight: 800;
+  transition: transform .2s ease, filter .2s ease;
 }
+
+.gocards-hero__store-button:hover { transform: translateY(-2px); filter: brightness(1.06); }
+
+.gocards-hero__collections {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255,255,255,.9);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,.42);
+  text-underline-offset: 5px;
+  transition: color .2s ease;
+}
+
+.gocards-hero__collections:hover { color: #f5c35e; }
+
+.gocards-hero__trust-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 29px;
+}
+
+.gocards-hero__trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #efbd56;
+}
+
+.gocards-hero__trust-item + .gocards-hero__trust-item {
+  padding-left: 15px;
+  border-left: 1px solid rgba(255,255,255,.2);
+}
+
+.gocards-hero__trust-item-copy { color: rgba(255,255,255,.9); }
+.gocards-hero__trust-item-copy strong { display: block; font-size: 11px; white-space: nowrap; }
+.gocards-hero__trust-item-copy span { display: none; }
+
+.gocards-hero__game-logos {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-top: 35px;
+}
+
+.gocards-hero__game-logos img { width: auto; max-width: 155px; height: 48px; object-fit: contain; }
+.gocards-hero__game-logos img:first-child { height: 42px; }
+.gocards-hero__logo-divider { width: 1px; height: 35px; background: rgba(255,255,255,.27); }
+.gocards-hero__mobile-logos { display: none; }
 
 @media (min-width: 1024px) and (max-width: 1199px) {
-  .gocards-hero__fan {
-    transform: scale(0.72);
-    transform-origin: center;
+  .gocards-hero__layout { grid-template-columns: minmax(380px, .95fr) minmax(420px, 1.05fr); }
+  .gocards-hero__fan { transform: scale(.54); transform-origin: center; }
+  .gocards-hero__stage { right: 3%; width: 55%; }
+}
+
+@media (max-width: 1023px) {
+  .gocards-hero { min-height: 0; }
+  .gocards-hero__content { min-height: 650px; }
+  .gocards-hero__layout { display: flex; flex-direction: column; gap: 0; }
+  .gocards-hero__content-group { display: contents; }
+  .gocards-hero__eyebrow { margin: 0 auto 11px; font-size: 9px; letter-spacing: .24em; }
+  .gocards-hero__heading {
+    order: 1;
+    width: 100%;
+    margin: 0;
+    font-size: clamp(2rem, 7.8vw, 3.1rem);
+    line-height: 1.02;
+    text-align: center;
   }
+  .gocards-hero__heading-line { display: block; }
+  .gocards-hero__heading-line:last-child { display: flex; flex-direction: column; align-items: center; }
+  .gocards-hero__turkey { width: min(68vw, 286px); height: clamp(48px, 13vw, 62px); margin: 6px 0 0; }
+  .gocards-hero__stage {
+    position: relative;
+    top: auto;
+    right: auto;
+    order: 3;
+    width: 100%;
+    height: 218px;
+    flex: 0 0 218px;
+    transform: none;
+    margin: -1px 0 0;
+  }
+  .gocards-hero__fan { transform: scale(.72); }
+  .gocards-hero__lower { display: contents; }
+  .gocards-hero__copy {
+    display: contents;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+  .gocards-hero__copy p {
+    order: 2;
+    max-width: 430px;
+    margin: 1px auto 15px;
+    font-size: 13px;
+    line-height: 1.43;
+  }
+  .gocards-hero__actions { order: 4; flex-direction: column; gap: 12px; width: 100%; }
+  .gocards-hero__store-button { min-width: 235px; min-height: 49px; }
+  .gocards-hero__trust-row { order: 5; justify-content: center; gap: 12px; margin-top: 22px; }
+  .gocards-hero__trust-item { gap: 6px; }
+  .gocards-hero__trust-item + .gocards-hero__trust-item { padding-left: 12px; }
+  .gocards-hero__trust-item-copy strong { font-size: 10px; }
+  .gocards-hero__game-logos { order: 6; justify-content: center; gap: 16px; margin-top: 25px; }
+  .gocards-hero__game-logos img { height: 39px; max-width: 125px; }
+  .gocards-hero__game-logos img:first-child { height: 34px; }
 }
 
 @media (max-width: 767px) {
   .gocards-hero {
-    height: var(--hero-mobile-available-height, calc(100svh - 120px - env(safe-area-inset-bottom, 0px)));
+    height: var(--hero-mobile-available-height, calc(100svh - 128px - env(safe-area-inset-bottom, 0px)));
     min-height: 0;
+    background-image: linear-gradient(180deg, rgba(5,12,24,.68), rgba(5,12,24,.34) 48%, rgba(5,12,24,.70)), url('./hero-world.webp');
+    background-position: center, 66% center;
+    background-size: cover;
   }
-
-  .gocards-hero > .relative {
-    min-height: 0;
-    flex: 1 1 auto;
-  }
-
-  .gocards-hero__content {
-    flex: 1 1 auto;
-    justify-content: center;
-    gap: 0.3rem;
-    min-height: 0;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-
-  .gocards-hero__heading {
-    font-size: clamp(2rem, 8.6vw, 3.15rem);
-    line-height: 1.06;
-    margin-bottom: 0.08rem;
-  }
-
-  .gocards-hero__lower {
-    flex: 0 0 auto;
-    gap: 0.15rem;
-  }
-
-  .gocards-hero__stage {
-    flex: 0 0 164px;
-    height: 164px;
-    margin-top: 0;
-  }
-
-  .gocards-hero__fan {
-    transform: scale(0.72);
-    transform-origin: center center;
-  }
-
-  .gocards-hero__copy {
-    flex: 0 0 auto;
-  }
-
-  .gocards-hero__trust-badge {
-    margin-bottom: 0.35rem;
-    padding: 0.28rem 0.7rem;
-  }
-
-  .gocards-hero__copy p {
-    max-width: 22rem;
-    margin-bottom: 0.55rem;
-    font-size: 0.83rem;
-    line-height: 1.35;
-  }
-
-  .gocards-hero__copy [data-testid="btn-hero-magaza"] {
-    min-height: 42px;
-    padding: 0.55rem 1.2rem;
-    border-radius: 0.7rem;
-  }
-
-  .gocards-hero__mobile-logos {
-    gap: 1.1rem;
-    margin-top: 0.45rem;
-  }
-
-  .gocards-hero__mobile-logos img {
-    height: 2rem;
-  }
-
-  .gocards-hero__mobile-logos > div {
-    height: 1.8rem;
-  }
+  .gocards-hero > .relative { min-height: 0; flex: 1 1 auto; }
+  .gocards-hero__content { min-height: 0; height: 100%; padding: 12px 0 14px; }
+  .gocards-hero__eyebrow { margin-bottom: 7px; font-size: 8px; }
+  .gocards-hero__heading { font-size: clamp(1.95rem, 8.1vw, 2.7rem); }
+  .gocards-hero__turkey { width: min(67vw, 250px); height: 48px; font-size: 1.35rem; }
+  .gocards-hero__stage { height: clamp(148px, 25vh, 208px); flex-basis: clamp(148px, 25vh, 208px); }
+  .gocards-hero__fan { transform: scale(.63); }
+  .gocards-hero__copy p { max-width: 360px; margin-bottom: 11px; font-size: 12px; }
+  .gocards-hero__store-button { min-height: 45px; min-width: 216px; padding-inline: 18px; }
+  .gocards-hero__actions { gap: 9px; }
+  .gocards-hero__collections { font-size: 12px; }
+  .gocards-hero__trust-row { gap: 8px; margin-top: 15px; }
+  .gocards-hero__trust-item { gap: 5px; }
+  .gocards-hero__trust-item + .gocards-hero__trust-item { padding-left: 8px; }
+  .gocards-hero__trust-item svg { width: 16px; height: 16px; }
+  .gocards-hero__trust-item-copy strong { font-size: 9px; }
+  .gocards-hero__game-logos { margin-top: 17px; gap: 12px; }
+  .gocards-hero__game-logos img { height: 31px; max-width: 104px; }
+  .gocards-hero__game-logos img:first-child { height: 27px; }
+  .gocards-hero__logo-divider { height: 25px; }
 }
 
 @media (max-width: 390px) {
-  .gocards-hero__fan {
-    transform: scale(0.66);
-  }
+  .gocards-hero__content { padding-inline: 12px; }
+  .gocards-hero__heading { font-size: 1.9rem; }
+  .gocards-hero__stage { height: 145px; flex-basis: 145px; }
+  .gocards-hero__fan { transform: scale(.55); }
+  .gocards-hero__trust-row { gap: 6px; }
+  .gocards-hero__trust-item + .gocards-hero__trust-item { padding-left: 6px; }
+  .gocards-hero__trust-item-copy strong { font-size: 8px; }
 }
 
 @media (max-width: 767px) and (max-height: 700px) {
-  .gocards-hero__content {
-    gap: 0.12rem;
-    padding-top: 0.3rem;
-    padding-bottom: 0.3rem;
-  }
-
-  .gocards-hero__heading {
-    font-size: clamp(1.85rem, 7.8vw, 2.5rem);
-    margin-bottom: 0;
-  }
-
-  .gocards-hero__lower {
-    gap: 0;
-  }
-
-  .gocards-hero__stage {
-    flex-basis: 138px;
-    height: 138px;
-  }
-
-  .gocards-hero__fan {
-    transform: scale(0.62);
-  }
-
-  .gocards-hero__trust-badge {
-    margin-bottom: 0.2rem;
-  }
-
-  .gocards-hero__copy p {
-    margin-bottom: 0.35rem;
-    font-size: 0.76rem;
-  }
-
-  .gocards-hero__mobile-logos {
-    margin-top: 0.3rem;
-  }
+  .gocards-hero__content { padding-block: 5px 7px; }
+  .gocards-hero__eyebrow { display: none; }
+  .gocards-hero__heading { font-size: clamp(1.75rem, 7vw, 2.25rem); }
+  .gocards-hero__turkey { height: 39px; font-size: 1.15rem; }
+  .gocards-hero__stage { height: 120px; flex-basis: 120px; }
+  .gocards-hero__fan { transform: scale(.49); }
+  .gocards-hero__copy p { margin-bottom: 7px; font-size: 11px; }
+  .gocards-hero__trust-row { margin-top: 10px; }
+  .gocards-hero__game-logos { margin-top: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gocards-hero__riftbound,
-  .gocards-hero__turkey {
-    animation: none;
-  }
-
-  .gocards-hero__riftbound { background-position: 50% 50%; }
-  .gocards-hero__turkey {
-    background-image: url('./turkish-flag.svg');
-    background-position: 50% 50%;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-  }
+  .gocards-hero *,
+  .gocards-hero *::before,
+  .gocards-hero *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

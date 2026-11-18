@@ -243,9 +243,9 @@ export function Header() {
   };
 
   const navCls = (active: boolean) =>
-    `inline-flex items-center gap-1 text-[13.5px] font-medium tracking-wide transition-colors whitespace-nowrap cursor-pointer ${
+    `relative inline-flex items-center gap-1 text-[13.5px] font-medium tracking-wide transition-colors whitespace-nowrap cursor-pointer ${
       active ? 'text-white' : 'text-white/55 hover:text-white'
-    }`;
+    } ${active ? 'after:absolute after:-bottom-[19px] after:left-0 after:right-0 after:h-[2px] after:bg-[#e33442]' : ''}`;
 
   const isActive = (path: string) =>
     path === '/' ? location === '/' : location.startsWith(path);
@@ -255,7 +255,7 @@ export function Header() {
       <div className="sticky top-0 z-50">
       {/* ── Announcement bar ── */}
       <AnimatePresence initial={false}>
-        {!announceClosed && (
+        {!announceClosed && location !== '/' && (
           <motion.div
             initial={{ height: 40, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -350,30 +350,19 @@ export function Header() {
 
           {/* ── Mobile layout ── */}
           <div className="lg:hidden flex items-center justify-between h-[60px]">
-            <button
-              data-testid="button-mobile-menu"
-              onClick={() => setMobileOpen(true)}
-              className="flex flex-col gap-[5px] p-2 -ml-2"
-              aria-label="Menü"
-            >
-              <span className="block h-[1.5px] w-[22px] rounded-full bg-white/70" />
-              <span className="block h-[1.5px] w-[15px] rounded-full bg-white/70" />
-              <span className="block h-[1.5px] w-[22px] rounded-full bg-white/70" />
-            </button>
-
-            <Link href="/" data-testid="link-logo-mobile" className="absolute left-1/2 -translate-x-1/2">
+            <Link href="/" data-testid="link-logo-mobile" className="shrink-0">
               <img
                 src="/gocards-logo-white.png"
                 alt="GoCards"
-                className="h-11 w-auto object-contain"
+                className="h-9 w-auto object-contain"
                 data-testid="img-logo-mobile"
               />
             </Link>
 
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2 text-white/60 hover:text-white transition-colors"
+                className="p-2 text-white/65 hover:text-white transition-colors"
                 data-testid="button-search-mobile"
                 aria-label="Ara"
               >
@@ -383,7 +372,7 @@ export function Header() {
                 href="/sepet"
                 data-testid="link-cart-mobile"
                 aria-label="Sepet"
-                className="p-2 inline-flex transition-colors relative text-white/60 hover:text-white"
+                className="p-2 inline-flex transition-colors relative text-white/65 hover:text-white"
               >
                 <ShoppingBag className="w-[19px] h-[19px]" strokeWidth={1.8} />
                 <AnimatePresence>
@@ -398,24 +387,38 @@ export function Header() {
                   )}
                 </AnimatePresence>
               </Link>
+              <Link href={user ? '/hesabim' : '/giris'} data-testid="link-account-mobile" className="p-2 inline-flex text-white/65 hover:text-white" aria-label="Hesabım">
+                <User className="w-[19px] h-[19px]" strokeWidth={1.8} />
+              </Link>
+              <button
+                data-testid="button-mobile-menu"
+                onClick={() => setMobileOpen(true)}
+                className="flex flex-col justify-center gap-[5px] p-2 -mr-2"
+                aria-label="Menü"
+                aria-expanded={mobileOpen}
+              >
+                <span className="block h-[1.5px] w-[21px] rounded-full bg-white/75" />
+                <span className="block h-[1.5px] w-[14px] rounded-full bg-white/75" />
+                <span className="block h-[1.5px] w-[21px] rounded-full bg-white/75" />
+              </button>
             </div>
           </div>
 
           {/* ── Desktop layout ── */}
-          <div className="hidden lg:flex items-center h-[80px] relative">
+          <div className="hidden lg:flex items-center h-[58px] relative">
 
             {/* Logo — left */}
             <Link href="/" data-testid="link-logo" className="shrink-0 z-10">
               <img
                 src="/gocards-logo-white.png"
                 alt="GoCards"
-                className="h-14 w-auto object-contain"
+                className="h-10 w-auto object-contain"
                 data-testid="img-logo"
               />
             </Link>
 
             {/* Nav — absolutely centered */}
-            <nav aria-label="Ana menü" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 xl:gap-10">
+            <nav aria-label="Ana menü" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4 xl:gap-8">
               <Link href="/" className={navCls(isActive('/'))} data-testid="link-nav-home">
                 Ana Sayfa
               </Link>
@@ -579,10 +582,8 @@ export function Header() {
 
               {/* Giriş Yap button (shown when not logged in) */}
               {!user && (
-                <Link href="/giris" data-testid="link-giris-btn">
-                  <button className="ml-2 px-4 py-2 text-[12.5px] font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors">
-                    Giriş Yap
-                  </button>
+                <Link href="/giris" data-testid="link-giris-btn" className="ml-2 inline-flex items-center rounded-md border border-white/35 px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:border-white/70 hover:bg-white/[0.06]">
+                  Giriş Yap
                 </Link>
               )}
             </div>

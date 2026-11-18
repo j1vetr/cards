@@ -15,8 +15,8 @@ Match this showcase to the site's existing colors rather than introducing an unr
 
 **How to apply:** Preserve source card names as printed. Apply the casing to authored showcase copy, including subtitle text, without adding decorative template-like messaging.
 
-The mobile hero must center its whole content group in the usable screen area, not merely fit everything above the bottom navigation. Keep visible spacing between the heading, cards and supporting content on both mobile and desktop.
+Use the owner's supplied desktop and mobile artwork as the hero and header design direction, with real catalog cards in place of the reference's illustrated cards.
 
-**Why:** The user rejected the viewport-fitting revision because mobile content was packed at the top and desktop cards touched the heading.
+**Why:** The user explicitly requested “Tam bu heroyu ve headerı istiyorum” and supplied a clean portal-and-rocks background, transparent Turkish ribbon and mobile reference. This supersedes earlier full-width centered desktop heading and text-clipped flag requests.
 
-**How to apply:** Check actual animated card bounds, not only container boxes. Preserve room for both game logos above the bottom navigation. The flag inside “Türkiye'de” should show one large centered crescent and star, not a repeated pattern.
+**How to apply:** Desktop copy belongs left and cards right. Mobile follows the stacked reference, with real navigation, legible spacing and both game logos clear of the fixed bottom menu. Use the supplied red ribbon for “Türkiye'de”, not a tiled flag texture. Do not apply the hero's gold accents to the separate post-hero showcase.
