@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 480 120">
   <defs>
-    <filter id="wave" x="-10%" y="-25%" width="120%" height="150%">
-      <feTurbulence type="fractalNoise" baseFrequency=".012 .025" numOctaves="1" seed="7" result="cloth">
-        <animate attributeName="baseFrequency" values=".012 .025;.018 .035;.012 .025" dur="5s" repeatCount="indefinite"/>
+    <filter id="clothWave" x="-2%" y="-8%" width="104%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency=".008 .035" numOctaves="1" seed="7" result="texture">
+        <animate attributeName="baseFrequency" values=".008 .035;.012 .045;.008 .035" dur="7s" repeatCount="indefinite"/>
       </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" in2="cloth" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+      <feDisplacementMap in="SourceGraphic" in2="texture" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
     <linearGradient id="red">
       <stop stop-color="#c4091b"/>
@@ -19,14 +19,15 @@
       <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <rect width="480" height="120" fill="url(#red)"/>
-  <g filter="url(#wave)">
-    <path fill="#fff" fill-rule="evenodd" d="M126 60a39 39 0 1 1-78 0 39 39 0 0 1 78 0Zm-2-5a31 31 0 1 0-62 0 31 31 0 0 0 62 0Z"/>
-    <path fill="#fff" d="m157 36 7.5 16 17.5 2-13 12 3.5 17-15.5-9-15.5 9 3.5-17-13-12 17.5-2Z"/>
-    <path fill="#fff" fill-rule="evenodd" d="M366 60a39 39 0 1 1-78 0 39 39 0 0 1 78 0Zm-2-5a31 31 0 1 0-62 0 31 31 0 0 0 62 0Z"/>
-    <path fill="#fff" d="m397 36 7.5 16 17.5 2-13 12 3.5 17-15.5-9-15.5 9 3.5-17-13-12 17.5-2Z"/>
+  <g filter="url(#clothWave)">
+    <rect width="480" height="120" fill="url(#red)"/>
+    <path d="M0 18c78-19 131 25 218 5s166-18 262 7v24c-90-21-161 19-250 4S77 31 0 54zm0 59c87-24 154 15 235-1s157-31 245-8v28c-89-23-164 10-248 16S84 83 0 109z" fill="#fff" opacity=".08"/>
   </g>
-  <rect x="-480" width="960" height="120" fill="url(#light)" opacity=".8">
-    <animate attributeName="x" values="-480;0;-480" dur="5s" repeatCount="indefinite"/>
+  <rect x="-480" width="960" height="120" fill="url(#light)" opacity=".7">
+    <animate attributeName="x" values="-480;0;-480" dur="7s" repeatCount="indefinite"/>
   </rect>
+  <g fill="#fff">
+    <path fill-rule="evenodd" d="M257 60a39 39 0 1 1-78 0 39 39 0 0 1 78 0Zm-2-5a31 31 0 1 0-62 0 31 31 0 0 0 62 0Z"/>
+    <path d="m288 36 7.5 16 17.5 2-13 12 3.5 17-15.5-9-15.5 9 3.5-17-13-12 17.5-2Z"/>
+  </g>
 </svg>

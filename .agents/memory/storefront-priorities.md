@@ -14,3 +14,9 @@ Match this showcase to the site's existing colors rather than introducing an unr
 **Why:** The user rejected the previous look as “çok ai” and not matching the site, explicitly corrected the lowercase second words in headings/subtitles, and requested a Riftbound icon instead of the perceived AI icon.
 
 **How to apply:** Preserve source card names as printed. Apply the casing to authored showcase copy, including subtitle text, without adding decorative template-like messaging.
+
+The mobile hero must center its whole content group in the usable screen area, not merely fit everything above the bottom navigation. Keep visible spacing between the heading, cards and supporting content on both mobile and desktop.
+
+**Why:** The user rejected the viewport-fitting revision because mobile content was packed at the top and desktop cards touched the heading.
+
+**How to apply:** Check actual animated card bounds, not only container boxes. Preserve room for both game logos above the bottom navigation. The flag inside “Türkiye'de” should show one large centered crescent and star, not a repeated pattern.

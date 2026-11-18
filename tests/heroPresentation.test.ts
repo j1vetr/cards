@@ -43,7 +43,7 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Homepage hero presentati
       expect(normal.image).toContain("data:image/svg+xml");
       expect(decodeURIComponent(normal.image)).toContain("#e30a17");
       expect(normal.clip).toBe("text");
-      expect(normal.animation).not.toBe("none");
+      expect(decodeURIComponent(normal.image)).toContain("<animate");
       const riftbound = page.getByTestId("hero-riftbound");
       expect(await riftbound.evaluate(el => getComputedStyle(el).animationName)).toBe("gocards-riftbound-shimmer");
       expect(await page.getByTestId("bar-announcement").isVisible()).toBe(true);
@@ -55,6 +55,15 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Homepage hero presentati
       }))).toBe(true);
       const orange = await heading.locator("span").filter({ hasText: /^Riftbound$/ }).evaluate(el => getComputedStyle(el).color);
       expect(orange).not.toBe("rgb(255, 255, 255)");
+      const fan = page.getByTestId("hero-card-fan");
+      await fan.locator("img").first().waitFor();
+      await expect.poll(async () => {
+        const headingBox = await heading.boundingBox();
+        const imageTops = await fan.locator("img").evaluateAll(imgs => imgs.map(img => img.getBoundingClientRect().top));
+        return Math.min(...imageTops) - headingBox!.y - headingBox!.height;
+      }).toBeGreaterThan(20);
+      expect(await turkey.evaluate(el => getComputedStyle(el).backgroundRepeat)).toBe("no-repeat");
+      expect(await turkey.evaluate(el => getComputedStyle(el).backgroundPosition)).toBe("50% 50%");
       await page.screenshot({ path: "generated-artifacts/hero/desktop.jpg" });
       for (const [width, height] of [[1024, 900], [390, 844], [360, 740], [375, 667], [360, 640]]) {
         await page.setViewportSize({ width, height });
@@ -75,6 +84,15 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Homepage hero presentati
           expect(await logos.locator("img").evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
           const button = await hero.getByTestId("btn-hero-magaza").boundingBox();
           expect(button!.y).toBeGreaterThan(bounds!.y + bounds!.height);
+          await expect.poll(async () => {
+            const titleBox = await heading.boundingBox();
+            const logoBox = await logos.boundingBox();
+            const heroBox = await hero.boundingBox();
+            const contentCenter = (titleBox!.y + logoBox!.y + logoBox!.height) / 2;
+            return Math.abs(contentCenter - (heroBox!.y + heroBox!.height / 2));
+          }).toBeLessThan(18);
+          const imageTops = await fan.locator("img").evaluateAll(imgs => imgs.map(img => img.getBoundingClientRect().top));
+          expect(Math.min(...imageTops) - bounds!.y - bounds!.height).toBeGreaterThan(7);
         }
       }
       await page.screenshot({ path: "generated-artifacts/hero/mobile.jpg" });

@@ -440,7 +440,7 @@ function HeroSection() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full flex-1 flex flex-col">
-        <div className="gocards-hero__content">
+        <div className="gocards-hero__content" data-testid="hero-content-group">
           <motion.h1
             variants={fadeUp}
             initial="hidden"
