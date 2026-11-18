@@ -32,3 +32,9 @@ Fit mobile content to the actual space remaining between the header and fixed bo
 **Why:** Preview banners can consume additional space, so a layout that fits an equally sized direct screenshot can still hide the game logos inside the user's preview.
 
 **How to apply:** Base compact fallbacks on the hero's measured available height and preserve a small gap above the bottom navigation.
+
+Keep a non-dismissible scrolling information bar above the menu on desktop and mobile.
+
+**Why:** The owner explicitly requested a permanent bar with “500 TL üzeri ücretsiz kargo” and other shopping information. This supersedes the earlier request to hide the shipping announcement on mobile.
+
+**How to apply:** Keep the strip in the sticky header, support reduced motion and include its height in hero layout calculations. Do not hide it on the homepage or restore a dismiss button.

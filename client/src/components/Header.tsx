@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, Search, X, User, LogOut, UserPlus, ArrowUpRight, ChevronDown, ChevronRight, ChevronLeft, Layers, Zap, ShieldCheck, Lock, Gift } from 'lucide-react';
+import { ShoppingBag, Search, X, User, LogOut, UserPlus, ArrowUpRight, ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/hooks/useCart';
@@ -9,6 +9,7 @@ import { SearchOverlay } from '@/components/SearchOverlay';
 import { useCardSets, type CardSetPublic } from '@/hooks/useTcg';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { SetLogo } from '@/components/home/SetLogo';
+import { AnnouncementBar } from '@/components/home/AnnouncementBar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const HEADER_BG = '#0c1220';
-const ANNOUNCE_BG = '#09090f';
 
 interface BoxMini {
   id: string;
@@ -202,8 +202,6 @@ export function Header() {
   const [location, navigate] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [announceClosed, setAnnounceClosed] = useState(false);
-  const [activeAnnounce, setActiveAnnounce] = useState(0);
   const [megaMenu, setMegaMenu] = useState<'pokemon' | 'riftbound' | 'accessories' | null>(null);
   const [mobileAccordion, setMobileAccordion] = useState<'pokemon' | 'riftbound' | 'accessories' | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -253,92 +251,7 @@ export function Header() {
   return (
     <>
       <div className="sticky top-0 z-50">
-      {/* ── Announcement bar ── */}
-      <AnimatePresence initial={false}>
-        {!announceClosed && location !== '/' && (
-          <motion.div
-            initial={{ height: 40, opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.4, 0, 1, 1] }}
-            className="relative hidden overflow-hidden text-white md:block"
-            style={{ height: 40, background: ANNOUNCE_BG, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-            data-testid="bar-announcement"
-          >
-            {(() => {
-              const ITEMS = [
-                { icon: Zap,         text: '500₺+ Siparişlerde Kargo Bedava', highlight: true },
-                { icon: ShieldCheck, text: 'Orijinal Kart Garantisi',          highlight: false },
-                { icon: Lock,        text: 'Hızlı ve Güvenli Alışveriş',       highlight: false },
-                { icon: Gift,        text: 'Yeni Setler Stokta!',              highlight: false },
-              ];
-              const prev = () => setActiveAnnounce(i => (i - 1 + ITEMS.length) % ITEMS.length);
-              const next = () => setActiveAnnounce(i => (i + 1) % ITEMS.length);
-              return (
-                <div className="flex items-center h-full px-4 lg:px-2">
-                  {/* Desktop: 4 items with dividers + arrows */}
-                  <div className="hidden lg:flex items-center w-full">
-                    <button
-                      onClick={prev}
-                      className="p-1 text-white/25 hover:text-white/60 transition-colors shrink-0"
-                      aria-label="Önceki duyuru"
-                      data-testid="button-announce-prev"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="flex items-center justify-center gap-0 flex-1">
-                      {ITEMS.map((item, i) => {
-                        const isActive = i === activeAnnounce;
-                        return (
-                          <div key={i} className="flex items-center">
-                            {i > 0 && <div className="w-px h-4 bg-white/10 mx-5" />}
-                            <div className="flex items-center gap-1.5">
-                              <item.icon
-                                className="w-3 h-3 shrink-0 transition-colors"
-                                style={{ color: isActive ? '#818cf8' : 'rgba(255,255,255,0.25)' }}
-                              />
-                              <span
-                                className="text-[11px] font-medium tracking-wide whitespace-nowrap transition-colors"
-                                style={{ color: isActive ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.38)' }}
-                              >
-                                {item.text}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <button
-                      onClick={next}
-                      className="p-1 text-white/25 hover:text-white/60 transition-colors shrink-0"
-                      aria-label="Sonraki duyuru"
-                      data-testid="button-announce-next"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  {/* Mobile: single cycling item */}
-                  <div className="lg:hidden flex items-center justify-center gap-2 flex-1">
-                    <Zap className="w-3 h-3 text-indigo-400 shrink-0" />
-                    <span className="text-[11px] font-medium text-white/55 tracking-wide">
-                      500₺ ve üzeri siparişlerde{' '}
-                      <span className="text-indigo-400 font-semibold">KARGO BEDAVA</span>
-                    </span>
-                    <ChevronRight className="w-3 h-3 text-white/30 shrink-0" />
-                  </div>
-                </div>
-              );
-            })()}
-            <button
-              onClick={() => setAnnounceClosed(true)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/25 hover:text-white/70 transition-colors z-10"
-              aria-label="Kapat"
-              data-testid="button-close-announcement"
-            >
-              <X className="w-3 h-3" strokeWidth={2} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnnouncementBar />
 
       {/* ── Main header ── */}
       <header

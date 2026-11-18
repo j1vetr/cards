@@ -64,7 +64,19 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       expect(await video.count()).toBe(0);
       await page.getByTestId("button-hero-video").click();
       await video.waitFor({ state: "attached" });
-      expect(await page.getByTestId("bar-announcement").isVisible()).toBe(false);
+      const announcement = page.getByTestId("bar-announcement");
+      expect(await announcement.isVisible()).toBe(true);
+      expect(await announcement.innerText()).toContain("500 TL Üzeri Ücretsiz Kargo");
+      expect(await page.getByTestId("button-close-announcement").count()).toBe(0);
+      const pauseAnnouncements = announcement.getByRole("button");
+      await pauseAnnouncements.click();
+      expect(await pauseAnnouncements.getAttribute("aria-pressed")).toBe("true");
+      await pauseAnnouncements.click();
+      expect(await pauseAnnouncements.getAttribute("aria-pressed")).toBe("false");
+      await page.evaluate(() => scrollTo(0, 300));
+      await expect.poll(async () => (await announcement.boundingBox())!.y).toBeGreaterThanOrEqual(-1);
+      await expect.poll(async () => (await announcement.boundingBox())!.y).toBeLessThan(100);
+      await page.evaluate(() => scrollTo(0, 0));
       expect(cardRequests.some(url => url.searchParams.get("limit") === "30" && url.searchParams.get("game") === "riftbound")).toBe(true);
       const titleBox = await heading.boundingBox();
       const fanBox = await fan.boundingBox();
@@ -107,15 +119,18 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
           expect(await logo.evaluate(el => getComputedStyle(el).content)).not.toContain("gocards-desktop-brand");
         }
         if (width < 640) {
+          expect(await announcement.isVisible()).toBe(true);
           expect(await hero.locator('.gocards-hero__copy p').isVisible()).toBe(false);
-          const ribbonBox = await turkey.boundingBox();
-          const cardBounds = await fan.locator("img").evaluateAll(imgs => ({
-            top: Math.min(...imgs.map(img => img.getBoundingClientRect().top)),
-            bottom: Math.max(...imgs.map(img => img.getBoundingClientRect().bottom)),
-          }));
-          const action = await page.getByTestId("btn-hero-magaza").boundingBox();
-          expect(ribbonBox!.y + ribbonBox!.height).toBeLessThanOrEqual(cardBounds.top + 4);
-          expect(cardBounds.bottom).toBeLessThanOrEqual(action!.y + 4);
+          await expect.poll(async () => {
+            const ribbonBox = await turkey.boundingBox();
+            const cardBounds = await fan.locator("img").evaluateAll(imgs => ({
+              top: Math.min(...imgs.map(img => img.getBoundingClientRect().top)),
+              bottom: Math.max(...imgs.map(img => img.getBoundingClientRect().bottom)),
+            }));
+            const action = await page.getByTestId("btn-hero-magaza").boundingBox();
+            return ribbonBox!.y + ribbonBox!.height <= cardBounds.top + 4
+              && cardBounds.bottom <= action!.y + 4;
+          }).toBe(true);
           const logos = page.getByTestId("hero-mobile-logos");
           await expect.poll(async () => {
             const logoBox = await logos.boundingBox();
@@ -135,6 +150,7 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       await page.getByTestId("input-search").waitFor({ state: "visible" });
       await page.keyboard.press("Escape");
       await page.emulateMedia({ reducedMotion: "reduce" });
+      expect(await page.getByTestId("announcement-track").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
       await expect.poll(() => video.count()).toBe(0);
       expect(await page.getByTestId("hero-riftbound").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
       const card = fan.locator("img").first();
@@ -144,6 +160,7 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       const cta = page.getByTestId("btn-hero-magaza");
       await cta.click();
       await page.waitForURL("**/kartlar");
+      await announcement.waitFor({ state: "visible" });
       expect(errors).toEqual([]);
     } finally {
       await browser.close();

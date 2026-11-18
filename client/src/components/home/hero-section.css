@@ -360,6 +360,14 @@
   .gocards-hero__logo-divider { height: 22px; }
 }
 
+@container (max-height: 440px) {
+  .gocards-hero__heading { font-size: 26px; }
+  .gocards-hero__stage { height: 142px; flex-basis: 142px; }
+  .gocards-hero__fan { transform: scale(.46); }
+  .gocards-hero__game-logos img,
+  .gocards-hero__game-logos img:first-child { height: 30px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gocards-hero *,
   .gocards-hero *::before,
@@ -448,7 +456,7 @@
   .gocards-hero__content-group > .gocards-hero__turkey {
     display: inline-flex;
     position: absolute;
-    left: 19.5vw;
+    left: 17.7vw;
     top: calc(32.5vh - var(--hero-desktop-top));
     margin: 0;
   }

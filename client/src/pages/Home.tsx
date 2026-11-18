@@ -375,8 +375,10 @@ function HeroSection() {
 
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateAvailableHeight) : null;
     const header = document.querySelector<HTMLElement>('[data-testid="header"]');
+    const announcement = document.querySelector<HTMLElement>('[data-testid="bar-announcement"]');
     const nav = document.querySelector<HTMLElement>('[data-testid="nav-mobile-bottom"]');
     if (header) observer?.observe(header);
+    if (announcement) observer?.observe(announcement);
     if (nav) observer?.observe(nav);
 
     return () => {
