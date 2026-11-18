@@ -531,10 +531,10 @@
     padding-inline: 5vw 4.2vw;
   }
   body:has(.gocards-hero) [data-testid="header"] > div:first-child > .lg\:flex {
-    height: clamp(50px, 4.9vw, 80px);
+    height: clamp(48px, 4.2vw, 64px);
   }
   body:has(.gocards-hero) [data-testid="link-logo"] {
-    width: clamp(160px, 15.8vw, 256px);
+    width: clamp(148px, 14vw, 228px);
     height: 100%;
     display: flex;
     align-items: center;
@@ -547,18 +547,18 @@
     object-fit: contain;
   }
   body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] {
-    left: 26%;
-    right: 23.2%;
-    justify-content: space-between;
-    gap: 1.25vw;
-    transform: none;
+    left: 50%;
+    right: auto;
+    justify-content: center;
+    gap: clamp(16px, 1.8vw, 28px);
+    transform: translateX(-50%);
     translate: none;
   }
   body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] > a,
   body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] > div > a,
   body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] > div > button {
     color: #e7e8ef;
-    font-size: clamp(11px, 1.04vw, 17px);
+    font-size: clamp(11px, .94vw, 15px);
     letter-spacing: -.015em;
   }
   body:has(.gocards-hero) [data-testid="header"] nav svg { width: .9vw; height: .9vw; }
