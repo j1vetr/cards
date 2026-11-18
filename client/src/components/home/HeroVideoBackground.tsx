@@ -3,7 +3,7 @@ import { Pause, Play } from 'lucide-react';
 import './hero-video-background.css';
 
 const VIDEO_ORIGIN = 'https://www.youtube-nocookie.com';
-const VIDEO_URL = `${VIDEO_ORIGIN}/embed/zF5Ddo9JdpY?enablejsapi=1&autoplay=1&mute=1&start=15&loop=1&playlist=zF5Ddo9JdpY&controls=0&playsinline=1&rel=0&disablekb=1&fs=0`;
+const VIDEO_URL = `${VIDEO_ORIGIN}/embed/zF5Ddo9JdpY?enablejsapi=1&autoplay=1&mute=1&start=15&loop=1&playlist=zF5Ddo9JdpY&controls=0&playsinline=1&cc_load_policy=0&rel=0&disablekb=1&fs=0`;
 
 export function HeroVideoBackground() {
   const [reducedMotion, setReducedMotion] = useState(true);
@@ -22,10 +22,18 @@ export function HeroVideoBackground() {
   useEffect(() => {
     setPlaying(false);
     if (paused || reducedMotion) return;
+    const disableCaptions = () => {
+      playerRef.current?.contentWindow?.postMessage(JSON.stringify({
+        event: 'command', func: 'unloadModule', args: ['captions'],
+      }), VIDEO_ORIGIN);
+    };
     const receive = (event: MessageEvent) => {
       if (event.origin !== VIDEO_ORIGIN || event.source !== playerRef.current?.contentWindow) return;
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data?.event === 'onReady' || data?.event === 'onApiChange' || (data?.event === 'onStateChange' && data.info === 1)) {
+          disableCaptions();
+        }
         if (data?.event === 'onStateChange') setPlaying(data.info === 1);
         if (data?.event === 'infoDelivery' && typeof data.info?.playerState === 'number') {
           setPlaying(data.info.playerState === 1);
@@ -39,6 +47,8 @@ export function HeroVideoBackground() {
       const player = playerRef.current?.contentWindow;
       player?.postMessage(JSON.stringify({ event: 'listening', id: 'hero-youtube' }), VIDEO_ORIGIN);
       player?.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), VIDEO_ORIGIN);
+      player?.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onApiChange'] }), VIDEO_ORIGIN);
+      disableCaptions();
     };
     window.addEventListener('message', receive);
     const timer = window.setInterval(subscribe, 1000);

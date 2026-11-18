@@ -22,7 +22,7 @@
 .gocards-hero-video__shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgb(0 0 0 / 82%), rgb(0 0 0 / 52%) 55%, rgb(0 0 0 / 35%));
+  background: linear-gradient(90deg, rgb(0 0 0 / 87%), rgb(0 0 0 / 62%) 55%, rgb(0 0 0 / 45%));
 }
 
 .gocards-hero-video__toggle {

@@ -35,12 +35,12 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       await fan.locator("img").first().waitFor();
       await expect.poll(() => heading.evaluate(el => getComputedStyle(el).opacity)).toBe("1");
       expect(await hero.getByRole("heading", { level: 1 }).count()).toBe(1);
-      expect((await heading.innerText()).replace(/\s+/g, " ")).toMatch(/Riftbound.*Pokémon TCG.*Kartları.*Türkiye[’']de/);
+      expect((await heading.innerText()).replace(/\s+/g, " ")).toMatch(/Riftbound.*Pokémon TCG.*Kartları/);
       const video = page.getByTestId("hero-background-video");
       await video.waitFor({ state: "attached" });
       const videoUrl = new URL((await video.getAttribute("src"))!);
       expect(videoUrl.pathname).toBe("/embed/zF5Ddo9JdpY");
-      for (const [key, value] of Object.entries({ autoplay: "1", mute: "1", start: "15", loop: "1", playlist: "zF5Ddo9JdpY", playsinline: "1" })) {
+      for (const [key, value] of Object.entries({ autoplay: "1", mute: "1", start: "15", loop: "1", playlist: "zF5Ddo9JdpY", playsinline: "1", cc_load_policy: "0" })) {
         expect(videoUrl.searchParams.get(key)).toBe(value);
       }
       // Simulate player events without depending on YouTube's network/bot checks.
@@ -102,8 +102,20 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
           const login = page.getByTestId("link-giris-btn");
           expect(await login.getAttribute("href")).toBe("/giris");
           expect(await login.locator("svg").count()).toBe(1);
+          const logo = page.getByTestId("img-logo");
+          expect(await logo.getAttribute("src")).toBe("/gocards-logo-white.png");
+          expect(await logo.evaluate(el => getComputedStyle(el).content)).not.toContain("gocards-desktop-brand");
         }
         if (width < 640) {
+          expect(await hero.locator('.gocards-hero__copy p').isVisible()).toBe(false);
+          const ribbonBox = await turkey.boundingBox();
+          const cardBounds = await fan.locator("img").evaluateAll(imgs => ({
+            top: Math.min(...imgs.map(img => img.getBoundingClientRect().top)),
+            bottom: Math.max(...imgs.map(img => img.getBoundingClientRect().bottom)),
+          }));
+          const action = await page.getByTestId("btn-hero-magaza").boundingBox();
+          expect(ribbonBox!.y + ribbonBox!.height).toBeLessThanOrEqual(cardBounds.top + 4);
+          expect(cardBounds.bottom).toBeLessThanOrEqual(action!.y + 4);
           const logos = page.getByTestId("hero-mobile-logos");
           await expect.poll(async () => {
             const logoBox = await logos.boundingBox();

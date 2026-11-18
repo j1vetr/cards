@@ -46,7 +46,7 @@ const staggerFast = {
 // ── Card fan decoration ─────────────────────────────────────────────────────
 
 const FAN_CFG = {
-  mobile:  { w: 118, h: 165, containerW: 370, containerH: 230 },
+  mobile:  { w: 154, h: 215, containerW: 390, containerH: 270 },
   desktop: { w: 285, h: 399, containerW: 740, containerH: 520 },
 };
 
@@ -407,12 +407,14 @@ function HeroSection() {
               </motion.div>
               <motion.h1 variants={fadeUp} initial="hidden" animate="show" className="gocards-hero__heading" data-testid="hero-heading">
                 <span className="gocards-hero__heading-line">
-                  <span className="gocards-hero__riftbound" data-testid="hero-riftbound">Riftbound</span>{' & Pokémon TCG'}
+                  <span className="gocards-hero__riftbound" data-testid="hero-riftbound">Riftbound</span>{' & '}
+                  <span className="gocards-hero__pokemon">Pokémon TCG</span>
                 </span>
-                <span className="gocards-hero__heading-line">
-                  Kartları <span className="gocards-hero__turkey" data-testid="hero-turkey">Türkiye’de</span>
-                </span>
+                <span className="gocards-hero__heading-line">Kartları</span>
               </motion.h1>
+              <motion.span className="gocards-hero__turkey" data-testid="hero-turkey" variants={fadeUp} initial="hidden" animate="show">
+                Türkiye’de
+              </motion.span>
               <div className="gocards-hero__lower">
                 <motion.div className="gocards-hero__copy" variants={stagger} initial="hidden" animate="show">
                   <motion.p variants={fadeUp}>

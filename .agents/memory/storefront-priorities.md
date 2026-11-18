@@ -21,8 +21,14 @@ Use the owner's supplied desktop and mobile artwork as the hero and header desig
 
 **How to apply:** Desktop copy belongs left and cards right. Header and hero together fill the first viewport. Keep copy, controls and branding compact without reducing the card fan. Mobile follows the stacked reference, with real navigation, legible spacing and both game logos clear of the fixed bottom menu. Use the supplied red ribbon for “Türkiye'de”, not a tiled flag texture. Do not apply the hero's gold accents to the separate post-hero showcase.
 
-The owner requested the League of Legends “Still Here” cinematic as the hero background instead of the static landscape.
+The owner requested a YouTube cinematic as the hero background instead of the static landscape. Use the original GoCards logo on both desktop and mobile, not a recreated brand mark.
 
-**Why:** The owner supplied the YouTube video and explicitly requested a background video while asking for smaller copy and unchanged cards.
+**Why:** The owner supplied the video, requested smaller copy and unchanged desktop cards, then explicitly asked for the old logo back and a mobile layout matching their supplied reference with large cards.
 
-**How to apply:** Play silently and loop, respect reduced-motion preferences and retain the supplied landscape when playback is unavailable. YouTube can return a bot-verification screen in preview, so reveal its frame only after confirmed playback.
+**How to apply:** Play silently and loop with captions disabled, respect reduced-motion preferences and retain the supplied landscape when playback is unavailable. YouTube can return a bot-verification screen in preview, so reveal its frame only after confirmed playback. Mobile copy precedes the large card fan, followed by actions, trust items and game logos.
+
+Fit mobile content to the actual space remaining between the header and fixed bottom navigation, not just the viewport dimensions.
+
+**Why:** Preview banners can consume additional space, so a layout that fits an equally sized direct screenshot can still hide the game logos inside the user's preview.
+
+**How to apply:** Base compact fallbacks on the hero's measured available height and preserve a small gap above the bottom navigation.

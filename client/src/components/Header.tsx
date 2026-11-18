@@ -354,7 +354,7 @@ export function Header() {
               <img
                 src="/gocards-logo-white.png"
                 alt="GoCards"
-                className="h-9 w-auto object-contain"
+                className="h-8 w-auto object-contain"
                 data-testid="img-logo-mobile"
               />
             </Link>
@@ -412,7 +412,7 @@ export function Header() {
               <img
                 src="/gocards-logo-white.png"
                 alt="GoCards"
-                className="h-10 w-auto object-contain"
+                className="h-9 w-auto object-contain"
                 data-testid="img-logo"
               />
             </Link>
