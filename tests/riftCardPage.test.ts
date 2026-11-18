@@ -80,6 +80,13 @@ describe.skipIf(!process.env.RIFT_CARD_BROWSER_TEST)("Riftbound card page browse
       }
       // Only the visible responsive slot is presented and no repeated full rules below it.
       expect(await rules().count()).toBe(1);
+      expect(await page.getByRole("region", { name: "Riftbound piyasa bilgileri" }).count()).toBe(0);
+      expect(await page.getByText("Riftbound baskı verisi", { exact: true }).count()).toBe(0);
+      expect(await page.getByRole("heading", { name: "Piyasa ve kart bilgileri", exact: true }).count()).toBe(0);
+      expect(requests[`${sourcePath}/history`] ?? 0).toBe(0);
+      if (p.finishes.length) {
+        expect(await page.locator('[data-testid="btn-addtocart"]:visible').count()).toBe(1);
+      }
       const icons = rules().locator('img[src^="/icons/riftbound/"]');
       for (let i = 0; i < await icons.count(); i++) {
         await expect.poll(() => icons.nth(i).evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);

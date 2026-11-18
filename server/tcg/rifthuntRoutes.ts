@@ -99,6 +99,8 @@ export async function riftCatalog(admin: string, query: Record<string, unknown>)
         updatedAt: listing?.updated_at ? new Date(listing.updated_at as string).toISOString() : null,
         oldPrice: listing?.price as string || null,
         ...calculated,
+        priceBeforeMinimum: "priceBeforeMinimum" in calculated ? calculated.priceBeforeMinimum ?? null : null,
+        minimumPrice: "minimumPrice" in calculated ? calculated.minimumPrice ?? null : null,
         ...(matches.length > 1 ? { salePrice: null, reason: "Birden fazla ilan var. İşlem durduruldu." } : {}),
       });
     }

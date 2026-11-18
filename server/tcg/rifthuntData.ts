@@ -5,10 +5,13 @@ import { calculateSalePrice } from "./salePricingMath";
 export const RIFTHUNT_BASE = "https://api.rifthunt.com";
 export const MAX_PRICE_AGE = 72 * 3600_000;
 // Use the source printing's exact rarity, never a local display label.
-const RIFT_PRICE_FLOORS: Record<string, Partial<Record<RiftFinish, number>>> = {
+const RIFT_PRICE_FLOORS: Record<string, Record<RiftFinish, number>> = {
   common: { normal: 15, foil: 50 },
   uncommon: { normal: 25, foil: 70 },
-  rare: { normal: 90 },
+  rare: { normal: 90, foil: 90 },
+  epic: { normal: 90, foil: 90 },
+  promo: { normal: 90, foil: 90 },
+  showcase: { normal: 90, foil: 90 },
 };
 const amount = z.number().finite().nonnegative().nullable();
 const finishSchema = z.enum(["normal", "foil"]);
@@ -119,7 +122,8 @@ export function priceFor(printing: RiftPrinting, finish: RiftFinish | null, rate
     // Clamp before monetary rounding so even a valid sub-cent market price
     // receives its floor. calculateSalePrice still validates rate and multiplier.
     const salePrice = calculateSalePrice(Math.max(usd, minimum / rate / multiplier), rate, multiplier);
-    return { salePrice, reason: null };
+    const priceBeforeMinimum = (Math.round((usd * rate * multiplier + Number.EPSILON) * 100) / 100).toFixed(2);
+    return { salePrice, reason: null, priceBeforeMinimum, minimumPrice: minimum > 0 ? minimum.toFixed(2) : null };
   }
   catch { return { salePrice: null, reason: "Hesaplanan fiyat geçersiz. Kur ve çarpanı kontrol edin." }; }
 }

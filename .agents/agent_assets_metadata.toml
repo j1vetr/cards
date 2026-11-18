@@ -91,3 +91,17 @@ mtime_ms = 1795012419069
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/0d8b1baa-cd24-4ae1-8615-6ff67bd5c7d9/66f32da0-144c-45c3-b7ff-6c2171f5a646"
 storage_version_token = "1795012488726251"
 content_type = "image/png"
+
+[[outputs]]
+id = "d2O6xsmBd6-XxXCws-xjN"
+uri = "file://generated-artifacts/rifthunt-browser/floor-price-applied.png"
+type = "image"
+title = "Riftbound Alt Limit Fiyat Gösterimi"
+description = "Test ortamında alt limit öncesi hesaplanan tutar üstü çizili, kaydedilmiş satış fiyatı yanında gösteriliyor. Canlı fiyat ve stoklar değildir."
+logical_id = "373dd993-c821-4485-ac68-46a672604d3d"
+content_hash = "sha256:9171a0aeeffc5cf68d710b4c3e3f63ded6864d5dc1ff15710d029019f1556553"
+size = 183939
+mtime_ms = 1795013834869
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:64fdb003-263c-4712-8d83-7c5d713e8591/373dd993-c821-4485-ac68-46a672604d3d/6cd1ed3f-5677-4187-8711-af996d693003"
+storage_version_token = "1795013902384133"
+content_type = "image/png"

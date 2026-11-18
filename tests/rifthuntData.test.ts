@@ -37,9 +37,13 @@ describe("RiftHunt printing and money contract", () => {
     ["Rare", "normal", "90.00"],
     ["Common", "foil", "50.00"],
     ["Uncommon", "foil", "70.00"],
-    ["Rare", "foil", "0.76"],
-    ["Epic", "normal", "0.76"],
-    ["Showcase", "foil", "0.76"],
+    ["Rare", "foil", "90.00"],
+    ["Epic", "normal", "90.00"],
+    ["Epic", "foil", "90.00"],
+    ["Promo", "normal", "90.00"],
+    ["Promo", "foil", "90.00"],
+    ["Showcase", "normal", "90.00"],
+    ["Showcase", "foil", "90.00"],
     ["Uncommon Plus", "normal", "0.76"],
     [" COMMON ", "normal", "15.00"],
   ] as const)("applies only the configured %s %s floor", (rarity, finish, expected) => {
@@ -51,12 +55,19 @@ describe("RiftHunt printing and money contract", () => {
       normal: { market: 0.01, low: 0.01, mid: 0.01, high: 0.01 },
       foil: { market: 0.01, low: 0.01, mid: 0.01, high: 0.01 },
     };
-    expect(priceFor(p, finish, 40, 1.9)).toEqual({ salePrice: expected, reason: null });
+    expect(priceFor(p, finish, 40, 1.9)).toMatchObject({ salePrice: expected, reason: null, priceBeforeMinimum: "0.76" });
   });
   it.each([
     ["Common", "normal", 15],
     ["Uncommon", "normal", 25],
     ["Rare", "normal", 90],
+    ["Rare", "foil", 90],
+    ["Epic", "normal", 90],
+    ["Epic", "foil", 90],
+    ["Promo", "normal", 90],
+    ["Promo", "foil", 90],
+    ["Showcase", "normal", 90],
+    ["Showcase", "foil", 90],
     ["Common", "foil", 50],
     ["Uncommon", "foil", 70],
   ] as const)("keeps %s %s prices at or above their floor unchanged", (rarity, finish, minimum) => {
@@ -68,11 +79,17 @@ describe("RiftHunt printing and money contract", () => {
       expect(priceFor(p, finish, 1, 1).salePrice).toBe(price.toFixed(2));
     }
   });
-  it("does not let a floor bypass missing, stale or unsupported pricing and invalid inputs", () => {
+  it("raises a low-priced Rare foil such as Maduli to 90 TRY", () => {
     const p = normalizeRifthunt(fixture().catalog, fixture().prices).printings[0];
-    p.rarity = "Common";
+    p.rarity = "Rare";
+    p.prices.foil!.market = 0.0756;
+    expect(priceFor(p, "foil", 40, 1.9)).toMatchObject({ salePrice: "90.00", priceBeforeMinimum: "5.75", minimumPrice: "90.00" });
+  });
+  it.each(["Common", "Uncommon", "Rare", "Epic", "Promo", "Showcase"])("does not let a %s floor bypass missing, stale or unsupported pricing and invalid inputs", rarity => {
+    const p = normalizeRifthunt(fixture().catalog, fixture().prices).printings[0];
+    p.rarity = rarity;
     p.prices.foil!.market = 0.000001;
-    expect(priceFor(p, "foil", 40, 1.9).salePrice).toBe("50.00");
+    expect(priceFor(p, "foil", 40, 1.9).salePrice).toBe(rarity === "Common" ? "50.00" : rarity === "Uncommon" ? "70.00" : "90.00");
     expect(priceFor(p, "normal", 40, 1.9).salePrice).toBeNull();
     for (const [rate, multiplier] of [[0, 1.9], [-1, 1.9], [NaN, 1.9], [40, 0], [40, 101], [40, Infinity]]) {
       expect(priceFor(p, "foil", rate, multiplier).salePrice).toBeNull();
@@ -99,7 +116,7 @@ describe("RiftHunt printing and money contract", () => {
     expect(p.cardmarket.normal).toBeUndefined();
     expect(p.prices.foil?.market).toBe(75.43);
     expect(p.cardmarket.foil?.trend).toBe(64.4);
-    expect(priceFor(p, "foil", 40, 1.9)).toEqual({ salePrice: "5732.68", reason: null });
+    expect(priceFor(p, "foil", 40, 1.9)).toEqual({ salePrice: "5732.68", reason: null, priceBeforeMinimum: "5732.68", minimumPrice: "90.00" });
     expect(priceFor(p, "normal", 40, 1.9).salePrice).toBeNull();
   });
   it("does not join by shared Riot identifiers", () => {

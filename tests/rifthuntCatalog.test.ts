@@ -11,7 +11,7 @@ function row(id: number, sale: string | null, stock = 0, market: number | null =
     printing: { ...printing, printingId: String(id), name: `Kart ${id}`, collector: String(id), rarity: id % 2 ? "Rare" : "Common",
       set: id % 2 ? "ogn" : "ven", prices: { normal: { market, low: null, mid: null, high: null } } },
     finish: "normal", cardId: `card-${id}`, slug: `card-${id}`, listingId: `listing-${id}`, stock,
-    updatedAt: null, oldPrice: sale, salePrice: sale, reason: sale === null ? "Fiyat yok" : null,
+    updatedAt: null, oldPrice: sale, salePrice: sale, priceBeforeMinimum: sale, minimumPrice: null, reason: sale === null ? "Fiyat yok" : null,
   };
 }
 const rows = [row(1, "2.00", 0, 7), row(2, "10.00", 3, 3), row(3, "100.25", 0, 20), row(4, null, 0, null), row(5, "9.90", 0, 10)];

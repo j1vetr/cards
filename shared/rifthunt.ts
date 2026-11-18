@@ -57,6 +57,8 @@ export interface RiftAdminRow {
   updatedAt: string | null;
   oldPrice: string | null;
   salePrice: string | null;
+  priceBeforeMinimum: string | null;
+  minimumPrice: string | null;
   reason: string | null;
 }
 export interface RiftRun {

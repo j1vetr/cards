@@ -213,26 +213,29 @@ describe.skipIf(!process.env.DATABASE_URL)("RiftHunt actual PostgreSQL routes in
     expect((await storage.getAdminCards({ gameId: "rift" })).total).toBe(1);
     expect((await get(`${base}/runs/${p.id}`)).body).toMatchObject({ importedCards: 1, importedSets: 1 });
   });
-  it("uses Riftbound floors in preview, import, stock entry and daily repricing without touching Pokemon", async () => {
-    sourceRarity = "Common";
+  it.each([
+    ["Common", "50.00"], ["Uncommon", "70.00"], ["Rare", "90.00"],
+    ["Epic", "90.00"], ["Promo", "90.00"], ["Showcase", "90.00"],
+  ])("uses the %s foil floor in preview, import, stock entry and daily repricing without touching Pokemon", async (rarity, minimum) => {
+    sourceRarity = rarity;
     market = 0.01;
     await reset();
     const p = await preview();
     const previewRow = (await get(`${base}/catalog?previewId=${p.id}`)).body.rows[0];
-    expect(previewRow).toMatchObject({ salePrice: "50.00", finish: "foil", cardId: null });
+    expect(previewRow).toMatchObject({ salePrice: minimum, finish: "foil", cardId: null });
     expect((await post(`${base}/runs/${p.id}/apply`)).status).toBe(200);
     const row = (await get(base + "/catalog")).body.rows[0];
-    expect(row).toMatchObject({ oldPrice: "50.00", salePrice: "50.00", stock: 0 });
+    expect(row).toMatchObject({ oldPrice: minimum, salePrice: minimum, priceBeforeMinimum: "0.76", minimumPrice: minimum, stock: 0 });
     expect((await post(base + "/stock", {
       printingId, finish: "foil", stock: 3, expectedStock: row.stock, expectedUpdatedAt: row.updatedAt,
     })).status).toBe(200);
     expect((await client.query("SELECT price,stock FROM card_listings WHERE card_id=$1", [row.cardId])).rows[0])
-      .toMatchObject({ price: "50.00", stock: 3 });
+      .toMatchObject({ price: minimum, stock: 3 });
     // Simulate an existing under-floor listing. The real daily engine must correct it.
     await client.query("UPDATE card_listings SET price=1 WHERE card_id=$1", [row.cardId]);
     await runRiftDaily();
     expect((await client.query("SELECT price,stock,is_active FROM card_listings WHERE card_id=$1", [row.cardId])).rows[0])
-      .toMatchObject({ price: "50.00", stock: 3, is_active: true });
+      .toMatchObject({ price: minimum, stock: 3, is_active: true });
     expect((await client.query("SELECT price,stock FROM card_listings WHERE id='poke-listing'")).rows[0])
       .toMatchObject({ price: "100.00", stock: 9 });
   });

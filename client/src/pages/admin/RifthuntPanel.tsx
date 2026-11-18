@@ -42,6 +42,25 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
   const [error, setError] = useState("");
   useEffect(() => setValue(String(row.stock)), [row.stock]);
   const validPrice = row.finish !== null && row.salePrice !== null && Number.isFinite(Number(row.salePrice)) && Number(row.salePrice) > 0;
+  const savedPrice = Number(row.oldPrice);
+  const proposedPrice = Number(row.salePrice);
+  const floorPrice = Number(row.minimumPrice);
+  const beforeFloorPrice = Number(row.priceBeforeMinimum);
+  const hasLocalListing = !!row.listingId;
+  const underFloorProposal = hasLocalListing
+    && row.salePrice !== null && row.salePrice !== ""
+    && Number.isFinite(proposedPrice) && proposedPrice > 0
+    && row.minimumPrice !== null && row.minimumPrice !== ""
+    && Number.isFinite(floorPrice) && floorPrice > 0
+    && row.priceBeforeMinimum !== null && row.priceBeforeMinimum !== ""
+    && Number.isFinite(beforeFloorPrice) && beforeFloorPrice >= 0
+    && beforeFloorPrice < floorPrice
+    && proposedPrice === floorPrice;
+  const floorApplied = underFloorProposal
+    && row.oldPrice !== null && row.oldPrice !== ""
+    && Number.isFinite(savedPrice) && savedPrice > 0
+    && savedPrice === proposedPrice;
+  const floorPending = underFloorProposal && !floorApplied;
   const valid = /^\d+$/.test(value) && Number(value) >= 0;
   const p = row.printing;
   return <tr data-testid="rift-inventory-row" data-printing-id={p.printingId} data-finish={row.finish ?? ""} className="align-top border-b border-neutral-100 last:border-0 hover:bg-[#f8f7f2]">
@@ -61,8 +80,27 @@ function InventoryRow({ row, enabled, onSave }: { row: RiftAdminRow; enabled: bo
     </td>
     <td className="px-3 py-3 min-w-[220px]">
       <div className="grid grid-cols-2 gap-1.5">
-         <PriceTile title="Sitedeki Fiyat" value={row.oldPrice} currency="TRY" className="bg-neutral-50" />
-         <PriceTile title="Hesaplanan TL" value={row.salePrice} currency="TRY" className={validPrice ? "bg-emerald-50" : "bg-amber-50"} />
+          <div data-testid="rift-site-price" className="rounded-md bg-neutral-50 px-2.5 py-2">
+            <p className="text-[10px] tracking-wide text-neutral-500">Sitedeki Fiyat</p>
+            <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
+              {floorApplied && <span data-testid="rift-floor-original" className="text-[11px] tabular-nums text-neutral-400 line-through">{money(row.priceBeforeMinimum, "TRY")}</span>}
+              <span className="text-[12px] font-semibold tabular-nums text-neutral-800">{money(row.oldPrice, "TRY")}</span>
+            </div>
+            {floorApplied && <div className="mt-1 space-y-0.5">
+              <span data-testid="rift-floor-applied" className="inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-900">Alt Limit Uygulandı</span>
+              <p className="text-[9px] leading-3 text-neutral-500">Alt limit, fiyatı tanımlı minimum tutara yükseltti.</p>
+            </div>}
+          </div>
+          <div data-testid="rift-calculated-price" className={`rounded-md px-2.5 py-2 ${validPrice ? "bg-emerald-50" : "bg-amber-50"}`}>
+            <p className="text-[10px] tracking-wide text-neutral-500">Hesaplanan TL</p>
+            {floorPending ? <>
+              <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
+                <span data-testid="rift-floor-original" className="text-[11px] tabular-nums text-neutral-400 line-through">{money(row.priceBeforeMinimum, "TRY")}</span>
+                <span className="text-[12px] font-semibold tabular-nums text-neutral-800">{money(row.salePrice, "TRY")}</span>
+              </div>
+              <p className="mt-1 text-[9px] font-medium text-amber-800">Alt Limit Önizlemesi</p>
+            </> : <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-neutral-800">{money(row.salePrice, "TRY")}</p>}
+          </div>
          <PriceTile title="TCG Market" value={row.finish ? p.prices[row.finish]?.market : null} currency="USD" className="bg-neutral-50" />
          <PriceTile title="CM Trend" value={row.finish ? p.cardmarket[row.finish]?.trend : null} currency="EUR" className="bg-neutral-50" />
       </div>

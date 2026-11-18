@@ -14,3 +14,9 @@ Use Turkish-aware title case for the Riftbound panel's headings, field labels an
 **Why:** The user requested “2. 3. kelimeler büyük başlasın” for panel headings, fields and selectable items, and asked to replace its generic menu icon with the Riftbound icon.
 
 **How to apply:** Keep brand names and acronyms intact, use `tr-TR` for Turkish casing, and leave source identifiers, option values and stored card data unchanged. Do not title-case full explanatory paragraphs.
+
+Explain floor-driven price increases in the admin panel by showing the pre-floor calculated TRY amount struck through beside the final site price, with “Alt Limit Uygulandı”.
+
+**Why:** The user requested “6 üstü çizili 90 olsun” in the panel's “Sitedeki Fiyat” area so staff can understand the system's adjustment.
+
+**How to apply:** This is an admin calculation comparison, not a storefront discount or historical-price claim. Only label it applied when the saved price matches the floor-adjusted calculation. Keep unapplied proposals visibly separate.

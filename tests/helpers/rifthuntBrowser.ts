@@ -90,9 +90,36 @@ export async function checkRifthuntBrowser(app: Express, client: Client, expecte
     await expect.poll(() => panel.getByTestId("rift-inventory-row").first().getAttribute("data-printing-id")).toBe(expectedCatalog.rows[0].printing.printingId);
     const format = (value: number) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 2 }).format(value);
     expect(await panel.getByTestId("summary-max-price").innerText()).toContain(format(expectedCatalog.summary.maxPrice));
+    expect(await panel.getByTestId("rift-inventory-row").first().getByTestId("rift-site-price").getByTestId("rift-floor-original").count()).toBe(0);
     await panel.getByLabel("Sıralama").selectOption("price_asc");
     const cheapest = (await request(app).get("/api/admin/rifthunt/catalog?stock=empty&sort=price_asc").set("x-test-admin", "test-admin")).body;
     await expect.poll(() => panel.getByTestId("rift-inventory-row").first().getAttribute("data-printing-id")).toBe(cheapest.rows[0].printing.printingId);
+    if (expectedCards > 1) {
+      const floored = cheapest.rows.find((r: any) => r.priceBeforeMinimum !== null && Number(r.priceBeforeMinimum) < Number(r.minimumPrice) && Number(r.oldPrice) === Number(r.minimumPrice));
+      expect(floored).toBeTruthy();
+      await panel.getByPlaceholder(/Kart Veya Baskı Ara/i).fill(floored.printing.riftboundId);
+      const floorRow = panel.locator(`[data-testid="rift-inventory-row"][data-printing-id="${floored.printing.printingId}"][data-finish="${floored.finish}"]`);
+      await floorRow.waitFor();
+      const siteTile = floorRow.getByTestId("rift-site-price");
+      expect(await siteTile.getByTestId("rift-floor-original").innerText()).toBe(format(Number(floored.priceBeforeMinimum)));
+      expect(await siteTile.getByTestId("rift-floor-original").evaluate(el => getComputedStyle(el).textDecorationLine)).toContain("line-through");
+      expect(await siteTile.getByTestId("rift-floor-applied").innerText()).toBe("Alt Limit Uygulandı");
+      expect(await siteTile.innerText()).toContain(format(Number(floored.oldPrice)));
+      await floorRow.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: "generated-artifacts/rifthunt-browser/floor-price-applied.png" });
+
+      // Only the isolated schema is changed. A pending calculation must not be
+      // presented as an already saved site price.
+      await client.query("UPDATE card_listings SET price=$1 WHERE id=$2", [floored.priceBeforeMinimum, floored.listingId]);
+      await page.reload();
+      await panel.getByPlaceholder(/Kart Veya Baskı Ara/i).fill(floored.printing.riftboundId);
+      await floorRow.waitFor();
+      expect(await siteTile.getByTestId("rift-floor-original").count()).toBe(0);
+      expect(await siteTile.innerText()).toContain(format(Number(floored.priceBeforeMinimum)));
+      expect(await floorRow.getByTestId("rift-calculated-price").innerText()).toContain("Alt Limit Önizlemesi");
+      await client.query("UPDATE card_listings SET price=$1 WHERE id=$2", [floored.oldPrice, floored.listingId]);
+      await page.reload();
+    }
     await panel.getByLabel("Sıralama").selectOption("price_desc");
     await panel.getByRole("heading", { name: "Baskı Kataloğu", exact: true }).evaluate(el => el.scrollIntoView({ block: "start" }));
     await page.screenshot({ path: "generated-artifacts/rifthunt-browser/price-explorer-desktop.png" });

@@ -5,9 +5,9 @@ description: User's USD-to-TRY pricing formula and stock-preserving safety const
 
 Use market USD × automatically retrieved TCMB USD/TRY foreign-exchange selling rate × a configurable margin multiplier, initially 1.9, for site sale prices.
 
-For Riftbound only, enforce these minimum TRY sale prices after conversion and multiplier: Common normal 15, Uncommon normal 25, Rare normal 90, Common foil 50, Uncommon foil 70. Higher calculated prices stay unchanged. No new floor applies to Rare foil or unspecified rarities.
+For Riftbound only, enforce these minimum TRY sale prices after conversion and multiplier: Common normal 15 and foil 50, Uncommon normal 25 and foil 70, Rare/Epic/Promo/Showcase normal or foil 90. Higher calculated prices stay unchanged.
 
-**Why:** The user explicitly requested fixed lower limits and confirmed “Yalnızca Riftbound”. They were told Rare Foil and unspecified types would not receive a new floor.
+**Why:** The user explicitly requested fixed lower limits and confirmed “Yalnızca Riftbound”. After a Rare foil remained below the floor, they requested “Eksik bir kart çeşiti kalmasın” and explicitly set Epic, Promo and Showcase to 90 TL each, with Rare normal and foil also at 90 TL.
 
 **How to apply:** Use the canonical source rarity and finish consistently in preview, import, stock entry and scheduled pricing. Local display metadata must not alter price identity. Do not invent a market price for missing or stale source prices. Preserve stock and keep Pokémon pricing unchanged.
 

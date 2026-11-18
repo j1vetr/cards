@@ -44,3 +44,9 @@ Preserve the source rich rules field, not only plain text, when preparing card d
 **Why:** Actual RiftHunt plain text concatenates some choice lists without separators. The rich field retains their paragraphs and list items. Cost codes and keyword brackets also need semantic rendering instead of literal display.
 
 **How to apply:** Render allowlisted structure as React nodes with local symbols, never inject source HTML directly. Keep unknown identifiers readable. Treat `[>]` and `[>>]` as neutral effect separators, not instructions to activate twice. Use local edited descriptions instead of stale source rich text when the description differs, but retain source formatting after unrelated rarity or name edits.
+
+Do not show a separate “Riftbound baskı verisi” section or its source-market, price-history and ruling content on the public card detail page.
+
+**Why:** The user explicitly asked “Kart Detay sayfasından Riftbound baskı verisi ve altındaki tüm şeyleri sil”.
+
+**How to apply:** Keep the main card description with icons, sale price and purchasing controls. This removes the extra public section, not the provider integration, admin tools or stored data.
