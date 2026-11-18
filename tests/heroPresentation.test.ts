@@ -60,7 +60,7 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
       await page.getByTestId("input-search").waitFor({ state: "hidden" });
       expect(await page.getByTestId("link-cart").getAttribute("href")).toBe("/sepet");
 
-      for (const [width, height] of [[1024, 768], [768, 1024], [390, 844], [375, 667], [360, 640]]) {
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1366, 768], [1024, 576], [768, 1024], [390, 844], [375, 667], [360, 640]]) {
         await page.setViewportSize({ width, height });
         await page.evaluate(() => scrollTo(0, 0));
         await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -68,7 +68,13 @@ describe.skipIf(process.env.HERO_BROWSER_TEST !== "1")("Reference homepage hero"
         expect(title!.x).toBeGreaterThanOrEqual(-1);
         expect(title!.x + title!.width).toBeLessThanOrEqual(width + 1);
         if (width >= 1024) {
+          await expect.poll(() => hero.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(3);
           await expect.poll(rightmostCard).toBeLessThan(width);
+          const logos = await page.getByTestId("hero-mobile-logos").boundingBox();
+          expect(logos!.y + logos!.height).toBeLessThan(height);
+          const login = page.getByTestId("link-giris-btn");
+          expect(await login.getAttribute("href")).toBe("/giris");
+          expect(await login.locator("svg").count()).toBe(1);
         }
         if (width < 640) {
           const logos = page.getByTestId("hero-mobile-logos");

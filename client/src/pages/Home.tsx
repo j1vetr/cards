@@ -8,6 +8,7 @@ import { SEO } from '@/components/SEO';
 import { CardCard } from '@/components/CardCard';
 import { OnSaleCardsSection as RiftboundOnSaleCardsSection } from '@/components/home/OnSaleCardsSection';
 import '@/components/home/hero-section.css';
+import { useDesktopHeroLayout } from '@/components/home/useDesktopHeroLayout';
 import { useCardSets, useCards, useCardGames, type CardSetPublic } from '@/hooks/useTcg';
 import type { CardPublic } from '@/components/CardCard';
 import {
@@ -348,6 +349,7 @@ const HERO_TRUST_ITEMS = [
 
 function HeroSection() {
   const heroRef = useRef<HTMLElement>(null);
+  useDesktopHeroLayout(heroRef);
 
   useEffect(() => {
     const section = heroRef.current;

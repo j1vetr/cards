@@ -338,3 +338,224 @@
   .gocards-hero *::before,
   .gocards-hero *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Desktop art direction: the reference is a viewport composition, not a
+   fixed-height content grid. Mobile/tablet rules above remain unchanged. */
+@media (min-width: 1024px) {
+  .gocards-hero {
+    --hero-desktop-top: 8.8vh;
+    --hero-desktop-height: calc(100vh - var(--hero-desktop-top));
+    --hero-desktop-fan-scale: .7;
+    height: var(--hero-desktop-height);
+    min-height: 0;
+    background-image:
+      linear-gradient(90deg, rgba(5,12,24,.48), rgba(5,12,24,.24) 38%, rgba(5,12,24,.02) 75%),
+      url('./hero-world.webp');
+    background-size: cover;
+    background-position: center top;
+  }
+
+  .gocards-hero__video-overlay {
+    background: linear-gradient(180deg, rgba(5,12,24,.08), transparent 58%, rgba(5,12,24,.12));
+  }
+  .gocards-hero__bottom-fade { height: 7%; opacity: .35; }
+  .gocards-hero > .relative {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .gocards-hero__content {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+  .gocards-hero__layout {
+    position: absolute;
+    inset: 0;
+    display: block;
+    max-width: none;
+    margin: 0;
+  }
+  .gocards-hero__content-group { display: contents; }
+  .gocards-hero__eyebrow,
+  .gocards-hero__heading,
+  .gocards-hero__copy p,
+  .gocards-hero__actions,
+  .gocards-hero__trust-row,
+  .gocards-hero__game-logos {
+    position: absolute;
+    left: 5vw;
+    z-index: 3;
+    margin: 0;
+  }
+  .gocards-hero__eyebrow {
+    top: calc(19.1vh - var(--hero-desktop-top));
+    gap: 1.2vw;
+    color: #e2e3e9;
+    font-size: clamp(9px, 1.02vw, 18px);
+    letter-spacing: .27em;
+    line-height: 1.3;
+  }
+  .gocards-hero__eyebrow::before,
+  .gocards-hero__eyebrow::after { width: 3vw; background: #dfcb9f; }
+  .gocards-hero__heading {
+    top: calc(24.2vh - var(--hero-desktop-top));
+    width: auto;
+    font-size: 4vw;
+    line-height: 1.16;
+    font-weight: 750;
+    letter-spacing: -.04em;
+    text-wrap: nowrap;
+    text-shadow: 0 2px 18px rgba(5,12,24,.15);
+  }
+  .gocards-hero__heading-line { white-space: nowrap; }
+  .gocards-hero__turkey {
+    width: 28vw;
+    height: 9.7vh;
+    margin-left: .5vw;
+    font-size: 3.2vw;
+    line-height: 1;
+  }
+  .gocards-hero__copy { display: contents; }
+  .gocards-hero__copy p {
+    top: calc(43.1vh - var(--hero-desktop-top));
+    width: 43vw;
+    max-width: none;
+    color: #e0e3eb;
+    font-size: clamp(13px, 1.48vw, 27px);
+    line-height: 1.39;
+    letter-spacing: -.015em;
+  }
+  .gocards-hero__copy p strong { color: #f1f2f6; font-weight: 700; }
+  .gocards-hero__actions {
+    top: calc(57.8vh - var(--hero-desktop-top));
+    gap: 2.25vw;
+  }
+  .gocards-hero__store-button {
+    gap: 1vw;
+    min-height: 7vh;
+    padding-inline: 2.15vw;
+    border-radius: .75vw;
+    font-size: clamp(13px, 1.45vw, 26px);
+    box-shadow: inset 0 1px rgba(255,255,255,.6), 0 7px 22px rgba(10,15,25,.15);
+  }
+  .gocards-hero__store-button svg { width: 1.9vw; height: 1.9vw; }
+  .gocards-hero__store-button svg:last-child { width: 1.35vw; height: 1.35vw; }
+  .gocards-hero__collections { gap: .5vw; font-size: clamp(11px, 1.16vw, 21px); }
+  .gocards-hero__collections svg { width: 1.3vw; height: 1.3vw; }
+  .gocards-hero__trust-row {
+    top: calc(69.8vh - var(--hero-desktop-top));
+    gap: 1.7vw;
+    min-height: 3.8vh;
+  }
+  .gocards-hero__trust-item { gap: .85vw; }
+  .gocards-hero__trust-item + .gocards-hero__trust-item { padding-left: 1.6vw; }
+  .gocards-hero__trust-item svg { width: 2.05vw; height: 2.05vw; }
+  .gocards-hero__trust-item-copy strong { font-size: clamp(10px, 1.03vw, 19px); font-weight: 650; }
+  .gocards-hero__game-logos {
+    top: calc(81.7vh - var(--hero-desktop-top));
+    gap: 1.7vw;
+    height: 7vh;
+  }
+  .gocards-hero__game-logos img,
+  .gocards-hero__game-logos img:first-child { height: 6.7vh; max-width: 15vw; }
+  .gocards-hero__game-logos a:first-child img { height: 5.5vh; max-width: 13vw; }
+  .gocards-hero__logo-divider { height: 3.6vh; }
+  .gocards-hero__stage {
+    top: calc(53vh - var(--hero-desktop-top) + var(--hero-desktop-fan-offset, 9px));
+    left: 44vw;
+    right: auto;
+    width: 52vw;
+    height: 0;
+    min-height: 0;
+    transform: none;
+    z-index: 2;
+  }
+  .gocards-hero__fan {
+    flex: 0 0 740px;
+    width: 740px;
+    max-width: none;
+    transform: scale(var(--hero-desktop-fan-scale));
+    transform-origin: center;
+    filter: drop-shadow(0 15px 22px rgba(3,8,20,.28));
+  }
+  .gocards-hero__fan img { background: #11192c !important; }
+  .gocards-hero__fan [style*="cursor: pointer"]:focus-visible {
+    outline: 3px solid #f6ce75;
+    outline-offset: 5px;
+  }
+
+  /* Scope shared-header refinements to the mounted homepage only. */
+  body:has(.gocards-hero) [data-testid="header"] {
+    background: #0c1221 !important;
+    border-bottom-color: rgba(214,224,244,.14) !important;
+  }
+  body:has(.gocards-hero) [data-testid="header"] > div:first-child {
+    max-width: none;
+    padding-inline: 5vw 4.2vw;
+  }
+  body:has(.gocards-hero) [data-testid="header"] > div:first-child > .lg\:flex {
+    height: 8.8vh;
+    min-height: 48px;
+  }
+  body:has(.gocards-hero) [data-testid="link-logo"] { width: 14vw; }
+  body:has(.gocards-hero) [data-testid="img-logo"] {
+    content: url('./gocards-desktop-brand.svg');
+    display: block;
+    width: 14vw;
+    height: auto;
+  }
+  body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] {
+    left: 26%;
+    right: 22%;
+    justify-content: space-between;
+    gap: 1.5vw;
+    transform: none;
+    translate: none;
+  }
+  body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] > a,
+  body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] > div > a,
+  body:has(.gocards-hero) [data-testid="header"] nav[aria-label="Ana menü"] > div > button {
+    color: #e7e8ef;
+    font-size: clamp(10px, 1.05vw, 20px);
+    letter-spacing: -.015em;
+  }
+  body:has(.gocards-hero) [data-testid="header"] nav svg { width: .9vw; height: .9vw; }
+  body:has(.gocards-hero) [data-testid="header"] nav .after\:absolute::after {
+    bottom: -2.2vh;
+    height: 2px;
+    background: #e63346;
+  }
+  body:has(.gocards-hero) [data-testid="button-search"],
+  body:has(.gocards-hero) [data-testid="link-cart"],
+  body:has(.gocards-hero) [data-testid="button-account"] { padding: .7vw; color: #e0e4ee; }
+  body:has(.gocards-hero) [data-testid="button-search"] svg,
+  body:has(.gocards-hero) [data-testid="link-cart"] > svg,
+  body:has(.gocards-hero) [data-testid="button-account"] > svg { width: 1.6vw; height: 1.6vw; }
+  body:has(.gocards-hero) [data-testid="header"]:has([data-testid="link-giris-btn"]) [data-testid="button-account"] { display: none; }
+  body:has(.gocards-hero) [data-testid="link-giris-btn"] {
+    position: relative;
+    gap: .55vw;
+    min-height: 4.2vh;
+    margin-left: 2.7vw;
+    padding: .5vh .8vw;
+    border: 1px solid #d4d8e4;
+    border-radius: .65vw;
+    color: #f1f3f8;
+    font-size: clamp(10px, .96vw, 18px);
+    line-height: 1;
+    font-weight: 650;
+  }
+  body:has(.gocards-hero) [data-testid="link-giris-btn"]::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 1.8vw);
+    top: 5%;
+    width: 1px;
+    height: 90%;
+    background: rgba(225,230,244,.34);
+    pointer-events: none;
+  }
+}

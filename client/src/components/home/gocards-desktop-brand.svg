@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="66" viewBox="0 0 360 66" fill="none">
+  <g transform="translate(1 5)">
+    <path d="M47 15A24 24 0 1 0 49 37H28V27H60V32A33 33 0 1 1 51 8Z" transform="translate(0 2) scale(.8)" fill="#F6F7FA"/>
+    <path d="M5 22A20 20 0 0 1 39 12L29 20A9 9 0 0 0 16 25Z" fill="#E63A4B"/>
+    <circle cx="23" cy="27" r="5" fill="#F6F7FA"/>
+  </g>
+  <path d="M81 9V57" stroke="#B4BAC9" stroke-opacity=".7"/>
+  <text x="106" y="49" fill="#F6F7FA" font-family="Trebuchet MS, sans-serif" font-weight="700" font-size="51" letter-spacing="-2">GoCards</text>
+</svg>
